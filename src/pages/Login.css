@@ -1,0 +1,115 @@
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background:
+    radial-gradient(60rem 40rem at 110% -10%, rgba(255, 122, 0, 0.18), transparent 60%),
+    radial-gradient(50rem 35rem at -10% 110%, rgba(230, 57, 70, 0.16), transparent 60%),
+    #12100e;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 24rem;
+  background: #1c1917;
+  border: 1px solid #2d2723;
+  border-radius: 1.25rem;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.login-logo {
+  display: inline-block;
+  font-size: 2.75rem;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.login-brand h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #faf7f2;
+}
+
+.login-brand p {
+  margin-top: 0.35rem;
+  color: #a8a29e;
+  font-size: 0.925rem;
+}
+
+.field {
+  margin-bottom: 1.15rem;
+}
+
+.field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e7e5e4;
+  margin-bottom: 0.4rem;
+}
+
+.field input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #12100e;
+  border: 1px solid #2d2723;
+  border-radius: 0.65rem;
+  padding: 0.7rem 0.9rem;
+  color: #fafaf9;
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field input::placeholder {
+  color: #57534e;
+}
+
+.field input:focus {
+  outline: none;
+  border-color: #f97316;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.22);
+}
+
+.login-error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+  border-radius: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.875rem;
+  margin-bottom: 1.15rem;
+}
+
+.login-button {
+  width: 100%;
+  border: none;
+  border-radius: 0.65rem;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.05s ease;
+}
+
+.login-button:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.login-button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.login-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
