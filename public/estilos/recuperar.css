@@ -1,0 +1,246 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #fdf8f0;
+    margin: 0;
+    padding: 20px;
+}
+
+.logo {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    width: 70px;
+    height: 70px;
+    background-image: url('imagenes/logo.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: pointer;
+    z-index: 1000;
+}
+
+
+.header-bar {
+    
+    width: 780px;
+    max-width: 95%;
+    background: #E8821A;
+    color: rgb(0, 0, 0);
+    text-align: center;
+    padding: 35px 0;    
+    font-weight: bold;
+    font-size: 28px;
+    border: 1px solid #000000;
+    border-bottom: none; 
+    border-radius: 10px 10px 0 0; 
+    margin: 0 auto;
+    box-shadow: 0 0 12px rgba(0,0,0,0.4); 
+}
+
+.card {
+    width: 700px;
+    max-width: 95%; 
+    background: #f5edd8;
+    padding: 40px;
+    border-left: 1px solid #000000;
+    border-right: 1px solid #000000;
+    border-top: none; 
+    border-bottom: none; 
+    border-radius: 0; 
+    text-align: center;
+    color: rgb(255, 255, 255);
+    box-shadow: 0 0 12px rgba(0,0,0,0.4);
+}
+
+
+
+.icono img {
+    width: 140px;
+}
+
+
+.card h2 {
+    margin-top: 8px;
+    margin-bottom: 18px;
+    color: rgb(3, 3, 3);
+    font-size: 40px; 
+}
+
+
+.descripcion {
+    font-size: 18px;
+    color: #000000;
+    margin-bottom: 20px;
+     
+}
+
+
+.input {
+    width: 95%;
+    padding: 14px;
+    font-size: 16px; 
+    border-radius: 6px;
+    background: #2c1810;
+    color: rgb(255, 255, 255);
+    margin-bottom: 15px;
+   
+}
+
+
+.btn-primario {
+    width: 100%;
+    background: #E8821A;
+    padding: 14px;
+    font-size: 18px; 
+    border-radius: 6px;
+    border: none;
+    font-weight: bold;
+    color: rgb(0, 0, 0);
+    cursor: pointer;
+    margin-bottom: 15px;
+     
+}
+.btn-primario:hover {
+    background: #d4b86a;
+    color: var(--color-primario);
+    cursor: pointer;
+}
+
+
+.link {
+    color: #6c6156;
+    font-size: 20px;
+    text-decoration: none;
+}
+.link:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.separador-contenedor {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.linea {
+    flex: 1;
+    height: 1px;
+    background: #000000;
+}
+
+.circulo {
+    margin: 0 10px;
+    color: #030303;
+}
+
+.btn-secundario {
+    color: rgb(42, 31, 31);
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 22px;
+}
+.btn-secundario:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.footer-btn {
+    display: block;
+    width: 742px; 
+    max-width: 95%;
+    background: #E8821A;
+    border: 1px solid #000000;
+    border-top: none; 
+    border-left: 1px solid #000000; 
+    border-right: 1px solid #000000; 
+    padding: 20px;   
+    font-size: 23px; 
+    text-align: center;
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+    border-radius: 0 0 10px 10px; 
+    text-decoration: none;
+    margin: 0 auto;
+    box-shadow: 0 0 12px rgba(0,0,0,0.4);
+}
+.footer-btn:hover {
+    background: #d4b86a;
+    color: var(color-primario);
+    cursor: pointer;
+}
+
+
+@media (max-width: 700px) {
+  
+
+    .header-bar, .card, .footer-btn {
+        width: 95%;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    
+    .footer-btn { margin-top: 18px; }
+    
+
+    .card {
+        padding: 66px;
+    }
+
+    .card h2 {
+        font-size: 60px;
+    }
+
+    .header-bar { font-size: 20px; }
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center; 
+    min-height: 100vh;      
+    gap: 0;               
+}
+
+
+.btn-regresar {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #E8821A;
+    color: #fff;
+    padding: 12px 15px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 18px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.1s;
+    z-index: 100;
+}
+
+.btn-regresar:hover {
+    background: #d4b86a;
+}
+
+
+footer {
+    width: 80%;
+    background: #fdf8f0;
+    color: #2c1810;
+    text-align: center;
+    padding: 20px ;
+    margin-top: 100px;
+}
+
+.footer-content p {
+    font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+    margin: 0;
+    font-size: 15px;
+    color: #2c1810;
+    font-weight: 900;
+}

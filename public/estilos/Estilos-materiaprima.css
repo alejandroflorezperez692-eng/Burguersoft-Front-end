@@ -1,0 +1,102 @@
+body {
+        font-family: Arial, Helvetica, sans-serif;
+        background: #fdf8f0;
+        margin: 0;
+        padding: 0;
+    }
+
+.marcas-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 28px;
+    padding-bottom: 14px;
+    border-bottom: 3px solid #E8821A;
+}
+
+.marcas-header h1 {
+    font-family: 'Lato', 'Segoe UI', sans-serif;
+    font-size: 28px;
+    font-weight: 700 !important;
+    color: #1e100a;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.marcas-header .subtitulo {
+    font-size: 13px;
+    color: #6b4c38;
+    margin: 4px 0 0;
+    font-family: 'Lato', 'Segoe UI', sans-serif;
+}
+
+.contenedor {
+    width: 90%;
+    margin: 0 auto;
+    padding-top: 100px;
+    font-family: Arial, sans-serif;
+}
+
+h2 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.formulario, .busqueda {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.formulario input, .busqueda input {
+    padding: 8px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    flex: 1;
+}
+
+button {
+    padding: 8px 15px;
+    background: #E8821A;
+    border: none;
+    color: white;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #d16900;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 10px;
+    border-bottom: 1px solid #ccc;
+    text-align: center;
+}
+
+.accion {
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: white;
+    font-size: 12px;
+}
+
+.editar { 
+    background: #2d89ef;
+    background-image: url("C:\Users\senita\Desktop\Proyecto Burguersoft\img\lapiz (1).png");
+ }
+
+.eliminar { 
+    background: #D94F35;
+    background-image: url("C:\Users\senita\Desktop\Proyecto Burguersoft\img\eliminar (1).png");
+}
