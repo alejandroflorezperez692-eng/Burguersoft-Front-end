@@ -14,16 +14,28 @@ export type User = {
   role?: string;
 };
 
+type UsuarioApi = {
+  id_Usuario?: number;
+  nombre_usuario?: string;
+  apellido_usuario?: string;
+  correo_personal?: string;
+};
+
 type LoginResponse = {
   token?: string;
-  access_token?: string;
-  user?: User;
+  usuario?: UsuarioApi;
 };
 
 type AuthContextValue = {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (
+    nombre: string,
+    apellido: string,
+    email: string,
+    password: string,
+  ) => Promise<void>;
   logout: () => void;
 };
 
@@ -49,21 +61,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const { data } = await apiClient.post<LoginResponse>('/login', {
-      email,
-      password,
+      correo: email,
+      contrasena: password,
     });
 
-    const token = data.token ?? data.access_token;
-    if (!token) {
+    if (!data.token) {
       throw new Error('El servidor no devolvió un token válido.');
     }
 
-    const nextUser: User = data.user ?? { email };
+    const u = data.usuario;
+    const nombreCompleto = [u?.nombre_usuario, u?.apellido_usuario]
+      .filter(Boolean)
+      .join(' ');
 
-    localStorage.setItem('token', token);
+    const nextUser: User = {
+      id: u?.id_Usuario,
+      name: nombreCompleto || undefined,
+      email: u?.correo_personal ?? email,
+    };
+
+    localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(nextUser));
     setUser(nextUser);
   }, []);
+
+  const register = useCallback(
+    async (nombre: string, apellido: string, email: string, password: string) => {
+      await apiClient.post('/registro', {
+        nombre,
+        apellido,
+        email,
+        password,
+      });
+    },
+    [],
+  );
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
@@ -76,9 +108,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: user !== null,
       login,
+      register,
       logout,
     }),
-    [user, login, logout],
+    [user, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
