@@ -8,6 +8,7 @@ import Registro from './pages/Registro';
 import RecuperarContrasena from './pages/RecuperarContrasena';
 import Inicio from './pages/Inicio';
 import Home from './pages/Home';
+import Nosotros from './pages/Nosotros';
 
 function App() {
   return (
@@ -15,7 +16,7 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route
         path="/nosotros"
-        element={<PublicPlaceholder titulo="Nosotros" />}
+        element={<Nosotros />}
       />
       <Route
         path="/menu-publico"
