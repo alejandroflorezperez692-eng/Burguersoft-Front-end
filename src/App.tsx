@@ -1,3 +1,4 @@
+
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import PaginaModulo from './components/PaginaModulo';
