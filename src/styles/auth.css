@@ -150,6 +150,70 @@
   background: #fff;
 }
 
+.campo-password {
+  position: relative;
+}
+
+.campo-password input {
+  padding-right: 52px;
+}
+
+.boton-mostrar-password {
+  position: absolute;
+  top: 44%;
+  right: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: #000;
+  background: transparent;
+  border: none;
+  transform: translateY(-60%);
+  cursor: pointer;
+}
+
+.boton-mostrar-password:hover,
+.boton-mostrar-password:focus-visible {
+  color: #000;
+  background: transparent;
+}
+
+.boton-mostrar-password svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#registroForm .boton-mostrar-password {
+  top: 54%;
+  right: 12px;
+  transform: translateY(-50%);
+}
+
+.input::-ms-reveal,
+.input::-ms-clear,
+.input::-webkit-credentials-auto-fill-button,
+.campo-password input::-ms-reveal,
+.campo-password input::-ms-clear,
+.campo-password input::-webkit-credentials-auto-fill-button {
+  display: none;
+}
+
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-oscuro);
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  box-shadow: 0 0 0 1000px #fff inset;
+}
+
 .btn-primario {
   width: 100%;
   background: linear-gradient(135deg, var(--color-primario) 0%, #d4761a 100%);

@@ -21,6 +21,7 @@ function getErrorMessage(error: unknown): string {
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [mostrarPassword, setMostrarPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -63,15 +64,29 @@ export default function Login() {
           />
 
           <h2>CONTRASEÑA</h2>
-          <input
-            type="password"
-            id="password"
-            className="input"
-            placeholder="Ingresa tu contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="campo-password">
+            <input
+              type={mostrarPassword ? 'text' : 'password'}
+              id="password"
+              className="input"
+              placeholder="Ingresa tu contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="boton-mostrar-password"
+              onClick={() => setMostrarPassword((visible) => !visible)}
+              aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+              title={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
+                <circle cx="12" cy="12" r="2.5" />
+              </svg>
+            </button>
+          </div>
 
           {error && (
             <p className="auth-error" role="alert">
