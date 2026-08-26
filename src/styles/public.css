@@ -831,8 +831,13 @@ body.dark-mode .public-body {
   --color-borde: rgba(232, 130, 26, 0.2);
 }
 
+body.dark-mode .public-body header {
+  background: #0e0500;
+  border-bottom-color: rgba(232, 130, 26, 0.15);
+}
+
 body.dark-mode .public-header {
-  background: rgba(17, 17, 17, 0.95);
+  background: #0e0500;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
