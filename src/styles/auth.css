@@ -190,14 +190,14 @@
   width: 100%;
   padding: 13px;
   background: transparent;
-  border: 1.5px solid var(--color-borde);
+  border: 1.5px solid rgba(232, 130, 26, 0.35);
   border-radius: var(--radio);
   font-size: 14px;
   font-weight: 800;
   font-family: var(--font-cuerpo);
   letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--color-oscuro);
+  color: var(--color-primario);
   text-align: center;
   cursor: pointer;
   transition: all var(--transicion);
@@ -205,7 +205,7 @@
 }
 
 .btn-secundario:hover {
-  background: var(--color-fondo);
+  background: transparent;
   border-color: var(--color-primario);
   color: var(--color-primario);
 }
@@ -220,7 +220,8 @@
 }
 
 .link:hover {
-  color: var(--color-oscuro);
+  color: var(--color-primario);
+  background: transparent;
   text-decoration: underline;
 }
 
@@ -234,12 +235,12 @@
 .linea {
   flex: 1;
   height: 1px;
-  background: rgba(44, 24, 16, 0.12);
+  background: #000;
 }
 
 .circulo {
   font-size: 13px;
-  color: #aaa;
+  color: #000;
   font-weight: 400;
   letter-spacing: 0.3px;
 }
@@ -247,7 +248,7 @@
 .enlace-externo {
   text-align: center;
   font-size: 14px;
-  color: #666;
+  color: #000;
   margin-top: 22px;
 }
 
@@ -268,9 +269,9 @@
 
 .enlace-externo a:hover,
 .enlace-externo button:hover {
-  color: var(--color-oscuro);
+  color: var(--color-primario);
   text-decoration: underline;
-  background: none;
+  background: transparent;
   transform: none;
   box-shadow: none;
 }
@@ -281,6 +282,10 @@
   text-align: center;
   margin-bottom: 20px;
   line-height: 1.6;
+}
+
+.descripcion-recuperacion {
+  color: #000;
 }
 
 .auth-error {
