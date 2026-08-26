@@ -53,6 +53,29 @@ export default function Accesibilidad() {
     return () => document.removeEventListener('click', manejarClic);
   }, []);
 
+  // Cierra el panel con la tecla Escape, como se espera en cualquier panel/diálogo accesible.
+  useEffect(() => {
+    if (!abierto) return;
+    const manejarTecla = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setAbierto(false);
+      }
+    };
+    document.addEventListener('keydown', manejarTecla);
+    return () => document.removeEventListener('keydown', manejarTecla);
+  }, [abierto]);
+
+  // Mueve el foco de teclado al panel al abrirlo, y lo regresa al botón flotante al cerrarlo,
+  // para que la navegación por teclado no "se pierda" en la página.
+  useEffect(() => {
+    if (abierto) {
+      const primerBoton = panelRef.current?.querySelector<HTMLElement>('button');
+      primerBoton?.focus();
+    } else {
+      fabRef.current?.focus();
+    }
+  }, [abierto]);
+
   const setTema = (modo: 'claro' | 'oscuro') => {
     if (modo === 'oscuro') {
       document.body.classList.add('dark-mode');
@@ -91,6 +114,9 @@ export default function Accesibilidad() {
         className={`acc-panel${abierto ? ' open' : ''}`}
         id="accPanel"
         ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Opciones de accesibilidad"
       >
         <div className="acc-panel-title">Accesibilidad</div>
         <div className="acc-row">
@@ -159,6 +185,8 @@ export default function Accesibilidad() {
         className="acc-fab"
         id="accFab"
         aria-label="Accesibilidad"
+        aria-expanded={abierto}
+        aria-controls="accPanel"
         ref={fabRef}
         onClick={() => setAbierto((v) => !v)}
       >
