@@ -72,15 +72,15 @@ body {
 }
 
 body.dark-mode {
-  --bg: #111;
-  --surface: #1e1e1e;
-  --surface-2: #252525;
-  --surface-3: #2a2a2a;
+  --bg: #1a0e06;
+  --surface: #251a10;
+  --surface-2: #2e2115;
+  --surface-3: #3d2818;
   --text-900: #f0ebe3;
-  --text-600: #a89888;
-  --text-400: #756050;
-  --border: rgba(232, 130, 26, 0.15);
-  --border-strong: rgba(232, 130, 26, 0.3);
+  --text-600: #c4a88a;
+  --text-400: #9a7d62;
+  --border: rgba(232, 130, 26, 0.2);
+  --border-strong: rgba(232, 130, 26, 0.4);
 }
 
 a {

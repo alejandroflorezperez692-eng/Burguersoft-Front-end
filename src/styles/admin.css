@@ -1468,12 +1468,12 @@ body.dark-mode .detalle-box { background: var(--surface); }
 }
 
 body.dark-mode .sidebar {
-  background: linear-gradient(200deg, #0e0500, #1a0800);
+  background: linear-gradient(200deg, #3d1a04 0%, #1a0800 100%);
 }
 
 body.dark-mode .sidebar-header {
-  background: #1a0800;
-  border-bottom-color: rgba(232, 130, 26, 0.08);
+  background: #6b3200;
+  border-bottom-color: rgba(232, 130, 26, 0.15);
 }
 
 body.dark-mode .sidebar-divider {
@@ -1493,7 +1493,7 @@ body.dark-mode .sidebar-item.active {
 }
 
 body.dark-mode .header-nav {
-  background: linear-gradient(to right, #1a0800, #0e0500);
+  background: linear-gradient(to right, #6b3200, var(--surface-3));
   box-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
 }
 
@@ -1517,7 +1517,7 @@ body.dark-mode .data-table {
 }
 
 body.dark-mode .data-table thead {
-  background: #0e0500;
+  background: #3d1a04;
 }
 
 body.dark-mode .data-table tbody tr {
@@ -1533,21 +1533,21 @@ body.dark-mode .modal-overlay {
 }
 
 body.dark-mode .modal-box {
-  background: #1e1e1e;
+  background: var(--surface);
 }
 
 body.dark-mode .form-group input,
 body.dark-mode .form-group select,
 body.dark-mode .form-group textarea {
-  background: #2a2a2a;
-  border-color: rgba(232, 130, 26, 0.2);
+  background: var(--surface-2);
+  border-color: rgba(232, 130, 26, 0.25);
   color: var(--text-900);
 }
 
 body.dark-mode .form-group input:focus,
 body.dark-mode .form-group select:focus,
 body.dark-mode .form-group textarea:focus {
-  background: #333;
+  background: var(--surface-3);
   border-color: var(--brand);
 }
 
@@ -1571,12 +1571,12 @@ body.dark-mode .btn-cancel:hover {
 }
 
 body.dark-mode .acc-panel {
-  background: #1e1e1e;
-  border-color: rgba(232, 130, 26, 0.2);
+  background: var(--surface);
+  border-color: rgba(232, 130, 26, 0.25);
 }
 
 body.dark-mode .welcome-banner {
-  background: linear-gradient(135deg, #0e0500, #2a0f02);
+  background: linear-gradient(135deg, #3d1a04, #4a2008);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
 }
 
@@ -1615,8 +1615,8 @@ body.dark-mode .badge-gray {
 
 body.dark-mode .acc-btn-option,
 body.dark-mode .acc_tema {
-  background: #2a2a2a;
-  border-color: rgba(232, 130, 26, 0.15);
+  background: var(--surface-2);
+  border-color: rgba(232, 130, 26, 0.2);
   color: var(--text-900);
 }
 
@@ -1628,7 +1628,7 @@ body.dark-mode .acc_tema:hover {
 }
 
 body.dark-mode .acc-btn-reset {
-  background: #2a2a2a;
+  background: var(--surface-2);
   color: var(--text-600);
 }
 
@@ -1647,7 +1647,7 @@ body.dark-mode .nav-item.active {
 }
 
 body.dark-mode .toast-bienvenida {
-  background: #1a1a1a;
+  background: var(--surface-2);
   border-color: var(--brand);
 }
 
@@ -1656,13 +1656,13 @@ body.dark-mode .historial-columnas {
 }
 
 body.dark-mode select {
-  background: #2a2a2a;
+  background: var(--surface-2);
   border-color: var(--border);
   color: var(--text-900);
 }
 
 body.dark-mode option {
-  background: #1e1e1e;
+  background: var(--surface);
   color: var(--text-900);
 }
 
@@ -1679,7 +1679,7 @@ body.dark-mode .page-header .subtitulo {
 }
 
 body.dark-mode .btn-icon-edit {
-  background: rgba(26, 63, 126, 0.2);
+  background: rgba(45, 137, 239, 0.2);
   color: #60a5fa;
 }
 
@@ -1689,7 +1689,7 @@ body.dark-mode .btn-icon-edit:hover {
 }
 
 body.dark-mode .btn-icon-del {
-  background: rgba(200, 56, 42, 0.15);
+  background: rgba(200, 56, 42, 0.2);
   color: #f87171;
 }
 
