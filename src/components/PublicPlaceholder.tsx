@@ -1,4 +1,5 @@
 import PublicHeader from './PublicHeader';
+import Footer from './Footer';
 
 type PublicPlaceholderProps = {
   titulo: string;
@@ -12,11 +13,7 @@ export default function PublicPlaceholder({ titulo }: PublicPlaceholderProps) {
         <h2>{titulo}</h2>
         <p>Esta página está en construcción.</p>
       </section>
-      <footer>
-        <div className="footer-bottom">
-          <p>&copy; 2026 BURGUERSOFT - EL ORIENTE. Todos los derechos reservados.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

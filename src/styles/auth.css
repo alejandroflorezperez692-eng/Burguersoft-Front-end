@@ -6,7 +6,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 100px 16px 30px;
+  padding: 100px 16px 0;
   background-color: var(--color-fondo);
   background-image:
     radial-gradient(circle at 15% 25%, rgba(232, 130, 26, 0.10) 0%, transparent 55%),
@@ -443,12 +443,17 @@
   cursor: not-allowed;
 }
 
-.auth-footer {
-  margin-top: 48px;
-  text-align: center;
-  color: var(--color-oscuro);
-  font-size: 15px;
-  font-weight: 700;
+.public-body.auth-site-footer {
+  align-self: stretch;
+  width: calc(100% + 32px);
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-top: 80px;
+  background: transparent;
+}
+
+.public-body.auth-site-footer footer {
+  margin-top: 0;
 }
 
 @media (max-width: 520px) {

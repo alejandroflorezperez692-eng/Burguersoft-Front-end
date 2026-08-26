@@ -546,7 +546,7 @@
   display: flex;
   align-items: stretch;
   min-height: 560px;
-  background: linear-gradient(135deg, var(--color-fondo-alt) 0%, var(--color-fondo) 100%);
+  background: #fff;
   position: relative;
   overflow: hidden;
 }
