@@ -10,6 +10,15 @@ import RecuperarContrasena from './pages/RecuperarContrasena';
 import Inicio from './pages/Inicio';
 import Home from './pages/Home';
 import Nosotros from './pages/Nosotros';
+import MarcasAdmin from './pages/admin/MarcasAdmin';
+import UsuariosAdmin from './pages/admin/UsuariosAdmin';
+import MenuAdmin from './pages/admin/MenuAdmin';
+import MateriaPrimaAdmin from './pages/admin/MateriaPrimaAdmin';
+import ComprasAdmin from './pages/admin/ComprasAdmin';
+import PromocionesAdmin from './pages/admin/PromocionesAdmin';
+import VentasAdmin from './pages/admin/VentasAdmin';
+import BackupsAdmin from './pages/admin/BackupsAdmin';
+import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
 
 function App() {
   return (
@@ -34,42 +43,17 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AdminLayout />}>
           <Route path="/inicio" element={<Inicio />} />
-          <Route
-            path="/menu"
-            element={<PaginaModulo titulo="Menú" />}
-          />
-          <Route
-            path="/ventas"
-            element={<PaginaModulo titulo="Ventas" />}
-          />
-          <Route
-            path="/materia-prima"
-            element={<PaginaModulo titulo="Materia Prima" />}
-          />
-          <Route
-            path="/compras"
-            element={<PaginaModulo titulo="Compras" />}
-          />
-          <Route
-            path="/gestion-marca"
-            element={<PaginaModulo titulo="Marcas" />}
-          />
-          <Route
-            path="/promociones"
-            element={<PaginaModulo titulo="Promociones" />}
-          />
-          <Route
-            path="/backups"
-            element={<PaginaModulo titulo="Copias de Seguridad" />}
-          />
-          <Route
-            path="/configuracion"
-            element={<PaginaModulo titulo="Configuración de Cuenta" />}
-          />
-          <Route
-            path="/usuarios"
-            element={<PaginaModulo titulo="Gestión de Usuarios" />}
-          />
+          <Route path="/menu" element={<MenuAdmin />} />
+          <Route path="/ventas" element={<VentasAdmin />} />
+          <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
+          <Route path="/compras" element={<ComprasAdmin />} />
+          <Route path="/gestion-marca" element={<MarcasAdmin />} />
+          <Route path="/promociones" element={<PromocionesAdmin />} />
+          <Route path="/backups" element={<BackupsAdmin />} />
+          <Route path="/configuracion" element={<ConfiguracionAdmin />} />
+          <Route path="/usuarios" element={<UsuariosAdmin />} />
+          <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
+          <Route path="/mis-pedidos" element={<PaginaModulo titulo="Mis Pedidos" />} />
         </Route>
       </Route>
 
