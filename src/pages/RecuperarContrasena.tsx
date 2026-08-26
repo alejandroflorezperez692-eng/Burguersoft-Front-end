@@ -49,7 +49,7 @@ export default function RecuperarContrasena() {
             <img src={iconoBloqueo} alt="Imagen Bloqueo" />
           </div>
 
-          <p className="descripcion">
+          <p className="descripcion descripcion-recuperacion">
             Ingresa tu correo electrónico registrado para recibir el código de
             recuperación.
           </p>
