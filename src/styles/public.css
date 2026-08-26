@@ -820,3 +820,122 @@
     height: 38px;
   }
 }
+
+body.dark-mode .public-body {
+  --color-primario: #f0ebe3;
+  --color-secundario: #E8821A;
+  --color-texto: #f0ebe3;
+  --color-texto-suave: #a89888;
+  --color-fondo: #111;
+  --color-fondo-alt: #1a0800;
+  --color-borde: rgba(232, 130, 26, 0.2);
+}
+
+body.dark-mode .public-header {
+  background: rgba(17, 17, 17, 0.95);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .public-header .nav-link {
+  color: #a89888;
+}
+
+body.dark-mode .public-header .nav-link:hover {
+  color: #E8821A;
+}
+
+body.dark-mode .public-header .btn-login-header {
+  background: var(--brand);
+  color: #fff;
+}
+
+body.dark-mode .hero-caption h1,
+body.dark-mode .hero-caption p {
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .promociones {
+  background: var(--color-fondo);
+}
+
+body.dark-mode .promociones h2,
+body.dark-mode .promociones p,
+body.dark-mode .section-title,
+body.dark-mode .section-text {
+  color: var(--color-texto);
+}
+
+body.dark-mode .promo-card-pub {
+  background: #1e1e1e;
+  border-color: var(--color-borde);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+body.dark-mode .promo-info-pub h3,
+body.dark-mode .promo-info-pub p {
+  color: var(--color-texto);
+}
+
+body.dark-mode .promo-precio-pub {
+  color: var(--brand);
+}
+
+body.dark-mode .nosotros-section {
+  background: var(--color-fondo);
+}
+
+body.dark-mode .nosotros-content h2,
+body.dark-mode .nosotros-content p {
+  color: var(--color-texto);
+}
+
+body.dark-mode .nosotros-ubicacion {
+  background: #1a0800;
+}
+
+body.dark-mode .nosotros-ubicacion h2,
+body.dark-mode .nosotros-ubicacion p {
+  color: var(--color-texto);
+}
+
+body.dark-mode .map-content {
+  background: var(--color-fondo);
+}
+
+body.dark-mode .footer {
+  background: #0e0500;
+}
+
+body.dark-mode .footer,
+body.dark-mode .footer h3,
+body.dark-mode .footer p,
+body.dark-mode .footer span,
+body.dark-mode .footer a {
+  color: #a89888;
+}
+
+body.dark-mode .footer h3 {
+  color: var(--text-900);
+}
+
+body.dark-mode .promo-vacio {
+  color: var(--color-texto-suave);
+}
+
+body.dark-mode .perfil-dropdown {
+  background: #1e1e1e;
+  border-color: var(--color-borde);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .perfil-dropdown a,
+body.dark-mode .perfil-dropdown button {
+  color: var(--color-texto);
+}
+
+body.dark-mode .perfil-dropdown a:hover,
+body.dark-mode .perfil-dropdown button:hover {
+  background: rgba(232, 130, 26, 0.1);
+  color: var(--brand);
+}
