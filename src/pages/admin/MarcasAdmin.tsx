@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import apiClient from '../../api/client';
 
 interface Marca {
-<<<<<<< HEAD
+
   idMarca: number;
   nombre_marca: string;
   img_marca: string;
@@ -19,7 +19,7 @@ const empty: Omit<Marca, 'idMarca'> = {
   telefono_marca: '',
   correo_marca: '',
   estado_marca: 'Activo',
-=======
+
   id: number;
   nombre: string;
   img: string;
@@ -34,7 +34,6 @@ const empty: Omit<Marca, 'id'> = {
   telefono: '',
   correo: '',
   nit: '',
->>>>>>> d457a72f680ed098dcc485a83cd4f204727aa48a
 };
 
 function estadoClass(e: string) {
@@ -88,31 +87,29 @@ export default function MarcasAdmin() {
 
   const openEdit = (m: Marca) => {
     setForm({
-<<<<<<< HEAD
+
       nombre_marca: m.nombre_marca,
       img_marca: m.img_marca,
       nit_marca: m.nit_marca ?? '',
       telefono_marca: m.telefono_marca,
       correo_marca: m.correo_marca,
       estado_marca: m.estado_marca ?? 'Activo',
-=======
       nombre: m.nombre,
       img: m.img,
       telefono: m.telefono,
       correo: m.correo,
       nit: m.nit,
->>>>>>> d457a72f680ed098dcc485a83cd4f204727aa48a
     });
     setEditId(m.id);
     setModal(true);
   };
 
   const save = () => {
-<<<<<<< HEAD
+
     if (!form.nombre_marca.trim() || !form.img_marca.trim() || !form.nit_marca.trim()) {
       showToast('Nombre, imagen y NIT son obligatorios.', 'err');
       return;
-=======
+
     if (editId) {
       // El endpoint de actualizar no acepta/require nit, así que lo excluimos.
       const { nit, ...body } = form;
@@ -122,7 +119,7 @@ export default function MarcasAdmin() {
       // ese dígito no es parte del número, así que solo tomamos lo que va antes del guion.
       const soloNit = form.nit.split('-')[0].replace(/[^0-9]/g, '');
       apiClient.post('/marcas', { ...form, nit: Number(soloNit) }).then(() => { setModal(false); load(); });
->>>>>>> d457a72f680ed098dcc485a83cd4f204727aa48a
+
     }
     const req = editId
       ? apiClient.put(`/marcas/${editId}`, form)
@@ -182,7 +179,7 @@ export default function MarcasAdmin() {
       {loading ? (
         <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
       ) : (
-<<<<<<< HEAD
+
         <div className="marcas-grid">
           {filtered.map((m) => (
             <div className="marca-card" key={m.idMarca} onClick={() => openDetalle(m)}>
@@ -208,7 +205,7 @@ export default function MarcasAdmin() {
             <div className="empty-state">No hay marcas registradas. Agrega la primera.</div>
           )}
         </div>
-=======
+
         <table className="data-table">
           <thead>
             <tr>
@@ -237,7 +234,7 @@ export default function MarcasAdmin() {
             )}
           </tbody>
         </table>
->>>>>>> d457a72f680ed098dcc485a83cd4f204727aa48a
+
       )}
 
       {modal && (
@@ -245,7 +242,7 @@ export default function MarcasAdmin() {
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <h2>{editId ? 'Editar Marca' : 'Nueva Marca'}</h2>
             <div className="form-group">
-<<<<<<< HEAD
+
               <label>Nombre *</label>
               <input value={form.nombre_marca} onChange={(e) => setForm({ ...form, nombre_marca: e.target.value })} placeholder="Nombre de la marca" />
             </div>
@@ -279,7 +276,7 @@ export default function MarcasAdmin() {
             <div className="form-group">
               <label>Correo *</label>
               <input type="email" value={form.correo_marca} onChange={(e) => setForm({ ...form, correo_marca: e.target.value })} placeholder="correo@empresa.com" />
-=======
+
               <label>Nombre</label>
               <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
             </div>
@@ -294,7 +291,7 @@ export default function MarcasAdmin() {
             <div className="form-group">
               <label>Correo</label>
               <input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
->>>>>>> d457a72f680ed098dcc485a83cd4f204727aa48a
+
             </div>
             {!editId && (
               <div className="form-group">
