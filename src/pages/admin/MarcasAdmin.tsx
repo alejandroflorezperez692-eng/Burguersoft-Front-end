@@ -2,18 +2,20 @@ import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 
 interface Marca {
-  idMarca: number;
-  nombre_marca: string;
-  img_marca: string;
-  telefono_marca: string;
-  correo_marca: string;
+  id: number;
+  nombre: string;
+  img: string;
+  telefono: string;
+  correo: string;
+  nit: string;
 }
 
-const empty: Omit<Marca, 'idMarca'> = {
-  nombre_marca: '',
-  img_marca: '',
-  telefono_marca: '',
-  correo_marca: '',
+const empty: Omit<Marca, 'id'> = {
+  nombre: '',
+  img: '',
+  telefono: '',
+  correo: '',
+  nit: '',
 };
 
 export default function MarcasAdmin() {
@@ -31,27 +33,33 @@ export default function MarcasAdmin() {
   useEffect(() => { load(); }, []);
 
   const filtered = items.filter((m) =>
-    m.nombre_marca.toLowerCase().includes(q.toLowerCase())
+    m.nombre.toLowerCase().includes(q.toLowerCase())
   );
 
   const openNew = () => { setForm(empty); setEditId(null); setModal(true); };
 
   const openEdit = (m: Marca) => {
     setForm({
-      nombre_marca: m.nombre_marca,
-      img_marca: m.img_marca,
-      telefono_marca: m.telefono_marca,
-      correo_marca: m.correo_marca,
+      nombre: m.nombre,
+      img: m.img,
+      telefono: m.telefono,
+      correo: m.correo,
+      nit: m.nit,
     });
-    setEditId(m.idMarca);
+    setEditId(m.id);
     setModal(true);
   };
 
   const save = () => {
     if (editId) {
-      apiClient.put(`/marcas/${editId}`, form).then(() => { setModal(false); load(); });
+      // El endpoint de actualizar no acepta/require nit, así que lo excluimos.
+      const { nit, ...body } = form;
+      apiClient.put(`/marcas/${editId}`, body).then(() => { setModal(false); load(); });
     } else {
-      apiClient.post('/marcas', form).then(() => { setModal(false); load(); });
+      // El NIT colombiano trae un dígito de verificación después del guion (ej. "830.047.819-9");
+      // ese dígito no es parte del número, así que solo tomamos lo que va antes del guion.
+      const soloNit = form.nit.split('-')[0].replace(/[^0-9]/g, '');
+      apiClient.post('/marcas', { ...form, nit: Number(soloNit) }).then(() => { setModal(false); load(); });
     }
   };
 
@@ -97,14 +105,14 @@ export default function MarcasAdmin() {
           </thead>
           <tbody>
             {filtered.map((m) => (
-              <tr key={m.idMarca}>
-                <td>{m.idMarca}</td>
-                <td style={{ fontWeight: 600 }}>{m.nombre_marca}</td>
-                <td>{m.telefono_marca || '—'}</td>
-                <td>{m.correo_marca || '—'}</td>
+              <tr key={m.id}>
+                <td>{m.id}</td>
+                <td style={{ fontWeight: 600 }}>{m.nombre}</td>
+                <td>{m.telefono || '—'}</td>
+                <td>{m.correo || '—'}</td>
                 <td>
                   <button className="btn-icon btn-icon-edit" onClick={() => openEdit(m)} title="Editar">✏</button>
-                  <button className="btn-icon btn-icon-del" onClick={() => del(m.idMarca)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
+                  <button className="btn-icon btn-icon-del" onClick={() => del(m.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
                 </td>
               </tr>
             ))}
@@ -121,20 +129,26 @@ export default function MarcasAdmin() {
             <h2>{editId ? 'Editar Marca' : 'Nueva Marca'}</h2>
             <div className="form-group">
               <label>Nombre</label>
-              <input value={form.nombre_marca} onChange={(e) => setForm({ ...form, nombre_marca: e.target.value })} />
+              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
             </div>
             <div className="form-group">
               <label>URL Imagen</label>
-              <input value={form.img_marca} onChange={(e) => setForm({ ...form, img_marca: e.target.value })} />
+              <input value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Teléfono</label>
-              <input value={form.telefono_marca} onChange={(e) => setForm({ ...form, telefono_marca: e.target.value })} />
+              <input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Correo</label>
-              <input type="email" value={form.correo_marca} onChange={(e) => setForm({ ...form, correo_marca: e.target.value })} />
+              <input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
             </div>
+            {!editId && (
+              <div className="form-group">
+                <label>NIT</label>
+                <input value={form.nit} onChange={(e) => setForm({ ...form, nit: e.target.value })} />
+              </div>
+            )}
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
               <button className="btn-save" onClick={save}>{editId ? 'Actualizar' : 'Crear'}</button>
