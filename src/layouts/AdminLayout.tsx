@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import logoClaro from '../assets/img/icono1.png';
 import logoOscuro from '../assets/img/icono1-oscuro.png';
@@ -31,6 +32,9 @@ const navItems = [
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const cerrarMenu = () => setMenuOpen(false);
 
   const handleSalir = () => {
     logout();
@@ -39,7 +43,7 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-body">
-      <aside className="sidebar">
+      <aside className={`sidebar${menuOpen ? ' open' : ''}`}>
         <div className="sidebar-header">
           <img src={logoClaro} alt="Logo" className="logo logo-claro" />
           <img src={logoOscuro} alt="Logo" className="logo logo-oscuro" />
@@ -52,6 +56,7 @@ export default function AdminLayout() {
             <div className="sidebar-item" key={item.to}>
               <NavLink
                 to={item.to}
+                onClick={cerrarMenu}
                 className={({ isActive }) => (isActive ? 'active' : undefined)}
               >
                 <img src={item.icono} alt="" className="icono-sidebar" />
@@ -61,9 +66,11 @@ export default function AdminLayout() {
           ))}
         </div>
       </aside>
+      <div className={`sidebar-backdrop${menuOpen ? ' show' : ''}`} onClick={cerrarMenu} />
 
       <nav className="header-nav">
-        <NavLink to="/configuracion" className="nav-item admin-name">
+        <button type="button" className="topbar-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú">☰</button>
+        <NavLink to="/configuracion" className="nav-item admin-name" onClick={cerrarMenu}>
           <img src={usuarioPerfil} alt="perfil" className="icono-sidebar-perfil" />
           <span>{user?.name ?? user?.email ?? 'Administrador'}</span>
         </NavLink>

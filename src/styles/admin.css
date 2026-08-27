@@ -249,6 +249,31 @@ body.dark-mode .sidebar-header .logo-oscuro {
   opacity: 0.8;
 }
 
+.sidebar-backdrop {
+  display: none;
+}
+
+.topbar-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: auto;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.topbar-toggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .main-content {
   margin-left: var(--sidebar-w);
   width: calc(100% - var(--sidebar-w));
@@ -1742,5 +1767,182 @@ body.dark-mode .chip-filtro:hover {
 @media (max-width: 860px) {
   .dashboard-row {
     grid-template-columns: 1fr;
+  }
+}
+
+.grid-lineas { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
+.grid-registro { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; align-items: end; }
+.grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-perfil { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; align-items: start; }
+
+.tabla-responsive {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.tabla-responsive .data-table {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .page-inner {
+    padding: 24px 20px 48px;
+  }
+
+  .dashboard-wrap {
+    padding: 24px 20px;
+  }
+
+  .welcome-banner {
+    padding: 28px 32px;
+  }
+}
+
+@media (max-width: 900px) {
+  html {
+    --sidebar-w: 0px;
+    --header-h: 60px;
+  }
+
+  .sidebar {
+    width: 260px;
+    transform: translateX(-105%);
+    transition: transform 0.3s var(--ease);
+    box-shadow: 10px 0 34px rgba(0, 0, 0, 0.3);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 95;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .sidebar-backdrop.show {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .header-nav {
+    left: 0;
+  }
+
+  .topbar-toggle {
+    display: inline-flex;
+  }
+
+  .header-nav > hr {
+    display: none !important;
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+
+  .stat-card {
+    padding: 18px;
+  }
+
+  .stat-card .stat-val {
+    font-size: 26px;
+  }
+
+  .marcas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .grid-lineas,
+  .grid-registro {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .grid-perfil {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-2col {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group select,
+  .form-group input {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header .btn-primary {
+    align-self: flex-start;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .welcome-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 20px;
+  }
+
+  .welcome-img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .welcome-text h2 {
+    font-size: 26px;
+  }
+
+  .nav-item {
+    min-width: 0;
+    padding: 0 12px;
+    font-size: 9px;
+  }
+
+  .header-nav .admin-name span {
+    display: none;
+  }
+
+  .modal-box {
+    padding: 24px;
+  }
+
+  .detalle-box {
+    width: 100%;
+    padding: 28px;
+  }
+
+  .detalle-content {
+    max-width: 100%;
+  }
+
+  .stat-val {
+    font-size: 26px;
+  }
+
+  .marca-img-wrap {
+    height: 120px;
   }
 }

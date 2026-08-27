@@ -128,7 +128,7 @@ export default function VentasAdmin() {
       {showForm && (
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>Registrar Venta</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 14 }}>
+          <div className="grid-registro">
             <div className="form-group">
               <label>Producto</label>
               <select value={productoId} onChange={(e) => setProductoId(Number(e.target.value))}>
@@ -166,6 +166,7 @@ export default function VentasAdmin() {
       {loading ? (
         <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
       ) : (
+        <div className="tabla-responsive">
         <table className="data-table">
           <thead>
             <tr>
@@ -216,6 +217,7 @@ export default function VentasAdmin() {
             )}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

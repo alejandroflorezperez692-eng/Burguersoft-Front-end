@@ -178,42 +178,44 @@ export default function MateriaPrimaAdmin() {
       {loading ? (
         <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Valor</th>
-              <th>Stock</th>
-              <th>Estado</th>
-              <th>Marca</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((m) => (
-              <tr key={m.idmateria}>
-                <td style={{ fontWeight: 600 }}>{m.nombre_materia}</td>
-                <td>{m.tipo_materia || '—'}</td>
-                <td>${Number(m.valor_materia).toLocaleString()}</td>
-                <td>{m.stock_materia}</td>
-                <td>
-                  <span className={`badge ${estadoKey(m.stock_materia) === 'agotado' ? 'badge-danger' : estadoKey(m.stock_materia) === 'bajo' ? 'badge-warning' : 'badge-success'}`}>
-                    {textoEstado(m.stock_materia)}
-                  </span>
-                </td>
-                <td>{m.marca?.nombre_marca || '—'}</td>
-                <td>
-                  <button className="btn-icon btn-icon-edit" onClick={() => openEdit(m)} title="Editar">✏</button>
-                  <button className="btn-icon btn-icon-del" onClick={() => del(m.idmateria)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
-                </td>
+        <div className="tabla-responsive">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Valor</th>
+                <th>Stock</th>
+                <th>Estado</th>
+                <th>Marca</th>
+                <th>Acciones</th>
               </tr>
-            ))}
-            {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron insumos</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map((m) => (
+                <tr key={m.idmateria}>
+                  <td style={{ fontWeight: 600 }}>{m.nombre_materia}</td>
+                  <td>{m.tipo_materia || '—'}</td>
+                  <td>${Number(m.valor_materia).toLocaleString()}</td>
+                  <td>{m.stock_materia}</td>
+                  <td>
+                    <span className={`badge ${estadoKey(m.stock_materia) === 'agotado' ? 'badge-danger' : estadoKey(m.stock_materia) === 'bajo' ? 'badge-warning' : 'badge-success'}`}>
+                      {textoEstado(m.stock_materia)}
+                    </span>
+                  </td>
+                  <td>{m.marca?.nombre_marca || '—'}</td>
+                  <td>
+                    <button className="btn-icon btn-icon-edit" onClick={() => openEdit(m)} title="Editar">✏</button>
+                    <button className="btn-icon btn-icon-del" onClick={() => del(m.idmateria)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron insumos</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {modal && (

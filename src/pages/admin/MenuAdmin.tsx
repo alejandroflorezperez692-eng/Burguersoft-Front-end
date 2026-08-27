@@ -163,36 +163,38 @@ export default function MenuAdmin() {
             <div className="meta-bar">
               <span>{cat} ({prods.length})</span>
             </div>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Precio</th>
-                  <th>Descripción</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {prods.map((p) => (
-                  <tr key={p.id_producto}>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <ThumbProducto img={p.img_producto} nombre={p.nombre_producto} />
-                        <span style={{ fontWeight: 600 }}>{p.nombre_producto}</span>
-                      </div>
-                    </td>
-                    <td>${Number(p.valor_producto).toLocaleString()}</td>
-                    <td style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.descri_producto || '—'}
-                    </td>
-                    <td>
-                      <button className="btn-icon btn-icon-edit" onClick={() => openEdit(p)} title="Editar">✏</button>
-                      <button className="btn-icon btn-icon-del" onClick={() => del(p.id_producto)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
-                    </td>
+            <div className="tabla-responsive">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Precio</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {prods.map((p) => (
+                    <tr key={p.id_producto}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <ThumbProducto img={p.img_producto} nombre={p.nombre_producto} />
+                          <span style={{ fontWeight: 600 }}>{p.nombre_producto}</span>
+                        </div>
+                      </td>
+                      <td>${Number(p.valor_producto).toLocaleString()}</td>
+                      <td style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.descri_producto || '—'}
+                      </td>
+                      <td>
+                        <button className="btn-icon btn-icon-edit" onClick={() => openEdit(p)} title="Editar">✏</button>
+                        <button className="btn-icon btn-icon-del" onClick={() => del(p.id_producto)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ))
       )}
@@ -203,7 +205,7 @@ export default function MenuAdmin() {
             <h2>{editId ? 'Editar Producto' : 'Nuevo Producto'}</h2>
             <div className="form-group">
               <label>Nombre</label>
-              <input value={form.nombre_producto} onChange={(e) => setForm({ ...form, nombre_producto: e.target.value })} placeholder="Ej. Hamburugesa Criolla" />
+              <input value={form.nombre_producto} onChange={(e) => setForm({ ...form, nombre_producto: e.target.value })} placeholder="Ej. Hamburguesa Criolla" />
             </div>
             <div className="form-group">
               <label>Precio</label>

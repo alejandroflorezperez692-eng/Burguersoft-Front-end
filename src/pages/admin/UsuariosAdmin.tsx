@@ -152,19 +152,20 @@ export default function UsuariosAdmin() {
       {loading ? (
         <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
       ) : (
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Usuario</th>
-              <th>Correo</th>
-              <th>Teléfono</th>
-              <th>Estado</th>
-              <th>Rol</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className="tabla-responsive">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Usuario</th>
+                <th>Correo</th>
+                <th>Teléfono</th>
+                <th>Estado</th>
+                <th>Rol</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
             {filtered.map((u) => (
               <tr key={u.id_Usuario}>
                 <td>{u.id_Usuario}</td>
@@ -189,6 +190,7 @@ export default function UsuariosAdmin() {
             )}
           </tbody>
         </table>
+        </div>
       )}
 
       {modal && sel && (
