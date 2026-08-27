@@ -551,15 +551,6 @@
   overflow: hidden;
 }
 
-.public-body .nosotros-section::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(to bottom, var(--color-secundario), var(--color-acento));
-}
 
 .public-body .nosotros-content {
   margin-left: 50px;
@@ -832,26 +823,61 @@ body.dark-mode .public-body {
 }
 
 body.dark-mode .public-body header {
-  background: #0e0500;
-  border-bottom-color: rgba(232, 130, 26, 0.15);
+  background: #000;
+  border-bottom-color: rgba(232, 130, 26, 0.35);
 }
 
-body.dark-mode .public-header {
-  background: #0e0500;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+body.dark-mode .public-body .nom-local {
+  color: #e8821a;
+  font-weight: 900;
+  font-size: 28px;
+  margin-left: 6px;
 }
 
-body.dark-mode .public-header .nav-link {
-  color: #a89888;
+body.dark-mode .public-body .header-center a {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
 }
 
-body.dark-mode .public-header .nav-link:hover {
-  color: #E8821A;
+body.dark-mode .public-body .header-center {
+  transform: translateX(-8px);
 }
 
-body.dark-mode .public-header .btn-login-header {
-  background: var(--brand);
+body.dark-mode .public-body .header-center a:hover,
+body.dark-mode .public-body .header-center a.activo {
+  color: #e8821a;
+}
+
+body.dark-mode .public-body .btn-sesion {
+  background: #000;
+  border-color: rgba(232, 130, 26, 0.35);
   color: #fff;
+  box-shadow: 0 0 16px rgba(232, 130, 26, 0.35);
+}
+
+body.dark-mode .public-body .btn-sesion:hover {
+  background: #000;
+  border-color: #e8821a;
+  box-shadow: 0 0 20px rgba(232, 130, 26, 0.65);
+}
+
+body.dark-mode .public-body .carousel-prev,
+body.dark-mode .public-body .carousel-next {
+  background: #000;
+  border-color: #000;
+}
+
+body.dark-mode .public-body .carousel-prev:hover,
+body.dark-mode .public-body .carousel-next:hover {
+  background: #000;
+  border-color: #000;
+}
+
+body.dark-mode .public-body .carousel-indicator,
+body.dark-mode .public-body .carousel-indicator.active {
+  background: #000;
+  box-shadow: none;
 }
 
 body.dark-mode .hero-caption h1,
@@ -887,41 +913,78 @@ body.dark-mode .promo-precio-pub {
 }
 
 body.dark-mode .nosotros-section {
-  background: var(--color-fondo);
+  background: #000;
+  border-color: #333;
+  border-bottom: 1px solid #fff;
 }
 
 body.dark-mode .nosotros-content h2,
 body.dark-mode .nosotros-content p {
-  color: var(--color-texto);
+  color: #ffffff;
+}
+
+body.dark-mode .nosotros-content h2 {
+  color: #ffffff;
+}
+
+body.dark-mode .nosotros-content h2::after {
+  background: #ffffff;
 }
 
 body.dark-mode .nosotros-ubicacion {
-  background: #1a0800;
+  background: #000;
+  color: #ffffff;
 }
 
 body.dark-mode .nosotros-ubicacion h2,
 body.dark-mode .nosotros-ubicacion p {
-  color: var(--color-texto);
+  color: #ffffff;
 }
 
 body.dark-mode .map-content {
-  background: var(--color-fondo);
+  background: #000;
 }
 
-body.dark-mode .footer {
-  background: #0e0500;
+body.dark-mode .public-body .nosotros-img img {
+  width: 85%;
+  height: 80%;
+  border-radius: 18px;
+  box-shadow: 4px 4px 14px 14px rgba(209, 0, 0, 0.45);
 }
 
-body.dark-mode .footer,
-body.dark-mode .footer h3,
-body.dark-mode .footer p,
-body.dark-mode .footer span,
-body.dark-mode .footer a {
+body.dark-mode .public-body footer,
+body.dark-mode .public-body .footer-brand {
+  background: #000;
+}
+
+body.dark-mode .public-body footer {
+  margin-top: 0;
+  border-top: 1px solid #ffffff;
+}
+
+body.dark-mode .public-body footer,
+body.dark-mode .public-body footer p,
+body.dark-mode .public-body footer span,
+body.dark-mode .public-body footer a {
+  color: #ffffff;
+}
+
+body.dark-mode .public-body footer h3,
+body.dark-mode .public-body footer h4 {
+  color: #ffffff;
+}
+
+body.dark-mode .public-body footer hr {
+  background: linear-gradient(to bottom, transparent, #e8821a, transparent);
+}
+
+body.dark-mode .public-body .footer-horarios li {
+  border-bottom-color: #33261e;
+}
+
+body.dark-mode .public-body .footer-bottom {
+  border-top-color: #33261e;
   color: #a89888;
-}
-
-body.dark-mode .footer h3 {
-  color: var(--text-900);
 }
 
 body.dark-mode .promo-vacio {
