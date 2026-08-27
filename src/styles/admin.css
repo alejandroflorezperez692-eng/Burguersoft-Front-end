@@ -1703,3 +1703,98 @@ body.dark-mode .btn-icon-del:hover {
     grid-template-columns: 1fr;
   }
 }
+
+.grid-registro {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 14px;
+  align-items: end;
+}
+
+.venta-detalles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.tabla-responsive {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.tabla-responsive .data-table {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .page-inner {
+    padding: 24px 20px 48px;
+  }
+
+  .dashboard-wrap {
+    padding: 24px 20px;
+  }
+
+  .welcome-banner {
+    padding: 28px 32px;
+  }
+}
+
+@media (max-width: 900px) {
+  .stat-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+  }
+
+  .stat-card {
+    padding: 18px;
+  }
+
+  .stat-card .stat-val {
+    font-size: 26px;
+  }
+
+  .grid-registro {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .form-group select,
+  .form-group input {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .page-header .btn-primary {
+    align-self: flex-start;
+  }
+
+  .page-header h1 {
+    font-size: 24px;
+  }
+
+  .welcome-banner {
+    flex-direction: column;
+    text-align: center;
+    padding: 24px 20px;
+  }
+
+  .welcome-img {
+    width: 100px;
+    height: 100px;
+  }
+
+  .welcome-text h2 {
+    font-size: 26px;
+  }
+
+  .stat-val {
+    font-size: 26px;
+  }
+}
