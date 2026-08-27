@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
+import ToastMessage, { useToast } from '../../components/Toast';
 
 interface MateriaPrima {
   idmateria: number;
@@ -16,40 +17,66 @@ interface Marca {
   nombre_marca: string;
 }
 
+type Filtro = 'todos' | 'disponible' | 'bajo' | 'agotado';
+
+const FILTROS: { key: Filtro; label: string }[] = [
+  { key: 'todos', label: 'Todos' },
+  { key: 'disponible', label: 'Disponible' },
+  { key: 'bajo', label: 'Bajo stock' },
+  { key: 'agotado', label: 'Agotado' },
+];
+
+const estadoKey = (stock: number): Filtro =>
+  stock > 10 ? 'disponible' : stock > 0 ? 'bajo' : 'agotado';
+
+const textoEstado = (stock: number) =>
+  stock > 10 ? 'Disponible' : stock > 0 ? 'Stock bajo' : 'Agotado';
+
+const emptyForm = {
+  nombre_materia: '', tipo_materia: '', valor_materia: '', stock_materia: '', idMarca: 1,
+};
+
 export default function MateriaPrimaAdmin() {
   const [items, setItems] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [q, setQ] = useState('');
+  const [filtro, setFiltro] = useState<Filtro>('todos');
   const [modal, setModal] = useState(false);
-  const [form, setForm] = useState({
-    nombre_materia: '', tipo_materia: '', valor_materia: '', stock_materia: '', idMarca: 1,
-  });
+  const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast, showToast } = useToast();
 
-  const load = () => {
-    Promise.all([
-      apiClient.get<MateriaPrima[]>('/materias-primas'),
-      apiClient.get<Marca[]>('/marcas'),
-    ]).then(([r1, r2]) => {
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [r1, r2] = await Promise.all([
+        apiClient.get<MateriaPrima[]>('/materias-primas'),
+        apiClient.get<Marca[]>('/marcas'),
+      ]);
       setItems(r1.data);
       setMarcas(r2.data);
+    } catch {
+      showToast('No se pudieron cargar los insumos', true);
+    } finally {
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }
   };
 
   useEffect(() => { load(); }, []);
 
   const filtered = items.filter((m) =>
+    (filtro === 'todos' || estadoKey(m.stock_materia) === filtro) &&
     m.nombre_materia.toLowerCase().includes(q.toLowerCase())
   );
 
   const total = items.length;
   const disponibles = items.filter((m) => m.stock_materia > 0).length;
-  const valorProm = total > 0 ? items.reduce((a, m) => a + Number(m.valor_materia), 0) / total : 0;
+  const agotados = items.filter((m) => m.stock_materia <= 0).length;
+  const valorInv = items.reduce((a, m) => a + Number(m.valor_materia) * Number(m.stock_materia), 0);
 
   const openNew = () => {
-    setForm({ nombre_materia: '', tipo_materia: '', valor_materia: '', stock_materia: '', idMarca: marcas[0]?.idMarca ?? 1 });
+    setForm({ ...emptyForm, idMarca: marcas[0]?.idMarca ?? 1 });
     setEditId(null);
     setModal(true);
   };
@@ -66,26 +93,43 @@ export default function MateriaPrimaAdmin() {
     setModal(true);
   };
 
-  const save = () => {
+  const guardar = async () => {
+    if (!form.nombre_materia.trim()) { showToast('El nombre es obligatorio', true); return; }
+    if (Number(form.valor_materia) < 0 || Number(form.stock_materia) < 0) {
+      showToast('El valor y el stock no pueden ser negativos', true);
+      return;
+    }
     const body = {
       ...form,
-      valor_materia: Number(form.valor_materia),
-      stock_materia: Number(form.stock_materia),
+      valor_materia: Number(form.valor_materia) || 0,
+      stock_materia: Number(form.stock_materia) || 0,
     };
-    if (editId) {
-      apiClient.put(`/materias-primas/${editId}`, body).then(() => { setModal(false); load(); });
-    } else {
-      apiClient.post('/materias-primas', body).then(() => { setModal(false); load(); });
+    try {
+      if (editId) {
+        await apiClient.put(`/materias-primas/${editId}`, body);
+        showToast('Materia prima actualizada');
+      } else {
+        await apiClient.post('/materias-primas', body);
+        showToast('Materia prima creada');
+      }
+      setModal(false);
+      load();
+    } catch {
+      showToast('No se pudo guardar la materia prima', true);
     }
   };
 
-  const del = (id: number) => {
-    if (!confirm('¿Eliminar esta materia prima?')) return;
-    apiClient.delete(`/materias-primas/${id}`).then(() => load());
+  const del = async (id: number) => {
+    const m = items.find((x) => x.idmateria === id);
+    if (!confirm(`¿Eliminar "${m?.nombre_materia ?? id}"?`)) return;
+    try {
+      await apiClient.delete(`/materias-primas/${id}`);
+      showToast('Materia prima eliminada');
+      load();
+    } catch {
+      showToast('No se pudo eliminar la materia prima', true);
+    }
   };
-
-  const estado = (stock: number) =>
-    stock > 10 ? 'badge-success' : stock > 0 ? 'badge-warning' : 'badge-danger';
 
   return (
     <div className="page-inner">
@@ -107,13 +151,28 @@ export default function MateriaPrimaAdmin() {
           <span className="stat-val">{disponibles}</span>
         </div>
         <div className="stat-card">
-          <span className="stat-label">Valor promedio</span>
-          <span className="stat-val">${Math.round(valorProm).toLocaleString()}</span>
+          <span className="stat-label">Agotados</span>
+          <span className="stat-val">{agotados}</span>
+        </div>
+        <div className="stat-card">
+          <span className="stat-label">Valor inventario</span>
+          <span className="stat-val" style={{ fontSize: 24 }}>${valorInv.toLocaleString()}</span>
         </div>
       </div>
 
       <div className="search-bar">
         <input placeholder="Buscar insumo..." value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="filter-chips" style={{ flexBasis: '100%', marginBottom: 0 }}>
+          {FILTROS.map((f) => (
+            <button
+              key={f.key}
+              className={`chip-filtro${filtro === f.key ? ' active' : ''}`}
+              onClick={() => setFiltro(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (
@@ -139,8 +198,8 @@ export default function MateriaPrimaAdmin() {
                 <td>${Number(m.valor_materia).toLocaleString()}</td>
                 <td>{m.stock_materia}</td>
                 <td>
-                  <span className={`badge ${estado(m.stock_materia)}`}>
-                    {m.stock_materia > 10 ? 'Disponible' : m.stock_materia > 0 ? 'Bajo' : 'Agotado'}
+                  <span className={`badge ${estadoKey(m.stock_materia) === 'agotado' ? 'badge-danger' : estadoKey(m.stock_materia) === 'bajo' ? 'badge-warning' : 'badge-success'}`}>
+                    {textoEstado(m.stock_materia)}
                   </span>
                 </td>
                 <td>{m.marca?.nombre_marca || '—'}</td>
@@ -163,19 +222,19 @@ export default function MateriaPrimaAdmin() {
             <h2>{editId ? 'Editar Materia Prima' : 'Nueva Materia Prima'}</h2>
             <div className="form-group">
               <label>Nombre</label>
-              <input value={form.nombre_materia} onChange={(e) => setForm({ ...form, nombre_materia: e.target.value })} />
+              <input value={form.nombre_materia} onChange={(e) => setForm({ ...form, nombre_materia: e.target.value })} placeholder="Ej. Harina" />
             </div>
             <div className="form-group">
               <label>Tipo</label>
-              <input value={form.tipo_materia} onChange={(e) => setForm({ ...form, tipo_materia: e.target.value })} />
+              <input value={form.tipo_materia} onChange={(e) => setForm({ ...form, tipo_materia: e.target.value })} placeholder="Ej. Básico / Carnes / Bebidas" />
             </div>
             <div className="form-group">
               <label>Valor unitario</label>
-              <input type="number" value={form.valor_materia} onChange={(e) => setForm({ ...form, valor_materia: e.target.value })} />
+              <input type="number" min={0} value={form.valor_materia} onChange={(e) => setForm({ ...form, valor_materia: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Stock</label>
-              <input type="number" value={form.stock_materia} onChange={(e) => setForm({ ...form, stock_materia: e.target.value })} />
+              <input type="number" min={0} value={form.stock_materia} onChange={(e) => setForm({ ...form, stock_materia: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Marca</label>
@@ -187,11 +246,13 @@ export default function MateriaPrimaAdmin() {
             </div>
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
-              <button className="btn-save" onClick={save}>{editId ? 'Actualizar' : 'Crear'}</button>
+              <button className="btn-save" onClick={guardar}>{editId ? 'Actualizar' : 'Crear'}</button>
             </div>
           </div>
         </div>
       )}
+
+      <ToastMessage toast={toast} />
     </div>
   );
 }

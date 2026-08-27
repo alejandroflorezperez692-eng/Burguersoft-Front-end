@@ -332,6 +332,38 @@ body.dark-mode .sidebar-header .logo-oscuro {
   box-shadow: 0 8px 22px rgba(200, 56, 42, 0.4);
 }
 
+.filter-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.chip-filtro {
+  padding: 7px 16px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-600);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+
+.chip-filtro:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.chip-filtro.active {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(232, 130, 26, 0.35);
+}
+
 .search-bar {
   display: flex;
   gap: 12px;
@@ -1696,6 +1728,15 @@ body.dark-mode .btn-icon-del {
 body.dark-mode .btn-icon-del:hover {
   background: var(--danger);
   color: #fff;
+}
+
+body.dark-mode .chip-filtro {
+  background: var(--surface-2);
+  color: var(--text-600);
+}
+
+body.dark-mode .chip-filtro:hover {
+  color: var(--brand);
 }
 
 @media (max-width: 860px) {

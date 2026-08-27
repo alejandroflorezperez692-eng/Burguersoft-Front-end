@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
+import ToastMessage, { useToast } from '../../components/Toast';
 
 interface Usuario {
   id_Usuario: number;
@@ -11,23 +12,59 @@ interface Usuario {
   rol: { nombre: string } | null;
 }
 
+type FiltroEstado = 'todos' | 'Activo' | 'Inactivo' | 'Suspendido';
+type FiltroRol = 'todos' | string;
+
+const ESTADOS: FiltroEstado[] = ['todos', 'Activo', 'Inactivo', 'Suspendido'];
+const ROLES = ['todos', 'Administrador', 'Cajero', 'Mesero', 'Cliente'];
+
+const badgeClass = (e: string) =>
+  e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
+
+function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string; estado: string }) {
+  return (
+    <span style={{
+      width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
+      background: estado === 'Activo' ? 'var(--brand)' : 'var(--surface-3)',
+      color: estado === 'Activo' ? '#fff' : 'var(--text-400)',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      fontWeight: 800, fontSize: 15,
+    }}>
+      {(nombre.charAt(0) + (apellido?.charAt(0) ?? '')).toUpperCase()}
+    </span>
+  );
+}
+
 export default function UsuariosAdmin() {
   const [items, setItems] = useState<Usuario[]>([]);
   const [q, setQ] = useState('');
+  const [fEstado, setFEstado] = useState<FiltroEstado>('todos');
+  const [fRol, setFRol] = useState<FiltroRol>('todos');
   const [modal, setModal] = useState(false);
   const [sel, setSel] = useState<Usuario | null>(null);
   const [rol, setRol] = useState('');
   const [estado, setEstado] = useState('');
   const [loading, setLoading] = useState(true);
+  const { toast, showToast } = useToast();
 
-  const load = () => {
-    apiClient.get<Usuario[]>('/usuarios').then((r) => { setItems(r.data); setLoading(false); }).catch(() => setLoading(false));
+  const load = async () => {
+    setLoading(true);
+    try {
+      const r = await apiClient.get<Usuario[]>('/usuarios');
+      setItems(r.data);
+    } catch {
+      showToast('No se pudieron cargar los usuarios', true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
 
   const filtered = items.filter((u) =>
-    `${u.nombre_usuario} ${u.apellido_usuario} ${u.correo_personal}`.toLowerCase().includes(q.toLowerCase())
+    (fEstado === 'todos' || u.estado === fEstado) &&
+    (fRol === 'todos' || u.rol?.nombre === fRol) &&
+    `${u.nombre_usuario} ${u.apellido_usuario} ${u.correo_personal} ${u.telefono ?? ''}`.toLowerCase().includes(q.toLowerCase())
   );
 
   const total = items.length;
@@ -41,18 +78,31 @@ export default function UsuariosAdmin() {
     setModal(true);
   };
 
-  const save = () => {
+  const guardar = async () => {
     if (!sel) return;
-    apiClient.put(`/usuarios/${sel.id_Usuario}`, { rol, estado }).then(() => { setModal(false); load(); });
+    if (!rol) { showToast('Selecciona un rol', true); return; }
+    if (!estado) { showToast('Selecciona un estado', true); return; }
+    try {
+      await apiClient.put(`/usuarios/${sel.id_Usuario}`, { rol, estado });
+      showToast('Usuario actualizado');
+      setModal(false);
+      load();
+    } catch {
+      showToast('No se pudo actualizar el usuario', true);
+    }
   };
 
-  const del = (id: number) => {
-    if (!confirm('¿Eliminar este usuario?')) return;
-    apiClient.delete(`/usuarios/${id}`).then(() => load());
+  const del = async (id: number) => {
+    const u = items.find((x) => x.id_Usuario === id);
+    if (!confirm(`¿Eliminar a "${u?.nombre_usuario} ${u?.apellido_usuario ?? ''}"?`)) return;
+    try {
+      await apiClient.delete(`/usuarios/${id}`);
+      showToast('Usuario eliminado');
+      load();
+    } catch {
+      showToast('No se pudo eliminar el usuario', true);
+    }
   };
-
-  const badgeClass = (e: string) =>
-    e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
 
   return (
     <div className="page-inner">
@@ -79,7 +129,20 @@ export default function UsuariosAdmin() {
       </div>
 
       <div className="search-bar">
-        <input placeholder="Buscar usuario..." value={q} onChange={(e) => setQ(e.target.value)} />
+        <input placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="filter-chips" style={{ flexBasis: '100%', marginBottom: 0 }}>
+          {ESTADOS.map((e) => (
+            <button key={e} className={`chip-filtro${fEstado === e ? ' active' : ''}`} onClick={() => setFEstado(e)}>
+              {e === 'todos' ? 'Todos los estados' : e}
+            </button>
+          ))}
+          <span style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)' }} />
+          {ROLES.map((r) => (
+            <button key={r} className={`chip-filtro${fRol === r ? ' active' : ''}`} onClick={() => setFRol(r)}>
+              {r === 'todos' ? 'Todos los roles' : r}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="meta-bar">
@@ -93,8 +156,9 @@ export default function UsuariosAdmin() {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Nombre</th>
+              <th>Usuario</th>
               <th>Correo</th>
+              <th>Teléfono</th>
               <th>Estado</th>
               <th>Rol</th>
               <th>Acciones</th>
@@ -104,8 +168,14 @@ export default function UsuariosAdmin() {
             {filtered.map((u) => (
               <tr key={u.id_Usuario}>
                 <td>{u.id_Usuario}</td>
-                <td style={{ fontWeight: 600 }}>{u.nombre_usuario} {u.apellido_usuario}</td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <Avatar nombre={u.nombre_usuario} apellido={u.apellido_usuario} estado={u.estado} />
+                    <span style={{ fontWeight: 600 }}>{u.nombre_usuario} {u.apellido_usuario}</span>
+                  </div>
+                </td>
                 <td>{u.correo_personal}</td>
+                <td>{u.telefono || '—'}</td>
                 <td><span className={`badge ${badgeClass(u.estado)}`}>{u.estado}</span></td>
                 <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
                 <td>
@@ -115,7 +185,7 @@ export default function UsuariosAdmin() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron usuarios</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron usuarios</td></tr>
             )}
           </tbody>
         </table>
@@ -131,6 +201,7 @@ export default function UsuariosAdmin() {
             <div className="form-group">
               <label>Rol</label>
               <select value={rol} onChange={(e) => setRol(e.target.value)}>
+                <option value="">Seleccionar rol...</option>
                 <option value="Administrador">Administrador</option>
                 <option value="Cajero">Cajero</option>
                 <option value="Mesero">Mesero</option>
@@ -140,6 +211,7 @@ export default function UsuariosAdmin() {
             <div className="form-group">
               <label>Estado</label>
               <select value={estado} onChange={(e) => setEstado(e.target.value)}>
+                <option value="">Seleccionar estado...</option>
                 <option value="Activo">Activo</option>
                 <option value="Inactivo">Inactivo</option>
                 <option value="Suspendido">Suspendido</option>
@@ -147,11 +219,13 @@ export default function UsuariosAdmin() {
             </div>
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
-              <button className="btn-save" onClick={save}>Actualizar</button>
+              <button className="btn-save" onClick={guardar}>Actualizar</button>
             </div>
           </div>
         </div>
       )}
+
+      <ToastMessage toast={toast} />
     </div>
   );
 }
