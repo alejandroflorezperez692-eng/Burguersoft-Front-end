@@ -11,6 +11,87 @@
   background-image:
     radial-gradient(circle at 15% 25%, rgba(232, 130, 26, 0.10) 0%, transparent 55%),
     radial-gradient(circle at 85% 75%, rgba(200, 56, 42, 0.07) 0%, transparent 50%);
+  position: relative;
+}
+
+/* Fondo animado del login: partículas flotantes */
+.auth-fondo-animado {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.auth-particula {
+  position: absolute;
+  padding: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  pointer-events: auto;
+  line-height: 1;
+  user-select: none;
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: auth-particula-flotar;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+.auth-particula-emoji {
+  display: block;
+  filter: drop-shadow(0 6px 14px rgba(44, 24, 16, 0.35));
+  transition: transform 0.2s ease;
+}
+
+.auth-particula:hover .auth-particula-emoji {
+  transform: scale(1.25);
+}
+
+@keyframes auth-particula-flotar {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0; }
+  12%  { opacity: var(--p-opacidad); }
+  50%  { transform: translateY(-30vh) translateX(6px) scale(1.15); }
+  88%  { opacity: var(--p-opacidad); }
+  100% { transform: translateY(-60vh) translateX(-6px) scale(0.8); opacity: 0; }
+}
+
+/* Explosión al hacer clic en una partícula */
+.auth-explosion {
+  position: fixed;
+  z-index: 200;
+  pointer-events: none;
+}
+
+.auth-esquirla {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 18px;
+  line-height: 1;
+  -webkit-text-stroke: 1px rgba(255, 255, 255, 0.4);
+  animation: auth-esquirla-rayo 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: var(--ed);
+}
+
+@keyframes auth-esquirla-rayo {
+  0% {
+    transform: translate(0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--ex), var(--ey)) rotate(var(--er)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* El resto del contenido va por encima del fondo */
+.auth-navbar,
+.header-bar,
+.card {
+  position: relative;
+  z-index: 1;
 }
 
 .auth-navbar {
