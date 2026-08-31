@@ -36,6 +36,8 @@ type AuthContextValue = {
     apellido: string,
     email: string,
     password: string,
+    tipoDocumento?: string,
+    numeroDocumento?: string,
   ) => Promise<void>;
   logout: () => void;
 };
@@ -87,12 +89,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (nombre: string, apellido: string, email: string, password: string) => {
+    async (
+      nombre: string,
+      apellido: string,
+      email: string,
+      password: string,
+      tipoDocumento?: string,
+      numeroDocumento?: string,
+    ) => {
       await apiClient.post('/registro', {
         nombre,
         apellido,
         email,
         password,
+        tipo_documento: tipoDocumento,
+        numero_documento: numeroDocumento,
       });
     },
     [],

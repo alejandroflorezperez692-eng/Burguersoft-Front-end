@@ -12,7 +12,6 @@ import engranaje from '../assets/img/engranaje.png';
 import equipo from '../assets/img/equipo.png';
 import cerrarSesion from '../assets/img/cerrar-sesion.png';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
-import Accesibilidad from '../components/Accesibilidad';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/admin.css';
 
@@ -77,8 +76,6 @@ export default function AdminLayout() {
       <div className="main-content">
         <Outlet />
       </div>
-
-      <Accesibilidad />
     </div>
   );
 }

@@ -7,10 +7,7 @@
   align-items: center;
   justify-content: center;
   padding: 100px 16px 0;
-  background-color: var(--color-fondo);
-  background-image:
-    radial-gradient(circle at 15% 25%, rgba(232, 130, 26, 0.10) 0%, transparent 55%),
-    radial-gradient(circle at 85% 75%, rgba(200, 56, 42, 0.07) 0%, transparent 50%);
+  background-color: #fff;
 }
 
 .auth-navbar {
@@ -66,8 +63,8 @@
 .header-bar {
   width: 100%;
   max-width: 460px;
-  background: var(--color-oscuro);
-  color: var(--color-acento);
+  background: #fff;
+  color: var(--color-primario);
   text-align: center;
   padding: 28px 0 24px;
   font-family: var(--font-display);
@@ -75,6 +72,7 @@
   font-weight: 900;
   letter-spacing: 2.5px;
   border-radius: 20px 20px 0 0;
+  border: 1.5px solid var(--color-primario);
   box-shadow: 0 -6px 24px rgba(44, 24, 16, 0.08);
   position: relative;
 }
@@ -97,8 +95,8 @@
   border-radius: 0 0 20px 20px;
   box-shadow: var(--sombra);
   text-align: center;
-  border: 1px solid rgba(232, 130, 26, 0.12);
-  border-top: none;
+  border: 1.5px solid var(--color-primario);
+  border-top: 2px solid var(--color-primario);
 }
 
 .icono-card {
@@ -128,9 +126,9 @@
   font-size: 15px;
   font-family: var(--font-cuerpo);
   border-radius: var(--radio);
-  background: var(--color-fondo);
+  background: #fff;
   color: var(--color-oscuro);
-  border: 1.5px solid rgba(44, 24, 16, 0.15);
+  border: 1.5px solid var(--color-primario);
   margin-bottom: 20px;
   outline: none;
   box-shadow: var(--sombra-input);
@@ -140,7 +138,7 @@
 }
 
 .input::placeholder {
-  color: #b5a99a;
+  color: #9a8370;
   font-weight: 300;
 }
 
@@ -209,9 +207,9 @@
 .input:-webkit-autofill,
 .input:-webkit-autofill:hover,
 .input:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--color-oscuro);
-  -webkit-box-shadow: 0 0 0 1000px #fff inset;
-  box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-text-fill-color: var(--color-oscuro) !important;
+  -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+  box-shadow: 0 0 0 1000px #fff inset !important;
 }
 
 .btn-primario {
@@ -298,8 +296,8 @@
 
 .linea {
   flex: 1;
-  height: 1px;
-  background: #000;
+  height: 1.5px;
+  background: var(--color-primario);
 }
 
 .circulo {
@@ -364,23 +362,24 @@
 }
 
 .contenedor-registro {
-  background: var(--color-fondo-card);
+  background: var(--color-card);
   width: 90%;
   max-width: 1300px;
   min-width: min(700px, 90vw);
   padding: 0 0 48px;
   border-radius: var(--radio-grande);
   box-shadow: var(--sombra);
-  border: 1px solid var(--color-borde);
+  border: 1.5px solid var(--color-primario);
   overflow: hidden;
   margin-top: 96px;
 }
 
 .encabezado {
-  background: var(--color-oscuro);
+  background: #fff;
   width: 100%;
   padding: 36px 40px 30px;
   text-align: center;
+  border-bottom: 2px solid var(--color-primario);
 }
 
 .encabezado::after {
@@ -397,13 +396,13 @@
   font-family: var(--font-display);
   font-size: 28px;
   font-weight: 900;
-  color: var(--color-acento);
+  color: var(--color-primario);
   letter-spacing: 1px;
 }
 
 .encabezado p {
   font-size: 15px;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--color-oscuro);
   margin-top: 8px;
   font-weight: 300;
 }
@@ -454,10 +453,10 @@
   width: 100%;
   padding: 17px 20px;
   border-radius: var(--radio);
-  border: 1.5px solid rgba(44, 24, 16, 0.16);
+  border: 1.5px solid var(--color-primario);
   font-size: 16px;
   font-family: var(--font-cuerpo);
-  background: var(--color-fondo);
+  background: #fff;
   color: var(--color-oscuro);
   outline: none;
   box-shadow: 0 2px 8px rgba(44, 24, 16, 0.06);
@@ -467,7 +466,7 @@
 }
 
 .campo input::placeholder {
-  color: #b5a99a;
+  color: #9a8370;
   font-weight: 300;
 }
 
@@ -475,6 +474,91 @@
   border-color: var(--color-primario);
   box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.14);
   background: #fff;
+}
+
+.campo select {
+  width: 100%;
+  padding: 17px 20px;
+  border-radius: var(--radio);
+  border: 1.5px solid var(--color-primario);
+  font-size: 16px;
+  font-family: var(--font-cuerpo);
+  background: #fff;
+  color: var(--color-oscuro);
+  outline: none;
+  box-shadow: 0 2px 8px rgba(44, 24, 16, 0.06);
+  transition:
+    border-color var(--transicion),
+    box-shadow var(--transicion);
+  cursor: pointer;
+}
+
+.campo select:focus {
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.14);
+  background: #fff;
+}
+
+.campo input:-webkit-autofill,
+.campo input:-webkit-autofill:hover,
+.campo input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-oscuro) !important;
+  -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+  box-shadow: 0 0 0 1000px #fff inset !important;
+}
+
+.barra-contrasena {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(44, 24, 16, 0.12);
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.barra-contrasena-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition:
+    width 0.35s var(--transicion),
+    background 0.35s var(--transicion);
+}
+
+.barra-contrasena.rojo .barra-contrasena-fill {
+  background: linear-gradient(90deg, #d93025, #f77e4f);
+}
+
+.barra-contrasena.amarillo .barra-contrasena-fill {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.barra-contrasena.verde .barra-contrasena-fill {
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+}
+
+.requisitos {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.requisito {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #a0522d;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.3;
+  transition: color var(--transicion);
+}
+
+.requisito.cumple {
+  color: #1e8e3e;
 }
 
 .boton-registro {
@@ -517,6 +601,7 @@
   width: calc(100% + 32px);
   margin-left: -16px;
   margin-right: -16px;
+  margin-top: auto;
   padding-top: 80px;
   background: transparent;
 }
@@ -537,4 +622,172 @@
   .card {
     padding: 28px 24px 36px;
   }
+}
+
+/* ========================================= */
+/* MODO OSCURO - PANELES DE AUTH              */
+/* ========================================= */
+
+body.dark-mode .auth-shell {
+  background-color: #000000;
+}
+
+body.dark-mode .auth-navbar {
+  background: transparent;
+}
+
+body.dark-mode .btn-regresar {
+  background: #000000;
+  color: #fff;
+  border: 1px solid rgba(232, 130, 26, 0.35);
+}
+
+body.dark-mode .btn-regresar:hover {
+  background: var(--color-primario);
+  color: #fff;
+}
+
+body.dark-mode .header-bar {
+  background: #000000;
+  border: 1.5px solid var(--color-primario);
+  box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-mode .card {
+  background: #000000;
+  border: 1.5px solid var(--color-primario);
+  border-top: 2px solid var(--color-primario);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .card h2 {
+  color: #fff;
+}
+
+body.dark-mode .icono-card img {
+  filter: brightness(0) invert(1);
+}
+
+body.dark-mode .input {
+  background: #000000;
+  color: #fff;
+  border: 1.5px solid rgba(232, 130, 26, 0.22);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .input::placeholder {
+  color: #9a8370;
+}
+
+body.dark-mode .input:focus {
+  background: #000000;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.16);
+}
+
+body.dark-mode .boton-mostrar-password,
+body.dark-mode .boton-mostrar-password:hover,
+body.dark-mode .boton-mostrar-password:focus-visible {
+  color: #fff;
+}
+
+body.dark-mode .input:-webkit-autofill,
+body.dark-mode .input:-webkit-autofill:hover,
+body.dark-mode .input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff !important;
+  -webkit-box-shadow: 0 0 0 1000px #000000 inset !important;
+  box-shadow: 0 0 0 1000px #000000 inset !important;
+}
+
+body.dark-mode .descripcion {
+  color: #cbb9a5;
+}
+
+body.dark-mode .descripcion-recuperacion {
+  color: #fff;
+}
+
+body.dark-mode .linea {
+  background: var(--color-primario);
+}
+
+body.dark-mode .circulo {
+  color: #fff;
+}
+
+body.dark-mode .enlace-externo {
+  color: #fff;
+}
+
+body.dark-mode .enlace-externo a,
+body.dark-mode .enlace-externo button {
+  color: var(--color-primario);
+}
+
+body.dark-mode .auth-error {
+  background: rgba(200, 56, 42, 0.16);
+  border: 1px solid rgba(200, 56, 42, 0.5);
+  color: #ff9185;
+}
+
+body.dark-mode .contenedor-registro {
+  background: #000000;
+  border: 1.5px solid var(--color-primario);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .encabezado {
+  background: #000000;
+  border-bottom: 2px solid var(--color-primario);
+}
+
+body.dark-mode .encabezado p {
+  color: #fff;
+}
+
+body.dark-mode .descripcion-registro {
+  color: #fff;
+}
+
+body.dark-mode .campo label {
+  color: #fff;
+}
+
+body.dark-mode .campo input,
+body.dark-mode .campo select {
+  background: #000000;
+  color: #fff;
+  border: 1.5px solid rgba(232, 130, 26, 0.22);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+}
+
+body.dark-mode .campo input::placeholder {
+  color: #fff;
+}
+
+body.dark-mode .campo input:-webkit-autofill,
+body.dark-mode .campo input:-webkit-autofill:hover,
+body.dark-mode .campo input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #fff !important;
+  -webkit-box-shadow: 0 0 0 1000px #000000 inset !important;
+  box-shadow: 0 0 0 1000px #000000 inset !important;
+}
+
+body.dark-mode .campo input:focus,
+body.dark-mode .campo select:focus {
+  background: #000000;
+  border-color: var(--color-primario);
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.16);
+}
+
+body.dark-mode .barra-contrasena {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+body.dark-mode .requisito {
+  color: #e8915a;
+}
+
+body.dark-mode .requisito.cumple {
+  color: #4ade80;
 }

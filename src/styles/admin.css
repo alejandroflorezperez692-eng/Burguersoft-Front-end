@@ -1349,124 +1349,6 @@ body.dark-mode .detalle-box { background: var(--surface); }
   margin-top: 4px;
 }
 
-.acc-panel {
-  position: fixed;
-  bottom: 80px;
-  right: 20px;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--r-lg);
-  padding: 20px;
-  width: 240px;
-  box-shadow: var(--shadow-lg);
-  z-index: 150;
-  display: none;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.acc-panel.open {
-  display: flex;
-}
-
-.acc-panel-title {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--text-600);
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
-}
-
-.acc-row {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.acc-row-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-600);
-}
-
-.acc-row-btns {
-  display: flex;
-  gap: 6px;
-}
-
-.acc-btn-option,
-.acc_tema,
-.acc-btn-reset {
-  flex: 1;
-  padding: 7px 10px;
-  background: var(--surface-3);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-900);
-  cursor: pointer;
-  transition: all 0.15s;
-  box-shadow: none;
-}
-
-.acc-btn-option:hover,
-.acc_tema:hover {
-  background: var(--brand);
-  color: #fff;
-  border-color: var(--brand);
-  transform: none;
-}
-
-.acc-btn-reset {
-  width: 100%;
-  flex: none;
-  background: var(--surface-3);
-  color: var(--text-600);
-}
-
-.acc-btn-reset:hover {
-  background: #f5e0d0;
-  color: var(--text-900);
-  transform: none;
-}
-
-.acc-fab {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 48px;
-  height: 48px;
-  background: var(--brand);
-  border: none;
-  border-radius: 50%;
-  box-shadow: 0 4px 18px rgba(232, 130, 26, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 150;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-  padding: 0;
-}
-
-.acc-fab img {
-  width: 22px;
-  height: 22px;
-  filter: invert(1);
-  pointer-events: none;
-}
-
-.acc-fab:hover {
-  transform: scale(1.1);
-  box-shadow: 0 8px 28px rgba(232, 130, 26, 0.6);
-}
-
 body.dark-mode .sidebar {
   background: linear-gradient(200deg, #0e0500, #1a0800);
 }
@@ -1570,11 +1452,6 @@ body.dark-mode .btn-cancel:hover {
   background: rgba(232, 130, 26, 0.1);
 }
 
-body.dark-mode .acc-panel {
-  background: #1e1e1e;
-  border-color: rgba(232, 130, 26, 0.2);
-}
-
 body.dark-mode .welcome-banner {
   background: linear-gradient(135deg, #0e0500, #2a0f02);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
@@ -1615,9 +1492,9 @@ body.dark-mode .badge-gray {
 
 body.dark-mode .acc-btn-option,
 body.dark-mode .acc_tema {
-  background: #2a2a2a;
-  border-color: rgba(232, 130, 26, 0.15);
-  color: var(--text-900);
+  background: #000;
+  border-color: rgba(232, 130, 26, 0.3);
+  color: #fff;
 }
 
 body.dark-mode .acc-btn-option:hover,
@@ -1628,13 +1505,15 @@ body.dark-mode .acc_tema:hover {
 }
 
 body.dark-mode .acc-btn-reset {
-  background: #2a2a2a;
-  color: var(--text-600);
+  background: #000;
+  color: #fff;
+  border-color: rgba(232, 130, 26, 0.3);
 }
 
 body.dark-mode .acc-btn-reset:hover {
-  background: rgba(232, 130, 26, 0.15);
-  color: var(--text-900);
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
 }
 
 body.dark-mode .nav-item {
