@@ -53,7 +53,7 @@ export default function MarcasAdmin() {
   const save = () => {
     if (editId) {
       // El endpoint de actualizar no acepta/require nit, así que lo excluimos.
-      const { nit, ...body } = form;
+      const { nit: _nit, ...body } = form;
       apiClient.put(`/marcas/${editId}`, body).then(() => { setModal(false); load(); });
     } else {
       // El NIT colombiano trae un dígito de verificación después del guion (ej. "830.047.819-9");

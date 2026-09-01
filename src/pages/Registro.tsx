@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
@@ -24,6 +24,20 @@ const TIPOS_DOCUMENTO = [
   'Cédula de Extranjería',
 ];
 
+function formatearNombre(valor: string): string {
+  // Solo letras (incluye tildes), espacios, apóstrofe y guion
+  const soloLetras = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]/g, '');
+  const minusculas = soloLetras.toLowerCase();
+  // Capitaliza primera letra de cada palabra / después de ' o -
+  const capitalizado = minusculas.replace(/(^|\s|'|-)([a-záéíóúñü])/g, (_m, sep: string, letra: string) => sep + letra.toUpperCase());
+  // Evita múltiples espacios seguidos
+  return capitalizado.replace(/\s{2,}/g, ' ');
+}
+
+function soloNumeros(valor: string): string {
+  return valor.replace(/\D/g, '');
+}
+
 type Requisito = {
   id: string;
   texto: string;
@@ -41,6 +55,8 @@ export default function Registro() {
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [tipoDocumento, setTipoDocumento] = useState('');
+  const [tipoOpen, setTipoOpen] = useState(false);
+  const tipoRef = useRef<HTMLDivElement>(null);
   const [numeroDocumento, setNumeroDocumento] = useState('');
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
@@ -52,6 +68,22 @@ export default function Registro() {
 
   const { register } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!tipoOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (tipoRef.current && !tipoRef.current.contains(e.target as Node)) setTipoOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setTipoOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [tipoOpen]);
 
   const requisitos: Requisito[] = [
     { ...TEXTO_REQUISITOS[0], cumple: password.length >= 8 },
@@ -79,12 +111,20 @@ export default function Registro() {
     event.preventDefault();
     setError(null);
 
+    if (!nombre.trim() || nombre.trim().length < 2) {
+      setError('Ingrese un nombre válido (solo letras, mínimo 2 caracteres).');
+      return;
+    }
+    if (!apellido.trim() || apellido.trim().length < 2) {
+      setError('Ingrese un apellido válido (solo letras, mínimo 2 caracteres).');
+      return;
+    }
     if (!tipoDocumento) {
       setError('Seleccione el tipo de documento.');
       return;
     }
-    if (!numeroDocumento.trim()) {
-      setError('Ingrese su número de documento.');
+    if (!/^[0-9]{6,12}$/.test(numeroDocumento)) {
+      setError('El número de documento debe tener entre 6 y 12 dígitos (solo números).');
       return;
     }
     if (!cumpleRequisitos) {
@@ -136,7 +176,17 @@ export default function Registro() {
                 id="nombre"
                 placeholder="Digite su nombre"
                 value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={(e) => setNombre(formatearNombre(e.target.value))}
+                onKeyDown={(e) => {
+                  if (e.key.length === 1 && /[0-9]/.test(e.key)) e.preventDefault();
+                }}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const texto = e.clipboardData.getData('text');
+                  setNombre(formatearNombre(texto));
+                }}
+                autoComplete="given-name"
+                maxLength={40}
                 required
               />
             </div>
@@ -147,7 +197,17 @@ export default function Registro() {
                 id="apellido"
                 placeholder="Digite su apellido"
                 value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                onChange={(e) => setApellido(formatearNombre(e.target.value))}
+                onKeyDown={(e) => {
+                  if (e.key.length === 1 && /[0-9]/.test(e.key)) e.preventDefault();
+                }}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const texto = e.clipboardData.getData('text');
+                  setApellido(formatearNombre(texto));
+                }}
+                autoComplete="family-name"
+                maxLength={40}
                 required
               />
             </div>
@@ -156,21 +216,38 @@ export default function Registro() {
           <div className="fila">
             <div className="campo">
               <label htmlFor="tipoDocumento">Tipo de documento*</label>
-              <select
-                id="tipoDocumento"
-                value={tipoDocumento}
-                onChange={(e) => setTipoDocumento(e.target.value)}
-                required
-              >
-                <option value="" disabled>
-                  Seleccione tipo de documento
-                </option>
-                {TIPOS_DOCUMENTO.map((tipo) => (
-                  <option key={tipo} value={tipo}>
-                    {tipo}
-                  </option>
-                ))}
-              </select>
+              <div className="custom-select" ref={tipoRef}>
+                <button
+                  type="button"
+                  id="tipoDocumento"
+                  className={`custom-select-trigger ${!tipoDocumento ? 'placeholder' : ''} ${tipoOpen ? 'open' : ''}`}
+                  onClick={() => setTipoOpen((v) => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={tipoOpen}
+                  aria-label="Tipo de documento"
+                >
+                  <span>{tipoDocumento || 'Seleccione tipo de documento'}</span>
+                  <span className="custom-select-arrow" aria-hidden="true">▾</span>
+                </button>
+                {tipoOpen && (
+                  <ul className="custom-select-options" role="listbox">
+                    {TIPOS_DOCUMENTO.map((tipo) => (
+                      <li
+                        key={tipo}
+                        role="option"
+                        aria-selected={tipoDocumento === tipo}
+                        className={`custom-select-option ${tipoDocumento === tipo ? 'selected' : ''}`}
+                        onClick={() => {
+                          setTipoDocumento(tipo);
+                          setTipoOpen(false);
+                        }}
+                      >
+                        {tipo}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
             <div className="campo">
               <label htmlFor="numeroDocumento">Número de documento*</label>
@@ -179,7 +256,19 @@ export default function Registro() {
                 id="numeroDocumento"
                 placeholder="Digite su número de documento"
                 value={numeroDocumento}
-                onChange={(e) => setNumeroDocumento(e.target.value)}
+                onChange={(e) => setNumeroDocumento(soloNumeros(e.target.value).slice(0, 12))}
+                onKeyDown={(e) => {
+                  if (e.key.length === 1 && !/[0-9]/.test(e.key)) e.preventDefault();
+                }}
+                onPaste={(e) => {
+                  e.preventDefault();
+                  const texto = e.clipboardData.getData('text');
+                  setNumeroDocumento(soloNumeros(texto).slice(0, 12));
+                }}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={12}
+                autoComplete="off"
                 required
               />
             </div>

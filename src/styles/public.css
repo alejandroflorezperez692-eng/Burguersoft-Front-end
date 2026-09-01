@@ -870,60 +870,372 @@
 /*                 RESPONSIVE                        */
 /* ================================================= */
 
+@media screen and (max-width: 1024px) {
+  .public-body .promociones {
+    padding: 32px 24px;
+  }
+
+  .public-body .nosotros-content {
+    padding: 60px 40px;
+    margin-left: 24px;
+  }
+
+  .public-body .nosotros-img {
+    margin-right: 24px;
+  }
+}
+
 @media screen and (max-width: 768px) {
   .public-body header {
     height: auto;
     min-height: 0;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .public-body .header-left,
-  .public-body .header-center,
-  .public-body .header-right {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    padding: 14px 16px 12px;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 
   .public-body .header-left {
-    flex-direction: column;
+    flex: 1 1 auto;
+    width: auto;
     gap: 10px;
   }
 
-  .public-body .header-center {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .public-body .header-center a {
-    font-size: 14px;
-    padding: 6px 10px;
-  }
-
   .public-body .logo {
-    width: 70px;
-    height: 70px;
+    width: 58px;
+    height: 58px;
   }
 
   .public-body .nom-local {
-    font-size: 28px;
+    font-size: 20px;
+    letter-spacing: 0.3px;
+  }
+
+  .public-body header hr {
+    display: none;
+  }
+
+  .public-body .header-center {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    justify-content: safe center;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 8px 6px;
+    backdrop-filter: blur(8px);
+  }
+
+  .public-body .header-center a {
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-width: 72px;
+  }
+
+  .public-body .header-right {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .public-body .btn-sesion {
+    width: 42px;
+    height: 42px;
+  }
+
+  .public-body .btn-sesion img {
+    width: 22px;
+    height: 22px;
   }
 
   .public-body .hero {
-    height: 60vh;
-    min-height: 350px;
+    height: 52vh;
+    min-height: 300px;
+  }
+
+  .public-body .carousel-prev {
+    left: 10px;
+  }
+
+  .public-body .carousel-next {
+    right: 10px;
   }
 
   .public-body .carousel-prev,
   .public-body .carousel-next {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    backdrop-filter: blur(10px);
+  }
+
+  .public-body .carousel-indicators {
+    bottom: 14px;
+    gap: 8px;
+  }
+
+  .public-body .carousel-indicator {
+    width: 8px;
+    height: 8px;
+  }
+
+  .public-body .carousel-indicator.active {
+    width: 22px;
+  }
+
+  .public-body .promociones {
+    padding: 26px 16px 32px;
+  }
+
+  .public-body .promociones h2 {
+    font-size: 26px;
+    line-height: 1.2;
+  }
+
+  .public-body .promociones > p {
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .public-body .grid-promociones {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 4px 0;
+  }
+
+  .public-body .promo-card-pub {
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  }
+
+  .public-body .promo-img-pub {
+    height: 190px;
+  }
+
+  .public-body .promo-info-pub {
+    padding: 16px 16px 18px;
+  }
+
+  .public-body .promo-info-pub h3 {
+    font-size: 1rem;
+  }
+
+  .public-body .promo-footer-pub {
+    padding-top: 8px;
+  }
+
+  .public-body .nosotros-section {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .public-body .nosotros-section::before {
+    width: 100%;
+    height: 4px;
+    top: 0;
+    bottom: auto;
+    left: 0;
+    background: linear-gradient(to right, var(--color-secundario), var(--color-acento));
+  }
+
+  .public-body .nosotros-content {
+    margin-left: 0;
+    padding: 28px 16px 20px;
+    text-align: center;
+    align-items: center;
+  }
+
+  .public-body .nosotros-content h2 {
+    font-size: 26px;
+    text-align: center;
+  }
+
+  .public-body .nosotros-content h2::after {
+    margin: 12px auto 0;
+  }
+
+  .public-body .nosotros-content p {
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .public-body .nosotros-img {
+    max-width: 100%;
+    margin-right: 0;
+    padding: 0 16px 28px;
+  }
+
+  .public-body .nosotros-img img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 11;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(209, 0, 0, 0.18);
+  }
+
+  .public-body .nosotros-ubicacion {
+    padding: 36px 16px;
+  }
+
+  .public-body .section-title {
+    font-size: 26px;
+    line-height: 1.2;
+  }
+
+  .public-body .section-text {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .public-body .map-content {
+    padding: 20px 16px 32px;
+  }
+
+  .public-body .nosotros-map {
+    height: 300px;
+    border-radius: 14px;
+  }
+
+  .public-body .footer-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .public-body footer {
+    padding: 28px 16px 14px;
+  }
+
+  .public-body .footer-brand {
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
+  .public-body .footer-brand h3 {
+    font-size: 1.2rem;
+  }
+
+  .public-body .footer-horarios {
+    max-width: 320px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .public-body header {
+    padding: 12px 12px 10px;
+    gap: 10px;
+  }
+
+  .public-body .logo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .public-body .nom-local {
+    font-size: 18px;
+  }
+
+  .public-body .header-center {
+    padding: 6px 4px;
+    gap: 4px;
+  }
+
+  .public-body .header-center a {
+    font-size: 11.5px;
+    padding: 7px 8px;
+    min-width: 64px;
+    letter-spacing: 0.4px;
+  }
+
+  .public-body .btn-sesion {
     width: 38px;
     height: 38px;
+  }
+
+  .public-body .hero {
+    height: 46vh;
+    min-height: 260px;
+  }
+
+  .public-body .carousel-prev,
+  .public-body .carousel-next {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .public-body .promociones {
+    padding: 22px 14px 28px;
+  }
+
+  .public-body .promociones h2 {
+    font-size: 22px;
+  }
+
+  .public-body .promociones > p {
+    font-size: 13.5px;
+  }
+
+  .public-body .promo-img-pub {
+    height: 170px;
+  }
+
+  .public-body .promo-precio-pub {
+    font-size: 1.2rem;
+  }
+
+  .public-body .btn-circular-add {
+    min-width: 52px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 16px;
+  }
+
+  .public-body .nosotros-content {
+    padding: 24px 14px 18px;
+  }
+
+  .public-body .nosotros-content h2 {
+    font-size: 22px;
+  }
+
+  .public-body .nosotros-content p {
+    font-size: 14px;
+  }
+
+  .public-body .section-title {
+    font-size: 22px;
+  }
+
+  .public-body .section-text {
+    font-size: 14px;
+  }
+
+  .public-body .nosotros-map {
+    height: 260px;
+    border-radius: 12px;
+  }
+
+  .public-body .footer-horarios li {
+    font-size: 0.82rem;
+  }
+
+  .public-body .dropdown-menu {
+    right: -8px;
+    min-width: 160px;
   }
 }
 
@@ -984,19 +1296,22 @@ body.dark-mode .public-body .header-center a.activo {
 /* ============================================= */
 
 body.dark-mode .public-body .btn-sesion {
-  background: #000;
-  border-color:
-    rgba(232, 130, 26, 0.35);
+  background: transparent;
+  border-color: var(--color-secundario);
   color: #fff;
-  box-shadow:
-    0 0 16px rgba(232, 130, 26, 0.35);
+  box-shadow: none;
 }
 
-body.dark-mode .public-body .btn-sesion:hover {
-  background: #000;
-  border-color: #e8821a;
-  box-shadow:
-    0 0 20px rgba(232, 130, 26, 0.65);
+body.dark-mode .public-body .btn-sesion:hover,
+body.dark-mode .public-body .btn-sesion:active,
+body.dark-mode .public-body .btn-sesion:focus,
+body.dark-mode .public-body .btn-sesion:focus-visible {
+  background: var(--color-secundario) !important;
+  border-color: var(--color-secundario) !important;
+  color: #fff !important;
+  outline: none;
+  box-shadow: 0 0 18px rgba(232, 130, 26, 0.6) !important;
+  transform: translateY(-2px);
 }
 
 
