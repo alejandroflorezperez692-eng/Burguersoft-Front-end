@@ -1,0 +1,60 @@
+#invoice-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    align-items:center;
+    justify-content:center;
+    background:rgba(0,0,0,0.6);
+    z-index:100000;
+}
+
+#invoice-box{
+    background:#fff;
+    padding:18px;
+    border-radius:8px;
+    max-width:720px;
+    width:92%;
+    box-shadow:0 12px 40px rgba(0,0,0,0.45);
+    position:relative;
+    overflow:hidden;
+}
+
+#invoice-content{position:relative;z-index:2}
+
+#invoice-box .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+
+.invoice-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.invoice-header .brand{font-size:16px}
+.invoice-header .mesa{font-size:14px}
+.invoice-hr{border:none;border-top:1px solid #ddd;margin:8px 0}
+.invoice-list{list-style:none;padding:0;margin:0}
+.invoice-item{padding:6px 0;border-bottom:1px dashed #eee}
+.invoice-total{margin-top:12px;font-weight:700}
+
+@media (max-width:480px){
+  #invoice-box{padding:12px}
+}
+
+.overlay{display:flex;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:100000}
+.modal-box{background:#fff;padding:18px;border-radius:8px;max-width:320px;width:88%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.35);margin:0 auto;position:relative;overflow:hidden}
+.modal-title{margin:0 0 8px}
+.modal-sub{margin:0 0 12px;font-size:14px;color:#333}
+.modal-input{width:80px;padding:8px;border:1px solid #ccc;border-radius:6px;text-align:center;font-size:16px}
+.modal-actions{display:flex;gap:8px;justify-content:center;margin-top:12px}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+
+.btn{padding:8px 12px;border-radius:6px;border:0;cursor:pointer}
+.btn-primary{background:#ecb500;color:#fff}
+.btn-cancel{background:#f2f2f2;color:#333;border:1px solid #ccc}
+.btn-dark{background:#444;color:#fff}
+
+#mesa-modal{display:none;position:fixed;inset:0;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);z-index:100000}
+#mesa-modal > div{background:#fff;padding:18px;border-radius:8px;max-width:320px;width:88%;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.35);margin:0 auto;position:relative;overflow:hidden}
+
+@media print{
+  @page{margin:12mm}
+  body{font-family:Arial,Helvetica,sans-serif;padding:18px;color:#111}
+  .print-content{position:relative;z-index:2;background:transparent}
+}
+
+

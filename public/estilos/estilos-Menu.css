@@ -1,0 +1,263 @@
+:root {
+    --color-primario: #2c1810;
+    --color-secundario: #E8821Ad7;
+    --color-alertas: #E8821A;
+    --color-fondo: #fdf8f0;
+    --color-texto: #333;
+}
+body {
+    margin: 0;
+    padding: 0;
+    background: var(--color-fondo);
+    font-family: Arial, sans-serif;
+}
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 220px;
+    height: 100%;
+    background: var(--color-primario);
+    color: white;
+    padding-top: 20px;
+    box-shadow: 3px 0 10px rgba(0,0,0,0.3);
+}
+
+.sidebar-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sidebar .logo {
+    width: 90px;
+    margin-bottom: 10px;
+}
+
+.nom-local {
+    margin-top: 5px;
+}
+
+.sidebar hr {
+    width: 150px;
+    border: none;
+    height: 2px;
+    background: var(--color-secundario);
+}
+
+.sidebar-item {
+    margin: 20px;
+}
+
+.sidebar-item a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.icono-sidebar {
+    width: 24px;
+}
+.header-nav {
+    position: fixed;
+    top: 0;
+    left: 220px;
+    right: 0;
+    height: 70px;
+    background: var(--color-primario);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 20px;
+    box-shadow: 0 4px 12px var(--color-secundario);
+}
+
+.header-nav hr {
+    height: 40px;
+    border: none;
+    border-right: 1px solid white;
+}
+
+.nav-item {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.nav-item img {
+    width: 22px;
+    margin-right: 5px;
+}
+
+.nav-item.active {
+    font-weight: bold;
+    text-shadow: 0 0 10px #fff;
+}
+#carrito {
+    margin-top: 40px;
+    margin-left: 20px;
+    position: fixed;
+    right: 20px;
+    top: 90px;
+    width: 240px;
+    background: white;
+    border-radius: 14px;
+    padding: 15px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 999;
+}
+
+#carrito h3 {
+    text-align: center;
+    color: var(--color-secundario);
+}
+
+#carrito select {
+    width: 100%;
+    padding: 6px;
+    border-radius: 8px;
+}
+
+#carrito button {
+    width: 100%;
+    padding: 8px;
+    margin-top: 8px;
+    border: none;
+    background: var(--color-alertas);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#carrito button:hover {
+    opacity: 0.9;
+}
+.titulo-seccion {
+    padding-top: 90px;
+    margin-top: 0;
+    text-align: center;
+    font-size: 40px;
+    color: var(--color-alertas);
+}
+
+.contenedor {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 40px;
+    justify-content: center;
+    padding: 20px;
+}
+
+.card {
+    width: 260px;
+    background: var(--color-fondo);
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    text-align: center;
+    transition: 0.2s;
+    cursor: pointer;
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+.card img {
+    width: 100%;
+    height: 180px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+.submenu {
+    display: none;
+    background: #fff7e6;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.submenu ul {
+    padding: 0;
+    list-style: none;
+}
+
+.submenu li {
+    padding: 10px;
+    margin: 6px 0;
+    background: var(--color-secundario);
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.submenu li:hover {
+    background: #ff9f3b;
+}
+.ingredientes-box {
+    display: none;
+    background: white;
+    padding: 12px;
+    border-radius: 12px;
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--color-texto);
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+.btn-volver {
+    margin-top: 10px;
+    padding: 10px;
+    background: #333;
+    color: white;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+}
+.btn-volver:hover {
+    background: #111;
+}
+
+@media (max-width: 768px) {
+
+    
+    .titulo-seccion {
+        font-size: 26px;
+        margin-top: 80px;
+    }
+
+    .contenedor {
+        gap: 20px;
+        padding: 10px;
+    }
+
+    
+    .card {
+        max-width: 100%;
+    }
+
+    
+    .carrito {
+        position: static;
+        width: 100%;
+        margin: 20px auto;
+    }
+
+    
+    .submenu {
+        padding: 10px;
+    }
+
+    .submenu li {
+        font-size: 14px;
+    }
+
+    
+    .ingredientes-box {
+        font-size: 13px;
+    }
+}
