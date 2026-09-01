@@ -167,7 +167,7 @@ export default function VentasAdmin() {
         <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
       ) : (
         <div className="tabla-responsive">
-          <table className="data-table">
+        <table className="data-table">
           <thead>
             <tr>
               <th>#</th>
@@ -218,7 +218,8 @@ export default function VentasAdmin() {
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}
           </tbody>
-          </table>
+        </table>
+
         </div>
       )}
     </div>

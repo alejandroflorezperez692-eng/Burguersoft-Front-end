@@ -155,7 +155,7 @@ export default function ComprasAdmin() {
           </div>
 
           {lineas.map((l, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 10, marginBottom: 12, alignItems: 'end' }}>
+            <div key={i} className="grid-lineas">
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>{i === 0 ? 'Insumo' : ''}</label>
                 <select value={l.materia_prima_id ?? '__nuevo__'} onChange={(e) => updateLinea(i, 'materia_prima_id', e.target.value === '__nuevo__' ? null : Number(e.target.value))}>
@@ -213,6 +213,7 @@ export default function ComprasAdmin() {
       {loading ? (
         <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
       ) : (
+        <div className="tabla-responsive">
         <table className="data-table">
           <thead>
             <tr>
@@ -241,6 +242,7 @@ export default function ComprasAdmin() {
             )}
           </tbody>
         </table>
+        </div>
       )}
 
       {modalDetalle && (
@@ -250,28 +252,30 @@ export default function ComprasAdmin() {
             <p style={{ marginBottom: 8, fontSize: 13, color: 'var(--text-400)' }}>
               {new Date(modalDetalle.fecha).toLocaleDateString()} — {modalDetalle.metodo_pago}
             </p>
-            <table className="data-table" style={{ marginBottom: 16 }}>
-              <thead>
-                <tr>
-                  <th>Insumo</th>
-                  <th>Proveedor</th>
-                  <th>Cant.</th>
-                  <th>Precio Unit.</th>
-                  <th>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {modalDetalle.detalles.map((d) => (
-                  <tr key={d.id}>
-                    <td>{d.materia_prima?.nombre_materia ?? 'N/A'}</td>
-                    <td>{d.marca?.nombre_marca ?? 'N/A'}</td>
-                    <td>{d.cantidad}</td>
-                    <td>${Number(d.precio_unitario).toLocaleString()}</td>
-                    <td style={{ fontWeight: 600 }}>${Number(d.subtotal).toLocaleString()}</td>
+            <div className="tabla-responsive" style={{ marginBottom: 16 }}>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Insumo</th>
+                    <th>Proveedor</th>
+                    <th>Cant.</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {modalDetalle.detalles.map((d) => (
+                    <tr key={d.id}>
+                      <td>{d.materia_prima?.nombre_materia ?? 'N/A'}</td>
+                      <td>{d.marca?.nombre_marca ?? 'N/A'}</td>
+                      <td>{d.cantidad}</td>
+                      <td>${Number(d.precio_unitario).toLocaleString()}</td>
+                      <td style={{ fontWeight: 600 }}>${Number(d.subtotal).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <div style={{ textAlign: 'right', fontWeight: 800, fontSize: 16 }}>
               Total: ${Number(modalDetalle.valor_total).toLocaleString()}
             </div>

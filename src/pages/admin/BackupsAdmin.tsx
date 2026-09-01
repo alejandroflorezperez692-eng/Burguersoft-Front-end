@@ -42,7 +42,7 @@ export default function BackupsAdmin() {
         </div>
       </div>
 
-      <div className="stat-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+      <div className="stat-grid">
         <div
           className="stat-card"
           style={{ cursor: 'pointer', background: generating ? 'var(--surface-3)' : 'var(--surface)' }}
@@ -67,6 +67,7 @@ export default function BackupsAdmin() {
       {loading ? (
         <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
       ) : (
+        <div className="tabla-responsive">
         <table className="data-table">
           <thead>
             <tr>
@@ -92,6 +93,7 @@ export default function BackupsAdmin() {
             )}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

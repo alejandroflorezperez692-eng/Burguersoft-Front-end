@@ -33,7 +33,7 @@ export default function ConfiguracionAdmin() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 24, alignItems: 'start' }}>
+      <div className="grid-perfil">
         <div style={{
           background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
           boxShadow: 'var(--shadow-sm)', padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
@@ -57,7 +57,7 @@ export default function ConfiguracionAdmin() {
             boxShadow: 'var(--shadow-sm)', padding: 28,
           }}>
             <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>Información Personal</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="grid-2col">
               <div className="form-group">
                 <label>Nombre</label>
                 <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder={user?.name ?? ''} />
