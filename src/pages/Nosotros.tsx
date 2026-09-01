@@ -1,7 +1,6 @@
 import PublicHeader from '../components/PublicHeader';
 import HeroCarousel from '../components/HeroCarousel';
 import Footer from '../components/Footer';
-import Accesibilidad from '../components/Accesibilidad';
 import localImg from '../assets/img/Local.png';
 
 export default function Nosotros() {
@@ -58,7 +57,6 @@ export default function Nosotros() {
       </section>
 
       <Footer />
-      <Accesibilidad />
     </div>
   );
 }

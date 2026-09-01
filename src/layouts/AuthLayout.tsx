@@ -21,7 +21,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
         </button>
       </nav>
 
-      {children}
+      <div className="auth-center">{children}</div>
 
       <div className="public-body auth-site-footer">
         <Footer />
