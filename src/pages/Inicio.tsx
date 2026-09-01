@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
+import { useAuth } from '../hooks/useAuth';
 
 function formatReloj(fecha: Date): string {
   let horas = fecha.getHours();
@@ -22,6 +23,7 @@ function formatFecha(fecha: Date): string {
 }
 
 export default function Inicio() {
+  const { user } = useAuth();
   const [ahora, setAhora] = useState(() => new Date());
   const [toastVisible, setToastVisible] = useState(false);
   const location = useLocation();
@@ -42,11 +44,14 @@ export default function Inicio() {
     }
   }, [location.state]);
 
+  const rol = user?.role ?? 'Cliente';
+  const nombre = user?.name ?? 'Usuario';
+
   return (
     <div className="dashboard-wrap">
       <div className="welcome-banner">
         <div className="welcome-text">
-          <h2>Bienvenido Administrador</h2>
+          <h2>Bienvenido {nombre} ({rol})</h2>
           <div style={{ fontWeight: 700 }}>{formatFecha(ahora)}</div>
           <div style={{ color: 'var(--brand)', fontWeight: 900 }}>
             {formatReloj(ahora)}
