@@ -288,6 +288,22 @@
   animation: publicFadeDown 0.2s ease;
 }
 
+@keyframes publicFadeDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.public-body .dropdown-menu.abierto {
+  display: block;
+}
+
 .public-body .dropdown-menu button {
   display: flex;
   align-items: center;
@@ -1499,3 +1515,25 @@ body.dark-mode .perfil-dropdown button:hover {
 }
 
 
+@media screen and (max-width: 520px) {
+  .public-body .promociones {
+    padding: 28px 16px;
+  }
+
+  .public-body .promociones h2 {
+    font-size: 28px;
+  }
+
+  .public-body .grid-promociones {
+    grid-template-columns: 1fr;
+  }
+
+  .public-body .promo-card-pub {
+    min-width: 0;
+  }
+
+  .public-body .promo-footer-pub {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}

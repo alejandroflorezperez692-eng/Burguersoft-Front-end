@@ -778,6 +778,11 @@
     font-size: 11px;
   }
 
+  .auth-logo {
+    width: 64px;
+    height: 64px;
+  }
+
   .header-bar {
     max-width: 95%;
     font-size: 20px;
@@ -1000,6 +1005,22 @@
   .auth-error {
     font-size: 12px;
     padding: 10px 12px;
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    padding: 22px 0 20px;
+  }
+
+  .card {
+    padding: 24px 20px 32px;
+  }
+
+  .card h2 {
+    font-size: 10px;
+  }
+
+  .boton-mostrar-password {
+    right: 18px;
+
   }
 }
 
