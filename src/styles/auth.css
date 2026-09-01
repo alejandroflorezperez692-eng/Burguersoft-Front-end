@@ -2,12 +2,28 @@
   --font-display: 'Lato', 'Segoe UI', sans-serif;
   --font-cuerpo: 'Lato', 'Segoe UI', sans-serif;
   min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+}
+
+.auth-center {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  padding: 96px 16px 40px;
+  box-sizing: border-box;
+  gap: 0;
+}
+
+.auth-center:has(#registroForm) {
+  justify-content: flex-start;
   padding: 100px 16px 0;
-  background-color: #fff;
 }
 
 .auth-navbar {
@@ -364,14 +380,25 @@
 .contenedor-registro {
   background: var(--color-card);
   width: 90%;
-  max-width: 1300px;
-  min-width: min(700px, 90vw);
-  padding: 0 0 48px;
+  max-width: 760px;
+  min-width: auto;
+  padding: 0 0 36px;
   border-radius: var(--radio-grande);
   box-shadow: var(--sombra);
   border: 1.5px solid var(--color-primario);
   overflow: hidden;
-  margin-top: 96px;
+  margin: 0 auto;
+}
+
+#registroForm {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+#registroForm .contenedor-registro {
+  margin: 96px auto 0;
 }
 
 .encabezado {
@@ -707,11 +734,10 @@
 
 .public-body.auth-site-footer {
   align-self: stretch;
-  width: calc(100% + 32px);
-  margin-left: -16px;
-  margin-right: -16px;
+  width: 100%;
+  margin: 0;
   margin-top: auto;
-  padding-top: 80px;
+  padding-top: 40px;
   background: transparent;
 }
 
@@ -720,8 +746,16 @@
 }
 
 @media (max-width: 768px) {
-  .auth-shell {
+  .auth-center {
+    padding: 84px 12px 24px;
+  }
+
+  .auth-center:has(#registroForm) {
     padding: 84px 12px 0;
+  }
+
+  .auth-shell {
+    padding: 0;
   }
 
   .auth-navbar {
@@ -850,16 +884,24 @@
   }
 
   .public-body.auth-site-footer {
-    padding-top: 40px;
-    width: calc(100% + 24px);
-    margin-left: -12px;
-    margin-right: -12px;
+    padding-top: 32px;
+    width: 100%;
+    margin-left: 0;
+    margin-right: 0;
   }
 }
 
 @media (max-width: 480px) {
-  .auth-shell {
+  .auth-center {
+    padding: 72px 10px 20px;
+  }
+
+  .auth-center:has(#registroForm) {
     padding: 72px 10px 0;
+  }
+
+  .auth-shell {
+    padding: 0;
   }
 
   .auth-logo {

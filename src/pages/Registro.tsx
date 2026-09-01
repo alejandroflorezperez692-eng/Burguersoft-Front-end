@@ -25,12 +25,9 @@ const TIPOS_DOCUMENTO = [
 ];
 
 function formatearNombre(valor: string): string {
-  // Solo letras (incluye tildes), espacios, apóstrofe y guion
   const soloLetras = valor.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]/g, '');
   const minusculas = soloLetras.toLowerCase();
-  // Capitaliza primera letra de cada palabra / después de ' o -
   const capitalizado = minusculas.replace(/(^|\s|'|-)([a-záéíóúñü])/g, (_m, sep: string, letra: string) => sep + letra.toUpperCase());
-  // Evita múltiples espacios seguidos
   return capitalizado.replace(/\s{2,}/g, ' ');
 }
 
