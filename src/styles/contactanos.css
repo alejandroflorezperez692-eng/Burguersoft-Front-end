@@ -1,0 +1,129 @@
+.contact-section {
+  padding: 80px 5% 100px;
+  background: var(--color-fondo);
+  text-align: center;
+}
+
+.contact-section h1 {
+  font-family: var(--font-display);
+  font-size: 54px;
+  font-weight: 900;
+  color: var(--color-primario);
+  margin-bottom: 16px;
+  line-height: 1.1;
+}
+
+.contact-section h1::after {
+  content: '';
+  display: block;
+  width: 70px;
+  height: 5px;
+  background: linear-gradient(90deg, var(--color-secundario), var(--color-acento));
+  border-radius: 3px;
+  margin: 16px auto 0;
+}
+
+.contact-section .descripcion {
+  font-size: 18px;
+  color: var(--color-texto-suave);
+  margin-bottom: 60px;
+  line-height: 1.7;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.icons-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 40px;
+}
+
+.icon-box {
+  text-align: center;
+  max-width: 160px;
+  position: relative;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-block;
+}
+
+.icon-box img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.icon-box img:hover {
+  transform: translateY(-6px) scale(1.06);
+}
+
+.icon-box p {
+  font-family: var(--font-cuerpo);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-texto-suave);
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+  word-break: break-word;
+}
+
+.wsp-menu {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 10px 16px;
+  margin-top: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.wsp-menu a {
+  display: block;
+  padding: 6px 0;
+  color: #25d366;
+  font-weight: bold;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.wsp-menu hr {
+  margin: 4px 0;
+  border-color: #eee;
+}
+
+@media screen and (max-width: 768px) {
+  .contact-section h1 {
+    font-size: 36px;
+  }
+
+  .icons-container {
+    gap: 24px;
+  }
+
+  .icon-box img {
+    width: 64px;
+    height: 64px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .contact-section h1 {
+    font-size: 30px;
+  }
+}

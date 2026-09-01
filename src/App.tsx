@@ -1,6 +1,7 @@
 
 import { Navigate, Route, Routes } from 'react-router-dom';
 import PaginaModulo from './components/PaginaModulo';
+import Contactanos from './pages/Contactanos';
 import PublicPlaceholder from './components/PublicPlaceholder';
 import AdminLayout from './layouts/AdminLayout';
 import Login from './pages/Login';
@@ -33,7 +34,7 @@ function App() {
       />
       <Route
         path="/contactanos"
-        element={<PublicPlaceholder titulo="Contactanos" />}
+        element={<Contactanos />}
       />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
