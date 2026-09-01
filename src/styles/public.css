@@ -104,8 +104,8 @@
 }
 
 .public-body .logo:hover {
-  filter: drop-shadow(0 0 22px rgba(249, 154, 60, 1));
-  transform: scale(1.06);
+  filter: drop-shadow(0 0 14px rgba(249, 154, 60, 0.7));
+  transform: none;
 }
 
 /* ============================================= */
@@ -142,7 +142,7 @@
 }
 
 .public-body .nom-local:hover {
-  color: #ffffff;
+  color: var(--color-acento);
 }
 
 /* ============================================= */
@@ -1274,6 +1274,10 @@ body.dark-mode .public-body header {
 /* ============================================= */
 
 body.dark-mode .public-body .nom-local {
+  color: #e8821a;
+}
+
+body.dark-mode .public-body .nom-local:hover {
   color: #e8821a;
 }
 

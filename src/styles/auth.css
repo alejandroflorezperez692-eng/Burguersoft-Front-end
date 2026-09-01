@@ -50,8 +50,8 @@
 }
 
 .auth-logo:hover {
-  filter: drop-shadow(0 0 18px rgba(249, 154, 60, 1));
-  transform: scale(1.07);
+  filter: drop-shadow(0 0 10px rgba(249, 154, 60, 0.6));
+  transform: none;
 }
 
 .btn-regresar {
