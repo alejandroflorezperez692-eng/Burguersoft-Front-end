@@ -21,8 +21,18 @@
   color: var(--color-texto);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
+
+.public-body:not(.auth-site-footer) {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ============================================= */
+/* HEADER PRINCIPAL                               */
+/* ============================================= */
 
 .public-body header {
   display: flex;
@@ -30,6 +40,8 @@
   align-items: center;
   padding: 0 40px;
   height: 110px;
+  min-height: 110px;
+  box-sizing: border-box;
   background: var(--color-primario);
   border-bottom: 2px solid rgba(232, 130, 26, 0.35);
   position: sticky;
@@ -39,12 +51,21 @@
   box-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
 }
 
+/* ============================================= */
+/* SECCIÓN IZQUIERDA                              */
+/* ============================================= */
+
 .public-body .header-left {
   display: flex;
   align-items: center;
   gap: 18px;
   flex: 1;
+  box-sizing: border-box;
 }
+
+/* ============================================= */
+/* SECCIÓN CENTRAL                                */
+/* ============================================= */
 
 .public-body .header-center {
   display: flex;
@@ -52,14 +73,24 @@
   align-items: center;
   gap: 8px;
   flex: 2;
+  box-sizing: border-box;
 }
+
+/* ============================================= */
+/* SECCIÓN DERECHA                                */
+/* ============================================= */
 
 .public-body .header-right {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   flex: 1;
+  box-sizing: border-box;
 }
+
+/* ============================================= */
+/* LOGO                                           */
+/* ============================================= */
 
 .public-body .logo {
   width: 90px;
@@ -73,24 +104,37 @@
 }
 
 .public-body .logo:hover {
-  filter: drop-shadow(0 0 22px rgba(249, 154, 60, 1));
-  transform: scale(1.06);
+  filter: drop-shadow(0 0 14px rgba(249, 154, 60, 0.7));
+  transform: none;
 }
+
+/* ============================================= */
+/* LÍNEA DIVISORIA                                */
+/* ============================================= */
 
 .public-body header hr,
 .public-body footer hr {
   width: 1px;
   height: 36px;
-  background: linear-gradient(to bottom, transparent, var(--color-secundario), transparent);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--color-secundario),
+    transparent
+  );
   border: none;
   flex-shrink: 0;
 }
 
+/* ============================================= */
+/* NOMBRE DEL LOCAL                               */
+/* ============================================= */
+
 .public-body .nom-local {
   color: var(--color-acento);
   font-family: var(--font-display);
-  font-size: 25px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 900;
   text-decoration: none;
   letter-spacing: 0.5px;
   transition: color var(--transicion);
@@ -98,16 +142,20 @@
 }
 
 .public-body .nom-local:hover {
-  color: #fff;
+  color: var(--color-acento);
 }
+
+/* ============================================= */
+/* MENÚ DE NAVEGACIÓN                             */
+/* ============================================= */
 
 .public-body .header-center a {
   font-family: var(--font-cuerpo);
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.78);
+  color: #ffffff;
   text-decoration: none;
   padding: 8px 16px;
   border-radius: 6px;
@@ -116,6 +164,8 @@
     background var(--transicion);
   position: relative;
 }
+
+/* Línea debajo del menú */
 
 .public-body .header-center a::after {
   content: '';
@@ -140,12 +190,18 @@
   width: 60%;
 }
 
+/* ============================================= */
+/* BOTÓN DE SESIÓN                                */
+/* ============================================= */
+
 .public-body .btn-sesion {
   background: var(--color-secundario);
   border: 2px solid transparent;
-  border-radius: 50px;
+  border-radius: 50%;
   color: #fff;
-  padding: 10px 14px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   cursor: pointer;
   transition: all var(--transicion);
   display: flex;
@@ -172,6 +228,10 @@
 .public-body .link-sesion {
   display: inline-flex;
 }
+
+/* ============================================= */
+/* DROPDOWN DE PERFIL                             */
+/* ============================================= */
 
 .public-body .perfil-dropdown {
   position: relative;
@@ -209,6 +269,10 @@
   color: white;
   white-space: nowrap;
 }
+
+/* ============================================= */
+/* DROPDOWN                                       */
+/* ============================================= */
 
 .public-body .dropdown-menu {
   display: none;
@@ -265,6 +329,10 @@
   transform: none;
 }
 
+/* ============================================= */
+/* HERO / CARRUSEL                               */
+/* ============================================= */
+
 .public-body .hero {
   position: relative;
   height: 78vh;
@@ -308,6 +376,10 @@
   transform: scale(1);
 }
 
+/* ============================================= */
+/* FLECHAS DEL CARRUSEL                           */
+/* ============================================= */
+
 .public-body .carousel-prev,
 .public-body .carousel-next {
   position: absolute;
@@ -344,6 +416,10 @@
   transform: translateY(-50%) scale(1.08);
 }
 
+/* ============================================= */
+/* INDICADORES DEL CARRUSEL                       */
+/* ============================================= */
+
 .public-body .carousel-indicators {
   position: absolute;
   bottom: 28px;
@@ -372,6 +448,10 @@
   box-shadow: 0 0 10px rgba(232, 130, 26, 0.7);
 }
 
+/* ============================================= */
+/* PROMOCIONES                                    */
+/* ============================================= */
+
 .public-body .promociones {
   padding: 40px;
   max-width: 1200px;
@@ -384,7 +464,7 @@
   font-family: var(--font-display);
   font-size: 40px;
   font-weight: 900;
-  color: var(--color-primario);
+  color: #000;
   margin-bottom: 10px;
   line-height: 1.15;
   position: relative;
@@ -404,7 +484,7 @@
 .public-body .promociones > p {
   font-family: var(--font-cuerpo);
   font-size: 17px;
-  color: var(--color-texto-suave);
+  color: #000;
   margin-bottom: 48px;
   font-weight: 400;
   max-width: 600px;
@@ -412,7 +492,8 @@
 
 .public-body .grid-promociones {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns:
+    repeat(auto-fill, minmax(260px, 1fr));
   gap: 15px;
   padding: 10px 0;
 }
@@ -422,7 +503,8 @@
   border-radius: 16px;
   overflow: hidden;
   border: 2px solid transparent;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.10);
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.10);
   transition:
     transform 0.25s,
     box-shadow 0.25s,
@@ -433,7 +515,8 @@
 
 .public-body .promo-card-pub:hover {
   transform: translateY(-6px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.15);
   border-color: #e8821a;
 }
 
@@ -542,9 +625,14 @@
 
 .public-body .promo-vacio {
   padding: 20px;
-  color: #888;
+  color: #000;
   grid-column: 1 / -1;
 }
+
+
+/* ============================================= */
+/* SECCIÓN NOSOTROS                               */
+/* ============================================= */
 
 .public-body .nosotros-section {
   display: flex;
@@ -555,16 +643,6 @@
   overflow: hidden;
 }
 
-.public-body .nosotros-section::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: linear-gradient(to bottom, var(--color-secundario), var(--color-acento));
-}
-
 .public-body .nosotros-content {
   margin-left: 50px;
   flex: 1;
@@ -572,6 +650,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  text-align: center;
   color: var(--color-primario);
 }
 
@@ -579,7 +658,7 @@
   font-family: var(--font-display);
   font-size: 40px;
   font-weight: 900;
-  color: var(--color-primario);
+  color: #000000;
   margin-bottom: 28px;
   line-height: 1.15;
 }
@@ -591,15 +670,17 @@
   height: 4px;
   background: var(--color-secundario);
   border-radius: 2px;
-  margin-top: 14px;
+  margin: 14px auto 0;
 }
 
 .public-body .nosotros-content p {
   font-size: 18px;
-  color: var(--color-texto-suave);
+  color: #000000;
   line-height: 1.8;
   margin-bottom: 16px;
   max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .public-body .nosotros-img {
@@ -618,7 +699,8 @@
   max-width: 680px;
   height: 70%;
   border-radius: 20px;
-  box-shadow: 4px 4px 14px 14px rgba(209, 0, 0, 0.3);
+  box-shadow:
+    4px 4px 14px 14px rgba(209, 0, 0, 0.3);
   object-fit: cover;
   transition:
     transform 0.55s ease,
@@ -627,8 +709,13 @@
 
 .public-body .nosotros-img img:hover {
   transform: scale(1.04) rotate(-0.5deg);
-  box-shadow: 4px 4px 14px 14px rgba(255, 72, 0, 0.2);
+  box-shadow:
+    4px 4px 14px 14px rgba(255, 72, 0, 0.2);
 }
+
+/* ============================================= */
+/* UBICACIÓN                                      */
+/* ============================================= */
 
 .public-body .nosotros-ubicacion {
   display: flex;
@@ -638,8 +725,17 @@
   padding: 80px 40px;
   background: var(--color-primario);
   background-image:
-    radial-gradient(circle at 20% 50%, rgba(232, 130, 26, 0.12) 0%, transparent 60%),
-    radial-gradient(circle at 80% 30%, rgba(200, 56, 42, 0.08) 0%, transparent 50%);
+    radial-gradient(
+      circle at 20% 50%,
+      rgba(232, 130, 26, 0.12) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      circle at 80% 30%,
+      rgba(200, 56, 42, 0.08) 0%,
+      transparent 50%
+    );
+
   color: var(--color-fondo);
   text-align: center;
 }
@@ -655,10 +751,14 @@
 
 .public-body .section-text {
   font-size: 18px;
-  color: rgba(253, 248, 240, 0.85);
+  color: #ffffff;
   line-height: 1.7;
   max-width: 600px;
 }
+
+/* ============================================= */
+/* MAPA                                           */
+/* ============================================= */
 
 .public-body .map-content {
   background: var(--color-fondo);
@@ -686,16 +786,26 @@
   box-shadow: var(--sombra-fuerte);
 }
 
+/* ============================================= */
+/* FOOTER                                         */
+/* ============================================= */
+
 .public-body footer {
   background: #1a0f0a;
   color: #e0d8cf;
   padding: 60px 5% 20px;
-  margin-top: 50px;
+  margin-top: auto;
+  flex-shrink: 0;
+}
+
+.public-body:not(.auth-site-footer) footer {
+  margin-top: auto;
 }
 
 .public-body .footer-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns:
+    repeat(auto-fit, minmax(300px, 1fr));
   gap: 40px;
   max-width: 1200px;
   margin: 0 auto;
@@ -719,7 +829,10 @@
   width: 80px;
   height: 80px;
   object-fit: contain;
-  filter: drop-shadow(0 0 14px rgba(249, 154, 60, 0.7));
+  filter:
+    drop-shadow(
+      0 0 14px rgba(249, 154, 60, 0.7)
+    );
 }
 
 .public-body .footer-brand h3 {
@@ -766,68 +879,394 @@
   padding-top: 20px;
   border-top: 1px solid #33261e;
   font-size: 0.8rem;
-  color: #6b6058;
+  color: #ffffff;
+}
+
+/* ================================================= */
+/*                 RESPONSIVE                        */
+/* ================================================= */
+
+@media screen and (max-width: 1024px) {
+  .public-body .promociones {
+    padding: 32px 24px;
+  }
+
+  .public-body .nosotros-content {
+    padding: 60px 40px;
+    margin-left: 24px;
+  }
+
+  .public-body .nosotros-img {
+    margin-right: 24px;
+  }
 }
 
 @media screen and (max-width: 768px) {
   .public-body header {
     height: auto;
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .public-body .header-left,
-  .public-body .header-center,
-  .public-body .header-right {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    min-height: 0;
+    padding: 14px 16px 12px;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 
   .public-body .header-left {
-    flex-direction: column;
+    flex: 1 1 auto;
+    width: auto;
     gap: 10px;
   }
 
-  .public-body .header-center {
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .public-body .header-center a {
-    font-size: 14px;
-    padding: 6px 10px;
-  }
-
   .public-body .logo {
-    width: 70px;
-    height: 70px;
+    width: 58px;
+    height: 58px;
   }
 
   .public-body .nom-local {
-    font-size: 28px;
+    font-size: 20px;
+    letter-spacing: 0.3px;
+  }
+
+  .public-body header hr {
+    display: none;
+  }
+
+  .public-body .header-center {
+    order: 3;
+    flex: 1 1 100%;
+    width: 100%;
+    justify-content: safe center;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 8px 6px;
+    backdrop-filter: blur(8px);
+  }
+
+  .public-body .header-center a {
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-width: 72px;
+  }
+
+  .public-body .header-right {
+    width: auto;
+    flex: 0 0 auto;
+  }
+
+  .public-body .btn-sesion {
+    width: 42px;
+    height: 42px;
+  }
+
+  .public-body .btn-sesion img {
+    width: 22px;
+    height: 22px;
   }
 
   .public-body .hero {
-    height: 60vh;
-    min-height: 350px;
+    height: 52vh;
+    min-height: 300px;
+  }
+
+  .public-body .carousel-prev {
+    left: 10px;
+  }
+
+  .public-body .carousel-next {
+    right: 10px;
   }
 
   .public-body .carousel-prev,
   .public-body .carousel-next {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+    backdrop-filter: blur(10px);
+  }
+
+  .public-body .carousel-indicators {
+    bottom: 14px;
+    gap: 8px;
+  }
+
+  .public-body .carousel-indicator {
+    width: 8px;
+    height: 8px;
+  }
+
+  .public-body .carousel-indicator.active {
+    width: 22px;
+  }
+
+  .public-body .promociones {
+    padding: 26px 16px 32px;
+  }
+
+  .public-body .promociones h2 {
+    font-size: 26px;
+    line-height: 1.2;
+  }
+
+  .public-body .promociones > p {
+    font-size: 14px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  .public-body .grid-promociones {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 4px 0;
+  }
+
+  .public-body .promo-card-pub {
+    border-radius: 16px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  }
+
+  .public-body .promo-img-pub {
+    height: 190px;
+  }
+
+  .public-body .promo-info-pub {
+    padding: 16px 16px 18px;
+  }
+
+  .public-body .promo-info-pub h3 {
+    font-size: 1rem;
+  }
+
+  .public-body .promo-footer-pub {
+    padding-top: 8px;
+  }
+
+  .public-body .nosotros-section {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .public-body .nosotros-section::before {
+    width: 100%;
+    height: 4px;
+    top: 0;
+    bottom: auto;
+    left: 0;
+    background: linear-gradient(to right, var(--color-secundario), var(--color-acento));
+  }
+
+  .public-body .nosotros-content {
+    margin-left: 0;
+    padding: 28px 16px 20px;
+    text-align: center;
+    align-items: center;
+  }
+
+  .public-body .nosotros-content h2 {
+    font-size: 26px;
+    text-align: center;
+  }
+
+  .public-body .nosotros-content h2::after {
+    margin: 12px auto 0;
+  }
+
+  .public-body .nosotros-content p {
+    font-size: 15px;
+    line-height: 1.7;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .public-body .nosotros-img {
+    max-width: 100%;
+    margin-right: 0;
+    padding: 0 16px 28px;
+  }
+
+  .public-body .nosotros-img img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 11;
+    object-fit: cover;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(209, 0, 0, 0.18);
+  }
+
+  .public-body .nosotros-ubicacion {
+    padding: 36px 16px;
+  }
+
+  .public-body .section-title {
+    font-size: 26px;
+    line-height: 1.2;
+  }
+
+  .public-body .section-text {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .public-body .map-content {
+    padding: 20px 16px 32px;
+  }
+
+  .public-body .nosotros-map {
+    height: 300px;
+    border-radius: 14px;
+  }
+
+  .public-body .footer-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .public-body footer {
+    padding: 28px 16px 14px;
+  }
+
+  .public-body .footer-brand {
+    padding: 14px 16px;
+    border-radius: 12px;
+  }
+
+  .public-body .footer-brand h3 {
+    font-size: 1.2rem;
+  }
+
+  .public-body .footer-horarios {
+    max-width: 320px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .public-body header {
+    padding: 12px 12px 10px;
+    gap: 10px;
+  }
+
+  .public-body .logo {
+    width: 52px;
+    height: 52px;
+  }
+
+  .public-body .nom-local {
+    font-size: 18px;
+  }
+
+  .public-body .header-center {
+    padding: 6px 4px;
+    gap: 4px;
+  }
+
+  .public-body .header-center a {
+    font-size: 11.5px;
+    padding: 7px 8px;
+    min-width: 64px;
+    letter-spacing: 0.4px;
+  }
+
+  .public-body .btn-sesion {
     width: 38px;
     height: 38px;
   }
+
+  .public-body .hero {
+    height: 46vh;
+    min-height: 260px;
+  }
+
+  .public-body .carousel-prev,
+  .public-body .carousel-next {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+
+  .public-body .promociones {
+    padding: 22px 14px 28px;
+  }
+
+  .public-body .promociones h2 {
+    font-size: 22px;
+  }
+
+  .public-body .promociones > p {
+    font-size: 13.5px;
+  }
+
+  .public-body .promo-img-pub {
+    height: 170px;
+  }
+
+  .public-body .promo-precio-pub {
+    font-size: 1.2rem;
+  }
+
+  .public-body .btn-circular-add {
+    min-width: 52px;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 16px;
+  }
+
+  .public-body .nosotros-content {
+    padding: 24px 14px 18px;
+  }
+
+  .public-body .nosotros-content h2 {
+    font-size: 22px;
+  }
+
+  .public-body .nosotros-content p {
+    font-size: 14px;
+  }
+
+  .public-body .section-title {
+    font-size: 22px;
+  }
+
+  .public-body .section-text {
+    font-size: 14px;
+  }
+
+  .public-body .nosotros-map {
+    height: 260px;
+    border-radius: 12px;
+  }
+
+  .public-body .footer-horarios li {
+    font-size: 0.82rem;
+  }
+
+  .public-body .dropdown-menu {
+    right: -8px;
+    min-width: 160px;
+  }
 }
+
+/* ================================================= */
+/*                  MODO OSCURO                      */
+/* ================================================= */
+
+/* ============================================= */
+/* VARIABLES DEL MODO OSCURO                      */
+/* ============================================= */
 
 body.dark-mode .public-body {
   --color-primario: #f0ebe3;
   --color-secundario: #E8821A;
+  --color-acento: #f5a623;
   --color-texto: #f0ebe3;
   --color-texto-suave: #a89888;
   --color-fondo: #111;
@@ -835,34 +1274,100 @@ body.dark-mode .public-body {
   --color-borde: rgba(232, 130, 26, 0.2);
 }
 
+/* ============================================= */
+/* HEADER OSCURO                                  */
+/* MISMO TAMAÑO Y ESPACIOS DEL MODO CLARO        */
+/* ============================================= */
+
 body.dark-mode .public-body header {
-  background: #0e0500;
-  border-bottom-color: rgba(232, 130, 26, 0.15);
+  background: #000;
+  border-bottom-color:
+    rgba(232, 130, 26, 0.35);
 }
 
-body.dark-mode .public-header {
-  background: #0e0500;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+/* ============================================= */
+/* NOMBRE DEL LOCAL                               */
+/* ============================================= */
+
+body.dark-mode .public-body .nom-local {
+  color: #e8821a;
 }
 
-body.dark-mode .public-header .nav-link {
-  color: #a89888;
+body.dark-mode .public-body .nom-local:hover {
+  color: #e8821a;
 }
 
-body.dark-mode .public-header .nav-link:hover {
-  color: #E8821A;
+/* ============================================= */
+/* MENÚ OSCURO                                    */
+/* ============================================= */
+
+body.dark-mode .public-body .header-center a {
+  color: #ffffff;
 }
 
-body.dark-mode .public-header .btn-login-header {
-  background: var(--brand);
+body.dark-mode .public-body .header-center a:hover,
+body.dark-mode .public-body .header-center a.activo {
+  color: #e8821a;
+}
+
+
+/* ============================================= */
+/* BOTÓN DE SESIÓN OSCURO                         */
+/* ============================================= */
+
+body.dark-mode .public-body .btn-sesion {
+  background: transparent;
+  border-color: var(--color-secundario);
   color: #fff;
+  box-shadow: none;
+}
+
+body.dark-mode .public-body .btn-sesion:hover,
+body.dark-mode .public-body .btn-sesion:active,
+body.dark-mode .public-body .btn-sesion:focus,
+body.dark-mode .public-body .btn-sesion:focus-visible {
+  background: var(--color-secundario) !important;
+  border-color: var(--color-secundario) !important;
+  color: #fff !important;
+  outline: none;
+  box-shadow: 0 0 18px rgba(232, 130, 26, 0.6) !important;
+  transform: translateY(-2px);
+}
+
+
+/* ============================================= */
+/* CARRUSEL OSCURO                                */
+/* ============================================= */
+
+body.dark-mode .public-body .carousel-prev,
+body.dark-mode .public-body .carousel-next {
+  background: #000;
+  border-color: #000;
+}
+
+body.dark-mode .public-body .carousel-prev:hover,
+body.dark-mode .public-body .carousel-next:hover {
+  background: #000;
+  border-color: #000;
+}
+
+body.dark-mode .public-body .carousel-indicator,
+body.dark-mode .public-body .carousel-indicator.active {
+  background: #000;
+  box-shadow: none;
 }
 
 body.dark-mode .hero-caption h1,
 body.dark-mode .hero-caption p {
   color: #fff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.6);
 }
+
+
+/* ============================================= */
+/* PROMOCIONES OSCURAS                            */
+/* ============================================= */
 
 body.dark-mode .promociones {
   background: var(--color-fondo);
@@ -878,7 +1383,8 @@ body.dark-mode .section-text {
 body.dark-mode .promo-card-pub {
   background: #1e1e1e;
   border-color: var(--color-borde);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 body.dark-mode .promo-info-pub h3,
@@ -887,55 +1393,113 @@ body.dark-mode .promo-info-pub p {
 }
 
 body.dark-mode .promo-precio-pub {
-  color: var(--brand);
+  color: #e8821a;
 }
 
+
+/* ============================================= */
+/* SECCIÓN NOSOTROS OSCURA                        */
+/* ============================================= */
+
 body.dark-mode .nosotros-section {
-  background: var(--color-fondo);
+  background: #000;
+  border-color: #333;
+  border-bottom: 1px solid #fff;
 }
 
 body.dark-mode .nosotros-content h2,
 body.dark-mode .nosotros-content p {
-  color: var(--color-texto);
+  color: #ffffff;
+}
+
+body.dark-mode .nosotros-content h2 {
+  color: #ffffff;
+}
+
+body.dark-mode .nosotros-content h2::after {
+  background: #ffffff;
 }
 
 body.dark-mode .nosotros-ubicacion {
-  background: #1a0800;
+  background: #000;
+  color: #ffffff;
 }
 
 body.dark-mode .nosotros-ubicacion h2,
 body.dark-mode .nosotros-ubicacion p {
-  color: var(--color-texto);
+  color: #ffffff;
 }
 
 body.dark-mode .map-content {
-  background: var(--color-fondo);
+  background: #000;
 }
 
-body.dark-mode .footer {
-  background: #0e0500;
+body.dark-mode .public-body .nosotros-img img {
+  width: 85%;
+  height: 80%;
+  border-radius: 18px;
+  box-shadow:
+    4px 4px 14px 14px rgba(209, 0, 0, 0.45);
 }
 
-body.dark-mode .footer,
-body.dark-mode .footer h3,
-body.dark-mode .footer p,
-body.dark-mode .footer span,
-body.dark-mode .footer a {
+
+/* ============================================= */
+/* FOOTER OSCURO                                  */
+/* ============================================= */
+
+body.dark-mode .public-body footer,
+body.dark-mode .public-body .footer-brand {
+  background: #000;
+}
+
+body.dark-mode .public-body footer {
+  border-top: 1px solid #ffffff;
+}
+
+body.dark-mode .public-body footer,
+body.dark-mode .public-body footer p,
+body.dark-mode .public-body footer span,
+body.dark-mode .public-body footer a {
+  color: #ffffff;
+}
+
+body.dark-mode .public-body footer h3,
+body.dark-mode .public-body footer h4 {
+  color: #ffffff;
+}
+
+body.dark-mode .public-body footer hr {
+  background:
+    linear-gradient(
+      to bottom,
+      transparent,
+      #e8821a,
+      transparent
+    );
+}
+
+body.dark-mode .public-body .footer-horarios li {
+  border-bottom-color: #33261e;
+}
+
+body.dark-mode .public-body .footer-bottom {
+  border-top-color: #33261e;
   color: #a89888;
-}
-
-body.dark-mode .footer h3 {
-  color: var(--text-900);
 }
 
 body.dark-mode .promo-vacio {
   color: var(--color-texto-suave);
 }
 
+/* ============================================= */
+/* DROPDOWN OSCURO                                */
+/* ============================================= */
+
 body.dark-mode .perfil-dropdown {
   background: #1e1e1e;
   border-color: var(--color-borde);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 body.dark-mode .perfil-dropdown a,
@@ -945,9 +1509,11 @@ body.dark-mode .perfil-dropdown button {
 
 body.dark-mode .perfil-dropdown a:hover,
 body.dark-mode .perfil-dropdown button:hover {
-  background: rgba(232, 130, 26, 0.1);
-  color: var(--brand);
+  background:
+    rgba(232, 130, 26, 0.1);
+  color: #e8821a;
 }
+
 
 @media screen and (max-width: 520px) {
   .public-body .promociones {

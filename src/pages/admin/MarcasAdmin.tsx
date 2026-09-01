@@ -70,6 +70,7 @@ export default function MarcasAdmin() {
     closeDetail();
   };
 
+
   const save = async () => {
     if (!form.nombre.trim()) {
       showToast('El nombre es obligatorio', true);

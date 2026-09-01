@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import logoClaro from '../assets/img/icono1.png';
@@ -13,7 +14,6 @@ import engranaje from '../assets/img/engranaje.png';
 import equipo from '../assets/img/equipo.png';
 import cerrarSesion from '../assets/img/cerrar-sesion.png';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
-import Accesibilidad from '../components/Accesibilidad';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/admin.css';
 
@@ -33,13 +33,24 @@ export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-
   const cerrarMenu = () => setMenuOpen(false);
 
   const handleSalir = () => {
     logout();
     navigate('/login', { replace: true });
   };
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (menuOpen) document.body.style.overflow = 'hidden';
+    else document.body.style.overflow = '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
 
   return (
     <div className="admin-body">
@@ -71,6 +82,7 @@ export default function AdminLayout() {
       <nav className="header-nav">
         <button type="button" className="topbar-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú">☰</button>
         <NavLink to="/configuracion" className="nav-item admin-name" onClick={cerrarMenu}>
+
           <img src={usuarioPerfil} alt="perfil" className="icono-sidebar-perfil" />
           <span>{user?.name ?? user?.email ?? 'Administrador'}</span>
         </NavLink>
@@ -81,11 +93,11 @@ export default function AdminLayout() {
         </button>
       </nav>
 
+      {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
+
       <div className="main-content">
         <Outlet />
       </div>
-
-      <Accesibilidad />
     </div>
   );
 }
