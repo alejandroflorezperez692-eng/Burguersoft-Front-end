@@ -16,7 +16,7 @@ import Accesibilidad from '../components/Accesibilidad';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/admin.css';
 
-const navItems = [
+const navItemsAdmin = [
   { to: '/inicio', label: 'Inicio', icono: casa },
   { to: '/menu', label: 'Menú', icono: cena },
   { to: '/ventas', label: 'Ventas', icono: insignia },
@@ -28,9 +28,18 @@ const navItems = [
   { to: '/usuarios', label: 'Usuarios', icono: equipo },
 ];
 
+const navItemsCliente = [
+  { to: '/inicio', label: 'Inicio', icono: casa },
+  { to: '/menu', label: 'Menú', icono: cena },
+  { to: '/mis-pedidos', label: 'Mis Pedidos', icono: buy },
+  { to: '/pedidos', label: 'Pedidos', icono: insignia },
+];
+
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isCliente = user?.role === 'Cliente';
+  const navItems = isCliente ? navItemsCliente : navItemsAdmin;
 
   const handleSalir = () => {
     logout();
