@@ -526,15 +526,34 @@
 }
 
 @media (max-width: 520px) {
+  .auth-shell {
+    padding: 100px 12px 0;
+  }
+
   .auth-navbar {
     padding: 12px 18px;
   }
 
+  .auth-logo {
+    width: 64px;
+    height: 64px;
+  }
+
   .header-bar {
-    font-size: 20px;
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    padding: 22px 0 20px;
   }
 
   .card {
-    padding: 28px 24px 36px;
+    padding: 24px 20px 32px;
+  }
+
+  .card h2 {
+    font-size: 10px;
+  }
+
+  .boton-mostrar-password {
+    right: 18px;
   }
 }

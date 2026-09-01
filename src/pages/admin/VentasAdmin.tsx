@@ -185,14 +185,16 @@ export default function VentasAdmin() {
                 <td>{v.id}</td>
                 <td style={{ fontWeight: 600 }}>{v.usuario?.nombre_usuario} {v.usuario?.apellido_usuario}</td>
                 <td>
-                  {v.detalles.map((d) => (
-                    <span key={d.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
-                      {d.producto?.nombre_producto} x{d.cantidad}
-                    </span>
-                  ))}
-                  {v.promociones?.map((p) => (
-                    <span key={p.id} className="badge badge-info" style={{ fontSize: 10, marginLeft: 4 }}>{p.nombre_promo}</span>
-                  ))}
+                  <div className="venta-detalles">
+                    {v.detalles.map((d) => (
+                      <span key={d.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
+                        {d.producto?.nombre_producto} x{d.cantidad}
+                      </span>
+                    ))}
+                    {v.promociones?.map((p) => (
+                      <span key={p.id} className="badge badge-info" style={{ fontSize: 10 }}>{p.nombre_promo}</span>
+                    ))}
+                  </div>
                 </td>
                 <td style={{ fontWeight: 700 }}>${Number(v.valor_total).toLocaleString()}</td>
                 <td><span className="badge badge-info">{v.metodo_pago}</span></td>
@@ -217,6 +219,7 @@ export default function VentasAdmin() {
             )}
           </tbody>
         </table>
+
         </div>
       )}
     </div>

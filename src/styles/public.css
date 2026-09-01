@@ -236,6 +236,10 @@
   }
 }
 
+.public-body .dropdown-menu.abierto {
+  display: block;
+}
+
 .public-body .dropdown-menu button {
   display: flex;
   align-items: center;
@@ -943,4 +947,27 @@ body.dark-mode .perfil-dropdown a:hover,
 body.dark-mode .perfil-dropdown button:hover {
   background: rgba(232, 130, 26, 0.1);
   color: var(--brand);
+}
+
+@media screen and (max-width: 520px) {
+  .public-body .promociones {
+    padding: 28px 16px;
+  }
+
+  .public-body .promociones h2 {
+    font-size: 28px;
+  }
+
+  .public-body .grid-promociones {
+    grid-template-columns: 1fr;
+  }
+
+  .public-body .promo-card-pub {
+    min-width: 0;
+  }
+
+  .public-body .promo-footer-pub {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
 }
