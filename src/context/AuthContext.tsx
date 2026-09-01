@@ -16,15 +16,16 @@ export type User = {
 };
 
 type UsuarioApi = {
-  id_Usuario?: number;
-  nombre_usuario?: string;
-  apellido_usuario?: string;
-  correo_personal?: string;
+  id_Usuario?: number; id?: number;
+  nombre_usuario?: string; nombre?: string;
+  apellido_usuario?: string; apellido?: string;
+  correo_personal?: string; correo?: string; email?: string;
+  rol?: string; rol_id?: number;
 };
-
 type LoginResponse = {
   token?: string;
   usuario?: UsuarioApi;
+  user?: UsuarioApi;
 };
 
 type AuthContextValue = {
@@ -73,16 +74,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('El servidor no devolvió un token válido.');
     }
 
-    const u = data.usuario;
-    const nombreCompleto = [u?.nombre_usuario, u?.apellido_usuario]
-      .filter(Boolean)
-      .join(' ');
+    const u = data.usuario ?? data.user;
 
     const nextUser: User = {
-      id: u?.id_Usuario,
-      name: nombreCompleto || undefined,
-      email: u?.correo_personal ?? email,
-    };
+    id: u?.id_Usuario ?? u?.id,
+    name: [u?.nombre_usuario ?? u?.nombre, u?.apellido_usuario ?? u?.apellido].filter(Boolean).join(' ') || undefined,
+    email: u?.correo_personal ?? u?.correo ?? u?.email ?? email,
+    role: u?.rol,
+  };
 
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(nextUser));

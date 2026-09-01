@@ -25,11 +25,11 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { login, isAuthenticated } = useAuth();
+  const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
   if (isAuthenticated) {
-    return <Navigate to="/inicio" replace />;
+    return <Navigate to={user?.role === 'Cliente' ? '/' : '/inicio'} replace />;
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -39,7 +39,10 @@ export default function Login() {
 
     try {
       await login(email, password);
-      navigate('/inicio', { replace: true, state: { toast: 'login_ok' } });
+      // Lee el rol recién guardado (AuthContext ya lo setea)
+      const stored = localStorage.getItem('user');
+      const rol = stored ? JSON.parse(stored).role : null;
+      navigate(rol === 'Cliente' ? '/' : '/inicio', { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

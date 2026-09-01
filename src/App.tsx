@@ -1,6 +1,7 @@
 
 import { Navigate, Route, Routes } from 'react-router-dom';
 import PaginaModulo from './components/PaginaModulo';
+import Contactanos from './pages/Contactanos';
 import PublicPlaceholder from './components/PublicPlaceholder';
 import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -10,6 +11,7 @@ import RecuperarContrasena from './pages/RecuperarContrasena';
 import Inicio from './pages/Inicio';
 import Home from './pages/Home';
 import Nosotros from './pages/Nosotros';
+import MisPedidos from './pages/MisPedidos';
 import MarcasAdmin from './pages/admin/MarcasAdmin';
 import UsuariosAdmin from './pages/admin/UsuariosAdmin';
 import MenuAdmin from './pages/admin/MenuAdmin';
@@ -38,11 +40,13 @@ function App() {
       />
       <Route
         path="/contactanos"
-        element={<PublicPlaceholder titulo="Contactanos" />}
+        element={<Contactanos />}
       />
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
       <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
+      <Route path="/mis-pedidos" element={<MisPedidos />} />
+
 
       <Route element={<ProtectedRoute />}>
         <Route element={<AdminLayout />}>
@@ -59,6 +63,7 @@ function App() {
           <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
           <Route path="/mis-pedidos" element={<PaginaModulo titulo="Mis Pedidos" />} />
         </Route>
+
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -5,6 +5,8 @@ import HeroCarousel from '../components/HeroCarousel';
 import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import promocionFallback from '../assets/img/promocion.png';
+import { useAuth } from '../hooks/useAuth';
+import { useCart } from '../hooks/useCart';
 import '../styles/public.css';
 
 type Promocion = {
@@ -23,13 +25,16 @@ function formatCOP(valor: number): string {
 
 export default function Home() {
   const [promos, setPromos] = useState<Promocion[] | null>(null);
+  const { isAuthenticated } = useAuth();
+  const { agregar } = useCart();
 
   useEffect(() => {
     let cancelado = false;
     apiClient
-      .get<Promocion[]>('/promociones')
+      .get<any>('/promociones')
       .then(({ data }) => {
-        if (!cancelado) setPromos(Array.isArray(data) ? data : []);
+        const lista: Promocion[] = Array.isArray(data) ? data : data?.data ?? [];
+        if (!cancelado) setPromos(lista);
       })
       .catch(() => {
         if (!cancelado) setPromos([]);
@@ -84,11 +89,17 @@ export default function Home() {
                     <div className="promo-precio-pub">
                       {formatCOP(Number(promo.precio))}
                     </div>
-                    <Link to="/login" title="Inicia sesión para pedir">
-                      <button type="button" className="btn-circular-add btn-login">
+                    {isAuthenticated ? (
+                      <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
                         +
                       </button>
-                    </Link>
+                    ) : (
+                      <Link to="/login" title="Inicia sesión para pedir">
+                        <button type="button" className="btn-circular-add btn-login">
+                          +
+                        </button>
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>

@@ -17,7 +17,7 @@ import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/admin.css';
 
-const navItems = [
+const navItemsAdmin = [
   { to: '/inicio', label: 'Inicio', icono: casa },
   { to: '/menu', label: 'Menú', icono: cena },
   { to: '/ventas', label: 'Ventas', icono: insignia },
@@ -29,12 +29,19 @@ const navItems = [
   { to: '/usuarios', label: 'Usuarios', icono: equipo },
 ];
 
+const navItemsCliente = [
+  { to: '/inicio', label: 'Inicio', icono: casa },
+  { to: '/menu', label: 'Menú', icono: cena },
+  { to: '/mis-pedidos', label: 'Mis Pedidos', icono: buy },
+  { to: '/pedidos', label: 'Pedidos', icono: insignia },
+];
+
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const cerrarMenu = () => setMenuOpen(false);
-
+  const isCliente = user?.role === 'Cliente';
   const handleSalir = () => {
     logout();
     navigate('/login', { replace: true });
