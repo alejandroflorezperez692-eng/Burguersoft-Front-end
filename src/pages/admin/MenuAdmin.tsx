@@ -24,8 +24,9 @@ const emptyForm = {
   id_categoria: 1,
 };
 
-function ThumbProducto({ img, nombre }: { img: string; nombre: string }) {
+function ThumbProducto({ img, nombre }: { img?: string | null; nombre?: string | null }) {
   const [err, setErr] = useState(false);
+  const inicial = (nombre ?? '').charAt(0).toUpperCase() || '?';
   if (!img || err) {
     return (
       <span style={{
@@ -33,7 +34,7 @@ function ThumbProducto({ img, nombre }: { img: string; nombre: string }) {
         color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         fontWeight: 800, fontSize: 17, flexShrink: 0,
       }}>
-        {nombre.charAt(0).toUpperCase()}
+        {inicial}
       </span>
     );
   }
@@ -61,9 +62,11 @@ export default function MenuAdmin() {
     setLoading(true);
     try {
       const r = await apiClient.get<Producto[]>('/productos');
-      setItems(r.data);
+      const data = Array.isArray(r.data) ? r.data : (r.data as unknown as { data?: Producto[] })?.data ?? [];
+      setItems(Array.isArray(data) ? data : []);
     } catch {
       showToast('No se pudieron cargar los productos', true);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -71,13 +74,13 @@ export default function MenuAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = items.filter((p) =>
-    (catFiltro === 0 || p.id_categoria === catFiltro) &&
-    p.nombre_producto.toLowerCase().includes(q.toLowerCase())
+  const filtered = (items ?? []).filter((p) =>
+    (catFiltro === 0 || p?.id_categoria === catFiltro) &&
+    (p?.nombre_producto ?? '').toLowerCase().includes((q ?? '').toLowerCase())
   );
 
   const grouped = CATEGORIAS.reduce<Record<string, Producto[]>>((acc, cat, i) => {
-    const prods = filtered.filter((p) => p.id_categoria === i + 1);
+    const prods = filtered.filter((p) => p?.id_categoria === i + 1);
     if (prods.length > 0) acc[cat] = prods;
     return acc;
   }, {});
@@ -86,11 +89,11 @@ export default function MenuAdmin() {
 
   const openEdit = (p: Producto) => {
     setForm({
-      nombre_producto: p.nombre_producto,
-      valor_producto: String(p.valor_producto),
-      descri_producto: p.descri_producto,
+      nombre_producto: p.nombre_producto ?? '',
+      valor_producto: String(p.valor_producto ?? ''),
+      descri_producto: p.descri_producto ?? '',
       img_producto: p.img_producto ?? '',
-      id_categoria: p.id_categoria,
+      id_categoria: p.id_categoria ?? 1,
     });
     setEditId(p.id_producto);
     setModal(true);
@@ -175,14 +178,14 @@ export default function MenuAdmin() {
                 </thead>
                 <tbody>
                   {prods.map((p) => (
-                    <tr key={p.id_producto}>
+                    <tr key={p.id_producto ?? p.nombre_producto ?? Math.random()}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <ThumbProducto img={p.img_producto} nombre={p.nombre_producto} />
-                          <span style={{ fontWeight: 600 }}>{p.nombre_producto}</span>
+                          <span style={{ fontWeight: 600 }}>{p.nombre_producto ?? 'Sin nombre'}</span>
                         </div>
                       </td>
-                      <td>${Number(p.valor_producto).toLocaleString()}</td>
+                      <td>${Number(p.valor_producto ?? 0).toLocaleString()}</td>
                       <td style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {p.descri_producto || '—'}
                       </td>

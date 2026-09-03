@@ -24,7 +24,7 @@ const emptyForm = {
   fecha_inicio: '', fecha_fin: '', estado: 'Activa',
 };
 
-const fechaLegible = (f: string) =>
+const fechaLegible = (f?: string | null) =>
   f ? new Date(f + (f.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
 
 export default function PromocionesAdmin() {
@@ -39,6 +39,9 @@ export default function PromocionesAdmin() {
   const [loading, setLoading] = useState(true);
   const { toast, showToast } = useToast();
 
+  const toArray = <T,>(v: unknown): T[] =>
+    Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -46,10 +49,13 @@ export default function PromocionesAdmin() {
         apiClient.get<Promocion[]>('/promociones'),
         apiClient.get('/productos'),
       ]);
-      setItems(r1.data);
-      setAllProducts(r2.data.map((p: { id_producto: number; nombre_producto: string }) => ({ id: p.id_producto, nombre: p.nombre_producto })));
+      setItems(toArray<Promocion>(r1.data));
+      const prodsRaw = toArray<{ id_producto: number; nombre_producto: string }>(r2.data);
+      setAllProducts(prodsRaw.map((p) => ({ id: p?.id_producto, nombre: p?.nombre_producto ?? 'Sin nombre' })));
     } catch {
       showToast('No se pudieron cargar las promociones', true);
+      setItems([]);
+      setAllProducts([]);
     } finally {
       setLoading(false);
     }
@@ -58,17 +64,17 @@ export default function PromocionesAdmin() {
   useEffect(() => { load(); }, []);
 
   const est = (p: Promocion) => {
-    if (p.estado === 'Inactiva' || p.estado === 'Finalizada') return 'Inactiva';
-    if (p.fecha_fin && new Date(p.fecha_fin) < new Date()) return 'Finalizada';
+    if (p?.estado === 'Inactiva' || p?.estado === 'Finalizada') return 'Inactiva';
+    if (p?.fecha_fin && new Date(p.fecha_fin) < new Date()) return 'Finalizada';
     return 'Activa';
   };
 
-  const filtered = items.filter((p) =>
+  const filtered = (items ?? []).filter((p) =>
     (filtro === 'todas' || est(p) === filtro) &&
-    p.nombre_promo.toLowerCase().includes(q.toLowerCase())
+    (p?.nombre_promo ?? '').toLowerCase().includes((q ?? '').toLowerCase())
   );
 
-  const activas = items.filter((p) => est(p) === 'Activa').length;
+  const activas = (items ?? []).filter((p) => est(p) === 'Activa').length;
 
   const openNew = () => {
     setForm(emptyForm);
@@ -79,16 +85,16 @@ export default function PromocionesAdmin() {
 
   const openEdit = (p: Promocion) => {
     setForm({
-      nombre_promo: p.nombre_promo,
-      descripcion_promo: p.descripcion_promo,
-      valor_promo: String(p.valor_promo),
-      img_promo: p.img_promo ?? '',
-      fecha_inicio: p.fecha_inicio?.slice(0, 10) ?? '',
-      fecha_fin: p.fecha_fin?.slice(0, 10) ?? '',
-      estado: p.estado,
+      nombre_promo: p?.nombre_promo ?? '',
+      descripcion_promo: p?.descripcion_promo ?? '',
+      valor_promo: String(p?.valor_promo ?? ''),
+      img_promo: p?.img_promo ?? '',
+      fecha_inicio: p?.fecha_inicio?.slice(0, 10) ?? '',
+      fecha_fin: p?.fecha_fin?.slice(0, 10) ?? '',
+      estado: p?.estado ?? 'Activa',
     });
-    setSelectedProds(p.productos.map((pr) => pr.id));
-    setEditId(p.id);
+    setSelectedProds((p?.productos ?? []).map((pr) => pr?.id));
+    setEditId(p?.id ?? null);
     setModal(true);
   };
 
@@ -123,7 +129,7 @@ export default function PromocionesAdmin() {
   };
 
   const del = async (id: number) => {
-    const p = items.find((x) => x.id === id);
+    const p = (items ?? []).find((x) => x?.id === id);
     if (!confirm(`¿Eliminar "${p?.nombre_promo ?? id}"?`)) return;
     try {
       await apiClient.delete(`/promociones/${id}`);
@@ -162,33 +168,33 @@ export default function PromocionesAdmin() {
           {filtered.map((p) => {
             const e = est(p);
             return (
-              <div key={p.id} style={{
+              <div key={p?.id} style={{
                 background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
                 boxShadow: 'var(--shadow-sm)', overflow: 'hidden', display: 'flex', flexDirection: 'column',
               }}>
-                {p.img_promo && (
+                {p?.img_promo && (
                   <div style={{ height: 130, overflow: 'hidden', background: 'var(--surface-3)' }}>
-                    <img src={p.img_promo} alt={p.nombre_promo} onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={p.img_promo} alt={p.nombre_promo ?? 'promoción'} onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 )}
                 <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, color: 'var(--text-900)', margin: 0 }}>{p.nombre_promo}</h3>
+                    <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, color: 'var(--text-900)', margin: 0 }}>{p?.nombre_promo ?? 'Sin nombre'}</h3>
                     <span className={`badge ${e === 'Activa' ? 'badge-success' : 'badge-gray'}`}>{e}</span>
                   </div>
-                  {p.descripcion_promo && <p style={{ fontSize: 13, color: 'var(--text-400)', margin: 0 }}>{p.descripcion_promo}</p>}
+                  {p?.descripcion_promo && <p style={{ fontSize: 13, color: 'var(--text-400)', margin: 0 }}>{p.descripcion_promo}</p>}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {p.productos.map((pr) => (
-                      <span key={pr.id} className="badge badge-info" style={{ fontSize: 10 }}>{pr.nombre}</span>
+                    {(p?.productos ?? []).map((pr) => (
+                      <span key={pr?.id} className="badge badge-info" style={{ fontSize: 10 }}>{pr?.nombre}</span>
                     ))}
                   </div>
-                  {(p.fecha_inicio || p.fecha_fin) && (
+                  {(p?.fecha_inicio || p?.fecha_fin) && (
                     <div style={{ fontSize: 12, color: 'var(--text-400)', fontWeight: 500 }}>
                       {fechaLegible(p.fecha_inicio)}{p.fecha_inicio && p.fecha_fin ? ' → ' : ''}{fechaLegible(p.fecha_fin)}
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: 20, fontWeight: 800, color: 'var(--brand)' }}>${Number(p.valor_promo).toLocaleString()}</span>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: 20, fontWeight: 800, color: 'var(--brand)' }}>${Number(p?.valor_promo || 0).toLocaleString()}</span>
                     <div>
                       <button className="btn-icon btn-icon-edit" onClick={() => openEdit(p)} title="Editar">✏</button>
                       <button className="btn-icon btn-icon-del" onClick={() => del(p.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>

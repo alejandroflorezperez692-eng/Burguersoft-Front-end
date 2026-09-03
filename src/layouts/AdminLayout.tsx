@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import logoClaro from '../assets/img/icono1.png';
 import logoOscuro from '../assets/img/icono1-oscuro.png';
 import casa from '../assets/img/casa.png';
@@ -39,9 +39,11 @@ const navItemsCliente = [
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const cerrarMenu = () => setMenuOpen(false);
   const isCliente = user?.role === 'Cliente';
+  const navItems = isCliente ? navItemsCliente : navItemsAdmin;
   const handleSalir = () => {
     logout();
     navigate('/login', { replace: true });

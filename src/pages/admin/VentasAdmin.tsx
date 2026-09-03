@@ -45,35 +45,42 @@ export default function VentasAdmin() {
   const [cantidad, setCantidad] = useState('1');
   const [loading, setLoading] = useState(true);
 
+  const toArray = <T,>(v: unknown): T[] =>
+    Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
+
   const load = () => {
     Promise.all([
       apiClient.get<Venta[]>('/ventas'),
       apiClient.get<Producto[]>('/productos'),
     ]).then(([r1, r2]) => {
-      setItems(r1.data);
-      setProductos(r2.data);
+      setItems(toArray<Venta>(r1.data));
+      setProductos(toArray<Producto>(r2.data));
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch(() => {
+      setItems([]);
+      setProductos([]);
+      setLoading(false);
+    });
   };
 
   useEffect(() => { load(); }, []);
 
-  const filtered = items.filter((v) =>
-    String(v.id).includes(q) ||
-    `${v.usuario?.nombre_usuario ?? ''} ${v.usuario?.apellido_usuario ?? ''}`.toLowerCase().includes(q.toLowerCase())
+  const filtered = (items ?? []).filter((v) =>
+    String(v?.id ?? '').includes(q ?? '') ||
+    `${v?.usuario?.nombre_usuario ?? ''} ${v?.usuario?.apellido_usuario ?? ''}`.toLowerCase().includes((q ?? '').toLowerCase())
   );
 
-  const ventasHoy = items.filter((v) => v.fecha === new Date().toISOString().slice(0, 10));
-  const ingresosHoy = ventasHoy.reduce((a, v) => a + Number(v.valor_total), 0);
-  const ingresosTotal = items.reduce((a, v) => a + Number(v.valor_total), 0);
+  const ventasHoy = (items ?? []).filter((v) => v?.fecha === new Date().toISOString().slice(0, 10));
+  const ingresosHoy = ventasHoy.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+  const ingresosTotal = (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
   const save = () => {
     if (!productoId) return;
-    const prod = productos.find((p) => p.id_producto === productoId);
+    const prod = (productos ?? []).find((p) => p?.id_producto === productoId);
     if (!prod) return;
     const body = {
       metodo_pago: metodoPago,
-      items: [{ producto_id: productoId, cantidad: Number(cantidad), precio_unitario: Number(prod.valor_producto) }],
+      items: [{ producto_id: productoId, cantidad: Number(cantidad) || 1, precio_unitario: Number(prod.valor_producto) || 0 }],
     };
     apiClient.post('/ventas', body).then(() => {
       setShowForm(false);
@@ -92,7 +99,7 @@ export default function VentasAdmin() {
     apiClient.delete(`/ventas/${id}`).then(() => load());
   };
 
-  const selectedProd = productos.find((p) => p.id_producto === productoId);
+  const selectedProd = (productos ?? []).find((p) => p?.id_producto === productoId);
 
   return (
     <div className="page-inner">
@@ -133,7 +140,7 @@ export default function VentasAdmin() {
               <label>Producto</label>
               <select value={productoId} onChange={(e) => setProductoId(Number(e.target.value))}>
                 <option value={0}>Seleccionar...</option>
-                {productos.map((p) => <option key={p.id_producto} value={p.id_producto}>{p.nombre_producto} — ${Number(p.valor_producto).toLocaleString()}</option>)}
+                {(productos ?? []).map((p) => <option key={p?.id_producto ?? p?.nombre_producto} value={p?.id_producto}>{p?.nombre_producto ?? 'Sin nombre'} — ${Number(p?.valor_producto || 0).toLocaleString()}</option>)}
               </select>
             </div>
             <div className="form-group">
@@ -149,7 +156,7 @@ export default function VentasAdmin() {
           </div>
           {selectedProd && (
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-900)' }}>
-              Subtotal: ${(Number(selectedProd.valor_producto) * Number(cantidad)).toLocaleString()}
+              Subtotal: ${((Number(selectedProd.valor_producto) || 0) * (Number(cantidad) || 0)).toLocaleString()}
             </p>
           )}
           <div className="modal-actions" style={{ marginTop: 8 }}>
@@ -181,26 +188,26 @@ export default function VentasAdmin() {
           </thead>
           <tbody>
             {filtered.map((v) => (
-              <tr key={v.id}>
-                <td>{v.id}</td>
-                <td style={{ fontWeight: 600 }}>{v.usuario?.nombre_usuario} {v.usuario?.apellido_usuario}</td>
+              <tr key={v?.id}>
+                <td>{v?.id}</td>
+                <td style={{ fontWeight: 600 }}>{v?.usuario?.nombre_usuario ?? ''} {v?.usuario?.apellido_usuario ?? ''}</td>
                 <td>
                   <div className="venta-detalles">
-                    {v.detalles.map((d) => (
-                      <span key={d.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
-                        {d.producto?.nombre_producto} x{d.cantidad}
+                    {(v?.detalles ?? []).map((d) => (
+                      <span key={d?.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
+                        {d?.producto?.nombre_producto ?? 'Producto'} x{d?.cantidad ?? 0}
                       </span>
                     ))}
-                    {v.promociones?.map((p) => (
-                      <span key={p.id} className="badge badge-info" style={{ fontSize: 10 }}>{p.nombre_promo}</span>
+                    {(v?.promociones ?? []).map((p) => (
+                      <span key={p?.id} className="badge badge-info" style={{ fontSize: 10 }}>{p?.nombre_promo}</span>
                     ))}
                   </div>
                 </td>
-                <td style={{ fontWeight: 700 }}>${Number(v.valor_total).toLocaleString()}</td>
-                <td><span className="badge badge-info">{v.metodo_pago}</span></td>
+                <td style={{ fontWeight: 700 }}>${Number(v?.valor_total || 0).toLocaleString()}</td>
+                <td><span className="badge badge-info">{v?.metodo_pago ?? ''}</span></td>
                 <td>
                   <select
-                    value={v.estado}
+                    value={v?.estado ?? ''}
                     onChange={(e) => updateEstado(v.id, e.target.value)}
                     style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                   >
