@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import HeroCarousel from '../components/HeroCarousel';
 import Footer from '../components/Footer';
-import Accesibilidad from '../components/Accesibilidad';
 import apiClient from '../api/client';
 import promocionFallback from '../assets/img/promocion.png';
 import { useAuth } from '../hooks/useAuth';
@@ -110,7 +109,6 @@ export default function Home() {
       </section>
 
       <Footer />
-      <Accesibilidad />
     </div>
   );
 }

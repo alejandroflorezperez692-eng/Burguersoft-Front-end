@@ -37,8 +37,11 @@ type AuthContextValue = {
     apellido: string,
     email: string,
     password: string,
+    tipoDocumento?: string,
+    numeroDocumento?: string,
   ) => Promise<void>;
   logout: () => void;
+  demoLogin: (role?: string) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -86,12 +89,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const register = useCallback(
-    async (nombre: string, apellido: string, email: string, password: string) => {
+    async (
+      nombre: string,
+      apellido: string,
+      email: string,
+      password: string,
+      tipoDocumento?: string,
+      numeroDocumento?: string,
+    ) => {
       await apiClient.post('/registro', {
         nombre,
         apellido,
         email,
         password,
+        tipo_documento: tipoDocumento,
+        numero_documento: numeroDocumento,
       });
     },
     [],
@@ -103,6 +115,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const demoLogin = useCallback((role?: string) => {
+    const esAdmin = role === 'admin';
+    const demoUser: User = {
+      id: 0,
+      name: esAdmin ? 'Administrador Demo' : 'Cliente Demo',
+      email: esAdmin ? 'admin@demo.com' : 'cliente@demo.com',
+      role: esAdmin ? 'admin' : 'cliente',
+    };
+    localStorage.setItem('token', 'demo-token-sin-backend');
+    localStorage.setItem('user', JSON.stringify(demoUser));
+    setUser(demoUser);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -110,8 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      demoLogin,
     }),
-    [user, login, register, logout],
+    [user, login, register, logout, demoLogin],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

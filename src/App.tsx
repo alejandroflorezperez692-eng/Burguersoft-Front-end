@@ -4,6 +4,7 @@ import PaginaModulo from './components/PaginaModulo';
 import Contactanos from './pages/Contactanos';
 import PublicPlaceholder from './components/PublicPlaceholder';
 import AdminLayout from './layouts/AdminLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
 import RecuperarContrasena from './pages/RecuperarContrasena';
@@ -20,10 +21,14 @@ import PromocionesAdmin from './pages/admin/PromocionesAdmin';
 import VentasAdmin from './pages/admin/VentasAdmin';
 import BackupsAdmin from './pages/admin/BackupsAdmin';
 import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
+import Accesibilidad from './components/Accesibilidad';
+import DemoAccess from './components/DemoAccess';
 
 function App() {
   return (
-    <Routes>
+    <>
+      <DemoAccess />
+      <Routes>
       <Route path="/" element={<Home />} />
       <Route
         path="/nosotros"
@@ -42,22 +47,29 @@ function App() {
       <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
       <Route path="/mis-pedidos" element={<MisPedidos />} />
 
-      <Route element={<AdminLayout />}>
-        <Route path="/inicio" element={<Inicio />} />
-        <Route path="/menu" element={<MenuAdmin />} />
-        <Route path="/ventas" element={<VentasAdmin />} />
-        <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
-        <Route path="/compras" element={<ComprasAdmin />} />
-        <Route path="/gestion-marca" element={<MarcasAdmin />} />
-        <Route path="/promociones" element={<PromocionesAdmin />} />
-        <Route path="/backups" element={<BackupsAdmin />} />
-        <Route path="/configuracion" element={<ConfiguracionAdmin />} />
-        <Route path="/usuarios" element={<UsuariosAdmin />} />
-        <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
+
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AdminLayout />}>
+          <Route path="/inicio" element={<Inicio />} />
+          <Route path="/menu" element={<MenuAdmin />} />
+          <Route path="/ventas" element={<VentasAdmin />} />
+          <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
+          <Route path="/compras" element={<ComprasAdmin />} />
+          <Route path="/gestion-marca" element={<MarcasAdmin />} />
+          <Route path="/promociones" element={<PromocionesAdmin />} />
+          <Route path="/backups" element={<BackupsAdmin />} />
+          <Route path="/configuracion" element={<ConfiguracionAdmin />} />
+          <Route path="/usuarios" element={<UsuariosAdmin />} />
+          <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
+          <Route path="/mis-pedidos" element={<PaginaModulo titulo="Mis Pedidos" />} />
+        </Route>
+
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+      <Accesibilidad />
+    </>
   );
 }
 

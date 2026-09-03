@@ -55,18 +55,18 @@ export default function Login() {
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
         <form onSubmit={handleSubmit} noValidate>
-          <h2>CORREO</h2>
+          <h2>CORREO*</h2>
           <input
             type="email"
             id="email"
             className="input"
-            placeholder="Correo electrónico (obligatorio)"
+            placeholder="Correo electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
           />
 
-          <h2>CONTRASEÑA</h2>
+          <h2>CONTRASEÑA*</h2>
           <div className="campo-password">
             <input
               type={mostrarPassword ? 'text' : 'password'}

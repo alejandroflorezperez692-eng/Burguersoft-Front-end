@@ -80,7 +80,7 @@ export default function RecuperarContrasena() {
             {loading ? 'ENVIANDO…' : 'Enviar código de recuperación'}
           </button>
 
-          <p style={{ color: '#2c1810' }}>¿No puedes cambiar la contraseña?</p>
+          <p className="descripcion-recuperacion">¿No puedes cambiar la contraseña?</p>
 
           <div className="separador-contenedor">
             <div className="linea" />

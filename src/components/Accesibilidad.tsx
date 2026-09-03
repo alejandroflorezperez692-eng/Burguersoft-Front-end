@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import iconoAcc from '../assets/img/accesibilidad.png';
 
 const SELECTOR_TEXTO =
-  'p, h1, h2, h3, h4, h5, h6, span, a, li, button, label, b, i, strong, td, th';
+  'p, h1, h2, h3, h4, h5, h6, span, a, li, button, label, b, i, strong, td, th, div, select, input, textarea';
 
 function aplicarEscala(factor: number) {
   document.querySelectorAll<HTMLElement>(SELECTOR_TEXTO).forEach((el) => {
@@ -17,6 +17,13 @@ function aplicarEscala(factor: number) {
   });
 }
 
+function aplicarFuente(fuente: string) {
+  document.body.style.setProperty('font-family', fuente, 'important');
+  document
+    .querySelectorAll<HTMLElement>(SELECTOR_TEXTO)
+    .forEach((el) => el.style.setProperty('font-family', fuente, 'important'));
+}
+
 export default function Accesibilidad() {
   const [abierto, setAbierto] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -24,6 +31,7 @@ export default function Accesibilidad() {
   const factorRef = useRef(
     Number.parseFloat(localStorage.getItem('acc_factor') ?? '') || 1,
   );
+  const fuenteRef = useRef(localStorage.getItem('acc_font') ?? '');
 
   useEffect(() => {
     if (localStorage.getItem('acc_tema') === 'oscuro') {
@@ -31,11 +39,28 @@ export default function Accesibilidad() {
     }
     const fuenteGuardada = localStorage.getItem('acc_font');
     if (fuenteGuardada) {
-      document.body.style.fontFamily = fuenteGuardada;
+      aplicarFuente(fuenteGuardada);
     }
     if (factorRef.current !== 1) {
       aplicarEscala(factorRef.current);
     }
+  }, []);
+
+  useEffect(() => {
+    let temporizador: ReturnType<typeof setTimeout> | undefined;
+    const reaplicar = () => {
+      if (factorRef.current !== 1) aplicarEscala(factorRef.current);
+      if (fuenteRef.current) aplicarFuente(fuenteRef.current);
+    };
+    const observador = new MutationObserver(() => {
+      if (temporizador) clearTimeout(temporizador);
+      temporizador = setTimeout(reaplicar, 150);
+    });
+    observador.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      if (temporizador) clearTimeout(temporizador);
+      observador.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -96,8 +121,9 @@ export default function Accesibilidad() {
     }
   };
 
-  const aplicarFuente = (fuente: string) => {
-    document.body.style.fontFamily = fuente;
+  const aplicarFuenteSelect = (fuente: string) => {
+    fuenteRef.current = fuente;
+    aplicarFuente(fuente);
     localStorage.setItem('acc_font', fuente);
   };
 
@@ -163,14 +189,14 @@ export default function Accesibilidad() {
             <button
               type="button"
               className="acc-btn-option"
-              onClick={() => aplicarFuente('Georgia, serif')}
+              onClick={() => aplicarFuenteSelect('Georgia, serif')}
             >
               Serif
             </button>
             <button
               type="button"
               className="acc-btn-option"
-              onClick={() => aplicarFuente('Arial, sans-serif')}
+              onClick={() => aplicarFuenteSelect('Arial, sans-serif')}
             >
               Sans
             </button>

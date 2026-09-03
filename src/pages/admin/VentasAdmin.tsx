@@ -128,7 +128,7 @@ export default function VentasAdmin() {
       {showForm && (
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>Registrar Venta</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 14 }}>
+          <div className="grid-registro">
             <div className="form-group">
               <label>Producto</label>
               <select value={productoId} onChange={(e) => setProductoId(Number(e.target.value))}>
@@ -166,6 +166,7 @@ export default function VentasAdmin() {
       {loading ? (
         <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
       ) : (
+        <div className="tabla-responsive">
         <table className="data-table">
           <thead>
             <tr>
@@ -184,14 +185,16 @@ export default function VentasAdmin() {
                 <td>{v.id}</td>
                 <td style={{ fontWeight: 600 }}>{v.usuario?.nombre_usuario} {v.usuario?.apellido_usuario}</td>
                 <td>
-                  {v.detalles.map((d) => (
-                    <span key={d.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
-                      {d.producto?.nombre_producto} x{d.cantidad}
-                    </span>
-                  ))}
-                  {v.promociones?.map((p) => (
-                    <span key={p.id} className="badge badge-info" style={{ fontSize: 10, marginLeft: 4 }}>{p.nombre_promo}</span>
-                  ))}
+                  <div className="venta-detalles">
+                    {v.detalles.map((d) => (
+                      <span key={d.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
+                        {d.producto?.nombre_producto} x{d.cantidad}
+                      </span>
+                    ))}
+                    {v.promociones?.map((p) => (
+                      <span key={p.id} className="badge badge-info" style={{ fontSize: 10 }}>{p.nombre_promo}</span>
+                    ))}
+                  </div>
                 </td>
                 <td style={{ fontWeight: 700 }}>${Number(v.valor_total).toLocaleString()}</td>
                 <td><span className="badge badge-info">{v.metodo_pago}</span></td>
@@ -216,6 +219,8 @@ export default function VentasAdmin() {
             )}
           </tbody>
         </table>
+
+        </div>
       )}
     </div>
   );
