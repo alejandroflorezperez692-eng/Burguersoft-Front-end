@@ -1,0 +1,92 @@
+.botones-sociales {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.btn-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 15px;
+  border-radius: var(--radio);
+  border: 1.5px solid var(--color-primario);
+  background: #fff;
+  color: var(--color-oscuro);
+  font-size: 14px;
+  font-weight: 900;
+  font-family: var(--font-cuerpo);
+  letter-spacing: 1.5px;
+  text-transform: none;
+  cursor: pointer;
+  transition: all var(--transicion);
+  box-shadow: 0 6px 20px rgba(232, 130, 26, 0.15);
+}
+
+.btn-social:hover {
+  background: var(--color-fondo);
+  box-shadow: 0 4px 16px rgba(232, 130, 26, 0.25);
+}
+
+.btn-social:active {
+  transform: scale(0.98);
+}
+
+.btn-social svg {
+  flex-shrink: 0;
+}
+
+.btn-social span {
+  flex: 1;
+  text-align: center;
+  font-family: var(--font-cuerpo);
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+body.dark-mode .btn-social {
+  background: #000;
+  color: #fff;
+  border-color: rgba(232, 130, 26, 0.5);
+}
+
+body.dark-mode .btn-social:hover {
+  background: #1a1a1a;
+  border-color: var(--color-primario);
+}
+
+.btn-social-phone {
+  background: #fff;
+  color: var(--color-oscuro);
+  border-color: var(--color-primario);
+}
+
+.btn-social-phone:hover {
+  background: var(--color-fondo);
+}
+
+body.dark-mode .btn-social-phone {
+  background: #000;
+  color: #fff;
+  border-color: rgba(232, 130, 26, 0.5);
+}
+
+body.dark-mode .btn-social-phone:hover {
+  background: #1a1a1a;
+  border-color: var(--color-primario);
+}
+
+@media (max-width: 480px) {
+  .botones-sociales {
+    gap: 10px;
+  }
+
+  .btn-social {
+    padding: 12px;
+    font-size: 13px;
+  }
+}

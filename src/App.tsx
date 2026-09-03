@@ -6,6 +6,7 @@ import PublicPlaceholder from './components/PublicPlaceholder';
 import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
+import SocialCallback from './pages/SocialCallback';
 import Registro from './pages/Registro';
 import RecuperarContrasena from './pages/RecuperarContrasena';
 import Inicio from './pages/Inicio';
@@ -43,9 +44,11 @@ function App() {
         element={<Contactanos />}
       />
       <Route path="/login" element={<Login />} />
+      <Route path="/social-callback" element={<SocialCallback />} /> 
       <Route path="/registro" element={<Registro />} />
       <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
       <Route path="/mis-pedidos" element={<MisPedidos />} />
+      <Route path="/social-callback" element={<SocialCallback />} />
 
 
       <Route element={<ProtectedRoute />}>
