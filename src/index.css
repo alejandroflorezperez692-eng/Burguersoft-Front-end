@@ -9,9 +9,9 @@
   --sidebar-end: #2d1206;
   --header-bg: #1a0a02;
   --surface: #ffffff;
-  --surface-2: #fdf9f5;
-  --surface-3: #f5ede0;
-  --bg: #f2ebe1;
+  --surface-2: #ffffff;
+  --surface-3: #ffffff;
+  --bg: #ffffff;
   --text-900: #160800;
   --text-600: #6b4c38;
   --text-400: #a08060;
@@ -37,7 +37,7 @@
 
   --color-primario: #E8821A;
   --color-acento: #f5a623;
-  --color-fondo: #fdf8f0;
+  --color-fondo: #ffffff;
   --color-card: #ffffff;
   --color-oscuro: #2c1810;
   --color-texto-suave: #6b4c38;
@@ -97,7 +97,7 @@ a {
   bottom: 80px;
   right: 20px;
   background: var(--surface);
-  border: 1px solid #e0e0e0;
+  border: 1.5px solid #E8821A;
   border-radius: var(--r-lg);
   padding: 20px;
   width: 240px;
@@ -119,7 +119,7 @@ a {
   letter-spacing: 0.8px;
   color: #000;
   padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #E8821A;
 }
 
 .acc-row {
@@ -144,8 +144,8 @@ a {
 .acc-btn-reset {
   flex: 1;
   padding: 7px 10px;
-  background: var(--surface-3);
-  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  border: 1.5px solid #E8821A;
   border-radius: var(--r-sm);
   font-family: var(--font-sans);
   font-size: 12px;
@@ -164,30 +164,33 @@ a {
 .acc_tema:focus-visible,
 .acc-btn-reset:focus-visible {
   outline: none;
-  border-color: #e0e0e0 !important;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06) !important;
+  border-color: #E8821A !important;
+  box-shadow: 0 0 0 2px rgba(232, 130, 26, 0.2) !important;
 }
 
 .acc-btn-option:hover,
-.acc_tema:hover {
-  background: var(--brand);
-  color: #fff;
-  border-color: var(--brand);
+.acc_tema:hover,
+.acc-btn-option:active,
+.acc_tema:active {
+  background: #E8821A;
+  color: #000;
+  border-color: #E8821A;
   transform: none;
 }
 
 .acc-btn-reset {
   width: 100%;
   flex: none;
-  background: var(--surface-3);
+  background: #ffffff;
   color: #000;
-  border-color: var(--border);
+  border-color: #E8821A;
 }
 
-.acc-btn-reset:hover {
-  background: var(--brand);
-  color: #fff;
-  border-color: var(--brand);
+.acc-btn-reset:hover,
+.acc-btn-reset:active {
+  background: #E8821A;
+  color: #000;
+  border-color: #E8821A;
 }
 
 .acc-fab {
@@ -254,20 +257,24 @@ body.dark-mode .acc-fab:hover {
 }
 
 body.dark-mode .acc-panel {
-  background: #000;
-  border-color: #333;
+  background: #000000 !important;
+  border: 1.5px solid #ffffff !important;
 }
 
-body.dark-mode .acc-panel-title,
+body.dark-mode .acc-panel-title {
+  color: #ffffff !important;
+  border-bottom: 1px solid #ffffff !important;
+}
+
 body.dark-mode .acc-row-label {
-  color: #fff;
+  color: #ffffff !important;
 }
 
 body.dark-mode .acc-btn-option,
 body.dark-mode .acc_tema {
-  background: #000;
-  border-color: #333;
-  color: #fff;
+  background: #000000 !important;
+  border: 1.5px solid #ffffff !important;
+  color: #ffffff !important;
 }
 
 body.dark-mode .acc-btn-option:focus,
@@ -275,34 +282,37 @@ body.dark-mode .acc_tema:focus,
 body.dark-mode .acc-btn-option:focus-visible,
 body.dark-mode .acc_tema:focus-visible {
   outline: none;
-  border-color: #333 !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25) !important;
 }
 
 body.dark-mode .acc-btn-option:hover,
-body.dark-mode .acc_tema:hover {
-  background: var(--brand);
-  color: #fff;
-  border-color: var(--brand);
+body.dark-mode .acc_tema:hover,
+body.dark-mode .acc-btn-option:active,
+body.dark-mode .acc_tema:active {
+  background: #E8821A !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
 }
 
 body.dark-mode .acc-btn-reset {
-  background: #000;
-  color: #fff;
-  border-color: #333;
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
 }
 
 body.dark-mode .acc-btn-reset:focus,
 body.dark-mode .acc-btn-reset:focus-visible {
   outline: none;
-  border-color: #333 !important;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08) !important;
+  border-color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25) !important;
 }
 
-body.dark-mode .acc-btn-reset:hover {
-  background: var(--brand);
-  color: #fff;
-  border-color: var(--brand);
+body.dark-mode .acc-btn-reset:hover,
+body.dark-mode .acc-btn-reset:active {
+  background: #E8821A !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
 }
 
 @media (max-width: 480px) {
@@ -325,4 +335,365 @@ body.dark-mode .acc-btn-reset:hover {
     width: 20px;
     height: 20px;
   }
+}
+
+/* ============================================= */
+/* FIX: MODO OSCURO - LETRAS BLANCAS EN TODO EL CONTENIDO */
+/* No toca header: .public-body header, .header-nav, .sidebar, .auth-navbar */
+/* ============================================= */
+
+/* Variables a blanco puro */
+body.dark-mode {
+  --text-900: #ffffff !important;
+  --text-600: #ffffff !important;
+  --text-400: #ffffff !important;
+  --color-texto: #ffffff !important;
+  --color-texto-suave: #ffffff !important;
+}
+
+/* ADMIN - todo el contenido principal (fuera de header/sidebar) */
+body.dark-mode .main-content,
+body.dark-mode .main-content h1,
+body.dark-mode .main-content h2,
+body.dark-mode .main-content h3,
+body.dark-mode .main-content h4,
+body.dark-mode .main-content h5,
+body.dark-mode .main-content h6,
+body.dark-mode .main-content p,
+body.dark-mode .main-content span,
+body.dark-mode .main-content label,
+body.dark-mode .main-content li,
+body.dark-mode .main-content td,
+body.dark-mode .main-content th,
+body.dark-mode .main-content div,
+body.dark-mode .main-content strong,
+body.dark-mode .main-content b,
+body.dark-mode .main-content em,
+body.dark-mode .main-content a,
+body.dark-mode .main-content small {
+  color: #ffffff !important;
+}
+
+/* ADMIN detalles específicos con color hardcodeado */
+body.dark-mode .page-header h1,
+body.dark-mode .page-header .subtitulo,
+body.dark-mode .stat-card .stat-label,
+body.dark-mode .stat-card .stat-val,
+body.dark-mode .stat-card .stat-sub,
+body.dark-mode .kpi-label,
+body.dark-mode .kpi-val,
+body.dark-mode .kpi-sub,
+body.dark-mode .data-table td,
+body.dark-mode .meta-bar span,
+body.dark-mode .marca-nombre,
+body.dark-mode .marca-id,
+body.dark-mode .detalle-nombre,
+body.dark-mode .detalle-info,
+body.dark-mode .detalle-info p,
+body.dark-mode .detalle-info strong,
+body.dark-mode .historial-header h3,
+body.dark-mode .historial-col-apartado,
+body.dark-mode .historial-col-accion,
+body.dark-mode .historial-vacio,
+body.dark-mode .empty-state,
+body.dark-mode .welcome-text h2,
+body.dark-mode .welcome-text p,
+body.dark-mode .welcome-text div {
+  color: #ffffff !important;
+}
+
+/* PUBLIC - secciones de contenido (header excluido) */
+body.dark-mode .promociones,
+body.dark-mode .promociones h2,
+body.dark-mode .promociones p,
+body.dark-mode .promociones .section-title,
+body.dark-mode .promociones .section-text,
+body.dark-mode .promo-info-pub h3,
+body.dark-mode .promo-info-pub p,
+body.dark-mode .promo-fechas,
+body.dark-mode .promo-precio-pub,
+body.dark-mode .promo-vacio,
+body.dark-mode .nosotros-section,
+body.dark-mode .nosotros-content h2,
+body.dark-mode .nosotros-content p,
+body.dark-mode .nosotros-ubicacion,
+body.dark-mode .nosotros-ubicacion h2,
+body.dark-mode .nosotros-ubicacion p,
+body.dark-mode .nosotros-ubicacion .section-title,
+body.dark-mode .nosotros-ubicacion .section-text,
+body.dark-mode .contact-section,
+body.dark-mode .contact-section h1,
+body.dark-mode .contact-section .descripcion,
+body.dark-mode .icon-box p,
+body.dark-mode .map-content,
+body.dark-mode .hero,
+body.dark-mode .hero h1,
+body.dark-mode .hero p {
+  color: #ffffff !important;
+}
+
+/* PUBLIC - wildcard para cualquier texto dentro de esas secciones */
+body.dark-mode .promociones *,
+body.dark-mode .nosotros-section *,
+body.dark-mode .nosotros-ubicacion *,
+body.dark-mode .contact-section *,
+body.dark-mode .map-content * {
+  color: #ffffff !important;
+}
+
+/* AUTH - solo el centro, sin tocar .auth-navbar (header) */
+body.dark-mode .auth-center,
+body.dark-mode .auth-center h1,
+body.dark-mode .auth-center h2,
+body.dark-mode .auth-center p,
+body.dark-mode .auth-center span,
+body.dark-mode .auth-center label,
+body.dark-mode .auth-center div,
+body.dark-mode .auth-center a,
+body.dark-mode .card h2,
+body.dark-mode .descripcion,
+body.dark-mode .descripcion-registro,
+body.dark-mode .campo label,
+body.dark-mode .encabezado h2,
+body.dark-mode .encabezado p,
+body.dark-mode .requisito,
+body.dark-mode .enlace-externo,
+body.dark-mode .circulo {
+  color: #ffffff !important;
+}
+
+body.dark-mode .auth-center * {
+  color: #ffffff !important;
+}
+
+/* Excepciones que deben mantener su color propio (badges, precios, botones con color de marca) - opcional, si quieres que TODO sea blanco comenta este bloque */
+/* Si prefieres que badges/botones sigan naranja, descomenta y ajusta: */
+/*
+body.dark-mode .promo-precio-pub,
+body.dark-mode .kpi-val,
+body.dark-mode .stat-card .stat-val { color: #E8821A !important; }
+*/
+
+/* Asegurar placeholders visibles en oscuro - igual que custom-select */
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ============================================= */
+/* FIX: MODO OSCURO - FONDO NEGRO COMO FOOTER (#000) EN TODAS LAS PÁGINAS */
+/* Guiado por footer: body.dark-mode .public-body footer { background:#000 } */
+/* No toca header (ya es #000 en oscuro) */
+/* ============================================= */
+body.dark-mode,
+body.dark-mode body,
+body.dark-mode .public-body,
+body.dark-mode .auth-shell {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+/* ADMIN */
+body.dark-mode .main-content,
+body.dark-mode .page-inner,
+body.dark-mode .dashboard-wrap {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+/* PUBLIC - fondos de secciones */
+body.dark-mode .promociones,
+body.dark-mode .contact-section,
+body.dark-mode .map-content {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+/* AUTH - fondos de páginas de login/registro */
+body.dark-mode .auth-center {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+/* Asegurar que variables de fondo también sean negro puro */
+body.dark-mode {
+  --bg: #000000 !important;
+  --surface: #0a0a0a !important;
+  --surface-2: #111111 !important;
+  --surface-3: #1a1a1a !important;
+  --color-fondo: #000000 !important;
+  --color-fondo-alt: #000000 !important;
+}
+
+/* ============================================= */
+/* FIX: PROMO CARD - GRIS -> NEGRO TOTAL, BEIGE -> BLANCO (modo oscuro) */
+/* Referencia imagen: top beige #f5edd8 -> #fff, bottom gris #1e1e1e -> #000 */
+/* ============================================= */
+body.dark-mode .promo-card-pub {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 2.5px solid #333333 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.dark-mode .promo-card-pub:hover {
+  border-color: #4a4a4a !important;
+  box-shadow: 0 8px 28px rgba(255, 255, 255, 0.08) !important;
+  transform: translateY(-6px);
+}
+
+body.dark-mode .promo-info-pub {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+body.dark-mode .promo-img-pub {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #1a1a1a !important;
+}
+
+/* Por si hay otros grises similares en oscuro, forzar a negro total */
+body.dark-mode .promo-card-pub,
+body.dark-mode .marca-card,
+body.dark-mode .stat-card,
+body.dark-mode .kpi-card,
+body.dark-mode .historial-section,
+body.dark-mode .data-table {
+  background: #000000 !important;
+}
+
+/* ============================================= */
+/* MODO CLARO: FOOTER LETRAS BLANCAS */
+/* ============================================= */
+.public-body footer,
+.public-body footer p,
+.public-body footer span,
+.public-body footer a,
+.public-body footer li,
+.public-body .footer-brand,
+.public-body .footer-brand h3,
+.public-body .footer-section h4,
+.public-body .footer-section p,
+.public-body .footer-horarios li,
+.public-body .footer-bottom {
+  color: #ffffff !important;
+}
+
+/* ============================================= */
+/* MODO CLARO: TARJETA COMBOS DIARIOS SIN BORDE */
+/* ============================================= */
+.public-body .promo-card-pub {
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.10) !important;
+}
+
+.public-body .promo-card-pub:hover {
+  border: none !important;
+  border-color: transparent !important;
+  transform: translateY(-6px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ============================================= */
+/* MODO OSCURO: PANEL PERFIL (cerrar cuenta) - TIPO DOCUMENTO PLACEHOLDER */
+/* ============================================= */
+body.dark-mode .mp-panel {
+  background: #000000 !important;
+}
+
+body.dark-mode .mp-panel select {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(232, 130, 26, 0.22) !important;
+}
+
+body.dark-mode .mp-panel select option {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .mp-panel select option[value=""] {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* ============================================= */
+/* MODO CLARO: TEXTOS DE PAGINAS NEGRO (excepto header, footer, paneles login) */
+/* ============================================= */
+/* PUBLIC */
+.public-body .promociones h2,
+.public-body .promociones p,
+.public-body .promo-info-pub h3,
+.public-body .promo-info-pub p,
+.public-body .promo-fechas,
+.public-body .promo-precio-pub,
+.public-body .nosotros-content h2,
+.public-body .nosotros-content p,
+.public-body .contact-section h1,
+.public-body .contact-section .descripcion,
+.public-body .icon-box p,
+.public-body .section-title,
+.public-body .section-text {
+  color: #000000 !important;
+}
+
+/* ADMIN - resto en negro, ubicacion en blanco porque fondo es café oscuro */
+.public-body .nosotros-ubicacion h2,
+.public-body .nosotros-ubicacion p,
+.public-body .nosotros-ubicacion .section-title,
+.public-body .nosotros-ubicacion .section-text {
+  color: #ffffff !important;
+}
+
+/* ADMIN */
+.main-content .page-header h1,
+.main-content .page-header .subtitulo,
+.main-content .stat-card .stat-label,
+.main-content .stat-card .stat-val,
+.main-content .stat-card .stat-sub,
+.main-content .kpi-label,
+.main-content .kpi-val,
+.main-content .kpi-sub,
+.main-content .data-table td,
+.main-content .meta-bar span,
+.main-content .marca-nombre,
+.main-content .marca-id,
+.main-content .detalle-nombre,
+.main-content .detalle-info,
+.main-content .detalle-info p,
+.main-content .historial-header h3,
+.main-content .historial-col-apartado,
+.main-content .historial-col-accion,
+.main-content .welcome-text h2,
+.main-content .welcome-text p {
+  color: #000000 !important;
+}
+
+/* ============================================= */
+/* MODO CLARO: FONDO BLANCO BLANCO EN TODAS LAS PÁGINAS (excepto header/footer) */
+/* ============================================= */
+body,
+.public-body,
+.contact-section,
+.map-content,
+.promociones,
+.nosotros-section,
+.main-content,
+.page-inner,
+.dashboard-wrap,
+.auth-center {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* FIX: modo oscuro - texto al lado de imagen (nosotros-section) debe ser negro fondo y letra blanca */
+body.dark-mode .nosotros-section {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+body.dark-mode .nosotros-content h2,
+body.dark-mode .nosotros-content p {
+  color: #ffffff !important;
 }

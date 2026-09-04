@@ -1130,7 +1130,7 @@ body.dark-mode .circulo {
 }
 
 body.dark-mode .enlace-externo {
-  color: #fff;
+  color: #ffffff !important;
 }
 
 body.dark-mode .enlace-externo a,
@@ -1229,7 +1229,15 @@ body.dark-mode .custom-select-trigger {
 }
 
 body.dark-mode .custom-select-trigger.placeholder {
-  color: #9a8370 !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body.dark-mode .custom-select-trigger.placeholder span {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+body.dark-mode .custom-select-trigger.placeholder .custom-select-arrow {
+  color: rgba(255, 255, 255, 0.6) !important;
 }
 
 body.dark-mode .custom-select-arrow {

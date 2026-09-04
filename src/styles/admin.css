@@ -1571,8 +1571,8 @@ body.dark-mode .btn-cancel:hover {
 }
 
 body.dark-mode .acc-panel {
-  background: var(--surface);
-  border-color: rgba(232, 130, 26, 0.25);
+  background: #000000 !important;
+  border: 1.5px solid #ffffff !important;
 }
 body.dark-mode .welcome-banner {
   background: linear-gradient(135deg, #3d1a04, #4a2008);
@@ -1614,28 +1614,31 @@ body.dark-mode .badge-gray {
 
 body.dark-mode .acc-btn-option,
 body.dark-mode .acc_tema {
-
-  background: var(--surface-2);
-  border-color: rgba(232, 130, 26, 0.2);
-  color: var(--text-900);
+  background: #000000 !important;
+  border: 1.5px solid #ffffff !important;
+  color: #ffffff !important;
 }
 
 body.dark-mode .acc-btn-option:hover,
-body.dark-mode .acc_tema:hover {
-  background: var(--brand);
-  color: #fff;
-  border-color: var(--brand);
+body.dark-mode .acc_tema:hover,
+body.dark-mode .acc-btn-option:active,
+body.dark-mode .acc_tema:active {
+  background: #E8821A !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
 }
 
 body.dark-mode .acc-btn-reset {
-  background: var(--surface-2);
-  color: var(--text-600);
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
 }
 
-body.dark-mode .acc-btn-reset:hover {
-  background: var(--brand);
-  color: #fff;
-  border-color: var(--brand);
+body.dark-mode .acc-btn-reset:hover,
+body.dark-mode .acc-btn-reset:active {
+  background: #E8821A !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
 }
 
 body.dark-mode .nav-item {

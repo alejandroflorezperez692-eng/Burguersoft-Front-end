@@ -791,7 +791,7 @@
 /* ============================================= */
 
 .public-body footer {
-  background: #1a0f0a;
+  background: #2c1810;
   color: #e0d8cf;
   padding: 60px 5% 20px;
   margin-top: auto;
@@ -817,7 +817,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #1a0f0a;
+  background-color: #2c1810;
   padding: 20px 40px;
   border-radius: 12px 12px 0 0;
   box-sizing: border-box;
