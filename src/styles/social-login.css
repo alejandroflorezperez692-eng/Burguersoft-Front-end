@@ -90,3 +90,72 @@ body.dark-mode .btn-social-phone:hover {
     font-size: 13px;
   }
 }
+
+.phone-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.phone-modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 40px 32px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.phone-modal h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--color-primario);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.phone-modal-desc {
+  font-size: 14px;
+  color: var(--color-texto-suave);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.phone-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: var(--color-texto-suave);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px;
+}
+
+.phone-modal-close:hover {
+  color: var(--color-oscuro);
+}
+
+.phone-resend {
+  display: block;
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+body.dark-mode .phone-modal {
+  background: #1a1a1a;
+}
+
+body.dark-mode .phone-modal h2 {
+  color: #fff;
+}
