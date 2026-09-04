@@ -84,10 +84,7 @@ export default function Login() {
               aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               title={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6Z" />
-                <circle cx="12" cy="12" r="2.5" />
-              </svg>
+              {mostrarPassword ? 'Ocultar' : 'Mostrar'}
             </button>
           </div>
 

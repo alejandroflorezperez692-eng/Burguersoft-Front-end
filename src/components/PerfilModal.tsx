@@ -20,10 +20,9 @@ function validarDatos(d: { nombre: string; apellido: string; tdoc: string; ndoc:
   if (d.tdoc === 'Tarjeta de Identidad' && (len < 10 || len > 11)) return 'La tarjeta de identidad debe tener entre 10 y 11 dígitos.';
   if (d.tdoc === 'Cédula de Extranjería' && (len < 6 || len > 10)) return 'La cédula de extranjería debe tener entre 6 y 10 dígitos.';
   if (d.tdoc === 'Pasaporte' && (len < 6 || len > 9)) return 'El pasaporte debe tener entre 6 y 9 caracteres.';
-  if (d.telefono) {
-    const limpio = d.telefono.replace(/\s/g, '');
-    if (!/^(\+57|57)?3[0-9]{9}$/.test(limpio)) return 'El teléfono debe ser un número colombiano válido (ej: 3001234567).';
-  }
+  if (!d.telefono.trim()) return 'El teléfono es obligatorio.';
+  const limpio = d.telefono.replace(/\s/g, '');
+  if (!/^(\+57|57)?3[0-9]{9}$/.test(limpio)) return 'El teléfono debe ser un número colombiano válido (ej: 3001234567).';
   return null;
 }
 
@@ -157,7 +156,6 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     especial: /[^A-Za-z0-9]/.test(nueva),
   };
   const fuerza = Object.values(reglas).filter(Boolean).length;
-  const barraColor = fuerza <= 1 ? '#e63946' : fuerza === 2 ? '#E8821A' : fuerza === 3 ? '#EF9F27' : '#2a9d48';
 
   if (!isOpen) return null;
 
@@ -212,7 +210,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                   <input type="text" value={apellido} onChange={(e) => setApellido(e.target.value)} placeholder="Tu apellido" required maxLength={20} />
                 </div>
                 <div className="mp-field">
-                  <label className="mp-label">Tipo de documento</label>
+                  <label className="mp-label">Tipo de documento <span className="mp-req">*</span></label>
                   <div className="mp-select-wrap">
                     <select value={tdoc} onChange={(e) => setTdoc(e.target.value)} required>
                       <option value="">Seleccione...</option>
@@ -221,17 +219,17 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                   </div>
                 </div>
                 <div className="mp-field">
-                  <label className="mp-label">Número de documento</label>
+                  <label className="mp-label">Número de documento <span className="mp-req">*</span></label>
                   <input type="text" value={ndoc} onChange={(e) => setNdoc(e.target.value.replace(/[^0-9A-Za-z]/g, ''))} placeholder="Número de documento" maxLength={maxLenDoc} required />
                 </div>
                 <div className="mp-field mp-full">
-                  <label className="mp-label">Teléfono</label>
+                  <label className="mp-label">Teléfono <span className="mp-req">*</span></label>
                   <input type="tel" value={telefono} onChange={(e) => {
                     let v = e.target.value.replace(/[^0-9]/g, '');
                     if (v.length > 0 && v[0] !== '3') v = '3' + v.slice(1);
                     if (v.length > 10) v = v.slice(0, 10);
                     setTelefono(v);
-                  }} placeholder="3001234567" maxLength={10} />
+                  }} placeholder="3001234567" maxLength={10} required />
                 </div>
                 <div className="mp-field mp-full">
                   <label className="mp-label">Correo electrónico</label>
@@ -262,14 +260,14 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                     <input type={mostrarNueva ? 'text' : 'password'} value={nueva} onChange={(e) => setNueva(e.target.value)} placeholder="Mínimo 8 caracteres" required />
                     <button type="button" className="mp-pw-toggle" onClick={() => setMostrarNueva((v) => !v)}>{mostrarNueva ? 'Ocultar' : 'Mostrar'}</button>
                   </div>
-                  <div style={{ height: 6, width: '100%', background: '#e0e0e0', marginTop: 10, borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${(fuerza / 4) * 100}%`, background: barraColor, transition: '0.3s' }} />
+                  <div className={`barra-contrasena ${fuerza <= 1 ? 'rojo' : fuerza === 2 ? 'amarillo' : 'verde'}`} style={{ marginTop: 10 }}>
+                    <span className="barra-contrasena-fill" style={{ width: `${(fuerza / 4) * 100}%` }} />
                   </div>
-                  <ul style={{ listStyle: 'none', padding: 0, fontSize: 13, marginTop: 10, color: '#999', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <li style={{ color: reglas.longitud ? '#2a9d48' : '#999' }}>{reglas.longitud ? '✓' : '❌'} Mínimo 8 caracteres</li>
-                    <li style={{ color: reglas.mayuscula ? '#2a9d48' : '#999' }}>{reglas.mayuscula ? '✓' : '❌'} Al menos una mayúscula</li>
-                    <li style={{ color: reglas.numero ? '#2a9d48' : '#999' }}>{reglas.numero ? '✓' : '❌'} Al menos un número</li>
-                    <li style={{ color: reglas.especial ? '#2a9d48' : '#999' }}>{reglas.especial ? '✓' : '❌'} Al menos un símbolo (@, #, $, etc.)</li>
+                  <ul className="requisitos" style={{ marginTop: 10 }}>
+                    <li className={`requisito${reglas.longitud ? ' cumple' : ''}`}><span aria-hidden="true">{reglas.longitud ? '✅' : '❌'}</span> Mínimo 8 caracteres</li>
+                    <li className={`requisito${reglas.mayuscula ? ' cumple' : ''}`}><span aria-hidden="true">{reglas.mayuscula ? '✅' : '❌'}</span> Al menos una mayúscula</li>
+                    <li className={`requisito${reglas.numero ? ' cumple' : ''}`}><span aria-hidden="true">{reglas.numero ? '✅' : '❌'}</span> Al menos un número</li>
+                    <li className={`requisito${reglas.especial ? ' cumple' : ''}`}><span aria-hidden="true">{reglas.especial ? '✅' : '❌'}</span> Al menos un símbolo (@, #, $, etc.)</li>
                   </ul>
                 </div>
                 <div className="mp-field mp-full">
@@ -299,7 +297,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 <div className="mp-info-row"><span className="mp-info-lbl">Estado</span><span className="mp-badge-ok">✓ Activo</span></div>
               </div>
               <div className="mp-actions" style={{ marginTop: 16 }}>
-                <button type="button" className="mp-btn-cancel" style={{ flex: 1 }} onClick={onClose}>Cerrar</button>
+                <button type="button" className="mp-btn-save" style={{ flex: 1 }} onClick={onClose}>Cerrar</button>
               </div>
             </>
           )}

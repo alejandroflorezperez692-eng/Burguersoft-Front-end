@@ -174,25 +174,52 @@
 
 .boton-mostrar-password {
   position: absolute;
-  top: 44%;
-  right: 30px;
+  top: 0;
+  right: 14px;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: auto;
+  height: auto;
+  padding: 0 6px;
+  color: #EF9F27;
+  background: transparent;
+  border: none;
+  line-height: 1;
+  cursor: pointer;
+  font-family: var(--font-cuerpo);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.boton-mostrar-password:has(svg) {
   width: 28px;
   height: 28px;
   padding: 0;
   color: #000;
-  background: transparent;
-  border: none;
-  transform: translateY(-60%);
-  cursor: pointer;
 }
 
 .boton-mostrar-password:hover,
 .boton-mostrar-password:focus-visible {
   color: #000;
   background: transparent;
+}
+
+.boton-mostrar-password:has(svg):hover {
+  color: #000;
+}
+
+body.dark-mode .boton-mostrar-password {
+  color: #EF9F27;
+}
+
+body.dark-mode .boton-mostrar-password:has(svg) {
+  color: #fff;
+}
+
+body.dark-mode .boton-mostrar-password:hover {
+  color: #fff;
 }
 
 .boton-mostrar-password svg {
@@ -205,10 +232,15 @@
   stroke-linejoin: round;
 }
 
+.campo-password input {
+  padding-right: 75px !important;
+}
+
 #registroForm .boton-mostrar-password {
-  top: 54%;
+  top: 0;
   right: 12px;
-  transform: translateY(-50%);
+  bottom: 0;
+  transform: none;
 }
 
 .input::-ms-reveal,
@@ -1275,4 +1307,83 @@ body.dark-mode .requisito {
 
 body.dark-mode .requisito.cumple {
   color: #4ade80;
+}
+
+/* El registro conserva la paleta original en modo oscuro. */
+body.dark-mode #registroForm .contenedor-registro {
+  background: #000000 !important;
+  border-color: #E8821A !important;
+}
+
+body.dark-mode #registroForm .encabezado {
+  background: #000000 !important;
+  border-bottom-color: #E8821A !important;
+}
+
+body.dark-mode #registroForm .encabezado h2 {
+  color: #E8821A !important;
+}
+
+body.dark-mode #registroForm .encabezado::after {
+  background: #E8821A !important;
+}
+
+body.dark-mode #registroForm .campo input,
+body.dark-mode #registroForm .custom-select-trigger,
+body.dark-mode #registroForm .custom-select-options {
+  background: #000000 !important;
+  border-color: rgba(232, 130, 26, 0.22) !important;
+}
+
+body.dark-mode #registroForm .campo input:focus,
+body.dark-mode #registroForm .custom-select-trigger:focus,
+body.dark-mode #registroForm .custom-select-trigger.open {
+  border-color: #E8821A !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.2) !important;
+}
+
+body.dark-mode #registroForm .custom-select-option:hover,
+body.dark-mode #registroForm .custom-select-option.selected {
+  background: #E8821A !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode #registroForm .boton-registro {
+  background: #E8821A !important;
+  color: #ffffff !important;
+}
+
+.boton-mostrar-password,
+.boton-mostrar-password:hover,
+.boton-mostrar-password:focus,
+.boton-mostrar-password:focus-visible,
+body.dark-mode .boton-mostrar-password,
+body.dark-mode .boton-mostrar-password:hover,
+body.dark-mode .boton-mostrar-password:focus,
+body.dark-mode .boton-mostrar-password:focus-visible {
+  background: transparent !important;
+  color: #E8821A !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.card .boton-mostrar-password {
+  top: 50%;
+  bottom: auto;
+  height: 28px;
+  transform: translateY(-80%);
+  line-height: 28px;
+}
+
+.boton-mostrar-password {
+  width: 72px;
+  padding: 0;
+  text-align: center;
+}
+
+body.dark-mode .boton-mostrar-password,
+body.dark-mode .boton-mostrar-password:hover,
+body.dark-mode .boton-mostrar-password:focus,
+body.dark-mode .boton-mostrar-password:focus-visible {
+  color: #ffffff !important;
 }

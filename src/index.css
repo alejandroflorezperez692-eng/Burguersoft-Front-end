@@ -22,7 +22,7 @@
   --warning: #f39c12;
   --border: rgba(232, 130, 26, 0.15);
   --border-strong: rgba(232, 130, 26, 0.35);
-  --shadow-xs: 0 1px 4px rgba(22, 8, 0, 0.08);
+  color: #ffffff !important;
   --shadow-sm: 0 2px 12px rgba(22, 8, 0, 0.10);
   --shadow-md: 0 6px 28px rgba(22, 8, 0, 0.14);
   --shadow-lg: 0 16px 56px rgba(22, 8, 0, 0.18);
@@ -614,8 +614,222 @@ body.dark-mode .mp-panel select option {
   color: #ffffff !important;
 }
 
+body.dark-mode .mp-btn-cancel {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
+}
+
+body.dark-mode .mp-btn-cancel:hover {
+  background: #E8821A !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
+}
+
+body.dark-mode .mp-tab,
+body.dark-mode .mp-tab span,
+body.dark-mode .mp-info-lbl,
+body.dark-mode .mp-label {
+  color: #ffffff !important;
+}
+
+body.dark-mode .icon-box p {
+  color: #ffffff !important;
+}
+
+body.dark-mode .mp-hint {
+  color: #ffffff !important;
+}
+
+/* MODO CLARO: TODOS LOS PANELES FONDO BLANCO */
+.contenedor-registro,
+.card,
+.mp-panel,
+.cart-panel,
+.promo-card-pub,
+.stat-card,
+.kpi-card,
+.historial-section,
+.data-table,
+.marca-card,
+.modal-box,
+.detalle-box {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
 body.dark-mode .mp-panel select option[value=""] {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+body.dark-mode .cart-panel {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-left: 1px solid #333 !important;
+}
+
+body.dark-mode .cart-items {
+  background: #000000 !important;
+}
+
+body.dark-mode .cart-items * {
+  color: #ffffff !important;
+}
+
+/* MODO CLARO: item del carrito fondo blanco y borde naranja */
+.public-body .cart-items div[style*="F7F2EA"],
+.public-body .cart-items > div > div {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  border: 1.5px solid #E8821A !important;
+}
+
+.public-body .cart-items,
+.public-body .cart-items * {
+  color: #000000 !important;
+}
+
+.public-body .subtotal span,
+.public-body .subtotal strong {
+  color: #000000 !important;
+}
+
+.public-body .cart-items button {
+  border: 1.5px solid #E8821A !important;
+}
+
+.public-body .cart-items > div > div > button:last-child {
+  border: none !important;
+  background: transparent !important;
+}
+
+body.dark-mode .cart-items div[style*="F7F2EA"],
+body.dark-mode .cart-items > div > div {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #ffffff !important;
+}
+
+body.dark-mode .cart-items button {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
+}
+
+body.dark-mode .cart-items button[style*="e63946"],
+body.dark-mode .cart-items > div > div > button:last-child {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .cart-footer {
+  background: #000000 !important;
+  border-top: 1px solid #ffffff !important;
+}
+
+body.dark-mode .subtotal span,
+body.dark-mode .subtotal strong,
+body.dark-mode .empty-cart p {
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-perfil {
+  background: #000000 !important;
+  border: 1.5px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-perfil .perfil-nombre {
+  color: #ffffff !important;
+}
+
+body.dark-mode .btn-perfil .icono-circulo-perfil {
+  background: #000000 !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .dropdown-menu {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1.5px solid #ffffff !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6) !important;
+}
+
+body.dark-mode .dropdown-menu button {
+  color: #ffffff !important;
+}
+
+body.dark-mode .dropdown-menu button:hover {
+  background: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .cart-header-title {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-bottom: 1.5px solid #ffffff !important;
+}
+
+/* Botones de abajo del carrito - fondo blanco, letra negra, borde naranja, hover naranja */
+.public-body .btn-cart-action {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1.5px solid #E8821A !important;
+}
+
+.public-body .btn-cart-action:hover,
+.public-body .btn-cart-action:active {
+  background: #E8821A !important;
+  background-color: #E8821A !important;
+  color: #000000 !important;
+  border-color: #E8821A !important;
+}
+
+.public-body .btn-checkout {
+  background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border: 1.5px solid #E8821A !important;
+}
+
+.public-body .btn-checkout:hover:not(:disabled),
+.public-body .btn-checkout:active:not(:disabled) {
+  background: #E8821A !important;
+  background-color: #E8821A !important;
+  color: #000000 !important;
+  border-color: #E8821A !important;
+}
+
+body.dark-mode .btn-cart-action {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
+}
+
+body.dark-mode .btn-cart-action:hover,
+body.dark-mode .btn-cart-action:active {
+  background: #E8821A !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
+}
+
+body.dark-mode .btn-checkout {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #ffffff !important;
+}
+
+body.dark-mode .btn-checkout:hover:not(:disabled),
+body.dark-mode .btn-checkout:active:not(:disabled) {
+  background: #E8821A !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
 }
 
 /* ============================================= */
@@ -695,5 +909,117 @@ body.dark-mode .nosotros-section {
 
 body.dark-mode .nosotros-content h2,
 body.dark-mode .nosotros-content p {
+  color: #ffffff !important;
+}
+
+/* Paleta unificada para todos los paneles en modo oscuro. */
+body.dark-mode .contenedor-registro,
+body.dark-mode .card,
+body.dark-mode .acc-panel,
+body.dark-mode .cart-panel,
+body.dark-mode .promo-card-pub,
+body.dark-mode .stat-card,
+body.dark-mode .kpi-card,
+body.dark-mode .historial-section,
+body.dark-mode .data-table,
+body.dark-mode .marca-card,
+body.dark-mode .modal-box,
+body.dark-mode .detalle-box,
+body.dark-mode .mp-panel,
+body.dark-mode .perfil-dropdown {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-color: #E8821A !important;
+}
+
+body.dark-mode .encabezado,
+body.dark-mode .promo-info-pub,
+body.dark-mode .mp-head,
+body.dark-mode .cart-header-title,
+body.dark-mode .cart-footer {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-color: #E8821A !important;
+}
+
+body.dark-mode .data-table thead {
+  background: #E8821A !important;
+  color: #000000 !important;
+}
+
+body.dark-mode .form-group input,
+body.dark-mode .form-group select,
+body.dark-mode .form-group textarea,
+body.dark-mode .search-bar input,
+body.dark-mode .mp-panel input,
+body.dark-mode .mp-panel select,
+body.dark-mode .mp-info-row,
+body.dark-mode .cart-items > div > div,
+body.dark-mode .btn-perfil,
+body.dark-mode .dropdown-menu,
+body.dark-mode .btn-cart-action,
+body.dark-mode .btn-checkout {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
+}
+
+body.dark-mode #registroForm .campo input,
+body.dark-mode #registroForm .custom-select-trigger,
+body.dark-mode #registroForm .custom-select-options {
+  border-color: rgba(232, 130, 26, 0.22) !important;
+}
+
+body.dark-mode #registroForm .campo input:focus,
+body.dark-mode #registroForm .custom-select-trigger:focus,
+body.dark-mode #registroForm .custom-select-trigger.open {
+  border-color: #E8821A !important;
+}
+
+body.dark-mode .btn-cart-action:hover,
+body.dark-mode .btn-checkout:hover:not(:disabled),
+body.dark-mode .mp-btn-cancel:hover,
+body.dark-mode .dropdown-menu button:hover {
+  background: #E8821A !important;
+  background-color: #E8821A !important;
+  border-color: #E8821A !important;
+  color: #ffffff !important;
+}
+
+/* El perfil del área de clientes usa bordes blancos en modo oscuro. */
+body.dark-mode .btn-perfil,
+body.dark-mode .btn-perfil .icono-circulo-perfil,
+body.dark-mode .perfil-dropdown,
+body.dark-mode .dropdown-menu {
+  border-color: #ffffff !important;
+}
+
+/* El panel del carrito conserva únicamente acentos blancos en modo oscuro. */
+body.dark-mode .cart-panel,
+body.dark-mode .cart-header-title,
+body.dark-mode .cart-footer,
+body.dark-mode .cart-items > div > div,
+body.dark-mode .cart-items button,
+body.dark-mode .btn-cart-action,
+body.dark-mode .btn-checkout {
+  border-color: #ffffff !important;
+}
+
+body.dark-mode .btn-cart-action:hover,
+body.dark-mode .btn-checkout:hover:not(:disabled) {
+  background: #E8821A !important;
+  background-color: #E8821A !important;
+  border-color: #E8821A !important;
+  color: #ffffff !important;
+}
+
+body:not(.dark-mode) .public-body .btn-cart-action:hover,
+body:not(.dark-mode) .public-body .btn-cart-action:active,
+body:not(.dark-mode) .public-body .btn-checkout:hover:not(:disabled),
+body:not(.dark-mode) .public-body .btn-checkout:active:not(:disabled) {
+  background: #E8821A !important;
+  background-color: #E8821A !important;
+  border-color: #E8821A !important;
   color: #ffffff !important;
 }
