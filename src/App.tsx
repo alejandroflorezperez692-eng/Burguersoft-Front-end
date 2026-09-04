@@ -14,13 +14,14 @@ import Nosotros from './pages/Nosotros';
 import MisPedidos from './pages/MisPedidos';
 import MarcasAdmin from './pages/admin/MarcasAdmin';
 import UsuariosAdmin from './pages/admin/UsuariosAdmin';
-import MenuAdmin from './pages/admin/MenuAdmin';
-import MateriaPrimaAdmin from './pages/admin/MateriaPrimaAdmin';
-import ComprasAdmin from './pages/admin/ComprasAdmin';
+import MenuAdmin from './pages/admin/menu/MenuAdmin';
+import MateriaPrimaAdmin from './pages/admin/materia-prima/MateriaPrimaAdmin';
+import ComprasAdmin from './pages/admin/compras/ComprasAdmin';
 import PromocionesAdmin from './pages/admin/PromocionesAdmin';
-import VentasAdmin from './pages/admin/VentasAdmin';
+import VentasAdmin from './pages/admin/ventas/VentasAdmin';
 import BackupsAdmin from './pages/admin/BackupsAdmin';
 import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
+import AsistenteAdmin from './pages/admin/AsistenteAdmin';
 import Accesibilidad from './components/Accesibilidad';
 import DemoAccess from './components/DemoAccess';
 
@@ -60,6 +61,7 @@ function App() {
           <Route path="/backups" element={<BackupsAdmin />} />
           <Route path="/configuracion" element={<ConfiguracionAdmin />} />
           <Route path="/usuarios" element={<UsuariosAdmin />} />
+          <Route path="/asistente-ia" element={<AsistenteAdmin />} />
           <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
           <Route path="/mis-pedidos" element={<PaginaModulo titulo="Mis Pedidos" />} />
         </Route>

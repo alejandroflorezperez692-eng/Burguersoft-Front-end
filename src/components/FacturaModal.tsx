@@ -1,7 +1,9 @@
 import { useCart } from '../hooks/useCart';
+import { desglosarIVA, formatoCOP } from '../utils/iva';
 
 export default function FacturaModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, total } = useCart();
+  const { subtotal, iva, tarifa } = desglosarIVA(total);
 
   if (!isOpen) return null;
 
@@ -51,9 +53,19 @@ export default function FacturaModal({ isOpen, onClose }: { isOpen: boolean; onC
               ))}
             </tbody>
           </table>
-          <div style={{ borderTop: '2px dashed #E0D5C5', paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#7A6855', textTransform: 'uppercase', letterSpacing: '.5px' }}>Total a pagar</span>
-            <span style={{ fontSize: 22, fontWeight: 900, color: '#EF9F27' }}>${Number(total ?? 0).toLocaleString('es-CO')}</span>
+          <div style={{ borderTop: '2px dashed #E0D5C5', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#7A6855' }}>
+              <span>Subtotal (base)</span>
+              <span style={{ fontWeight: 700, color: '#1C1410' }}>{formatoCOP(subtotal)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#7A6855' }}>
+              <span>IVA {(tarifa * 100).toFixed(0)}% incluido</span>
+              <span style={{ fontWeight: 700, color: '#1C1410' }}>{formatoCOP(iva)}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: '#7A6855', textTransform: 'uppercase', letterSpacing: '.5px' }}>Total a pagar</span>
+              <span style={{ fontSize: 22, fontWeight: 900, color: '#EF9F27' }}>${Number(total ?? 0).toLocaleString('es-CO')}</span>
+            </div>
           </div>
           <div style={{ marginTop: 16, padding: '10px 14px', background: '#FFF8EE', border: '1px solid #FAEEDA', borderRadius: 8, fontSize: 11, color: '#7A6855', textAlign: 'center' }}>
             ¡Gracias por tu compra! Este es un resumen antes de confirmar tu pedido.
