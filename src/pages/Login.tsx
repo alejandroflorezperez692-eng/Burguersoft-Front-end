@@ -40,8 +40,11 @@ export default function Login() {
     try {
       await login(email, password);
       // Lee el rol recién guardado (AuthContext ya lo setea)
-      const stored = localStorage.getItem('user');
-      const rol = stored ? JSON.parse(stored).role : null;
+      let rol: string | null = null;
+      try {
+        const stored = localStorage.getItem('user');
+        rol = stored ? (JSON.parse(stored) as { role?: string }).role ?? null : null;
+      } catch { rol = null; }
       navigate(rol === 'Cliente' ? '/' : '/inicio', { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
       setError(getErrorMessage(err));

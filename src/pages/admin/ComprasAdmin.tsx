@@ -8,8 +8,6 @@ interface DetalleCompra {
   subtotal: number;
   materia_prima_id: number;
   marca_id: number;
-  materia_prima?: { nombre_materia: string };
-  marca?: { nombre_marca: string };
 }
 
 interface Compra {
@@ -17,11 +15,11 @@ interface Compra {
   fecha: string;
   metodo_pago: string;
   valor_total: number;
-  detalles: DetalleCompra[];
+  detalles?: DetalleCompra[];
 }
 
-interface MateriaPrima { idmateria: number; nombre_materia: string; }
-interface Marca { idMarca: number; nombre_marca: string; }
+interface MateriaPrima { id: number; nombre: string; }
+interface Marca { id: number; nombre: string; }
 
 interface Linea {
   materia_prima_id: number | null;
@@ -34,6 +32,20 @@ interface Linea {
 }
 
 const METODOS = ['Efectivo', 'Tarjeta', 'Transferencia', 'Nequi', 'Daviplata'];
+
+function unwrap<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === 'object' && Array.isArray((data as { data?: unknown }).data)) {
+    return (data as { data: T[] }).data;
+  }
+  return [];
+}
+
+function fechaCorta(f: string | undefined): string {
+  if (!f) return '—';
+  const d = new Date(f);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString();
+}
 
 export default function ComprasAdmin() {
   const [items, setItems] = useState<Compra[]>([]);
@@ -49,34 +61,46 @@ export default function ComprasAdmin() {
   const [loading, setLoading] = useState(true);
 
   const load = () => {
+    setLoading(true);
     Promise.all([
-      apiClient.get<Compra[]>('/compras'),
-      apiClient.get<MateriaPrima[]>('/materias-primas'),
-      apiClient.get<Marca[]>('/marcas'),
+      apiClient.get('/compras'),
+      apiClient.get('/materias-primas'),
+      apiClient.get('/marcas'),
     ]).then(([r1, r2, r3]) => {
-      setItems(r1.data);
-      setMaterias(r2.data);
-      setMarcas(r3.data);
+      setItems(unwrap<Compra>(r1.data));
+      setMaterias(unwrap<Record<string, unknown>>(r2.data).map((m) => ({
+        id: Number(m.id ?? m.idmateria ?? 0),
+        nombre: String(m.nombre ?? m.nombre_materia ?? ''),
+      })));
+      setMarcas(unwrap<Record<string, unknown>>(r3.data).map((m) => ({
+        id: Number(m.id ?? m.idMarca ?? 0),
+        nombre: String(m.nombre ?? m.nombre_marca ?? ''),
+      })));
       setLoading(false);
     }).catch(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);
 
+  const materiaNombre = (id: number) => materias.find((m) => m.id === id)?.nombre ?? `#${id}`;
+  const marcaNombre = (id: number) => marcas.find((m) => m.id === id)?.nombre ?? `#${id}`;
+
   const filtered = items.filter((c) =>
-    String(c.id).includes(q) || c.metodo_pago.toLowerCase().includes(q.toLowerCase())
+    String(c.id ?? '').includes(q) || (c.metodo_pago ?? '').toLowerCase().includes(q.toLowerCase())
   );
 
-  const totalMes = items.filter((c) => {
-    const d = new Date(c.fecha);
+  const enMes = (f: string) => {
+    const d = new Date(f);
     const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).reduce((a, c) => a + Number(c.valor_total), 0);
+    return !isNaN(d.getTime()) && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  };
 
-  const totalHisto = items.reduce((a, c) => a + Number(c.valor_total), 0);
+  const totalMes = items.filter((c) => c.fecha && enMes(c.fecha)).reduce((a, c) => a + Number(c.valor_total ?? 0), 0);
+
+  const totalHisto = items.reduce((a, c) => a + Number(c.valor_total ?? 0), 0);
 
   const addLinea = () => {
-    setLineas([...lineas, { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: marcas[0]?.idMarca ?? 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+    setLineas([...lineas, { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: marcas[0]?.id ?? 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
   };
 
   const removeLinea = (i: number) => {
@@ -100,21 +124,21 @@ export default function ComprasAdmin() {
         cantidad: Number(l.cantidad),
         precio_unitario: Number(l.precio_unitario),
         marca_id: l.marca_id,
-        nombre_nuevo: l.materia_prima_id ? undefined : l.nombre_nuevo,
-        tipo: l.materia_prima_id ? undefined : l.tipo,
-        unidad_medida: l.materia_prima_id ? undefined : l.unidad_medida,
+        nombre_nuevo: l.materia_prima_id ? undefined : (l.nombre_nuevo || undefined),
+        tipo: l.materia_prima_id ? undefined : (l.tipo || undefined),
+        unidad_medida: l.materia_prima_id ? undefined : (l.unidad_medida || undefined),
       })),
     };
     apiClient.post('/compras', payload).then(() => {
       setShowForm(false);
-      setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: marcas[0]?.idMarca ?? 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+      setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: marcas[0]?.id ?? 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
       load();
-    });
+    }).catch(() => alert('No se pudo registrar la compra (revisa los datos).'));
   };
 
   const del = (id: number) => {
     if (!confirm('¿Eliminar esta compra? Se revertirá el stock.')) return;
-    apiClient.delete(`/compras/${id}`).then(() => load());
+    apiClient.delete(`/compras/${id}`).then(() => load()).catch(() => alert('No se pudo eliminar la compra.'));
   };
 
   return (
@@ -132,7 +156,7 @@ export default function ComprasAdmin() {
       <div className="stat-grid">
         <div className="stat-card">
           <span className="stat-label">Compras este mes</span>
-          <span className="stat-val">{items.filter((c) => { const d = new Date(c.fecha); const n = new Date(); return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }).length}</span>
+          <span className="stat-val">{items.filter((c) => c.fecha && enMes(c.fecha)).length}</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Invertido este mes</span>
@@ -160,7 +184,7 @@ export default function ComprasAdmin() {
                 <label>{i === 0 ? 'Insumo' : ''}</label>
                 <select value={l.materia_prima_id ?? '__nuevo__'} onChange={(e) => updateLinea(i, 'materia_prima_id', e.target.value === '__nuevo__' ? null : Number(e.target.value))}>
                   <option value="__nuevo__">+ Nuevo insumo</option>
-                  {materias.map((m) => <option key={m.idmateria} value={m.idmateria}>{m.nombre_materia}</option>)}
+                  {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
               </div>
               {l.materia_prima_id === null && (
@@ -186,7 +210,7 @@ export default function ComprasAdmin() {
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Proveedor</label>
                 <select value={l.marca_id} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
-                  {marcas.map((m) => <option key={m.idMarca} value={m.idMarca}>{m.nombre_marca}</option>)}
+                  {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
               </div>
               {lineas.length > 1 && (
@@ -228,9 +252,9 @@ export default function ComprasAdmin() {
             {filtered.map((c) => (
               <tr key={c.id}>
                 <td>{c.id}</td>
-                <td>{new Date(c.fecha).toLocaleDateString()}</td>
-                <td><span className="badge badge-info">{c.metodo_pago}</span></td>
-                <td style={{ fontWeight: 700 }}>${Number(c.valor_total).toLocaleString()}</td>
+                <td>{fechaCorta(c.fecha)}</td>
+                <td><span className="badge badge-info">{c.metodo_pago ?? '—'}</span></td>
+                <td style={{ fontWeight: 700 }}>${Number(c.valor_total ?? 0).toLocaleString()}</td>
                 <td>
                   <button className="btn-icon btn-icon-edit" onClick={() => setModalDetalle(c)} title="Ver detalle">👁</button>
                   <button className="btn-icon btn-icon-del" onClick={() => del(c.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
@@ -250,7 +274,7 @@ export default function ComprasAdmin() {
           <div className="modal-box" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
             <h2>Factura Compra #{modalDetalle.id}</h2>
             <p style={{ marginBottom: 8, fontSize: 13, color: 'var(--text-400)' }}>
-              {new Date(modalDetalle.fecha).toLocaleDateString()} — {modalDetalle.metodo_pago}
+              {fechaCorta(modalDetalle.fecha)} — {modalDetalle.metodo_pago ?? '—'}
             </p>
             <div className="tabla-responsive" style={{ marginBottom: 16 }}>
               <table className="data-table">
@@ -264,20 +288,23 @@ export default function ComprasAdmin() {
                   </tr>
                 </thead>
                 <tbody>
-                  {modalDetalle.detalles.map((d) => (
+                  {(modalDetalle.detalles ?? []).map((d) => (
                     <tr key={d.id}>
-                      <td>{d.materia_prima?.nombre_materia ?? 'N/A'}</td>
-                      <td>{d.marca?.nombre_marca ?? 'N/A'}</td>
+                      <td>{materiaNombre(d.materia_prima_id)}</td>
+                      <td>{marcaNombre(d.marca_id)}</td>
                       <td>{d.cantidad}</td>
-                      <td>${Number(d.precio_unitario).toLocaleString()}</td>
-                      <td style={{ fontWeight: 600 }}>${Number(d.subtotal).toLocaleString()}</td>
+                      <td>${Number(d.precio_unitario ?? 0).toLocaleString()}</td>
+                      <td style={{ fontWeight: 600 }}>${Number(d.subtotal ?? 0).toLocaleString()}</td>
                     </tr>
                   ))}
+                  {(modalDetalle.detalles ?? []).length === 0 && (
+                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: 20, color: 'var(--text-400)' }}>Sin detalle</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
             <div style={{ textAlign: 'right', fontWeight: 800, fontSize: 16 }}>
-              Total: ${Number(modalDetalle.valor_total).toLocaleString()}
+              Total: ${Number(modalDetalle.valor_total ?? 0).toLocaleString()}
             </div>
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModalDetalle(null)}>Cerrar</button>

@@ -15,7 +15,11 @@ export default function BackupsAdmin() {
   const [generating, setGenerating] = useState(false);
 
   const load = () => {
-    apiClient.get<Backup[]>('/backups').then((r) => { setItems(r.data); setLoading(false); }).catch(() => setLoading(false));
+    apiClient.get('/backups').then((r) => {
+      const lista = Array.isArray(r.data) ? r.data : (r.data?.data ?? []);
+      setItems(Array.isArray(lista) ? lista : []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);
@@ -78,16 +82,19 @@ export default function BackupsAdmin() {
             </tr>
           </thead>
           <tbody>
-            {items.map((b) => (
+            {items.map((b) => {
+              const f = b.fecha ? new Date(b.fecha) : null;
+              return (
               <tr key={b.id}>
                 <td>{b.id}</td>
-                <td style={{ fontWeight: 600 }}>{b.nombre_tabla}</td>
-                <td>{new Date(b.fecha).toLocaleString()}</td>
+                <td style={{ fontWeight: 600 }}>{b.nombre_tabla ?? b.nombre ?? '—'}</td>
+                <td>{f && !isNaN(f.getTime()) ? f.toLocaleString() : '—'}</td>
                 <td>
                   <button className="btn-icon btn-icon-del" onClick={() => del(b.id)} title="Eliminar">🗑</button>
                 </td>
               </tr>
-            ))}
+              );
+            })}
             {items.length === 0 && (
               <tr><td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No hay registros de copias de seguridad</td></tr>
             )}

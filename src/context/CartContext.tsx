@@ -32,7 +32,17 @@ function readStored(): CartItem[] {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    // Sanea items corruptos para que nunca rompan el render ni el total
+    return parsed
+      .filter((p) => p && typeof p === 'object')
+      .map((p) => ({
+        id: (p as CartItem).id ?? Math.random().toString(36).slice(2),
+        nombre: String((p as CartItem).nombre ?? 'Producto'),
+        precio: Number((p as CartItem).precio ?? 0) || 0,
+        imagen: (p as CartItem).imagen ?? null,
+        cantidad: Number((p as CartItem).cantidad ?? 1) || 1,
+      }));
   } catch {
     return [];
   }
@@ -46,8 +56,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-  const count = useMemo(() => items.reduce((a, b) => a + b.cantidad, 0), [items]);
-  const total = useMemo(() => items.reduce((a, b) => a + b.precio * b.cantidad, 0), [items]);
+  const count = useMemo(() => items.reduce((a, b) => a + (Number(b.cantidad) || 0), 0), [items]);
+  const total = useMemo(() => items.reduce((a, b) => a + (Number(b.precio) || 0) * (Number(b.cantidad) || 0), 0), [items]);
 
   const agregar = useCallback((item: Omit<CartItem, 'cantidad'> & { cantidad?: number }) => {
     setItems((prev) => {

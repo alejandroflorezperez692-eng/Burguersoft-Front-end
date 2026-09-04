@@ -2,13 +2,33 @@ import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
 
+// La API Laravel devuelve: id, nombre, valor, descripcion, img, cantidad, categoria, estado
+interface ProductoApi {
+  id?: number;
+  id_producto?: number;
+  nombre?: string;
+  nombre_producto?: string;
+  valor?: number | string;
+  valor_producto?: number | string;
+  descripcion?: string;
+  descri_producto?: string;
+  img?: string;
+  img_producto?: string;
+  cantidad?: string | number;
+  categoria?: string;
+  id_categoria?: number;
+  estado?: string;
+}
+
 interface Producto {
-  id_producto: number;
-  nombre_producto: string;
-  valor_producto: number;
-  descri_producto: string;
-  img_producto: string;
-  id_categoria: number;
+  id: number;
+  nombre: string;
+  valor: number;
+  descripcion: string;
+  img: string;
+  cantidad: string;
+  categoria: string;
+  estado: string;
 }
 
 const CATEGORIAS = [
@@ -17,15 +37,31 @@ const CATEGORIAS = [
 ];
 
 const emptyForm = {
-  nombre_producto: '',
-  valor_producto: '',
-  descri_producto: '',
-  img_producto: '',
-  id_categoria: 1,
+  nombre: '',
+  valor: '',
+  descripcion: '',
+  img: '',
+  cantidad: '',
+  categoria: 'Hamburguesa',
+  estado: 'Disponible',
 };
+
+function normalize(p: ProductoApi): Producto {
+  return {
+    id: Number(p.id ?? p.id_producto ?? 0),
+    nombre: p.nombre ?? p.nombre_producto ?? '',
+    valor: Number(p.valor ?? p.valor_producto ?? 0),
+    descripcion: p.descripcion ?? p.descri_producto ?? '',
+    img: p.img ?? p.img_producto ?? '',
+    cantidad: String(p.cantidad ?? '0'),
+    categoria: p.categoria ?? (p.id_categoria ? CATEGORIAS[p.id_categoria - 1] ?? '' : ''),
+    estado: p.estado ?? 'Disponible',
+  };
+}
 
 function ThumbProducto({ img, nombre }: { img: string; nombre: string }) {
   const [err, setErr] = useState(false);
+  const letra = (nombre ?? '').charAt(0).toUpperCase() || '?';
   if (!img || err) {
     return (
       <span style={{
@@ -33,7 +69,7 @@ function ThumbProducto({ img, nombre }: { img: string; nombre: string }) {
         color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
         fontWeight: 800, fontSize: 17, flexShrink: 0,
       }}>
-        {nombre.charAt(0).toUpperCase()}
+        {letra}
       </span>
     );
   }
@@ -50,7 +86,7 @@ function ThumbProducto({ img, nombre }: { img: string; nombre: string }) {
 export default function MenuAdmin() {
   const [items, setItems] = useState<Producto[]>([]);
   const [q, setQ] = useState('');
-  const [catFiltro, setCatFiltro] = useState(0);
+  const [catFiltro, setCatFiltro] = useState('Todas');
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<number | null>(null);
@@ -60,8 +96,9 @@ export default function MenuAdmin() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await apiClient.get<Producto[]>('/productos');
-      setItems(r.data);
+      const r = await apiClient.get<ProductoApi[]>('/productos');
+      const data = Array.isArray(r.data) ? r.data : [];
+      setItems(data.map(normalize));
     } catch {
       showToast('No se pudieron cargar los productos', true);
     } finally {
@@ -72,34 +109,46 @@ export default function MenuAdmin() {
   useEffect(() => { load(); }, []);
 
   const filtered = items.filter((p) =>
-    (catFiltro === 0 || p.id_categoria === catFiltro) &&
-    p.nombre_producto.toLowerCase().includes(q.toLowerCase())
+    (catFiltro === 'Todas' || p.categoria === catFiltro) &&
+    (p.nombre ?? '').toLowerCase().includes(q.toLowerCase())
   );
 
-  const grouped = CATEGORIAS.reduce<Record<string, Producto[]>>((acc, cat, i) => {
-    const prods = filtered.filter((p) => p.id_categoria === i + 1);
+  const grouped = CATEGORIAS.reduce<Record<string, Producto[]>>((acc, cat) => {
+    const prods = filtered.filter((p) => p.categoria === cat);
     if (prods.length > 0) acc[cat] = prods;
     return acc;
   }, {});
+  const sinCategoria = filtered.filter((p) => !p.categoria || !CATEGORIAS.includes(p.categoria));
+  if (sinCategoria.length > 0) grouped['Sin categoría'] = sinCategoria;
 
   const openNew = () => { setForm(emptyForm); setEditId(null); setModal(true); };
 
   const openEdit = (p: Producto) => {
     setForm({
-      nombre_producto: p.nombre_producto,
-      valor_producto: String(p.valor_producto),
-      descri_producto: p.descri_producto,
-      img_producto: p.img_producto ?? '',
-      id_categoria: p.id_categoria,
+      nombre: p.nombre,
+      valor: String(p.valor),
+      descripcion: p.descripcion,
+      img: p.img ?? '',
+      cantidad: p.cantidad,
+      categoria: p.categoria || 'Hamburguesa',
+      estado: p.estado || 'Disponible',
     });
-    setEditId(p.id_producto);
+    setEditId(p.id);
     setModal(true);
   };
 
   const guardar = async () => {
-    if (!form.nombre_producto.trim()) { showToast('El nombre es obligatorio', true); return; }
-    if (Number(form.valor_producto) < 0) { showToast('El precio no puede ser negativo', true); return; }
-    const body = { ...form, valor_producto: Number(form.valor_producto) || 0 };
+    if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
+    if (Number(form.valor) < 0) { showToast('El precio no puede ser negativo', true); return; }
+    const body = {
+      nombre: form.nombre.trim(),
+      valor: Number(form.valor) || 0,
+      descripcion: form.descripcion || null,
+      img: form.img || null,
+      cantidad: form.cantidad === '' ? 0 : Number(form.cantidad),
+      categoria: form.categoria,
+      estado: form.estado,
+    };
     try {
       if (editId) {
         await apiClient.put(`/productos/${editId}`, body);
@@ -116,8 +165,8 @@ export default function MenuAdmin() {
   };
 
   const del = async (id: number) => {
-    const p = items.find((x) => x.id_producto === id);
-    if (!confirm(`¿Eliminar "${p?.nombre_producto ?? id}"?`)) return;
+    const p = items.find((x) => x.id === id);
+    if (!confirm(`¿Eliminar "${p?.nombre ?? id}"?`)) return;
     try {
       await apiClient.delete(`/productos/${id}`);
       showToast('Producto eliminado');
@@ -140,12 +189,12 @@ export default function MenuAdmin() {
       <div className="search-bar">
         <input placeholder="Buscar producto..." value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="filter-chips" style={{ flexBasis: '100%', marginBottom: 0 }}>
-          <button className={`chip-filtro${catFiltro === 0 ? ' active' : ''}`} onClick={() => setCatFiltro(0)}>Todas</button>
-          {CATEGORIAS.map((c, i) => (
+          <button className={`chip-filtro${catFiltro === 'Todas' ? ' active' : ''}`} onClick={() => setCatFiltro('Todas')}>Todas</button>
+          {CATEGORIAS.map((c) => (
             <button
               key={c}
-              className={`chip-filtro${catFiltro === i + 1 ? ' active' : ''}`}
-              onClick={() => setCatFiltro(i + 1)}
+              className={`chip-filtro${catFiltro === c ? ' active' : ''}`}
+              onClick={() => setCatFiltro(c)}
             >
               {c}
             </button>
@@ -175,20 +224,20 @@ export default function MenuAdmin() {
                 </thead>
                 <tbody>
                   {prods.map((p) => (
-                    <tr key={p.id_producto}>
+                    <tr key={p.id}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <ThumbProducto img={p.img_producto} nombre={p.nombre_producto} />
-                          <span style={{ fontWeight: 600 }}>{p.nombre_producto}</span>
+                          <ThumbProducto img={p.img} nombre={p.nombre} />
+                          <span style={{ fontWeight: 600 }}>{p.nombre}</span>
                         </div>
                       </td>
-                      <td>${Number(p.valor_producto).toLocaleString()}</td>
+                      <td>${Number(p.valor).toLocaleString()}</td>
                       <td style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {p.descri_producto || '—'}
+                        {p.descripcion || '—'}
                       </td>
                       <td>
                         <button className="btn-icon btn-icon-edit" onClick={() => openEdit(p)} title="Editar">✏</button>
-                        <button className="btn-icon btn-icon-del" onClick={() => del(p.id_producto)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
+                        <button className="btn-icon btn-icon-del" onClick={() => del(p.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
                       </td>
                     </tr>
                   ))}
@@ -205,18 +254,18 @@ export default function MenuAdmin() {
             <h2>{editId ? 'Editar Producto' : 'Nuevo Producto'}</h2>
             <div className="form-group">
               <label>Nombre</label>
-              <input value={form.nombre_producto} onChange={(e) => setForm({ ...form, nombre_producto: e.target.value })} placeholder="Ej. Hamburguesa Criolla" />
+              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Hamburguesa Criolla" />
             </div>
             <div className="form-group">
               <label>Precio</label>
-              <input type="number" min={0} value={form.valor_producto} onChange={(e) => setForm({ ...form, valor_producto: e.target.value })} />
+              <input type="number" min={0} value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Imagen (URL)</label>
-              <input value={form.img_producto} onChange={(e) => setForm({ ...form, img_producto: e.target.value })} placeholder="https://..." />
+              <input value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
               <div className="logo-preview-wrap">
-                {form.img_producto ? (
-                  <img src={form.img_producto} alt="Vista previa" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                {form.img ? (
+                  <img src={form.img} alt="Vista previa" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 ) : (
                   <span style={{ color: 'var(--text-400)', fontSize: 12 }}>Sin imagen</span>
                 )}
@@ -224,14 +273,26 @@ export default function MenuAdmin() {
             </div>
             <div className="form-group">
               <label>Descripción</label>
-              <textarea value={form.descri_producto} onChange={(e) => setForm({ ...form, descri_producto: e.target.value })} />
+              <textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Cantidad</label>
+              <input type="number" min={0} value={form.cantidad} onChange={(e) => setForm({ ...form, cantidad: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Categoría</label>
-              <select value={form.id_categoria} onChange={(e) => setForm({ ...form, id_categoria: Number(e.target.value) })}>
-                {CATEGORIAS.map((c, i) => (
-                  <option key={c} value={i + 1}>{c}</option>
+              <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
+                {CATEGORIAS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
                 ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Estado</label>
+              <select value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value })}>
+                <option value="Disponible">Disponible</option>
+                <option value="Agotado">Agotado</option>
+                <option value="Por agotarse">Por agotarse</option>
               </select>
             </div>
             <div className="modal-actions">

@@ -45,15 +45,15 @@ export default function FacturaModal({ isOpen, onClose }: { isOpen: boolean; onC
                 <tr key={String(it.id)}>
                   <td style={{ padding: '8px 10px' }}>{it.nombre}</td>
                   <td style={{ padding: '8px 10px', textAlign: 'center' }}>{it.cantidad}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'center' }}>${it.precio.toLocaleString('es-CO')}</td>
-                  <td style={{ padding: '8px 10px', textAlign: 'right' }}>${(it.precio * it.cantidad).toLocaleString('es-CO')}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'center' }}>${Number(it.precio ?? 0).toLocaleString('es-CO')}</td>
+                  <td style={{ padding: '8px 10px', textAlign: 'right' }}>${(Number(it.precio ?? 0) * Number(it.cantidad ?? 0)).toLocaleString('es-CO')}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <div style={{ borderTop: '2px dashed #E0D5C5', paddingTop: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: 14, fontWeight: 700, color: '#7A6855', textTransform: 'uppercase', letterSpacing: '.5px' }}>Total a pagar</span>
-            <span style={{ fontSize: 22, fontWeight: 900, color: '#EF9F27' }}>${total.toLocaleString('es-CO')}</span>
+            <span style={{ fontSize: 22, fontWeight: 900, color: '#EF9F27' }}>${Number(total ?? 0).toLocaleString('es-CO')}</span>
           </div>
           <div style={{ marginTop: 16, padding: '10px 14px', background: '#FFF8EE', border: '1px solid #FAEEDA', borderRadius: 8, fontSize: 11, color: '#7A6855', textAlign: 'center' }}>
             ¡Gracias por tu compra! Este es un resumen antes de confirmar tu pedido.

@@ -2,21 +2,60 @@ import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
 
+interface UsuarioApi {
+  id?: number;
+  id_Usuario?: number;
+  nombre?: string;
+  nombre_usuario?: string;
+  apellido?: string;
+  apellido_usuario?: string;
+  correo?: string;
+  correo_personal?: string;
+  email?: string;
+  telefono?: string | number;
+  estado?: string;
+  rol?: { id?: number; nombre?: string } | string | null;
+}
+
 interface Usuario {
-  id_Usuario: number;
-  nombre_usuario: string;
-  apellido_usuario: string;
-  correo_personal: string;
+  id: number;
+  nombre: string;
+  apellido: string;
+  correo: string;
   telefono: string;
   estado: string;
   rol: { nombre: string } | null;
+}
+
+function unwrap<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === 'object' && Array.isArray((data as { data?: unknown }).data)) {
+    return (data as { data: T[] }).data;
+  }
+  return [];
+}
+
+function normalize(u: UsuarioApi): Usuario {
+  const rolNombre =
+    typeof u.rol === 'string' ? u.rol
+    : (u.rol?.nombre ?? null);
+  return {
+    id: Number(u.id ?? u.id_Usuario ?? 0),
+    nombre: u.nombre ?? u.nombre_usuario ?? '',
+    apellido: u.apellido ?? u.apellido_usuario ?? '',
+    correo: u.correo ?? u.correo_personal ?? u.email ?? '',
+    telefono: u.telefono != null ? String(u.telefono) : '',
+    estado: u.estado ?? '',
+    rol: rolNombre ? { nombre: rolNombre } : null,
+  };
 }
 
 type FiltroEstado = 'todos' | 'Activo' | 'Inactivo' | 'Suspendido';
 type FiltroRol = 'todos' | string;
 
 const ESTADOS: FiltroEstado[] = ['todos', 'Activo', 'Inactivo', 'Suspendido'];
-const ROLES = ['todos', 'Administrador', 'Cajero', 'Mesero', 'Cliente'];
+// La BD solo tiene estos roles (tabla roles)
+const ROLES = ['todos', 'Administrador', 'Cliente'];
 
 const badgeClass = (e: string) =>
   e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
@@ -30,7 +69,7 @@ function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
       fontWeight: 800, fontSize: 15,
     }}>
-      {(nombre.charAt(0) + (apellido?.charAt(0) ?? '')).toUpperCase()}
+      {((nombre ?? '').charAt(0) + ((apellido ?? '').charAt(0) ?? '')).toUpperCase() || '?'}
     </span>
   );
 }
@@ -50,8 +89,8 @@ export default function UsuariosAdmin() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await apiClient.get<Usuario[]>('/usuarios');
-      setItems(r.data);
+      const r = await apiClient.get('/usuarios');
+      setItems(unwrap<UsuarioApi>(r.data).map(normalize));
     } catch {
       showToast('No se pudieron cargar los usuarios', true);
     } finally {
@@ -64,7 +103,7 @@ export default function UsuariosAdmin() {
   const filtered = items.filter((u) =>
     (fEstado === 'todos' || u.estado === fEstado) &&
     (fRol === 'todos' || u.rol?.nombre === fRol) &&
-    `${u.nombre_usuario} ${u.apellido_usuario} ${u.correo_personal} ${u.telefono ?? ''}`.toLowerCase().includes(q.toLowerCase())
+    `${u.nombre ?? ''} ${u.apellido ?? ''} ${u.correo ?? ''} ${u.telefono ?? ''}`.toLowerCase().includes(q.toLowerCase())
   );
 
   const total = items.length;
@@ -83,7 +122,7 @@ export default function UsuariosAdmin() {
     if (!rol) { showToast('Selecciona un rol', true); return; }
     if (!estado) { showToast('Selecciona un estado', true); return; }
     try {
-      await apiClient.put(`/usuarios/${sel.id_Usuario}`, { rol, estado });
+      await apiClient.put(`/usuarios/${sel.id}`, { rol, estado });
       showToast('Usuario actualizado');
       setModal(false);
       load();
@@ -93,8 +132,8 @@ export default function UsuariosAdmin() {
   };
 
   const del = async (id: number) => {
-    const u = items.find((x) => x.id_Usuario === id);
-    if (!confirm(`¿Eliminar a "${u?.nombre_usuario} ${u?.apellido_usuario ?? ''}"?`)) return;
+    const u = items.find((x) => x.id === id);
+    if (!confirm(`¿Eliminar a "${u?.nombre ?? ''} ${u?.apellido ?? ''}"?`)) return;
     try {
       await apiClient.delete(`/usuarios/${id}`);
       showToast('Usuario eliminado');
@@ -167,21 +206,21 @@ export default function UsuariosAdmin() {
             </thead>
             <tbody>
             {filtered.map((u) => (
-              <tr key={u.id_Usuario}>
-                <td>{u.id_Usuario}</td>
+              <tr key={u.id}>
+                <td>{u.id}</td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Avatar nombre={u.nombre_usuario} apellido={u.apellido_usuario} estado={u.estado} />
-                    <span style={{ fontWeight: 600 }}>{u.nombre_usuario} {u.apellido_usuario}</span>
+                    <Avatar nombre={u.nombre} apellido={u.apellido} estado={u.estado} />
+                    <span style={{ fontWeight: 600 }}>{u.nombre} {u.apellido}</span>
                   </div>
                 </td>
-                <td>{u.correo_personal}</td>
+                <td>{u.correo}</td>
                 <td>{u.telefono || '—'}</td>
                 <td><span className={`badge ${badgeClass(u.estado)}`}>{u.estado}</span></td>
                 <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
                 <td>
                   <button className="btn-icon btn-icon-edit" onClick={() => openEdit(u)} title="Editar">✏</button>
-                  <button className="btn-icon btn-icon-del" onClick={() => del(u.id_Usuario)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
+                  <button className="btn-icon btn-icon-del" onClick={() => del(u.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
                 </td>
               </tr>
             ))}
@@ -198,15 +237,13 @@ export default function UsuariosAdmin() {
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <h2>Editar Usuario</h2>
             <p style={{ marginBottom: 16, color: 'var(--text-400)', fontSize: 13 }}>
-              {sel.nombre_usuario} {sel.apellido_usuario} — {sel.correo_personal}
+              {sel.nombre} {sel.apellido} — {sel.correo}
             </p>
             <div className="form-group">
               <label>Rol</label>
               <select value={rol} onChange={(e) => setRol(e.target.value)}>
                 <option value="">Seleccionar rol...</option>
                 <option value="Administrador">Administrador</option>
-                <option value="Cajero">Cajero</option>
-                <option value="Mesero">Mesero</option>
                 <option value="Cliente">Cliente</option>
               </select>
             </div>

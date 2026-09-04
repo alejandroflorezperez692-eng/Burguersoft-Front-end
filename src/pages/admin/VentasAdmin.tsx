@@ -6,13 +6,12 @@ interface DetalleVenta {
   cantidad: number;
   precio_unitario: number;
   subtotal: number;
-  producto?: { nombre_producto: string };
+  producto?: { id?: number; nombre?: string };
 }
 
 interface PromocionVenta {
   id: number;
-  nombre_promo: string;
-  valor_promo: number;
+  nombre?: string;
 }
 
 interface Venta {
@@ -21,19 +20,28 @@ interface Venta {
   valor_total: number;
   metodo_pago: string;
   estado: string;
-  tipo_entrega: string;
-  usuario?: { nombre_usuario: string; apellido_usuario: string };
-  detalles: DetalleVenta[];
-  promociones: PromocionVenta[];
+  tipo_entrega?: string;
+  detalles?: DetalleVenta[];
+  promociones?: PromocionVenta[];
 }
 
 interface Producto {
-  id_producto: number;
-  nombre_producto: string;
-  valor_producto: number;
+  id: number;
+  nombre: string;
+  valor: number;
 }
 
-const METODOS = ['Efectivo', 'Tarjeta', 'Transferencia', 'Nequi', 'Daviplata'];
+const METODOS = ['Efectivo', 'Tarjeta', 'Transferencia', 'Nequi', 'Daviplata', 'PSE'];
+const TIPOS_ENTREGA = ['Recoger', 'Domicilio', 'Consumir'];
+const ESTADOS = ['En cocina', 'En barra', 'En camino', 'Listo para recoger', 'Entregado', 'Pendiente de pago', 'Pagado', 'Cancelado'];
+
+function unwrap<T>(data: unknown): T[] {
+  if (Array.isArray(data)) return data as T[];
+  if (data && typeof data === 'object' && Array.isArray((data as { data?: unknown }).data)) {
+    return (data as { data: T[] }).data;
+  }
+  return [];
+}
 
 export default function VentasAdmin() {
   const [items, setItems] = useState<Venta[]>([]);
@@ -41,58 +49,72 @@ export default function VentasAdmin() {
   const [q, setQ] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
+  const [tipoEntrega, setTipoEntrega] = useState('Recoger');
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
   const [loading, setLoading] = useState(true);
 
   const load = () => {
+    setLoading(true);
     Promise.all([
-      apiClient.get<Venta[]>('/ventas'),
-      apiClient.get<Producto[]>('/productos'),
+      // /pedidos trae detalles.producto; /ventas no trae detalles
+      apiClient.get('/pedidos'),
+      apiClient.get('/productos'),
     ]).then(([r1, r2]) => {
-      setItems(r1.data);
-      setProductos(r2.data);
+      setItems(unwrap<Venta>(r1.data));
+      setProductos(
+        unwrap<Record<string, unknown>>(r2.data).map((p) => ({
+          id: Number(p.id ?? p.id_producto ?? 0),
+          nombre: String(p.nombre ?? p.nombre_producto ?? ''),
+          valor: Number(p.valor ?? p.valor_producto ?? 0),
+        }))
+      );
       setLoading(false);
     }).catch(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, []);
 
+  const qLower = q.toLowerCase();
   const filtered = items.filter((v) =>
-    String(v.id).includes(q) ||
-    `${v.usuario?.nombre_usuario ?? ''} ${v.usuario?.apellido_usuario ?? ''}`.toLowerCase().includes(q.toLowerCase())
+    String(v.id ?? '').includes(q) ||
+    (v.detalles ?? []).some((d) => (d.producto?.nombre ?? '').toLowerCase().includes(qLower))
   );
 
-  const ventasHoy = items.filter((v) => v.fecha === new Date().toISOString().slice(0, 10));
-  const ingresosHoy = ventasHoy.reduce((a, v) => a + Number(v.valor_total), 0);
-  const ingresosTotal = items.reduce((a, v) => a + Number(v.valor_total), 0);
+  const hoy = new Date().toISOString().slice(0, 10);
+  const ventasHoy = items.filter((v) => (v.fecha ?? '').slice(0, 10) === hoy);
+  const ingresosHoy = ventasHoy.reduce((a, v) => a + Number(v.valor_total ?? 0), 0);
+  const ingresosTotal = items.reduce((a, v) => a + Number(v.valor_total ?? 0), 0);
 
   const save = () => {
     if (!productoId) return;
-    const prod = productos.find((p) => p.id_producto === productoId);
-    if (!prod) return;
     const body = {
+      carrito: [{ producto_id: productoId, cantidad: Math.max(1, Number(cantidad) || 1) }],
       metodo_pago: metodoPago,
-      items: [{ producto_id: productoId, cantidad: Number(cantidad), precio_unitario: Number(prod.valor_producto) }],
+      tipo_entrega: tipoEntrega,
     };
     apiClient.post('/ventas', body).then(() => {
       setShowForm(false);
       setProductoId(0);
       setCantidad('1');
       load();
+    }).catch(() => {
+      alert('No se pudo registrar la venta (revisa stock y sesión).');
     });
   };
 
   const updateEstado = (id: number, estado: string) => {
-    apiClient.put(`/ventas/${id}`, { estado }).then(() => load());
+    apiClient.patch(`/ventas/${id}/estado`, { estado })
+      .then(() => load())
+      .catch(() => alert('No se pudo actualizar el estado.'));
   };
 
-  const del = (id: number) => {
-    if (!confirm('¿Eliminar esta venta?')) return;
-    apiClient.delete(`/ventas/${id}`).then(() => load());
+  const cancelar = (id: number) => {
+    if (!confirm('¿Cancelar esta venta?')) return;
+    updateEstado(id, 'Cancelado');
   };
 
-  const selectedProd = productos.find((p) => p.id_producto === productoId);
+  const selectedProd = productos.find((p) => p.id === productoId);
 
   return (
     <div className="page-inner">
@@ -133,7 +155,7 @@ export default function VentasAdmin() {
               <label>Producto</label>
               <select value={productoId} onChange={(e) => setProductoId(Number(e.target.value))}>
                 <option value={0}>Seleccionar...</option>
-                {productos.map((p) => <option key={p.id_producto} value={p.id_producto}>{p.nombre_producto} — ${Number(p.valor_producto).toLocaleString()}</option>)}
+                {productos.map((p) => <option key={p.id} value={p.id}>{p.nombre} — ${Number(p.valor).toLocaleString()}</option>)}
               </select>
             </div>
             <div className="form-group">
@@ -146,10 +168,16 @@ export default function VentasAdmin() {
                 {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
+            <div className="form-group">
+              <label>Tipo de entrega</label>
+              <select value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
+                {TIPOS_ENTREGA.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
           </div>
           {selectedProd && (
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-900)' }}>
-              Subtotal: ${(Number(selectedProd.valor_producto) * Number(cantidad)).toLocaleString()}
+              Subtotal: ${(Number(selectedProd.valor) * Number(cantidad || 0)).toLocaleString()}
             </p>
           )}
           <div className="modal-actions" style={{ marginTop: 8 }}>
@@ -171,7 +199,6 @@ export default function VentasAdmin() {
           <thead>
             <tr>
               <th>#</th>
-              <th>Cliente</th>
               <th>Productos</th>
               <th>Total</th>
               <th>Método</th>
@@ -183,39 +210,41 @@ export default function VentasAdmin() {
             {filtered.map((v) => (
               <tr key={v.id}>
                 <td>{v.id}</td>
-                <td style={{ fontWeight: 600 }}>{v.usuario?.nombre_usuario} {v.usuario?.apellido_usuario}</td>
                 <td>
                   <div className="venta-detalles">
-                    {v.detalles.map((d) => (
+                    {(v.detalles ?? []).map((d) => (
                       <span key={d.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
-                        {d.producto?.nombre_producto} x{d.cantidad}
+                        {d.producto?.nombre ?? 'Producto'} x{d.cantidad}
                       </span>
                     ))}
-                    {v.promociones?.map((p) => (
-                      <span key={p.id} className="badge badge-info" style={{ fontSize: 10 }}>{p.nombre_promo}</span>
+                    {(v.promociones ?? []).map((p) => (
+                      <span key={p.id} className="badge badge-info" style={{ fontSize: 10 }}>{p.nombre ?? 'Promo'}</span>
                     ))}
+                    {(v.detalles ?? []).length === 0 && (v.promociones ?? []).length === 0 && (
+                      <span style={{ fontSize: 12, color: 'var(--text-400)' }}>—</span>
+                    )}
                   </div>
                 </td>
-                <td style={{ fontWeight: 700 }}>${Number(v.valor_total).toLocaleString()}</td>
-                <td><span className="badge badge-info">{v.metodo_pago}</span></td>
+                <td style={{ fontWeight: 700 }}>${Number(v.valor_total ?? 0).toLocaleString()}</td>
+                <td><span className="badge badge-info">{v.metodo_pago ?? '—'}</span></td>
                 <td>
                   <select
                     value={v.estado}
                     onChange={(e) => updateEstado(v.id, e.target.value)}
                     style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    {['En cocina', 'En barra', 'En camino', 'Listo para recoger', 'Entregado', 'Pendiente de pago', 'Pagado', 'Cancelado'].map((e) => (
+                    {ESTADOS.map((e) => (
                       <option key={e} value={e}>{e}</option>
                     ))}
                   </select>
                 </td>
                 <td>
-                  <button className="btn-icon btn-icon-del" onClick={() => del(v.id)} title="Eliminar">🗑</button>
+                  <button className="btn-icon btn-icon-del" onClick={() => cancelar(v.id)} title="Cancelar">🗑</button>
                 </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}
           </tbody>
         </table>

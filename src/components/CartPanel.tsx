@@ -25,10 +25,11 @@ export default function CartPanel() {
     if (items.length === 0) return;
     setComprando(true);
     try {
-      // intenta enviar al backend como venta
-      await apiClient.post('/venta', {
-        productos: items.map((i) => ({ id: i.id, cantidad: i.cantidad, precio: i.precio })),
-        total,
+      // Backend: POST /api/ventas { carrito:[{producto_id,cantidad}], metodo_pago, tipo_entrega }
+      await apiClient.post('/ventas', {
+        carrito: items.map((i) => ({ producto_id: Number(i.id), cantidad: i.cantidad })),
+        metodo_pago: 'Efectivo',
+        tipo_entrega: 'Recoger',
       });
       showToast('Compra finalizada con éxito.');
       vaciar();
@@ -67,7 +68,7 @@ export default function CartPanel() {
                   {it.imagen && <img src={it.imagen} alt={it.nombre} style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8 }} />}
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#1C1410' }}>{it.nombre}</div>
-                    <div style={{ fontSize: 12, color: '#7A6855' }}>${it.precio.toLocaleString('es-CO')} x {it.cantidad} = ${(it.precio * it.cantidad).toLocaleString('es-CO')}</div>
+                    <div style={{ fontSize: 12, color: '#7A6855' }}>${Number(it.precio ?? 0).toLocaleString('es-CO')} x {it.cantidad} = ${((Number(it.precio ?? 0)) * (Number(it.cantidad ?? 0))).toLocaleString('es-CO')}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <button onClick={() => actualizarCantidad(it.id, it.cantidad - 1)} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid #E0D5C5', background: '#fff', cursor: 'pointer' }}>-</button>
@@ -83,7 +84,7 @@ export default function CartPanel() {
         <div className="cart-footer">
           <div className="subtotal">
             <span>Total a pagar:</span>
-            <strong id="cartTotal">${total.toLocaleString('es-CO')}</strong>
+            <strong id="cartTotal">${Number(total ?? 0).toLocaleString('es-CO')}</strong>
           </div>
           <div className="cart-actions-grid">
             <button type="button" className="btn-cart-action btn-vaciar" onClick={handleVaciar}>Vaciar Carrito</button>

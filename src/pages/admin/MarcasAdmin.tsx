@@ -8,7 +8,7 @@ interface Marca {
   img: string;
   telefono: string;
   correo: string;
-  nit: string;
+  nit: string | number;
 }
 
 const empty: Omit<Marca, 'id'> = {
@@ -40,8 +40,9 @@ export default function MarcasAdmin() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await apiClient.get<Marca[]>('/marcas');
-      setItems(r.data);
+      const r = await apiClient.get('/marcas');
+      const lista = Array.isArray(r.data) ? r.data : (r.data?.data ?? []);
+      setItems(Array.isArray(lista) ? lista : []);
     } catch {
       showToast('No se pudieron cargar las marcas', true);
     } finally {
@@ -52,18 +53,18 @@ export default function MarcasAdmin() {
   useEffect(() => { load(); }, []);
 
   const filtered = items.filter((m) =>
-    [m.nombre, m.correo, m.telefono].some((v) => v?.toLowerCase().includes(q.toLowerCase()))
+    [m.nombre, m.correo, m.telefono].some((v) => (v ?? '').toString().toLowerCase().includes(q.toLowerCase()))
   );
 
   const openNew = () => { setForm(empty); setEditId(null); setModal(true); };
 
   const openEdit = (m: Marca) => {
     setForm({
-      nombre: m.nombre,
-      img: m.img,
-      telefono: m.telefono,
-      correo: m.correo,
-      nit: m.nit,
+      nombre: m.nombre ?? '',
+      img: m.img ?? '',
+      telefono: m.telefono != null ? String(m.telefono) : '',
+      correo: m.correo ?? '',
+      nit: m.nit != null ? String(m.nit) : '',
     });
     setEditId(m.id);
     setModal(true);
@@ -78,12 +79,12 @@ export default function MarcasAdmin() {
     }
     try {
       if (editId) {
-        const { nit, ...body } = form;
+        const { nit: _nit, ...body } = form;
         await apiClient.put(`/marcas/${editId}`, body);
         showToast('Marca actualizada correctamente');
       } else {
-        const soloNit = form.nit.split('-')[0].replace(/[^0-9]/g, '');
-        await apiClient.post('/marcas', { ...form, nit: Number(soloNit) });
+        const soloNit = String(form.nit ?? '').split('-')[0].replace(/[^0-9]/g, '');
+        await apiClient.post('/marcas', { ...form, nit: Number(soloNit) || 0 });
         showToast('Marca creada correctamente');
       }
       setModal(false);

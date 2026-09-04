@@ -5,6 +5,16 @@ import apiClient from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 
+type PedidoApi = {
+  id: number;
+  fecha?: string;
+  valor_total?: number;
+  total?: number;
+  estado?: string;
+  detalles?: { producto?: { nombre?: string }; cantidad?: number; precio_unitario?: number }[];
+  productos?: { nombre: string; cantidad: number; precio: number }[];
+};
+
 type Pedido = {
   id: number;
   fecha?: string;
@@ -12,6 +22,23 @@ type Pedido = {
   estado?: string;
   productos?: { nombre: string; cantidad: number; precio: number }[];
 };
+
+function normalize(p: PedidoApi): Pedido {
+  const detalles = Array.isArray(p.detalles)
+    ? p.detalles.map((d) => ({
+        nombre: d.producto?.nombre ?? 'Producto',
+        cantidad: Number(d.cantidad ?? 0),
+        precio: Number(d.precio_unitario ?? 0),
+      }))
+    : undefined;
+  return {
+    id: Number(p.id),
+    fecha: p.fecha,
+    total: Number(p.valor_total ?? p.total ?? 0),
+    estado: p.estado,
+    productos: p.productos ?? detalles,
+  };
+}
 
 export default function MisPedidos() {
   const { isAuthenticated } = useAuth();
@@ -21,8 +48,9 @@ export default function MisPedidos() {
     if (!isAuthenticated) return;
     apiClient.get('/mis-pedidos')
       .then(({ data }) => {
-        const lista = Array.isArray(data) ? data : data?.data ?? [];
-        setPedidos(lista);
+        const raw = Array.isArray(data) ? data : (data?.data ?? []);
+        const lista = Array.isArray(raw) ? raw : [];
+        setPedidos(lista.map(normalize));
       })
       .catch(() => setPedidos([]));
   }, [isAuthenticated]);
@@ -57,12 +85,23 @@ export default function MisPedidos() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {pedidos.map((p) => (
-              <div key={p.id} style={{ background: '#fff', border: '1px solid #E0D5C5', borderRadius: 12, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontWeight: 700 }}>Pedido #{p.id}</div>
-                  <div style={{ fontSize: 13, color: '#7A6855' }}>{p.fecha ?? ''} {p.estado ? `• ${p.estado}` : ''}</div>
+              <div key={p.id} style={{ background: '#fff', border: '1px solid #E0D5C5', borderRadius: 12, padding: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>Pedido #{p.id}</div>
+                    <div style={{ fontSize: 13, color: '#7A6855' }}>{p.fecha ? new Date(p.fecha).toLocaleString() : ''} {p.estado ? `• ${p.estado}` : ''}</div>
+                  </div>
+                  <div style={{ fontWeight: 800, color: '#E8821A' }}>${Number(p.total ?? 0).toLocaleString('es-CO')}</div>
                 </div>
-                <div style={{ fontWeight: 800, color: '#E8821A' }}>${Number(p.total ?? 0).toLocaleString('es-CO')}</div>
+                {(p.productos ?? []).length > 0 && (
+                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {(p.productos ?? []).map((prod, i) => (
+                      <div key={i} style={{ fontSize: 13, color: '#5b4a3a' }}>
+                        {prod.nombre} x{prod.cantidad}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

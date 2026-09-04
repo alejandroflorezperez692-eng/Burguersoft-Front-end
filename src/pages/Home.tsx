@@ -33,7 +33,8 @@ export default function Home() {
     apiClient
       .get<any>('/promociones')
       .then(({ data }) => {
-        const lista: Promocion[] = Array.isArray(data) ? data : data?.data ?? [];
+        const raw = Array.isArray(data) ? data : (data?.data ?? []);
+        const lista: Promocion[] = Array.isArray(raw) ? raw : [];
         if (!cancelado) setPromos(lista);
       })
       .catch(() => {

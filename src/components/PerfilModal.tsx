@@ -94,12 +94,14 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
       await apiClient.put('/perfil', { nombre, apellido, Tdocumento: tdoc, Ndocumento: ndoc, telefono });
       setSuccess('Datos actualizados correctamente.');
       // actualizar local
-      const stored = localStorage.getItem('user');
-      if (stored) {
-        const u = JSON.parse(stored);
-        u.name = `${nombre.trim()} ${apellido.trim()}`.trim();
-        localStorage.setItem('user', JSON.stringify(u));
-      }
+      try {
+        const stored = localStorage.getItem('user');
+        if (stored) {
+          const u = JSON.parse(stored);
+          u.name = `${nombre.trim()} ${apellido.trim()}`.trim();
+          localStorage.setItem('user', JSON.stringify(u));
+        }
+      } catch { /* storage corrupto, se ignora */ }
       localStorage.setItem('perfil_extra', JSON.stringify({ Tdocumento: tdoc, Ndocumento: ndoc, telefono }));
     } catch {
       // si backend no existe, igual mostramos éxito local (para demo)
@@ -135,8 +137,9 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
       await apiClient.post('/perfil/password', { actual, nueva, confirmar });
       setSuccess('Contraseña actualizada correctamente.');
       setActual(''); setNueva(''); setConfirmar('');
-    } catch (err: any) {
-      const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? '';
+    } catch (err: unknown) {
+      const rawMsg = (err as { response?: { data?: { message?: unknown; error?: unknown } } })?.response?.data;
+      const msg = typeof rawMsg?.message === 'string' ? rawMsg.message : typeof rawMsg?.error === 'string' ? rawMsg.error : '';
       if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
         setError('La contraseña actual es incorrecta.');
       } else if (msg) {
