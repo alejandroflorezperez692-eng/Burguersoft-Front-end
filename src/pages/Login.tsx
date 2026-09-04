@@ -1,11 +1,8 @@
-import { useState, type FormEvent, useEffect } from 'react';
+import { useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
-import apiClient from '../api/client';
-import { auth, getRecaptchaVerifier } from '../firebase';
-import { signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import '../styles/social-login.css';
 
 function getErrorMessage(error: unknown): string {
@@ -34,14 +31,6 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const [showPhoneModal, setShowPhoneModal] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [phoneStep, setPhoneStep] = useState<'phone' | 'code'>('phone');
-  const [phoneLoading, setPhoneLoading] = useState(false);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
-  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
-
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
 
@@ -68,53 +57,6 @@ export default function Login() {
 
   const handleGoogleLogin = () => {
     window.location.href = 'http://127.0.0.1:8000/api/auth/google';
-  };
-
-  const handleSendCode = async () => {
-    if (!phoneNumber.trim()) {
-      setPhoneError('Ingresa tu número de teléfono');
-      return;
-    }
-    setPhoneError(null);
-    setPhoneLoading(true);
-    try {
-      await apiClient.post('/auth/phone/send', { phone: phoneNumber });
-      setPhoneStep('code');
-    } catch (err) {
-      setPhoneError(getErrorMessage(err));
-    } finally {
-      setPhoneLoading(false);
-    }
-  };
-
-  const handleVerifyCode = async () => {
-    if (!verificationCode.trim()) {
-      setPhoneError('Ingresa el código de verificación');
-      return;
-    }
-    setPhoneError(null);
-    setPhoneLoading(true);
-    try {
-      const { data } = await apiClient.post('/auth/phone/verify', {
-        phone: phoneNumber,
-        code: verificationCode,
-      });
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      window.location.href = data.user.role === 'Cliente' ? '/' : '/inicio';
-    } catch (err) {
-      setPhoneError(getErrorMessage(err));
-    } finally {
-      setPhoneLoading(false);
-    }
-  };
-
-  const closePhoneModal = () => {
-    setShowPhoneModal(false);
-    setPhoneStep('phone');
-    setPhoneNumber('');
-    setVerificationCode('');
-    setPhoneError(null);
   };
 
   return (
@@ -181,20 +123,6 @@ export default function Login() {
           <div className="botones-sociales">
             <button
               type="button"
-              className="btn-social btn-social-phone"
-              onClick={() => setShowPhoneModal(true)}
-            >
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                <path
-                  fill="currentColor"
-                  d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2Z"
-                />
-              </svg>
-              <span>Continuar con número de teléfono</span>
-            </button>
-
-            <button
-              type="button"
               className="btn-social btn-social-google"
               onClick={handleGoogleLogin}
             >
@@ -232,74 +160,6 @@ export default function Login() {
           </div>
         </form>
       </div>
-
-      {showPhoneModal && (
-        <div className="phone-modal-overlay" onClick={closePhoneModal}>
-          <div className="phone-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="phone-modal-close" onClick={closePhoneModal}>
-              &times;
-            </button>
-            <h2>
-              {phoneStep === 'phone'
-                ? 'Ingresa tu número de teléfono'
-                : 'Código de verificación'}
-            </h2>
-            <p className="phone-modal-desc">
-              {phoneStep === 'phone'
-                ? 'Te enviaremos un código de verificación por SMS'
-                : `Enviamos el código a ${phoneNumber}`}
-            </p>
-
-            {phoneStep === 'phone' ? (
-              <input
-                type="tel"
-                className="input"
-                placeholder="Ej: 311 538 7534"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-              />
-            ) : (
-              <input
-                type="text"
-                className="input"
-                placeholder="Código de 6 dígitos"
-                maxLength={6}
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-              />
-            )}
-
-            {phoneError && (
-              <p className="auth-error" role="alert">
-                {phoneError}
-              </p>
-            )}
-
-            {phoneStep === 'code' && (
-              <button
-                type="button"
-                className="link phone-resend"
-                onClick={handleSendCode}
-              >
-                Reenviar código
-              </button>
-            )}
-
-            <button
-              type="button"
-              className="btn-primario"
-              disabled={phoneLoading}
-              onClick={phoneStep === 'phone' ? handleSendCode : handleVerifyCode}
-            >
-              {phoneLoading
-                ? 'ENVIANDO…'
-                : phoneStep === 'phone'
-                  ? 'ENVIAR CÓDIGO'
-                  : 'VERIFICAR'}
-            </button>
-          </div>
-        </div>
-      )}
     </AuthLayout>
   );
 }
