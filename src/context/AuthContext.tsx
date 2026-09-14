@@ -16,10 +16,10 @@ export type User = {
 };
 
 type UsuarioApi = {
-  id_Usuario?: number; id?: number;
-  nombre_usuario?: string; nombre?: string;
-  apellido_usuario?: string; apellido?: string;
-  correo_personal?: string; correo?: string; email?: string;
+  id?: number; 
+  nombre?: string; 
+  apellido?: string;
+  correo?: string; email?: string;
   rol?: string; rol_id?: number;
 };
 type LoginResponse = {
@@ -77,9 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const u = data.usuario ?? data.user;
 
     const nextUser: User = {
-    id: u?.id_Usuario ?? u?.id,
-    name: [u?.nombre_usuario ?? u?.nombre, u?.apellido_usuario ?? u?.apellido].filter(Boolean).join(' ') || undefined,
-    email: u?.correo_personal ?? u?.correo ?? u?.email ?? email,
+    id: u?.id ?? u?.id,
+    name: [u?.nombre ?? u?.nombre, u?.apellido ?? u?.apellido].filter(Boolean).join(' ') || undefined,
+    email: u?.correo ?? u?.correo ?? u?.email ?? email,
     role: u?.rol,
   };
 
