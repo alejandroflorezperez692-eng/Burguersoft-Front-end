@@ -61,7 +61,6 @@ function App() {
           <Route path="/configuracion" element={<ConfiguracionAdmin />} />
           <Route path="/usuarios" element={<UsuariosAdmin />} />
           <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
-          <Route path="/mis-pedidos" element={<PaginaModulo titulo="Mis Pedidos" />} />
         </Route>
 
       </Route>

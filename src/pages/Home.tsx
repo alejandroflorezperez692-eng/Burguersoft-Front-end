@@ -70,8 +70,13 @@ export default function Home() {
                   <img
                     src={promo.imagen || promocionFallback}
                     alt={promo.nombre}
+                    loading="lazy"
                     onError={(e) => {
-                      e.currentTarget.src = promocionFallback;
+                      // Evita loop infinito si el fallback también falla
+                      e.currentTarget.onerror = null;
+                      if (e.currentTarget.src !== promocionFallback) {
+                        e.currentTarget.src = promocionFallback;
+                      }
                     }}
                   />
                   <span className="promo-badge-pub">PROMO</span>

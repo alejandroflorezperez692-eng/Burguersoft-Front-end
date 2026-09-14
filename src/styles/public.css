@@ -21,6 +21,7 @@
   color: var(--color-texto);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
   overflow-x: clip;
 }
 
@@ -47,6 +48,7 @@
   position: sticky;
   top: 0;
   z-index: 1000;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   box-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
 }
@@ -398,6 +400,7 @@
   z-index: 10;
   font-size: 20px;
   transition: all var(--transicion);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
@@ -934,13 +937,14 @@
     order: 3;
     flex: 1 1 100%;
     width: 100%;
-    justify-content: safe center;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 6px;
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
     padding: 8px 6px;
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
   }
 
@@ -991,6 +995,7 @@
     width: 34px;
     height: 34px;
     font-size: 16px;
+    -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
   }
 
@@ -1052,7 +1057,7 @@
 
   .public-body .nosotros-section {
     flex-direction: column;
-    min-height: auto;
+    min-height: 0;
   }
 
   .public-body .nosotros-section::before {
@@ -1581,9 +1586,15 @@ body.dark-mode .perfil-dropdown button:hover {
 .public-body .btn-checkout:disabled { background: #ccc; color: #fff; cursor: not-allowed; }
 
 /* ===== Modal Mi Perfil (mp-*) portado de PHP ===== */
-.mp-overlay { position: fixed; inset: 0; background: rgba(26,9,13,.55); backdrop-filter: blur(4px); z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.28s ease; }
+.mp-overlay { position: fixed; inset: 0; background: rgba(26,9,13,.55); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.28s ease; }
 .mp-overlay.mp-show { opacity: 1; pointer-events: all; }
-.mp-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-48%) scale(.96); width: min(540px,94vw); max-height: 88vh; overflow-y: auto; background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(26,9,13,.3); z-index: 10001; opacity: 0; pointer-events: none; transition: opacity 0.28s ease, transform 0.28s ease; scrollbar-width: thin; scrollbar-color: #E0D5C5 transparent; }
+.mp-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-48%) scale(.96); width: min(540px,94vw); max-height: 88vh; overflow-y: auto; background: #fff; border-radius: 20px; box-shadow: 0 20px 60px rgba(26,9,13,.3); z-index: 10001; opacity: 0; pointer-events: none; transition: opacity 0.28s ease, transform 0.28s ease; }
+@supports (scrollbar-width: thin) {
+  .mp-panel { scrollbar-width: thin; scrollbar-color: #E0D5C5 transparent; }
+}
+.mp-panel::-webkit-scrollbar { width: 8px; }
+.mp-panel::-webkit-scrollbar-thumb { background: #E0D5C5; border-radius: 8px; }
+.mp-panel::-webkit-scrollbar-track { background: transparent; }
 .mp-panel.mp-show { opacity: 1; pointer-events: all; transform: translate(-50%,-50%) scale(1); }
 .mp-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px 16px; border-bottom: 1px solid #F0EAE0; position: sticky; top: 0; background: #fff; z-index: 5; }
 .mp-head-left { display: flex; align-items: center; gap: 12px; }
@@ -1599,7 +1610,14 @@ body.dark-mode .perfil-dropdown button:hover {
 .mp-tabs-container { display: flex; justify-content: space-around; margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
 .mp-tab { display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; padding: 10px 15px; border-radius: 12px; transition: all 0.3s ease; color: #7A6855; font-weight: 600; font-family: inherit; font-size: 12px; }
 .mp-tab-active { background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.08); color: #BA7517; }
-.mp-tab-icon { width: 24px; height: 24px; object-fit: contain; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
+.mp-tabs-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 25px; border-bottom: none; padding: 8px; background: #F7F2EA; border-radius: 16px; }
+.mp-tab-icon { width: 48px; height: 48px; border-radius: 14px; background: #fff; border: 1px solid #EDE4D6; color: #7A6855; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; transition: background 0.25s, border-color 0.25s, color 0.25s, transform 0.25s; }
+.mp-tab-icon svg { display: block; }
+.mp-tab-icon-img { width: 30px; height: 30px; object-fit: contain; display: block; }
+.mp-tab:hover .mp-tab-icon { transform: translateY(-1px); }
+.mp-tab-active .mp-tab-icon { background: #FAEEDA; border-color: #EF9F27; color: #E8821A; }
+.mp-tab-label { font-size: 12px; }
+.mp-tab-active .mp-tab-label { color: #BA7517; }
 .mp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
 .mp-full { grid-column: 1/-1; }
 .mp-field { display: flex; flex-direction: column; gap: 5px; }
@@ -1607,7 +1625,7 @@ body.dark-mode .perfil-dropdown button:hover {
 .mp-req { color: #EF9F27; }
 .mp-hint { font-size: 11px; color: #B0A090; margin-top: 2px; }
 .mp-panel input[type=text], .mp-panel input[type=email], .mp-panel input[type=password], .mp-panel input[type=tel], .mp-panel select {
-  width: 100%; padding: 10px 13px; font-family: inherit; font-size: 13px; color: #1C1410; background: #F7F2EA; border: 1px solid #E0D5C5; border-radius: 10px; outline: none; appearance: none; -webkit-appearance: none; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s; box-sizing: border-box;
+  width: 100%; padding: 10px 13px; font-family: inherit; font-size: 13px; color: #1C1410; background: #F7F2EA; border: 1px solid #E0D5C5; border-radius: 10px; outline: none; -webkit-appearance: none; appearance: none; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s; box-sizing: border-box;
 }
 .mp-panel input::placeholder { color: #B0A090; }
 .mp-panel input:focus, .mp-panel select:focus { border-color: #EF9F27; background: #fff; box-shadow: 0 0 0 3px rgba(239,159,39,.13); }
