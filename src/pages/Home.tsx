@@ -58,7 +58,7 @@ export default function Home() {
       <HeroCarousel />
 
       <section className="promociones">
-        <h2>Combos Diarios</h2>
+        <h2>BURGUERSOFT</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
         <div className="grid-promociones">
           {promos === null ? null : activas.length === 0 ? (

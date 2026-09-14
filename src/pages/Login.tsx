@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/social-login.css';
@@ -33,6 +33,9 @@ export default function Login() {
 
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const passwordCambiada =
+    (location.state as { toast?: string } | null)?.toast === 'password_ok';
 
   if (isAuthenticated) {
     return <Navigate to={user?.role === 'Cliente' ? '/' : '/inicio'} replace />;
@@ -63,6 +66,11 @@ export default function Login() {
     <AuthLayout>
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
+        {passwordCambiada && (
+          <p className="descripcion" role="status" style={{ color: '#1e8e3e', fontWeight: 700 }}>
+            Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.
+          </p>
+        )}
         <form onSubmit={handleSubmit} noValidate>
           <h2>CORREO*</h2>
           <input

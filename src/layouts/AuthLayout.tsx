@@ -7,16 +7,25 @@ import '../styles/public.css';
 
 type AuthLayoutProps = {
   children: ReactNode;
+  regresarA?: string;
 };
 
-export default function AuthLayout({ children }: AuthLayoutProps) {
+export default function AuthLayout({ children, regresarA }: AuthLayoutProps) {
   const navigate = useNavigate();
+
+  const handleRegresar = () => {
+    if (regresarA) {
+      navigate(regresarA);
+    } else {
+      navigate(-1);
+    }
+  };
 
   return (
     <div className="auth-shell">
       <nav className="auth-navbar">
         <img src={logo} alt="Burguersoft" className="auth-logo" />
-        <button type="button" className="btn-regresar" onClick={() => navigate(-1)}>
+        <button type="button" className="btn-regresar" onClick={handleRegresar}>
           Regresar
         </button>
       </nav>

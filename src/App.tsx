@@ -9,6 +9,8 @@ import Login from './pages/Login';
 import SocialCallback from './pages/SocialCallback';
 import Registro from './pages/Registro';
 import RecuperarContrasena from './pages/RecuperarContrasena';
+import VerificarCodigo from './pages/VerificarCodigo';
+import RestablecerContrasena from './pages/RestablecerContrasena';
 import Inicio from './pages/Inicio';
 import Home from './pages/Home';
 import Nosotros from './pages/Nosotros';
@@ -47,6 +49,8 @@ function App() {
       <Route path="/social-callback" element={<SocialCallback />} /> 
       <Route path="/registro" element={<Registro />} />
       <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
+      <Route path="/verificar-codigo" element={<VerificarCodigo />} />
+      <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
       <Route path="/mis-pedidos" element={<MisPedidos />} />
       <Route path="/social-callback" element={<SocialCallback />} />
 
