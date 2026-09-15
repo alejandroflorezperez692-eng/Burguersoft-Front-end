@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 import '../styles/mis-pedidos.css';
 
+
 type ItemUI = {
   nombre: string;
   cantidad: number;

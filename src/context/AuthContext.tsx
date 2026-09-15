@@ -42,6 +42,7 @@ type AuthContextValue = {
   ) => Promise<void>;
   logout: () => void;
   demoLogin: (role?: string) => void;
+  updateUser: (partial: Partial<User>) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -137,6 +138,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((partial: Partial<User>) => {
+    setUser((prev) => {
+      const next = { ...(prev ?? {}), ...partial };
+      localStorage.setItem('user', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   const demoLogin = useCallback((role?: string) => {
     const esAdmin = role === 'admin';
     const demoUser: User = {
@@ -159,8 +168,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       logout,
       demoLogin,
+      updateUser,
     }),
-    [user, login, loginWithToken, register, logout, demoLogin],
+    [user, login, loginWithToken, register, logout, demoLogin, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

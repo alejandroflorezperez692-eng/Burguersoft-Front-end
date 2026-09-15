@@ -6,6 +6,7 @@ export type CartItem = {
   precio: number;
   imagen?: string | null;
   cantidad: number;
+  descripcion?: string;
 };
 
 type CartContextValue = {

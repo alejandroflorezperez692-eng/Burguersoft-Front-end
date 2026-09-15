@@ -5,6 +5,7 @@
   --mp-fondo: #f6f5e4;
   --mp-border: #e8e0d4;
   --mp-radius: 14px;
+  font-family: 'Lucida Sans', sans-serif;
   max-width: 900px;
   width: 100%;
   margin: 0 auto;
@@ -142,3 +143,10 @@
   .pedido-table th:nth-child(2), .pedido-table td:nth-child(2) { display: none; }
   .paso-label { font-size: 9px; }
 }
+
+.mis-pedidos-header { animation: fadeDown .5s ease both; }
+.pedido-card { animation: fadeUp .45s ease both; }
+.pedidos-empty { animation: fadeUp .5s ease both; }
+
+@keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeUp   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
