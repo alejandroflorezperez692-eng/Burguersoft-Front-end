@@ -1,4 +1,3 @@
-
 import {
   createContext,
   useCallback,
@@ -32,6 +31,7 @@ type AuthContextValue = {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   register: (
     nombre: string,
     apellido: string,
@@ -58,6 +58,18 @@ function readStoredUser(): User | null {
   }
 }
 
+function mapUsuarioApi(u: UsuarioApi | undefined, fallbackEmail?: string): User {
+  return {
+    id: u?.id_Usuario ?? u?.id,
+    name:
+      [u?.nombre_usuario ?? u?.nombre, u?.apellido_usuario ?? u?.apellido]
+        .filter(Boolean)
+        .join(' ') || undefined,
+    email: u?.correo_personal ?? u?.correo ?? u?.email ?? fallbackEmail,
+    role: u?.rol,
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     const token = localStorage.getItem('token');
@@ -74,18 +86,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('El servidor no devolvió un token válido.');
     }
 
-    const u = data.usuario ?? data.user;
-
-    const nextUser: User = {
-    id: u?.id_Usuario ?? u?.id,
-    name: [u?.nombre_usuario ?? u?.nombre, u?.apellido_usuario ?? u?.apellido].filter(Boolean).join(' ') || undefined,
-    email: u?.correo_personal ?? u?.correo ?? u?.email ?? email,
-    role: u?.rol,
-  };
+    const nextUser = mapUsuarioApi(data.usuario ?? data.user, email);
 
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(nextUser));
     setUser(nextUser);
+  }, []);
+
+  // Usado por el login social (Google/Facebook): ya tenemos el token
+  // (viene en la URL tras el redirect de Laravel), así que solo hay que
+  // guardarlo y pedir los datos del usuario a /me para completar la sesión.
+  const loginWithToken = useCallback(async (token: string) => {
+    localStorage.setItem('token', token);
+
+    try {
+      const { data } = await apiClient.get<UsuarioApi>('/me');
+      const nextUser = mapUsuarioApi(data);
+      localStorage.setItem('user', JSON.stringify(nextUser));
+      setUser(nextUser);
+    } catch (err) {
+      localStorage.removeItem('token');
+      throw err;
+    }
   }, []);
 
   const register = useCallback(
@@ -133,11 +155,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       isAuthenticated: user !== null,
       login,
+      loginWithToken,
       register,
       logout,
       demoLogin,
     }),
-    [user, login, register, logout, demoLogin],
+    [user, login, loginWithToken, register, logout, demoLogin],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
