@@ -9,6 +9,9 @@ export type CartItem = {
   descripcion?: string;
 };
 
+export type TipoEntrega = 'Domicilio' | 'Para recoger' | 'En restaurante';
+export type CuandoOpcion = 'Lo antes posible' | 'Programar para más tarde';
+
 type CartContextValue = {
   items: CartItem[];
   count: number;
@@ -21,6 +24,16 @@ type CartContextValue = {
   quitar: (id: string | number) => void;
   actualizarCantidad: (id: string | number, cantidad: number) => void;
   vaciar: () => void;
+
+  // Datos de entrega, compartidos entre el carrito y el checkout
+  tipoEntrega: TipoEntrega;
+  setTipoEntrega: (v: TipoEntrega) => void;
+  cuando: CuandoOpcion;
+  setCuando: (v: CuandoOpcion) => void;
+  fechaProgramada: string;
+  setFechaProgramada: (v: string) => void;
+  horaProgramada: string;
+  setHoraProgramada: (v: string) => void;
 };
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
@@ -42,6 +55,11 @@ function readStored(): CartItem[] {
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => readStored());
   const [isOpen, setIsOpen] = useState(false);
+
+  const [tipoEntrega, setTipoEntrega] = useState<TipoEntrega>('Domicilio');
+  const [cuando, setCuando] = useState<CuandoOpcion>('Lo antes posible');
+  const [fechaProgramada, setFechaProgramada] = useState('');
+  const [horaProgramada, setHoraProgramada] = useState('');
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
@@ -81,8 +99,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback(() => setIsOpen((v) => !v), []);
 
   const value = useMemo<CartContextValue>(
-    () => ({ items, count, total, isOpen, open, close, toggle, agregar, quitar, actualizarCantidad, vaciar }),
-    [items, count, total, isOpen, open, close, toggle, agregar, quitar, actualizarCantidad, vaciar],
+    () => ({
+      items, count, total, isOpen, open, close, toggle, agregar, quitar, actualizarCantidad, vaciar,
+      tipoEntrega, setTipoEntrega, cuando, setCuando, fechaProgramada, setFechaProgramada, horaProgramada, setHoraProgramada,
+    }),
+    [items, count, total, isOpen, open, close, toggle, agregar, quitar, actualizarCantidad, vaciar,
+     tipoEntrega, cuando, fechaProgramada, horaProgramada],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -1,22 +1,58 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import FacturaModal from './FacturaModal';
-import apiClient from '../api/client';
 
-const IVA_RATE = 0.08; // IVA reducido para servicio de alimentos; ajusta si tu tasa real es distinta
 const TIPOS_ENTREGA = ['Domicilio', 'Para recoger', 'En restaurante'] as const;
 const CUANDO_OPCIONES = ['Lo antes posible', 'Programar para más tarde'] as const;
+const IVA_RATE = 0.08;
+const ZONA_HORARIA = 'America/Bogota';
 
-// Mismos horarios que ya tienes en el footer. 0 = domingo ... 6 = sábado.
 const HORARIOS: Record<number, { inicio: string; fin: string } | null> = {
-  0: { inicio: '15:00', fin: '22:00' }, // Domingo
-  1: { inicio: '15:30', fin: '22:00' }, // Lunes
+  0: { inicio: '15:00', fin: '22:00' },
+  1: { inicio: '15:30', fin: '22:00' },
   2: { inicio: '15:30', fin: '22:00' },
   3: { inicio: '15:30', fin: '22:00' },
   4: { inicio: '15:30', fin: '22:00' },
   5: { inicio: '15:30', fin: '22:00' },
-  6: { inicio: '15:00', fin: '23:00' }, // Sábado
+  6: { inicio: '15:00', fin: '23:00' },
 };
+
+function partesAhoraColombia() {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: ZONA_HORARIA,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(new Date());
+
+  const valores: Record<string, string> = {};
+  for (const { type, value } of partes) {
+    if (type !== 'literal') valores[type] = value;
+  }
+  const hour = valores.hour === '24' ? '00' : valores.hour;
+
+  return {
+    year: Number(valores.year),
+    month: Number(valores.month),
+    day: Number(valores.day),
+    hour: Number(hour),
+    minute: Number(valores.minute),
+  };
+}
+
+function ahoraEnColombia(): Date {
+  const p = partesAhoraColombia();
+  return new Date(p.year, p.month - 1, p.day, p.hour, p.minute);
+}
+
+function hoyColombiaStr(): string {
+  const p = partesAhoraColombia();
+  return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+}
 
 function obtenerRangoHorario(fechaStr: string): { min: string; max: string } | null {
   if (!fechaStr) return null;
@@ -24,11 +60,10 @@ function obtenerRangoHorario(fechaStr: string): { min: string; max: string } | n
   const horario = HORARIOS[fecha.getDay()];
   if (!horario) return null;
 
-  const ahora = new Date();
-  const esHoy = fechaStr === ahora.toISOString().slice(0, 10);
+  const ahora = ahoraEnColombia();
+  const esHoy = fechaStr === hoyColombiaStr();
   if (!esHoy) return { min: horario.inicio, max: horario.fin };
 
-  // Si es hoy, el mínimo no puede ser antes de la hora actual + 20 min de margen
   const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes() + 20;
   const [hIni, mIni] = horario.inicio.split(':').map(Number);
   const minutosIni = hIni * 60 + mIni;
@@ -44,20 +79,22 @@ function horaValida(fechaStr: string, horaStr: string): boolean {
 }
 
 export default function CartPanel() {
-  const { items, total, isOpen, close, quitar, actualizarCantidad, vaciar } = useCart();
+  const {
+    items, total, isOpen, close, quitar, actualizarCantidad, vaciar,
+    tipoEntrega, setTipoEntrega, cuando, setCuando,
+    fechaProgramada: fechaSeleccionada, setFechaProgramada: setFechaSeleccionada,
+    horaProgramada: horaSeleccionada, setHoraProgramada: setHoraSeleccionada,
+  } = useCart();
+  const navigate = useNavigate();
+
   const [showFactura, setShowFactura] = useState(false);
-  const [comprando, setComprando] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [tipoEntrega, setTipoEntrega] = useState<(typeof TIPOS_ENTREGA)[number]>(TIPOS_ENTREGA[0]);
-  const [cuando, setCuando] = useState<(typeof CUANDO_OPCIONES)[number]>(CUANDO_OPCIONES[0]);
-  const [fechaSeleccionada, setFechaSeleccionada] = useState('');
-  const [horaSeleccionada, setHoraSeleccionada] = useState('');
   const [confirmado, setConfirmado] = useState(false);
 
   const rangoHorario = obtenerRangoHorario(fechaSeleccionada);
-  const hoyStr = new Date().toISOString().slice(0, 10);
+  const hoyStr = hoyColombiaStr();
 
-  const descuentos = 0; // placeholder hasta que exista lógica de cupones
+  const descuentos = 0;
   const subtotal = total / (1 + IVA_RATE);
   const impuestos = total - subtotal;
 
@@ -73,7 +110,7 @@ export default function CartPanel() {
     showToast('Tu carrito ha sido vaciado.');
   };
 
-  const handleCheckout = async () => {
+  const handleIrAPagar = () => {
     if (items.length === 0) return;
     if (cuando === 'Programar para más tarde') {
       if (!fechaSeleccionada || !horaSeleccionada) {
@@ -85,27 +122,8 @@ export default function CartPanel() {
         return;
       }
     }
-    setComprando(true);
-    try {
-      // intenta enviar al backend como venta
-      await apiClient.post('/venta', {
-        productos: items.map((i) => ({ id: i.id, cantidad: i.cantidad, precio: i.precio })),
-        total,
-        tipo_entrega: tipoEntrega,
-        cuando,
-        fecha_programada: cuando === 'Programar para más tarde' ? `${fechaSeleccionada}T${horaSeleccionada}` : null,
-      });
-      showToast('Compra finalizada con éxito.');
-      vaciar();
-      close();
-    } catch {
-      // fallback demo: simula éxito si backend no está
-      showToast('Compra simulada - backend no configurado. Carrito vaciado.');
-      vaciar();
-      close();
-    } finally {
-      setComprando(false);
-    }
+    close();
+    navigate('/checkout');
   };
 
   return (
@@ -217,10 +235,10 @@ export default function CartPanel() {
 
           <button
             className="btn-ir-pagar"
-            disabled={items.length === 0 || comprando || !confirmado}
-            onClick={handleCheckout}
+            disabled={items.length === 0 || !confirmado}
+            onClick={handleIrAPagar}
           >
-            <span>{comprando ? 'Procesando...' : 'Ir a pagar'}</span>
+            <span>Ir a pagar</span>
             <span>${total.toLocaleString('es-CO')}</span>
           </button>
         </div>
