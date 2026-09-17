@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import apiClient from '../../api/client';
+import AdminLoading from '../../components/AdminLoading';
 
 interface DetalleCompra {
   id: number;
@@ -8,8 +9,8 @@ interface DetalleCompra {
   subtotal: number;
   materia_prima_id: number;
   marca_id: number;
-  materia_prima?: { nombre_materia: string };
-  marca?: { nombre_marca: string };
+  materia_prima?: { nombre: string };
+  marca?: { nombre: string };
 }
 
 interface Compra {
@@ -20,8 +21,8 @@ interface Compra {
   detalles: DetalleCompra[];
 }
 
-interface MateriaPrima { idmateria: number; nombre_materia: string; }
-interface Marca { idMarca: number; nombre_marca: string; }
+interface MateriaPrima { id: number; nombre: string; }
+interface Marca { id: number; nombre: string; }
 
 interface Linea {
   materia_prima_id: number | null;
@@ -47,6 +48,7 @@ export default function ComprasAdmin() {
   ]);
   const [modalDetalle, setModalDetalle] = useState<Compra | null>(null);
   const [loading, setLoading] = useState(true);
+  const cargado = useRef(false);
 
   const load = () => {
     Promise.all([
@@ -61,7 +63,11 @@ export default function ComprasAdmin() {
     }).catch(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+  if (cargado.current) return;
+  cargado.current = true;
+  load();
+}, []);
 
   const filtered = items.filter((c) =>
     String(c.id).includes(q) || c.metodo_pago.toLowerCase().includes(q.toLowerCase())
@@ -76,7 +82,7 @@ export default function ComprasAdmin() {
   const totalHisto = items.reduce((a, c) => a + Number(c.valor_total), 0);
 
   const addLinea = () => {
-    setLineas([...lineas, { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: marcas[0]?.idMarca ?? 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+    setLineas([...lineas, { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: marcas[0]?.id ?? 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
   };
 
   const removeLinea = (i: number) => {
@@ -107,7 +113,7 @@ export default function ComprasAdmin() {
     };
     apiClient.post('/compras', payload).then(() => {
       setShowForm(false);
-      setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: marcas[0]?.idMarca ?? 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+      setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: marcas[0]?.id ?? 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
       load();
     });
   };
@@ -160,7 +166,7 @@ export default function ComprasAdmin() {
                 <label>{i === 0 ? 'Insumo' : ''}</label>
                 <select value={l.materia_prima_id ?? '__nuevo__'} onChange={(e) => updateLinea(i, 'materia_prima_id', e.target.value === '__nuevo__' ? null : Number(e.target.value))}>
                   <option value="__nuevo__">+ Nuevo insumo</option>
-                  {materias.map((m) => <option key={m.idmateria} value={m.idmateria}>{m.nombre_materia}</option>)}
+                  {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
               </div>
               {l.materia_prima_id === null && (
@@ -186,7 +192,7 @@ export default function ComprasAdmin() {
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Proveedor</label>
                 <select value={l.marca_id} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
-                  {marcas.map((m) => <option key={m.idMarca} value={m.idMarca}>{m.nombre_marca}</option>)}
+                  {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
               </div>
               {lineas.length > 1 && (
@@ -211,7 +217,7 @@ export default function ComprasAdmin() {
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
+        <AdminLoading texto="Cargando compras" subtexto="Reuniendo tus abastecimientos" />
       ) : (
         <div className="tabla-responsive">
         <table className="data-table">
@@ -266,8 +272,8 @@ export default function ComprasAdmin() {
                 <tbody>
                   {modalDetalle.detalles.map((d) => (
                     <tr key={d.id}>
-                      <td>{d.materia_prima?.nombre_materia ?? 'N/A'}</td>
-                      <td>{d.marca?.nombre_marca ?? 'N/A'}</td>
+                      <td>{d.materia_prima?.nombre ?? 'N/A'}</td>
+                      <td>{d.marca?.nombre ?? 'N/A'}</td>
                       <td>{d.cantidad}</td>
                       <td>${Number(d.precio_unitario).toLocaleString()}</td>
                       <td style={{ fontWeight: 600 }}>${Number(d.subtotal).toLocaleString()}</td>

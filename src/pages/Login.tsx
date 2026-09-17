@@ -3,7 +3,9 @@ import { isAxiosError } from 'axios';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
+import AdminLoading from '../components/AdminLoading';
 import '../styles/social-login.css';
+
 
 function getErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
@@ -58,9 +60,13 @@ export default function Login() {
     }
   };
 
+  if (loading) {
+    return <AdminLoading texto="Iniciando sesión" subtexto="Verificando tus credenciales" />;
+  }
   const handleGoogleLogin = () => {
     window.location.href = 'http://127.0.0.1:8000/api/auth/google';
   };
+
 
   return (
     <AuthLayout>

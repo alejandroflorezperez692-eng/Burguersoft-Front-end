@@ -2,6 +2,17 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
+import apiClient from '../api/client';
+import AdminLoading from '../components/AdminLoading';
+
+interface Movimiento {
+  id: number;
+  modulo: string;
+  descripcion: string;
+  fecha: string;
+  nombre?: string;
+  apellido?: string;
+}
 
 function formatReloj(fecha: Date): string {
   let horas = fecha.getHours();
@@ -26,12 +37,34 @@ export default function Inicio() {
   const { user } = useAuth();
   const [ahora, setAhora] = useState(() => new Date());
   const [toastVisible, setToastVisible] = useState(false);
+  const [movs, setMovs] = useState<Movimiento[]>([]);
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
     const id = setInterval(() => setAhora(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    let vivo = true;
+    setLoading(true);
+    apiClient
+      .get('/reportes/historial', { params: user?.id ? { usuario_id: user.id } : {} })
+      .then(({ data }) => {
+        const lista: Movimiento[] = Array.isArray(data) ? data : data?.data ?? [];
+        if (vivo) setMovs(lista);
+      })
+      .catch(() => {
+        if (vivo) setMovs([]);
+      })
+      .finally(() => {
+        if (vivo) setLoading(false);
+      });
+    return () => {
+      vivo = false;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (location.state?.toast === 'login_ok') {
@@ -70,13 +103,37 @@ export default function Inicio() {
             <div className="historial-col-accion">Acción</div>
           </div>
           <div className="historial-lista">
-            <div className="historial-vacio">Aún no tienes movimientos registrados.</div>
+            {loading ? (
+              <AdminLoading texto="Cargando movimientos" subtexto="Revisando tu actividad reciente" />
+            ) : movs.length === 0 ? (
+              <div className="historial-vacio">Aún no tienes movimientos registrados.</div>
+            ) : (
+              movs.slice(0, 8).map((m) => (
+                <div
+                  key={m.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '9px 6px', borderBottom: '1px solid var(--border)' }}
+                >
+                  <span
+                    className="badge badge-info"
+                    style={{ flexShrink: 0, minWidth: 88, textAlign: 'center' }}
+                  >
+                    {m.modulo ?? '—'}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-900)' }}>
+                    {m.descripcion ?? '—'}
+                  </span>
+                  <span style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-400)' }}>
+                    {m.fecha ? new Date(m.fecha).toLocaleString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         <div className="kpi-card">
           <div className="kpi-label">Total de movimientos</div>
-          <div className="kpi-val">0</div>
+          <div className="kpi-val">{movs.length}</div>
           <div className="kpi-sub">Acciones registradas en tu cuenta</div>
         </div>
       </div>
