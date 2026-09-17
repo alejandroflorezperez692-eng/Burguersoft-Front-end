@@ -30,6 +30,7 @@ type LoginResponse = {
 type AuthContextValue = {
   user: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithToken: (token: string) => Promise<void>;
   register: (
@@ -76,22 +77,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem('token');
     return token ? readStoredUser() : null;
   });
+  const [loading, setLoading] = useState(false);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { data } = await apiClient.post<LoginResponse>('/login', {
-      correo: email,
-      contrasena: password,
-    });
+    setLoading(true);
+    try {
+      const { data } = await apiClient.post<LoginResponse>('/login', {
+        correo: email,
+        contrasena: password,
+      });
 
-    if (!data.token) {
-      throw new Error('El servidor no devolvió un token válido.');
+      if (!data.token) {
+        throw new Error('El servidor no devolvió un token válido.');
+      }
+
+      const u = data.usuario ?? data.user;
+
+      const nextUser: User = {
+        id: u?.id_Usuario ?? u?.id,
+        name: [u?.nombre_usuario ?? u?.nombre, u?.apellido_usuario ?? u?.apellido].filter(Boolean).join(' ') || undefined,
+        email: u?.correo_personal ?? u?.correo ?? u?.email ?? email,
+        role: u?.rol,
+      };
+
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(nextUser));
+      setUser(nextUser);
+    } finally {
+      setLoading(false);
     }
-
-    const nextUser = mapUsuarioApi(data.usuario ?? data.user, email);
-
-    localStorage.setItem('token', data.token);
-    localStorage.setItem('user', JSON.stringify(nextUser));
-    setUser(nextUser);
   }, []);
 
   // Usado por el login social (Google/Facebook): ya tenemos el token
@@ -133,9 +148,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    setLoading(true);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setLoading(false);
   }, []);
 
   const updateUser = useCallback((partial: Partial<User>) => {
@@ -163,6 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       isAuthenticated: user !== null,
+      loading,
       login,
       loginWithToken,
       register,
@@ -170,7 +188,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       demoLogin,
       updateUser,
     }),
-    [user, login, loginWithToken, register, logout, demoLogin, updateUser],
+
+    [user, loading, login, register, logout, demoLogin],
+
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

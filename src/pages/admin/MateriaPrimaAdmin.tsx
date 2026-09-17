@@ -1,20 +1,22 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
+import AdminLoading from '../../components/AdminLoading';
 
 interface MateriaPrima {
-  idmateria: number;
-  nombre_materia: string;
-  tipo_materia: string;
-  valor_materia: number;
-  stock_materia: number;
-  idMarca: number;
-  marca?: { nombre_marca: string };
+  id: number;
+  nombre: string;
+  tipo?: string | null;
+  valor: number;
+  cantidad: number;
+  unidad_medida?: string | null;
+  marca_id: number;
+  estado?: string | null;
 }
 
 interface Marca {
-  idMarca: number;
-  nombre_marca: string;
+  id: number;
+  nombre: string;
 }
 
 type Filtro = 'todos' | 'disponible' | 'bajo' | 'agotado';
@@ -26,14 +28,20 @@ const FILTROS: { key: Filtro; label: string }[] = [
   { key: 'agotado', label: 'Agotado' },
 ];
 
-const estadoKey = (stock: number): Filtro =>
-  stock > 10 ? 'disponible' : stock > 0 ? 'bajo' : 'agotado';
+const num = (v: unknown): number => Number(v ?? 0) || 0;
 
-const textoEstado = (stock: number) =>
-  stock > 10 ? 'Disponible' : stock > 0 ? 'Stock bajo' : 'Agotado';
+const estadoKey = (stock: unknown): Filtro => {
+  const s = num(stock);
+  return s > 10 ? 'disponible' : s > 0 ? 'bajo' : 'agotado';
+};
+
+const textoEstado = (stock: unknown) => {
+  const s = num(stock);
+  return s > 10 ? 'Disponible' : s > 0 ? 'Stock bajo' : 'Agotado';
+};
 
 const emptyForm = {
-  nombre_materia: '', tipo_materia: '', valor_materia: '', stock_materia: '', idMarca: 1,
+  nombre: '', tipo: '', valor: '', cantidad: '', unidad_medida: '', marca_id: 1,
 };
 
 export default function MateriaPrimaAdmin() {
@@ -47,17 +55,22 @@ export default function MateriaPrimaAdmin() {
   const [loading, setLoading] = useState(true);
   const { toast, showToast } = useToast();
 
+  const toArray = <T,>(v: unknown): T[] =>
+    Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
+
   const load = async () => {
     setLoading(true);
     try {
       const [r1, r2] = await Promise.all([
-        apiClient.get<MateriaPrima[]>('/materias-primas'),
-        apiClient.get<Marca[]>('/marcas'),
+        apiClient.get('/materias-primas'),
+        apiClient.get('/marcas'),
       ]);
-      setItems(r1.data);
-      setMarcas(r2.data);
+      setItems(toArray<MateriaPrima>(r1.data));
+      setMarcas(toArray<Marca>(r2.data));
     } catch {
       showToast('No se pudieron cargar los insumos', true);
+      setItems([]);
+      setMarcas([]);
     } finally {
       setLoading(false);
     }
@@ -65,44 +78,53 @@ export default function MateriaPrimaAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = items.filter((m) =>
-    (filtro === 'todos' || estadoKey(m.stock_materia) === filtro) &&
-    m.nombre_materia.toLowerCase().includes(q.toLowerCase())
+  // El index no trae la marca: se resuelve con la lista de /marcas
+  const marcaNombre = (id: unknown): string =>
+    (marcas ?? []).find((x) => x?.id === id)?.nombre ?? '';
+
+  const filtered = (items ?? []).filter((m) =>
+    (filtro === 'todos' || estadoKey(m?.cantidad) === filtro) &&
+    (m?.nombre ?? '').toLowerCase().includes((q ?? '').toLowerCase())
   );
 
-  const total = items.length;
-  const disponibles = items.filter((m) => m.stock_materia > 0).length;
-  const agotados = items.filter((m) => m.stock_materia <= 0).length;
-  const valorInv = items.reduce((a, m) => a + Number(m.valor_materia) * Number(m.stock_materia), 0);
+  const total = (items ?? []).length;
+  const disponibles = (items ?? []).filter((m) => num(m?.cantidad) > 0).length;
+  const agotados = (items ?? []).filter((m) => num(m?.cantidad) <= 0).length;
+  const valorInv = (items ?? []).reduce((a, m) => a + num(m?.valor) * num(m?.cantidad), 0);
 
   const openNew = () => {
-    setForm({ ...emptyForm, idMarca: marcas[0]?.idMarca ?? 1 });
+    setForm({ ...emptyForm, marca_id: marcas[0]?.id ?? 1 });
     setEditId(null);
     setModal(true);
   };
 
   const openEdit = (m: MateriaPrima) => {
     setForm({
-      nombre_materia: m.nombre_materia,
-      tipo_materia: m.tipo_materia,
-      valor_materia: String(m.valor_materia),
-      stock_materia: String(m.stock_materia),
-      idMarca: m.idMarca,
+      nombre: m?.nombre ?? '',
+      tipo: m?.tipo ?? '',
+      valor: String(m?.valor ?? ''),
+      cantidad: String(m?.cantidad ?? ''),
+      unidad_medida: m?.unidad_medida ?? '',
+      marca_id: m?.marca_id ?? marcas[0]?.id ?? 1,
     });
-    setEditId(m.idmateria);
+    setEditId(m?.id ?? null);
     setModal(true);
   };
 
   const guardar = async () => {
-    if (!form.nombre_materia.trim()) { showToast('El nombre es obligatorio', true); return; }
-    if (Number(form.valor_materia) < 0 || Number(form.stock_materia) < 0) {
+    if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
+    if (Number(form.valor) < 0 || Number(form.cantidad) < 0) {
       showToast('El valor y el stock no pueden ser negativos', true);
       return;
     }
+    if (!form.marca_id) { showToast('Selecciona una marca', true); return; }
     const body = {
-      ...form,
-      valor_materia: Number(form.valor_materia) || 0,
-      stock_materia: Number(form.stock_materia) || 0,
+      nombre: form.nombre.trim(),
+      tipo: form.tipo.trim() || null,
+      valor: Number(form.valor) || 0,
+      cantidad: Number(form.cantidad) || 0,
+      unidad_medida: form.unidad_medida.trim() || null,
+      marca_id: Number(form.marca_id),
     };
     try {
       if (editId) {
@@ -120,8 +142,8 @@ export default function MateriaPrimaAdmin() {
   };
 
   const del = async (id: number) => {
-    const m = items.find((x) => x.idmateria === id);
-    if (!confirm(`¿Eliminar "${m?.nombre_materia ?? id}"?`)) return;
+    const m = (items ?? []).find((x) => x?.id === id);
+    if (!confirm(`¿Eliminar "${m?.nombre ?? id}"?`)) return;
     try {
       await apiClient.delete(`/materias-primas/${id}`);
       showToast('Materia prima eliminada');
@@ -156,7 +178,7 @@ export default function MateriaPrimaAdmin() {
         </div>
         <div className="stat-card">
           <span className="stat-label">Valor inventario</span>
-          <span className="stat-val" style={{ fontSize: 24 }}>${valorInv.toLocaleString()}</span>
+          <span className="stat-val" style={{ fontSize: 24 }}>${valorInv.toLocaleString('es-CO')}</span>
         </div>
       </div>
 
@@ -176,7 +198,7 @@ export default function MateriaPrimaAdmin() {
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
+        <AdminLoading texto="Cargando materia prima" subtexto="Revisando tu inventario" />
       ) : (
         <div className="tabla-responsive">
           <table className="data-table">
@@ -192,21 +214,21 @@ export default function MateriaPrimaAdmin() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((m) => (
-                <tr key={m.idmateria}>
-                  <td style={{ fontWeight: 600 }}>{m.nombre_materia}</td>
-                  <td>{m.tipo_materia || '—'}</td>
-                  <td>${Number(m.valor_materia).toLocaleString()}</td>
-                  <td>{m.stock_materia}</td>
+              {(filtered ?? []).map((m) => (
+                <tr key={m?.id}>
+                  <td style={{ fontWeight: 600 }}>{m?.nombre ?? 'Sin nombre'}</td>
+                  <td>{m?.tipo || '—'}</td>
+                  <td>${num(m?.valor).toLocaleString('es-CO')}</td>
+                  <td>{m?.cantidad ?? '—'}</td>
                   <td>
-                    <span className={`badge ${estadoKey(m.stock_materia) === 'agotado' ? 'badge-danger' : estadoKey(m.stock_materia) === 'bajo' ? 'badge-warning' : 'badge-success'}`}>
-                      {textoEstado(m.stock_materia)}
+                    <span className={`badge ${estadoKey(m?.cantidad) === 'agotado' ? 'badge-danger' : estadoKey(m?.cantidad) === 'bajo' ? 'badge-warning' : 'badge-success'}`}>
+                      {textoEstado(m?.cantidad)}
                     </span>
                   </td>
-                  <td>{m.marca?.nombre_marca || '—'}</td>
+                  <td>{marcaNombre(m?.marca_id) || '—'}</td>
                   <td>
                     <button className="btn-icon btn-icon-edit" onClick={() => openEdit(m)} title="Editar">✏</button>
-                    <button className="btn-icon btn-icon-del" onClick={() => del(m.idmateria)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
+                    <button className="btn-icon btn-icon-del" onClick={() => m?.id != null && del(m.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
                   </td>
                 </tr>
               ))}
@@ -224,25 +246,29 @@ export default function MateriaPrimaAdmin() {
             <h2>{editId ? 'Editar Materia Prima' : 'Nueva Materia Prima'}</h2>
             <div className="form-group">
               <label>Nombre</label>
-              <input value={form.nombre_materia} onChange={(e) => setForm({ ...form, nombre_materia: e.target.value })} placeholder="Ej. Harina" />
+              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Harina" />
             </div>
             <div className="form-group">
               <label>Tipo</label>
-              <input value={form.tipo_materia} onChange={(e) => setForm({ ...form, tipo_materia: e.target.value })} placeholder="Ej. Básico / Carnes / Bebidas" />
+              <input value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} placeholder="Ej. Básico / Carnes / Bebidas" />
             </div>
             <div className="form-group">
               <label>Valor unitario</label>
-              <input type="number" min={0} value={form.valor_materia} onChange={(e) => setForm({ ...form, valor_materia: e.target.value })} />
+              <input type="number" min={0} value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Stock</label>
-              <input type="number" min={0} value={form.stock_materia} onChange={(e) => setForm({ ...form, stock_materia: e.target.value })} />
+              <label>Stock (cantidad)</label>
+              <input type="number" min={0} value={form.cantidad} onChange={(e) => setForm({ ...form, cantidad: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Unidad de medida</label>
+              <input value={form.unidad_medida} onChange={(e) => setForm({ ...form, unidad_medida: e.target.value })} placeholder="Ej. Kg, Unidades, Litros" />
             </div>
             <div className="form-group">
               <label>Marca</label>
-              <select value={form.idMarca} onChange={(e) => setForm({ ...form, idMarca: Number(e.target.value) })}>
-                {marcas.map((m) => (
-                  <option key={m.idMarca} value={m.idMarca}>{m.nombre_marca}</option>
+              <select value={form.marca_id} onChange={(e) => setForm({ ...form, marca_id: Number(e.target.value) })}>
+                {(marcas ?? []).map((m) => (
+                  <option key={m?.id} value={m?.id}>{m?.nombre ?? 'Sin nombre'}</option>
                 ))}
               </select>
             </div>

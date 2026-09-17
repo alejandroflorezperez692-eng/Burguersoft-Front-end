@@ -7,6 +7,7 @@ import apiClient from '../api/client';
 import promocionFallback from '../assets/img/promocion.png';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
+import AdminLoading from '../components/AdminLoading';
 import '../styles/public.css';
 
 type Promocion = {
@@ -60,60 +61,57 @@ export default function Home() {
       <section className="promociones">
         <h2>BURGUERSOFT</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
-        <div className="grid-promociones">
-          {promos === null ? null : activas.length === 0 ? (
-            <p className="promo-vacio">No hay promociones activas en este momento.</p>
-          ) : (
-            activas.map((promo) => (
-              <div className="promo-card-pub" key={promo.id}>
-                <div className="promo-img-pub">
-                  <img
-                    src={promo.imagen || promocionFallback}
-                    alt={promo.nombre}
-                    loading="lazy"
-                    onError={(e) => {
-                      // Evita loop infinito si el fallback también falla
-                      e.currentTarget.onerror = null;
-                      if (e.currentTarget.src !== promocionFallback) {
+        {promos === null ? (
+          <AdminLoading texto="Cargando combos" subtexto="Preparando las mejores promociones" />
+        ) : (
+          <div className="grid-promociones">
+            {activas.length === 0 ? (
+              <p className="promo-vacio">No hay promociones activas en este momento.</p>
+            ) : (
+              activas.map((promo) => (
+                <div className="promo-card-pub" key={promo.id}>
+                  <div className="promo-img-pub">
+                    <img
+                      src={promo.imagen || promocionFallback}
+                      alt={promo.nombre}
+                      onError={(e) => {
                         e.currentTarget.src = promocionFallback;
-                      }
-                    }}
-                  />
-                  <span className="promo-badge-pub">PROMO</span>
-                </div>
-                <div className="promo-info-pub">
-                  <h3>{promo.nombre}</h3>
-                  {promo.descripcion && <p>{promo.descripcion}</p>}
-                  {(promo.fecha_inicio || promo.fecha_fin) && (
-                    <div className="promo-fechas">
-                      {promo.fecha_inicio && <>Desde {promo.fecha_inicio}</>}
-                      {promo.fecha_fin && <> hasta {promo.fecha_fin}</>}
-                    </div>
-                  )}
-                  <div className="promo-footer-pub">
-                    <div className="promo-precio-pub">
-                      {formatCOP(Number(promo.precio))}
-                    </div>
-                    {isAuthenticated ? (
-                      <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen, descripcion: promo.descripcion ?? undefined })}>
-                        +
-                      </button>
-                    ) : (
-                      <Link to="/login" title="Inicia sesión para pedir">
-                        <button type="button" className="btn-circular-add btn-login" aria-label="Inicia sesión para pedir">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                          </svg>
-                        </button>
-                      </Link>
+                      }}
+                    />
+                    <span className="promo-badge-pub">PROMO</span>
+                  </div>
+                  <div className="promo-info-pub">
+                    <h3>{promo.nombre}</h3>
+                    {promo.descripcion && <p>{promo.descripcion}</p>}
+                    {(promo.fecha_inicio || promo.fecha_fin) && (
+                      <div className="promo-fechas">
+                        {promo.fecha_inicio && <>Desde {promo.fecha_inicio}</>}
+                        {promo.fecha_fin && <> hasta {promo.fecha_fin}</>}
+                      </div>
                     )}
+                    <div className="promo-footer-pub">
+                      <div className="promo-precio-pub">
+                        {formatCOP(Number(promo.precio))}
+                      </div>
+                      {isAuthenticated ? (
+                        <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
+                          +
+
+                        </button>
+                      ) : (
+                        <Link to="/login" title="Inicia sesión para pedir">
+                          <button type="button" className="btn-circular-add btn-login">
+                            +
+                          </button>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        )}
       </section>
 
       <Footer />
