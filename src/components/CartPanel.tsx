@@ -89,7 +89,7 @@ export default function CartPanel() {
 
   const [showFactura, setShowFactura] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [confirmado, setConfirmado] = useState(false);
+  const [confirmado, setConfirmado] = useState(() => localStorage.getItem('burguersoft_confirmado') === '1');
 
   const rangoHorario = obtenerRangoHorario(fechaSeleccionada);
   const hoyStr = hoyColombiaStr();
@@ -102,6 +102,11 @@ export default function CartPanel() {
     setToast(msg);
     setTimeout(() => setToast(null), 3000);
   };
+
+  const cambiarConfirmado = (valor: boolean) => {
+  setConfirmado(valor);
+  localStorage.setItem('burguersoft_confirmado', valor ? '1' : '0');
+};
 
   const handleVaciar = () => {
     if (items.length === 0) { showToast('No hay productos en el carrito para vaciarlo.'); return; }
@@ -227,7 +232,7 @@ export default function CartPanel() {
           </div>
 
           <label className="cart-confirm-row">
-            <input type="checkbox" checked={confirmado} onChange={(e) => setConfirmado(e.target.checked)} />
+            <input type="checkbox" checked={confirmado} onChange={(e) => cambiarConfirmado(e.target.checked)} />
             <span>
               Confirmo que quiero hacer mi pedido para <strong>{tipoEntrega}</strong>
             </span>

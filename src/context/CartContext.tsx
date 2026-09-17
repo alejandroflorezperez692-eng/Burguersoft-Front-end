@@ -41,6 +41,25 @@ export { CartContext };
 
 const STORAGE_KEY = 'burguersoft_cart';
 
+const ENTREGA_KEY = 'burguersoft_entrega';
+
+type EntregaGuardada = {
+  tipoEntrega: TipoEntrega;
+  cuando: CuandoOpcion;
+  fechaProgramada: string;
+  horaProgramada: string;
+};
+
+function readStoredEntrega(): Partial<EntregaGuardada> {
+  try {
+    const raw = localStorage.getItem(ENTREGA_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
 function readStored(): CartItem[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -56,14 +75,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => readStored());
   const [isOpen, setIsOpen] = useState(false);
 
-  const [tipoEntrega, setTipoEntrega] = useState<TipoEntrega>('Domicilio');
-  const [cuando, setCuando] = useState<CuandoOpcion>('Lo antes posible');
-  const [fechaProgramada, setFechaProgramada] = useState('');
-  const [horaProgramada, setHoraProgramada] = useState('');
+  const entregaGuardada = readStoredEntrega();
+  const [tipoEntrega, setTipoEntrega] = useState<TipoEntrega>(entregaGuardada.tipoEntrega ?? 'Domicilio');
+  const [cuando, setCuando] = useState<CuandoOpcion>(entregaGuardada.cuando ?? 'Lo antes posible');
+  const [fechaProgramada, setFechaProgramada] = useState(entregaGuardada.fechaProgramada ?? '');
+  const [horaProgramada, setHoraProgramada] = useState(entregaGuardada.horaProgramada ?? '');
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
+
+    useEffect(() => {
+    localStorage.setItem(
+      ENTREGA_KEY,
+      JSON.stringify({ tipoEntrega, cuando, fechaProgramada, horaProgramada }),
+    );
+  }, [tipoEntrega, cuando, fechaProgramada, horaProgramada]);
 
   const count = useMemo(() => items.reduce((a, b) => a + b.cantidad, 0), [items]);
   const total = useMemo(() => items.reduce((a, b) => a + b.precio * b.cantidad, 0), [items]);
