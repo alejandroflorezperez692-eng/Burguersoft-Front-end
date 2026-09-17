@@ -26,6 +26,7 @@ import BackupsAdmin from './pages/admin/BackupsAdmin';
 import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
 import Accesibilidad from './components/Accesibilidad';
 import DemoAccess from './components/DemoAccess';
+import Checkout from './pages/Checkout';
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
       <Route path="/verificar-codigo" element={<VerificarCodigo />} />
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
       <Route path="/mis-pedidos" element={<MisPedidos />} />
+      <Route path="/checkout" element={<Checkout />} />
       <Route path="/social-callback" element={<SocialCallback />} />
 
 
@@ -68,7 +70,6 @@ function App() {
           <Route path="/configuracion" element={<ConfiguracionAdmin />} />
           <Route path="/usuarios" element={<UsuariosAdmin />} />
           <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
-          <Route path="/mis-pedidos" element={<PaginaModulo titulo="Mis Pedidos" />} />
         </Route>
 
       </Route>
