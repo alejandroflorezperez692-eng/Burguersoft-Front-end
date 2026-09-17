@@ -1718,6 +1718,7 @@ body.dark-mode .perfil-dropdown button:hover {
 .mp-hint { font-size: 11px; color: #000000; margin-top: 2px; }
 .mp-panel input[type=text], .mp-panel input[type=email], .mp-panel input[type=password], .mp-panel input[type=tel], .mp-panel select {
   width: 100%; padding: 10px 13px; font-family: inherit; font-size: 13px; color: #000; background: #ffffff; border: 1.5px solid #E8821A; border-radius: 10px; outline: none; appearance: none; -webkit-appearance: none; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s; box-sizing: border-box;
+}
 .mp-panel input::placeholder { color: #B0A090; }
 .mp-panel input:focus, .mp-panel select:focus { border-color: #EF9F27; background: #fff; box-shadow: 0 0 0 3px rgba(239,159,39,.13); }
 .mp-panel input:disabled { opacity: .5; cursor: not-allowed; background: #F0EAE0; }
