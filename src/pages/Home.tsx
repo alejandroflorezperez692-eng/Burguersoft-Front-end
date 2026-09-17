@@ -58,7 +58,7 @@ export default function Home() {
       <HeroCarousel />
 
       <section className="promociones">
-        <h2>Combos Diarios</h2>
+        <h2>BURGUERSOFT</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
         <div className="grid-promociones">
           {promos === null ? null : activas.length === 0 ? (
@@ -70,8 +70,13 @@ export default function Home() {
                   <img
                     src={promo.imagen || promocionFallback}
                     alt={promo.nombre}
+                    loading="lazy"
                     onError={(e) => {
-                      e.currentTarget.src = promocionFallback;
+                      // Evita loop infinito si el fallback también falla
+                      e.currentTarget.onerror = null;
+                      if (e.currentTarget.src !== promocionFallback) {
+                        e.currentTarget.src = promocionFallback;
+                      }
                     }}
                   />
                   <span className="promo-badge-pub">PROMO</span>
@@ -90,7 +95,7 @@ export default function Home() {
                       {formatCOP(Number(promo.precio))}
                     </div>
                     {isAuthenticated ? (
-                      <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
+                      <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen, descripcion: promo.descripcion ?? undefined })}>
                         +
                       </button>
                     ) : (

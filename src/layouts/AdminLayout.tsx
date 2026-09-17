@@ -39,6 +39,7 @@ const navItemsCliente = [
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
   const cerrarMenu = () => setMenuOpen(false);

@@ -1,16 +1,22 @@
-
 import { useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
+import '../styles/social-login.css';
 
 function getErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
-    const data = error.response?.data as
-      | { message?: string; error?: string }
-      | undefined;
-    return data?.message ?? data?.error ?? 'Credenciales incorrectas.';
+    if (!error.response) {
+      return 'No se pudo conectar con el servidor.';
+    }
+    const data = error.response.data;
+    if (typeof data === 'string') {
+      return `Error del servidor (${error.response.status}).`;
+    }
+    const msg = (data as Record<string, unknown>)?.message ?? (data as Record<string, unknown>)?.error;
+    if (typeof msg === 'string') return msg;
+    return `Error inesperado (${error.response.status}).`;
   }
   if (error instanceof Error) {
     return error.message;
@@ -27,6 +33,9 @@ export default function Login() {
 
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const passwordCambiada =
+    (location.state as { toast?: string } | null)?.toast === 'password_ok';
 
   if (isAuthenticated) {
     return <Navigate to={user?.role === 'Cliente' ? '/' : '/inicio'} replace />;
@@ -39,7 +48,6 @@ export default function Login() {
 
     try {
       await login(email, password);
-      // Lee el rol recién guardado (AuthContext ya lo setea)
       const stored = localStorage.getItem('user');
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rol === 'Cliente' ? '/' : '/inicio', { replace: true, state: { toast: 'login_ok' } });
@@ -50,10 +58,19 @@ export default function Login() {
     }
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = 'http://127.0.0.1:8000/api/auth/google';
+  };
+
   return (
     <AuthLayout>
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
+        {passwordCambiada && (
+          <p className="descripcion" role="status" style={{ color: '#1e8e3e', fontWeight: 700 }}>
+            Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.
+          </p>
+        )}
         <form onSubmit={handleSubmit} noValidate>
           <h2>CORREO*</h2>
           <input
@@ -101,6 +118,40 @@ export default function Login() {
           <Link to="/recuperar-contrasena" className="link">
             ¿Recuperar tu contraseña?
           </Link>
+
+          <div className="separador-contenedor">
+            <div className="linea" />
+            <span className="circulo">o continúa con</span>
+            <div className="linea" />
+          </div>
+
+          <div className="botones-sociales">
+            <button
+              type="button"
+              className="btn-social btn-social-google"
+              onClick={handleGoogleLogin}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path
+                  fill="#4285F4"
+                  d="M23.52 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.77-2.4 3.62v3h3.88c2.27-2.09 3.57-5.17 3.57-8.81Z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.96-1.07 7.95-2.92l-3.88-3c-1.08.72-2.46 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.27v3.11C3.25 21.3 7.28 24 12 24Z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.27 14.27a7.2 7.2 0 0 1 0-4.54V6.62H1.27a12 12 0 0 0 0 10.76l4-3.11Z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.77c1.76 0 3.34.6 4.58 1.79l3.44-3.44C17.95 1.19 15.24 0 12 0 7.28 0 3.25 2.7 1.27 6.62l4 3.11C6.22 6.88 8.87 4.77 12 4.77Z"
+                />
+              </svg>
+              <span>Continuar con Google</span>
+            </button>
+          </div>
 
           <div className="separador-contenedor">
             <div className="linea" />
