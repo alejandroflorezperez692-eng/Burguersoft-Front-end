@@ -7,6 +7,7 @@ import apiClient from '../api/client';
 import promocionFallback from '../assets/img/promocion.png';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
+import AdminLoading from '../components/AdminLoading';
 import '../styles/public.css';
 
 type Promocion = {
@@ -60,52 +61,56 @@ export default function Home() {
       <section className="promociones">
         <h2>Combos Diarios</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
-        <div className="grid-promociones">
-          {promos === null ? null : activas.length === 0 ? (
-            <p className="promo-vacio">No hay promociones activas en este momento.</p>
-          ) : (
-            activas.map((promo) => (
-              <div className="promo-card-pub" key={promo.id}>
-                <div className="promo-img-pub">
-                  <img
-                    src={promo.imagen || promocionFallback}
-                    alt={promo.nombre}
-                    onError={(e) => {
-                      e.currentTarget.src = promocionFallback;
-                    }}
-                  />
-                  <span className="promo-badge-pub">PROMO</span>
-                </div>
-                <div className="promo-info-pub">
-                  <h3>{promo.nombre}</h3>
-                  {promo.descripcion && <p>{promo.descripcion}</p>}
-                  {(promo.fecha_inicio || promo.fecha_fin) && (
-                    <div className="promo-fechas">
-                      {promo.fecha_inicio && <>Desde {promo.fecha_inicio}</>}
-                      {promo.fecha_fin && <> hasta {promo.fecha_fin}</>}
-                    </div>
-                  )}
-                  <div className="promo-footer-pub">
-                    <div className="promo-precio-pub">
-                      {formatCOP(Number(promo.precio))}
-                    </div>
-                    {isAuthenticated ? (
-                      <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
-                        +
-                      </button>
-                    ) : (
-                      <Link to="/login" title="Inicia sesión para pedir">
-                        <button type="button" className="btn-circular-add btn-login">
+        {promos === null ? (
+          <AdminLoading texto="Cargando combos" subtexto="Preparando las mejores promociones" />
+        ) : (
+          <div className="grid-promociones">
+            {activas.length === 0 ? (
+              <p className="promo-vacio">No hay promociones activas en este momento.</p>
+            ) : (
+              activas.map((promo) => (
+                <div className="promo-card-pub" key={promo.id}>
+                  <div className="promo-img-pub">
+                    <img
+                      src={promo.imagen || promocionFallback}
+                      alt={promo.nombre}
+                      onError={(e) => {
+                        e.currentTarget.src = promocionFallback;
+                      }}
+                    />
+                    <span className="promo-badge-pub">PROMO</span>
+                  </div>
+                  <div className="promo-info-pub">
+                    <h3>{promo.nombre}</h3>
+                    {promo.descripcion && <p>{promo.descripcion}</p>}
+                    {(promo.fecha_inicio || promo.fecha_fin) && (
+                      <div className="promo-fechas">
+                        {promo.fecha_inicio && <>Desde {promo.fecha_inicio}</>}
+                        {promo.fecha_fin && <> hasta {promo.fecha_fin}</>}
+                      </div>
+                    )}
+                    <div className="promo-footer-pub">
+                      <div className="promo-precio-pub">
+                        {formatCOP(Number(promo.precio))}
+                      </div>
+                      {isAuthenticated ? (
+                        <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
                           +
                         </button>
-                      </Link>
-                    )}
+                      ) : (
+                        <Link to="/login" title="Inicia sesión para pedir">
+                          <button type="button" className="btn-circular-add btn-login">
+                            +
+                          </button>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
-          )}
-        </div>
+              ))
+            )}
+          </div>
+        )}
       </section>
 
       <Footer />

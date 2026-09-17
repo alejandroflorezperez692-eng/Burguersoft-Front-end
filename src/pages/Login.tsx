@@ -1,9 +1,9 @@
-
 import { useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
+import AdminLoading from '../components/AdminLoading';
 
 function getErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
@@ -49,6 +49,10 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  if (loading) {
+    return <AdminLoading texto="Iniciando sesión" subtexto="Verificando tus credenciales" />;
+  }
 
   return (
     <AuthLayout>

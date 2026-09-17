@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
+import AdminLoading from '../../components/AdminLoading';
 
 interface Producto {
-  id_producto: number;
-  nombre_producto: string;
-  valor_producto: number;
-  descri_producto: string;
-  img_producto: string;
-  id_categoria: number;
+  id: number;
+  nombre: string;
+  valor: number;
+  descripcion: string;
+  img: string;
+  categoria: string | number;
 }
 
 const CATEGORIAS = [
@@ -16,12 +17,19 @@ const CATEGORIAS = [
   'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
 ];
 
+// El backend devuelve categoria como texto ("Hamburguesa"), pero datos viejos
+// pueden traerla como número (1-9). Normaliza ambos a nombre.
+const catNombre = (c: unknown): string => {
+  if (typeof c === 'number') return CATEGORIAS[c - 1] ?? '';
+  return (c as string | null | undefined) ?? '';
+};
+
 const emptyForm = {
-  nombre_producto: '',
-  valor_producto: '',
-  descri_producto: '',
-  img_producto: '',
-  id_categoria: 1,
+  nombre: '',
+  valor: '',
+  descripcion: '',
+  img: '',
+  categoria: 'Hamburguesa',
 };
 
 function ThumbProducto({ img, nombre }: { img?: string | null; nombre?: string | null }) {
@@ -40,8 +48,8 @@ function ThumbProducto({ img, nombre }: { img?: string | null; nombre?: string |
   }
   return (
     <img
-      src={img}
-      alt={nombre}
+      src={img ?? ''}
+      alt={nombre ?? 'Producto'}
       onError={() => setErr(true)}
       style={{ width: 42, height: 42, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
     />
@@ -75,34 +83,39 @@ export default function MenuAdmin() {
   useEffect(() => { load(); }, []);
 
   const filtered = (items ?? []).filter((p) =>
-    (catFiltro === 0 || p?.id_categoria === catFiltro) &&
-    (p?.nombre_producto ?? '').toLowerCase().includes((q ?? '').toLowerCase())
+    (catFiltro === 0 || catNombre(p?.categoria) === CATEGORIAS[catFiltro - 1]) &&
+    (p?.nombre ?? '').toLowerCase().includes((q ?? '').toLowerCase())
   );
 
-  const grouped = CATEGORIAS.reduce<Record<string, Producto[]>>((acc, cat, i) => {
-    const prods = filtered.filter((p) => p?.id_categoria === i + 1);
+  const grouped = CATEGORIAS.reduce<Record<string, Producto[]>>((acc, cat) => {
+    const prods = filtered.filter((p) => catNombre(p?.categoria) === cat);
     if (prods.length > 0) acc[cat] = prods;
     return acc;
   }, {});
+
+  // Productos con categoria desconocida/vacía: van a "Otras" para que nunca desaparezcan
+  const sinCategoria = filtered.filter((p) => !CATEGORIAS.includes(catNombre(p?.categoria)));
+  if (sinCategoria.length > 0) grouped['Otras'] = sinCategoria;
 
   const openNew = () => { setForm(emptyForm); setEditId(null); setModal(true); };
 
   const openEdit = (p: Producto) => {
     setForm({
-      nombre_producto: p.nombre_producto ?? '',
-      valor_producto: String(p.valor_producto ?? ''),
-      descri_producto: p.descri_producto ?? '',
-      img_producto: p.img_producto ?? '',
-      id_categoria: p.id_categoria ?? 1,
+      nombre: p.nombre ?? '',
+      valor: String(p.valor ?? ''),
+      descripcion: p.descripcion ?? '',
+      img: p.img ?? '',
+      categoria: catNombre(p.categoria) || 'Hamburguesa',
     });
-    setEditId(p.id_producto);
+    setEditId(p.id);
     setModal(true);
   };
 
   const guardar = async () => {
-    if (!form.nombre_producto.trim()) { showToast('El nombre es obligatorio', true); return; }
-    if (Number(form.valor_producto) < 0) { showToast('El precio no puede ser negativo', true); return; }
-    const body = { ...form, valor_producto: Number(form.valor_producto) || 0 };
+    if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
+    if (Number(form.valor) < 0) { showToast('El precio no puede ser negativo', true); return; }
+    // El backend valida categoria como texto (in:Hamburguesa,...), no número
+    const body = { ...form, valor: Number(form.valor) || 0, categoria: catNombre(form.categoria) || 'Hamburguesa' };
     try {
       if (editId) {
         await apiClient.put(`/productos/${editId}`, body);
@@ -119,8 +132,8 @@ export default function MenuAdmin() {
   };
 
   const del = async (id: number) => {
-    const p = items.find((x) => x.id_producto === id);
-    if (!confirm(`¿Eliminar "${p?.nombre_producto ?? id}"?`)) return;
+    const p = items.find((x) => x.id === id);
+    if (!confirm(`¿Eliminar "${p?.nombre  ?? id}"?`)) return;
     try {
       await apiClient.delete(`/productos/${id}`);
       showToast('Producto eliminado');
@@ -157,7 +170,7 @@ export default function MenuAdmin() {
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
+        <AdminLoading texto="Cargando menú" subtexto="Preparando tus productos" />
       ) : Object.keys(grouped).length === 0 ? (
         <p style={{ textAlign: 'center', padding: 40, color: 'var(--text-400)' }}>No se encontraron productos</p>
       ) : (
@@ -178,20 +191,20 @@ export default function MenuAdmin() {
                 </thead>
                 <tbody>
                   {prods.map((p) => (
-                    <tr key={p.id_producto ?? p.nombre_producto ?? Math.random()}>
+                    <tr key={p.id ?? p.nombre ?? Math.random()}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <ThumbProducto img={p.img_producto} nombre={p.nombre_producto} />
-                          <span style={{ fontWeight: 600 }}>{p.nombre_producto ?? 'Sin nombre'}</span>
+                          <ThumbProducto img={p.img} nombre={p.nombre} />
+                          <span style={{ fontWeight: 600 }}>{p.nombre ?? 'Sin nombre'}</span>
                         </div>
                       </td>
-                      <td>${Number(p.valor_producto ?? 0).toLocaleString()}</td>
+                      <td>${Number(p.valor ?? 0).toLocaleString()}</td>
                       <td style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {p.descri_producto || '—'}
+                        {p.descripcion || '—'}
                       </td>
                       <td>
                         <button className="btn-icon btn-icon-edit" onClick={() => openEdit(p)} title="Editar">✏</button>
-                        <button className="btn-icon btn-icon-del" onClick={() => del(p.id_producto)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
+                        <button className="btn-icon btn-icon-del" onClick={() => del(p.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
                       </td>
                     </tr>
                   ))}
@@ -208,18 +221,18 @@ export default function MenuAdmin() {
             <h2>{editId ? 'Editar Producto' : 'Nuevo Producto'}</h2>
             <div className="form-group">
               <label>Nombre</label>
-              <input value={form.nombre_producto} onChange={(e) => setForm({ ...form, nombre_producto: e.target.value })} placeholder="Ej. Hamburguesa Criolla" />
+              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Hamburguesa Criolla" />
             </div>
             <div className="form-group">
               <label>Precio</label>
-              <input type="number" min={0} value={form.valor_producto} onChange={(e) => setForm({ ...form, valor_producto: e.target.value })} />
+              <input type="number" min={0} value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Imagen (URL)</label>
-              <input value={form.img_producto} onChange={(e) => setForm({ ...form, img_producto: e.target.value })} placeholder="https://..." />
+              <input value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
               <div className="logo-preview-wrap">
-                {form.img_producto ? (
-                  <img src={form.img_producto} alt="Vista previa" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                {form.img ? (
+                  <img src={form.img} alt="Vista previa" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 ) : (
                   <span style={{ color: 'var(--text-400)', fontSize: 12 }}>Sin imagen</span>
                 )}
@@ -227,13 +240,13 @@ export default function MenuAdmin() {
             </div>
             <div className="form-group">
               <label>Descripción</label>
-              <textarea value={form.descri_producto} onChange={(e) => setForm({ ...form, descri_producto: e.target.value })} />
+              <textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Categoría</label>
-              <select value={form.id_categoria} onChange={(e) => setForm({ ...form, id_categoria: Number(e.target.value) })}>
-                {CATEGORIAS.map((c, i) => (
-                  <option key={c} value={i + 1}>{c}</option>
+              <select value={catNombre(form.categoria) || 'Hamburguesa'} onChange={(e) => setForm({ ...form, categoria: e.target.value })}>
+                {CATEGORIAS.map((c) => (
+                  <option key={c} value={c}>{c}</option>
                 ))}
               </select>
             </div>

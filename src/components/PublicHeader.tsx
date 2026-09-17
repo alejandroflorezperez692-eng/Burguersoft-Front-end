@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
 import PerfilModal from './PerfilModal';
 import CartPanel from './CartPanel';
+import AdminLoading from './AdminLoading';
 
 const enlaces = [
   { to: '/', label: 'Inicio', end: true },
@@ -20,6 +21,7 @@ export default function PublicHeader() {
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
+  const [saliendo, setSaliendo] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,6 +33,24 @@ export default function PublicHeader() {
     document.addEventListener('click', onClickOutside);
     return () => document.removeEventListener('click', onClickOutside);
   }, []);
+
+  const handleSalir = () => {
+    setMenuAbierto(false);
+    setSaliendo(true);
+    setTimeout(() => {
+      logout();
+      navigate('/', { replace: true });
+      setSaliendo(false);
+    }, 500);
+  };
+
+  if (saliendo) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#fff' }}>
+        <AdminLoading texto="Cerrando sesión" subtexto="Hasta pronto" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -89,7 +109,7 @@ export default function PublicHeader() {
                     <span style={{ width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>🛍️</span>
                     Mis pedidos
                   </button>
-                  <button type="button" className="cerrar-sesion" onClick={() => { logout(); setMenuAbierto(false); navigate('/', { replace: true }); }}>
+                  <button type="button" className="cerrar-sesion" onClick={handleSalir}>
                     <span style={{ width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>↪</span>
                     Cerrar sesión
                   </button>

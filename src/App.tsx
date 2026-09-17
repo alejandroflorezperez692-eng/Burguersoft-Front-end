@@ -2,7 +2,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import PaginaModulo from './components/PaginaModulo';
 import Contactanos from './pages/Contactanos';
-import PublicPlaceholder from './components/PublicPlaceholder';
+import MenuPublico from './pages/MenuPublico';
 import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
@@ -36,7 +36,7 @@ function App() {
       />
       <Route
         path="/menu-publico"
-        element={<PublicPlaceholder titulo="Menú" />}
+        element={<MenuPublico />}
       />
       <Route
         path="/contactanos"

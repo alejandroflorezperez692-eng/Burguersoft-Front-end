@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
+import AdminLoading from '../../components/AdminLoading';
 
 interface DetalleVenta {
   id: number;
   cantidad: number;
   precio_unitario: number;
   subtotal: number;
-  producto?: { nombre_producto: string };
+  producto?: { id?: number; nombre?: string };
 }
 
 interface PromocionVenta {
   id: number;
-  nombre_promo: string;
-  valor_promo: number;
+  nombre: string;
 }
 
 interface Venta {
@@ -22,18 +22,24 @@ interface Venta {
   metodo_pago: string;
   estado: string;
   tipo_entrega: string;
-  usuario?: { nombre_usuario: string; apellido_usuario: string };
+  usuario_id: number;
+  usuario?: { nombre: string; apellido: string };
   detalles: DetalleVenta[];
   promociones: PromocionVenta[];
 }
 
 interface Producto {
-  id_producto: number;
-  nombre_producto: string;
-  valor_producto: number;
+  id: number;
+  nombre: string;
+  valor: number;
 }
 
-const METODOS = ['Efectivo', 'Tarjeta', 'Transferencia', 'Nequi', 'Daviplata'];
+const METODOS = ['Efectivo', 'Tarjeta', 'Transferencia', 'Nequi', 'Daviplata', 'PSE'];
+const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
+const ESTADOS = ['En barra', 'En cocina', 'En camino', 'Listo para recoger', 'Entregado', 'Pagado', 'Cancelado', 'Reembolsada'];
+
+const toArray = <T,>(v: unknown): T[] =>
+  Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
 export default function VentasAdmin() {
   const [items, setItems] = useState<Venta[]>([]);
@@ -41,65 +47,71 @@ export default function VentasAdmin() {
   const [q, setQ] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
+  const [tipoEntrega, setTipoEntrega] = useState('Domicilio');
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
   const [loading, setLoading] = useState(true);
 
-  const toArray = <T,>(v: unknown): T[] =>
-    Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
-
-  const load = () => {
-    Promise.all([
-      apiClient.get<Venta[]>('/ventas'),
-      apiClient.get<Producto[]>('/productos'),
-    ]).then(([r1, r2]) => {
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [r1, r2] = await Promise.all([
+        apiClient.get('/ventas'),
+        apiClient.get('/productos'),
+      ]);
       setItems(toArray<Venta>(r1.data));
       setProductos(toArray<Producto>(r2.data));
-      setLoading(false);
-    }).catch(() => {
+    } catch {
       setItems([]);
       setProductos([]);
+    } finally {
       setLoading(false);
-    });
+    }
   };
 
   useEffect(() => { load(); }, []);
 
+  if (loading) {
+    return <AdminLoading texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
+  }
+
+  const nombreCliente = (v: Venta) =>
+    v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '';
+
   const filtered = (items ?? []).filter((v) =>
     String(v?.id ?? '').includes(q ?? '') ||
-    `${v?.usuario?.nombre_usuario ?? ''} ${v?.usuario?.apellido_usuario ?? ''}`.toLowerCase().includes((q ?? '').toLowerCase())
+    nombreCliente(v).toLowerCase().includes((q ?? '').toLowerCase())
   );
 
-  const ventasHoy = (items ?? []).filter((v) => v?.fecha === new Date().toISOString().slice(0, 10));
+  const hoy = new Date().toISOString().slice(0, 10);
+  const ventasHoy = (items ?? []).filter((v) => (v?.fecha ?? '').slice(0, 10) === hoy);
   const ingresosHoy = ventasHoy.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
   const ingresosTotal = (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
   const save = () => {
     if (!productoId) return;
-    const prod = (productos ?? []).find((p) => p?.id_producto === productoId);
+    const prod = (productos ?? []).find((p) => p?.id === productoId);
     if (!prod) return;
     const body = {
+      carrito: [{ producto_id: productoId, cantidad: Number(cantidad) || 1 }],
       metodo_pago: metodoPago,
-      items: [{ producto_id: productoId, cantidad: Number(cantidad) || 1, precio_unitario: Number(prod.valor_producto) || 0 }],
+      tipo_entrega: tipoEntrega,
     };
     apiClient.post('/ventas', body).then(() => {
       setShowForm(false);
       setProductoId(0);
       setCantidad('1');
       load();
-    });
+    }).catch(() => alert('No se pudo registrar la venta. Revisa el stock y los datos.'));
   };
 
   const updateEstado = (id: number, estado: string) => {
-    apiClient.put(`/ventas/${id}`, { estado }).then(() => load());
+    apiClient.patch(`/ventas/${id}/estado`, { estado })
+      .then(() => load())
+      .catch(() => alert('No se pudo cambiar el estado.'));
   };
 
-  const del = (id: number) => {
-    if (!confirm('¿Eliminar esta venta?')) return;
-    apiClient.delete(`/ventas/${id}`).then(() => load());
-  };
-
-  const selectedProd = (productos ?? []).find((p) => p?.id_producto === productoId);
+  const selectedProd = (productos ?? []).find((p) => p?.id === productoId);
 
   return (
     <div className="page-inner">
@@ -120,7 +132,7 @@ export default function VentasAdmin() {
         </div>
         <div className="stat-card">
           <span className="stat-label">Ingresos hoy</span>
-          <span className="stat-val">${ingresosHoy.toLocaleString()}</span>
+          <span className="stat-val">${ingresosHoy.toLocaleString('es-CO')}</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Total ventas</span>
@@ -128,7 +140,7 @@ export default function VentasAdmin() {
         </div>
         <div className="stat-card">
           <span className="stat-label">Ingresos totales</span>
-          <span className="stat-val">${ingresosTotal.toLocaleString()}</span>
+          <span className="stat-val">${ingresosTotal.toLocaleString('es-CO')}</span>
         </div>
       </div>
 
@@ -140,7 +152,7 @@ export default function VentasAdmin() {
               <label>Producto</label>
               <select value={productoId} onChange={(e) => setProductoId(Number(e.target.value))}>
                 <option value={0}>Seleccionar...</option>
-                {(productos ?? []).map((p) => <option key={p?.id_producto ?? p?.nombre_producto} value={p?.id_producto}>{p?.nombre_producto ?? 'Sin nombre'} — ${Number(p?.valor_producto || 0).toLocaleString()}</option>)}
+                {(productos ?? []).map((p) => <option key={p?.id ?? p?.nombre} value={p?.id}>{p?.nombre ?? 'Sin nombre'} — ${Number(p?.valor || 0).toLocaleString('es-CO')}</option>)}
               </select>
             </div>
             <div className="form-group">
@@ -153,10 +165,16 @@ export default function VentasAdmin() {
                 {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
+            <div className="form-group">
+              <label>Tipo de entrega</label>
+              <select value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
+                {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </div>
           </div>
           {selectedProd && (
             <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-900)' }}>
-              Subtotal: ${((Number(selectedProd.valor_producto) || 0) * (Number(cantidad) || 0)).toLocaleString()}
+              Subtotal: ${((Number(selectedProd.valor) || 0) * (Number(cantidad) || 0)).toLocaleString('es-CO')}
             </p>
           )}
           <div className="modal-actions" style={{ marginTop: 8 }}>
@@ -170,10 +188,7 @@ export default function VentasAdmin() {
         <input placeholder="Buscar venta..." value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
-      {loading ? (
-        <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
-      ) : (
-        <div className="tabla-responsive">
+      <div className="tabla-responsive">
         <table className="data-table">
           <thead>
             <tr>
@@ -183,27 +198,26 @@ export default function VentasAdmin() {
               <th>Total</th>
               <th>Método</th>
               <th>Estado</th>
-              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((v) => (
               <tr key={v?.id}>
                 <td>{v?.id}</td>
-                <td style={{ fontWeight: 600 }}>{v?.usuario?.nombre_usuario ?? ''} {v?.usuario?.apellido_usuario ?? ''}</td>
+                <td style={{ fontWeight: 600 }}>{nombreCliente(v) || '—'}</td>
                 <td>
                   <div className="venta-detalles">
                     {(v?.detalles ?? []).map((d) => (
                       <span key={d?.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
-                        {d?.producto?.nombre_producto ?? 'Producto'} x{d?.cantidad ?? 0}
+                        {d?.producto?.nombre ?? 'Producto'} x{d?.cantidad ?? 0}
                       </span>
                     ))}
                     {(v?.promociones ?? []).map((p) => (
-                      <span key={p?.id} className="badge badge-info" style={{ fontSize: 10 }}>{p?.nombre_promo}</span>
+                      <span key={p?.id} className="badge badge-info" style={{ fontSize: 10 }}>{p?.nombre}</span>
                     ))}
                   </div>
                 </td>
-                <td style={{ fontWeight: 700 }}>${Number(v?.valor_total || 0).toLocaleString()}</td>
+                <td style={{ fontWeight: 700 }}>${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
                 <td><span className="badge badge-info">{v?.metodo_pago ?? ''}</span></td>
                 <td>
                   <select
@@ -211,24 +225,19 @@ export default function VentasAdmin() {
                     onChange={(e) => updateEstado(v.id, e.target.value)}
                     style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    {['En cocina', 'En barra', 'En camino', 'Listo para recoger', 'Entregado', 'Pendiente de pago', 'Pagado', 'Cancelado'].map((e) => (
+                    {ESTADOS.map((e) => (
                       <option key={e} value={e}>{e}</option>
                     ))}
                   </select>
                 </td>
-                <td>
-                  <button className="btn-icon btn-icon-del" onClick={() => del(v.id)} title="Eliminar">🗑</button>
-                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
+              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}
           </tbody>
         </table>
-
-        </div>
-      )}
+      </div>
     </div>
   );
 }

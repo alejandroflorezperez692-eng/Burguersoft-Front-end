@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
+import AdminLoading from '../../components/AdminLoading';
 
 interface Producto {
   id: number;
@@ -9,10 +10,10 @@ interface Producto {
 
 interface Promocion {
   id: number;
-  nombre_promo: string;
-  descripcion_promo: string;
-  valor_promo: number;
-  img_promo: string;
+  nombre: string;
+  descripcion: string;
+  valor: number;
+  img: string;
   fecha_inicio: string;
   fecha_fin: string;
   estado: string;
@@ -20,7 +21,7 @@ interface Promocion {
 }
 
 const emptyForm = {
-  nombre_promo: '', descripcion_promo: '', valor_promo: '', img_promo: '',
+  nombre: '', descripcion: '', valor: '', img: '',
   fecha_inicio: '', fecha_fin: '', estado: 'Activa',
 };
 
@@ -71,7 +72,7 @@ export default function PromocionesAdmin() {
 
   const filtered = (items ?? []).filter((p) =>
     (filtro === 'todas' || est(p) === filtro) &&
-    (p?.nombre_promo ?? '').toLowerCase().includes((q ?? '').toLowerCase())
+    (p?.nombre ?? '').toLowerCase().includes((q ?? '').toLowerCase())
   );
 
   const activas = (items ?? []).filter((p) => est(p) === 'Activa').length;
@@ -85,10 +86,10 @@ export default function PromocionesAdmin() {
 
   const openEdit = (p: Promocion) => {
     setForm({
-      nombre_promo: p?.nombre_promo ?? '',
-      descripcion_promo: p?.descripcion_promo ?? '',
-      valor_promo: String(p?.valor_promo ?? ''),
-      img_promo: p?.img_promo ?? '',
+      nombre: p?.nombre ?? '',
+      descripcion: p?.descripcion ?? '',
+      valor: String(p?.valor ?? ''),
+      img: p?.img ?? '',
       fecha_inicio: p?.fecha_inicio?.slice(0, 10) ?? '',
       fecha_fin: p?.fecha_fin?.slice(0, 10) ?? '',
       estado: p?.estado ?? 'Activa',
@@ -105,12 +106,12 @@ export default function PromocionesAdmin() {
   };
 
   const guardar = async () => {
-    if (!form.nombre_promo.trim()) { showToast('El nombre es obligatorio', true); return; }
-    if (Number(form.valor_promo) < 0) { showToast('El precio no puede ser negativo', true); return; }
+    if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
+    if (Number(form.valor) < 0) { showToast('El precio no puede ser negativo', true); return; }
     if (selectedProds.length === 0) { showToast('Selecciona al menos un producto', true); return; }
     const body = {
       ...form,
-      valor_promo: Number(form.valor_promo) || 0,
+      valor: Number(form.valor) || 0,
       productos_ids: selectedProds,
     };
     try {
@@ -130,7 +131,7 @@ export default function PromocionesAdmin() {
 
   const del = async (id: number) => {
     const p = (items ?? []).find((x) => x?.id === id);
-    if (!confirm(`¿Eliminar "${p?.nombre_promo ?? id}"?`)) return;
+    if (!confirm(`¿Eliminar "${p?.nombre ?? id}"?`)) return;
     try {
       await apiClient.delete(`/promociones/${id}`);
       showToast('Promoción eliminada');
@@ -162,7 +163,7 @@ export default function PromocionesAdmin() {
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
+        <AdminLoading texto="Cargando promociones" subtexto="Armando tus combos" />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
           {filtered.map((p) => {
@@ -172,17 +173,17 @@ export default function PromocionesAdmin() {
                 background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
                 boxShadow: 'var(--shadow-sm)', overflow: 'hidden', display: 'flex', flexDirection: 'column',
               }}>
-                {p?.img_promo && (
+                {p?.img && (
                   <div style={{ height: 130, overflow: 'hidden', background: 'var(--surface-3)' }}>
-                    <img src={p.img_promo} alt={p.nombre_promo ?? 'promoción'} onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={p.img} alt={p.nombre ?? 'promoción'} onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 )}
                 <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                    <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, color: 'var(--text-900)', margin: 0 }}>{p?.nombre_promo ?? 'Sin nombre'}</h3>
+                    <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, color: 'var(--text-900)', margin: 0 }}>{p?.nombre ?? 'Sin nombre'}</h3>
                     <span className={`badge ${e === 'Activa' ? 'badge-success' : 'badge-gray'}`}>{e}</span>
                   </div>
-                  {p?.descripcion_promo && <p style={{ fontSize: 13, color: 'var(--text-400)', margin: 0 }}>{p.descripcion_promo}</p>}
+                  {p?.descripcion && <p style={{ fontSize: 13, color: 'var(--text-400)', margin: 0 }}>{p.descripcion}</p>}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                     {(p?.productos ?? []).map((pr) => (
                       <span key={pr?.id} className="badge badge-info" style={{ fontSize: 10 }}>{pr?.nombre}</span>
@@ -194,7 +195,7 @@ export default function PromocionesAdmin() {
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: 20, fontWeight: 800, color: 'var(--brand)' }}>${Number(p?.valor_promo || 0).toLocaleString()}</span>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: 20, fontWeight: 800, color: 'var(--brand)' }}>${Number(p?.valor || 0).toLocaleString()}</span>
                     <div>
                       <button className="btn-icon btn-icon-edit" onClick={() => openEdit(p)} title="Editar">✏</button>
                       <button className="btn-icon btn-icon-del" onClick={() => del(p.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
@@ -216,22 +217,22 @@ export default function PromocionesAdmin() {
             <h2>{editId ? 'Editar Promoción' : 'Nueva Promoción'}</h2>
             <div className="form-group">
               <label>Nombre</label>
-              <input value={form.nombre_promo} onChange={(e) => setForm({ ...form, nombre_promo: e.target.value })} placeholder="Ej. Combo Familiar" />
+              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Combo Familiar" />
             </div>
             <div className="form-group">
               <label>Descripción</label>
-              <textarea value={form.descripcion_promo} onChange={(e) => setForm({ ...form, descripcion_promo: e.target.value })} />
+              <textarea value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Precio del combo</label>
-              <input type="number" min={0} value={form.valor_promo} onChange={(e) => setForm({ ...form, valor_promo: e.target.value })} />
+              <input type="number" min={0} value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Imagen (URL)</label>
-              <input value={form.img_promo} onChange={(e) => setForm({ ...form, img_promo: e.target.value })} placeholder="https://..." />
+              <input value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
               <div className="logo-preview-wrap">
-                {form.img_promo ? (
-                  <img src={form.img_promo} alt="Vista previa" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                {form.img ? (
+                  <img src={form.img} alt="Vista previa" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
                 ) : (
                   <span style={{ color: 'var(--text-400)', fontSize: 12 }}>Sin imagen</span>
                 )}

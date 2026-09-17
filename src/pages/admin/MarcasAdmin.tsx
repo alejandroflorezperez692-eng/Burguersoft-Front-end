@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import apiClient from '../../api/client';
 import marcaFallback from '../../assets/img/marca-comercial.png';
+import AdminLoading from '../../components/AdminLoading';
 
 interface Marca {
   id: number;
@@ -137,7 +138,7 @@ export default function MarcasAdmin() {
       </div>
 
       {loading ? (
-        <p style={{ color: 'var(--text-400)', padding: 20 }}>Cargando...</p>
+        <AdminLoading texto="Cargando marcas" subtexto="Listando tus proveedores" />
       ) : (
         <div className="marcas-grid">
           {filtered.map((m) => (

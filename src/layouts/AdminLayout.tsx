@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import logoClaro from '../assets/img/icono1.png';
@@ -16,6 +15,7 @@ import cerrarSesion from '../assets/img/cerrar-sesion.png';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/admin.css';
+import AdminLoading from '../components/AdminLoading';
 
 const navItemsAdmin = [
   { to: '/inicio', label: 'Inicio', icono: casa },
@@ -41,12 +41,18 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [saliendo, setSaliendo] = useState(false);
   const cerrarMenu = () => setMenuOpen(false);
   const isCliente = user?.role === 'Cliente';
   const navItems = isCliente ? navItemsCliente : navItemsAdmin;
+
   const handleSalir = () => {
-    logout();
-    navigate('/login', { replace: true });
+    setSaliendo(true);
+    setTimeout(() => {
+      logout();
+      navigate('/login', { replace: true });
+      setSaliendo(false);
+    }, 500);
   };
 
   useEffect(() => {
@@ -60,6 +66,14 @@ export default function AdminLayout() {
       document.body.style.overflow = '';
     };
   }, [menuOpen]);
+
+  if (saliendo) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: '#fff' }}>
+        <AdminLoading texto="Cerrando sesión" subtexto="Hasta pronto" />
+      </div>
+    );
+  }
 
   return (
     <div className="admin-body">

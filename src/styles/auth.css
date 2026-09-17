@@ -1268,3 +1268,22 @@ body.dark-mode .requisito {
 body.dark-mode .requisito.cumple {
   color: #4ade80;
 }
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.loading-screen img {
+  width: 100px;
+  height: 100px;
+}
