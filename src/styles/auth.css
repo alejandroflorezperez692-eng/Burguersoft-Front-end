@@ -1408,6 +1408,7 @@ body.dark-mode .boton-mostrar-password:hover,
 body.dark-mode .boton-mostrar-password:focus,
 body.dark-mode .boton-mostrar-password:focus-visible {
   color: #ffffff !important;
+}
 /* ===== Recuperar contraseña · verificación de código (OTP) ===== */
 
 .otp-paso {
