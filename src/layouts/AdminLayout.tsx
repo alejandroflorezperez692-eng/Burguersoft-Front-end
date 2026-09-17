@@ -41,7 +41,6 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const location = useLocation();
   const cerrarMenu = () => setMenuOpen(false);
   const isCliente = user?.role === 'Cliente';
   const navItems = isCliente ? navItemsCliente : navItemsAdmin;
