@@ -6,7 +6,11 @@ export type CartItem = {
   precio: number;
   imagen?: string | null;
   cantidad: number;
+  descripcion?: string;
 };
+
+export type TipoEntrega = 'Domicilio' | 'Para recoger' | 'En restaurante';
+export type CuandoOpcion = 'Lo antes posible' | 'Programar para más tarde';
 
 type CartContextValue = {
   items: CartItem[];
@@ -20,12 +24,41 @@ type CartContextValue = {
   quitar: (id: string | number) => void;
   actualizarCantidad: (id: string | number, cantidad: number) => void;
   vaciar: () => void;
+
+  // Datos de entrega, compartidos entre el carrito y el checkout
+  tipoEntrega: TipoEntrega;
+  setTipoEntrega: (v: TipoEntrega) => void;
+  cuando: CuandoOpcion;
+  setCuando: (v: CuandoOpcion) => void;
+  fechaProgramada: string;
+  setFechaProgramada: (v: string) => void;
+  horaProgramada: string;
+  setHoraProgramada: (v: string) => void;
 };
 
 const CartContext = createContext<CartContextValue | undefined>(undefined);
 export { CartContext };
 
 const STORAGE_KEY = 'burguersoft_cart';
+
+const ENTREGA_KEY = 'burguersoft_entrega';
+
+type EntregaGuardada = {
+  tipoEntrega: TipoEntrega;
+  cuando: CuandoOpcion;
+  fechaProgramada: string;
+  horaProgramada: string;
+};
+
+function readStoredEntrega(): Partial<EntregaGuardada> {
+  try {
+    const raw = localStorage.getItem(ENTREGA_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
 
 function readStored(): CartItem[] {
   try {
@@ -42,9 +75,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(() => readStored());
   const [isOpen, setIsOpen] = useState(false);
 
+  const entregaGuardada = readStoredEntrega();
+  const [tipoEntrega, setTipoEntrega] = useState<TipoEntrega>(entregaGuardada.tipoEntrega ?? 'Domicilio');
+  const [cuando, setCuando] = useState<CuandoOpcion>(entregaGuardada.cuando ?? 'Lo antes posible');
+  const [fechaProgramada, setFechaProgramada] = useState(entregaGuardada.fechaProgramada ?? '');
+  const [horaProgramada, setHoraProgramada] = useState(entregaGuardada.horaProgramada ?? '');
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
+
+    useEffect(() => {
+    localStorage.setItem(
+      ENTREGA_KEY,
+      JSON.stringify({ tipoEntrega, cuando, fechaProgramada, horaProgramada }),
+    );
+  }, [tipoEntrega, cuando, fechaProgramada, horaProgramada]);
 
   const count = useMemo(() => items.reduce((a, b) => a + b.cantidad, 0), [items]);
   const total = useMemo(() => items.reduce((a, b) => a + b.precio * b.cantidad, 0), [items]);
@@ -80,8 +126,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const toggle = useCallback(() => setIsOpen((v) => !v), []);
 
   const value = useMemo<CartContextValue>(
-    () => ({ items, count, total, isOpen, open, close, toggle, agregar, quitar, actualizarCantidad, vaciar }),
-    [items, count, total, isOpen, open, close, toggle, agregar, quitar, actualizarCantidad, vaciar],
+    () => ({
+      items, count, total, isOpen, open, close, toggle, agregar, quitar, actualizarCantidad, vaciar,
+      tipoEntrega, setTipoEntrega, cuando, setCuando, fechaProgramada, setFechaProgramada, horaProgramada, setHoraProgramada,
+    }),
+    [items, count, total, isOpen, open, close, toggle, agregar, quitar, actualizarCantidad, vaciar,
+     tipoEntrega, cuando, fechaProgramada, horaProgramada],
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

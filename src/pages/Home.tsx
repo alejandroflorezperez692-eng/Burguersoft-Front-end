@@ -59,7 +59,7 @@ export default function Home() {
       <HeroCarousel />
 
       <section className="promociones">
-        <h2>Combos Diarios</h2>
+        <h2>BURGUERSOFT</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
         {promos === null ? (
           <AdminLoading texto="Cargando combos" subtexto="Preparando las mejores promociones" />
@@ -96,6 +96,7 @@ export default function Home() {
                       {isAuthenticated ? (
                         <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
                           +
+
                         </button>
                       ) : (
                         <Link to="/login" title="Inicia sesión para pedir">
