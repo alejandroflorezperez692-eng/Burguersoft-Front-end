@@ -30,13 +30,13 @@
 
 .mn-row-main {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 14px;
   align-items: end;
 }
 .mn-row-secondary {
   display: grid;
-  grid-template-columns: 1fr 260px 1fr;
+  grid-template-columns: 1fr 260px;
   gap: 14px;
   align-items: start;
 }
@@ -322,8 +322,11 @@
   transition: transform 0.22s var(--ease), box-shadow 0.22s, border-color 0.22s;
 }
 .mn-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-md); border-color: var(--border-strong); }
-.mn-card.agotado { filter: grayscale(1); opacity: 0.6; }
-.mn-card.agotado:hover { transform: none; box-shadow: none; }
+.mn-card.agotado .mn-card-imgwrap,
+.mn-card.agotado .mn-card-body {
+  filter: grayscale(1);
+  opacity: 0.6;
+}
 
 .mn-card-imgwrap { overflow: hidden; height: 155px; background: var(--surface-3); }
 .mn-card-img {
@@ -442,4 +445,106 @@
   .mn-form-header, .mn-form-footer { padding-left: 16px; padding-right: 16px; }
   .mn-row-main { grid-template-columns: 1fr 1fr; }
   .mn-row-secondary { grid-template-columns: 1fr; }
+}
+/* ===== Formulario rediseñado ===== */
+.mn-form-header { padding: 18px 28px; }
+.mn-form-body { padding: 28px; }
+
+.mn-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 32px;
+  align-items: start;
+}
+.mn-form-left { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.mn-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.mn-req { color: var(--brand); }
+
+.mn-field input,
+.mn-field select,
+.mn-field textarea {
+  height: 44px;
+  border-radius: var(--r-md);
+  padding: 0 14px;
+}
+.mn-field textarea { height: auto; min-height: 130px; padding: 12px 14px; }
+
+/* Selects con la misma apariencia que los campos de texto */
+.mn-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a08060' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+}
+
+/* Prefijo $ en el precio */
+.mn-input-prefix { position: relative; }
+.mn-input-prefix > span {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-400);
+  font-weight: 700;
+  pointer-events: none;
+}
+.mn-field .mn-input-prefix > input { padding-left: 30px; }
+
+.mn-counter { align-self: flex-end; font-size: 11px; color: var(--text-400); }
+
+/* Zona de imagen */
+.mn-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--r-lg);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.mn-upload:hover { border-color: var(--brand); }
+.mn-upload.has-img { border-style: solid; }
+.mn-upload-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mn-upload-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px;
+  text-align: center;
+  color: var(--text-400);
+}
+.mn-upload-empty svg { color: var(--brand); margin-bottom: 4px; }
+.mn-upload-empty strong { font-size: 13px; color: var(--text-600); }
+.mn-upload-empty small { font-size: 11px; }
+.mn-upload-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+.mn-upload-bar .mn-btn-pick { margin-top: 0; flex-shrink: 0; padding: 7px 14px; font-size: 12px; }
+
+@media (max-width: 900px) {
+  .mn-form-grid { grid-template-columns: 1fr; }
+  .mn-upload { aspect-ratio: 16 / 9; }
+}
+@media (max-width: 600px) {
+  .mn-row-3 { grid-template-columns: 1fr; }
+  .mn-form-body { padding: 18px 16px; }
+}
+.mn-field select.est-Disponible {
+  color: #1a7a42;
+  background-color: #d5f5e3;
+  border-color: #1a7a42;
+  font-weight: 700;
+}
+.mn-field select.est-Agotado {
+  color: #992222;
+  background-color: #fde8e8;
+  border-color: #c8382a;
+  font-weight: 700;
 }

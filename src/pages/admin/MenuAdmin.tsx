@@ -18,26 +18,13 @@ interface Producto {
   estado: Estado;
 }
 
-interface MateriaPrima {
-  id: number;
-  nombre: string;
-  cantidad: number | string;
-  unidad_medida: string | null;
-}
-
-interface Ingrediente {
-  id: number | null; // null = aún no guardado (producto nuevo)
-  materia_id: number;
-  nombre: string;
-  cantidad: number;
-}
 
 const CATEGORIAS = [
   'Hamburguesa', 'Perros Caliente', 'Salchipapa', 'Fritos',
-  'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
+  'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza', 'Combos',
 ];
 
-const emptyForm = { nombre: '', valor: '', cantidad: '', categoria: '', descripcion: '' };
+const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '' };
 
 const calcularEstado = (cantidad: number | string | null | undefined): Estado => {
   const n = parseInt(String(cantidad ?? ''), 10) || 0;
@@ -48,24 +35,32 @@ const calcularEstado = (cantidad: number | string | null | undefined): Estado =>
 
 const estadoClase = (e: Estado) => `mn-estado-${e.replace(/ /g, '_')}`;
 
-// Muestra el primer error de validación de Laravel si lo hay.
+
 const mensajeError = (err: unknown, porDefecto: string): string => {
   const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
   const primero = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined;
-  return primero || data?.message || porDefecto;
+  const msg = primero || data?.message || porDefecto;
+  if (/23503|foreign key|sale_details|llave for[aá]nea/i.test(msg)) {
+    return 'No se puede eliminar porque tiene ventas registradas. Edítalo y cambia su estado a Agotado.';
+  }
+  return msg;
 };
+
+// Solo acepta URLs de imagen utilizables (absolutas, data/blob o /storage).
+// Los valores legacy tipo "../uploads/..." nunca resuelven y solo generan ruido 404.
+const imgValida = (img: string | null | undefined): boolean =>
+  !!img && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(img);
 
 function CardImg({ img, nombre }: { img: string | null; nombre: string }) {
   const [error, setError] = useState(false);
-  if (!img || error) {
+  if (!imgValida(img) || error) {
     return <div className="mn-card-noimg">{(nombre || '?').charAt(0).toUpperCase()}</div>;
   }
-  return <img className="mn-card-img" src={img} alt={nombre} onError={() => setError(true)} />;
+  return <img className="mn-card-img" src={img ?? ''} alt={nombre} onError={() => setError(true)} />;
 }
 
 export default function MenuAdmin() {
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [materias, setMaterias] = useState<MateriaPrima[]>([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [buscar, setBuscar] = useState('');
@@ -77,15 +72,11 @@ export default function MenuAdmin() {
   const [archivo, setArchivo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [imgActual, setImgActual] = useState(false);
-  const [ingredientes, setIngredientes] = useState<Ingrediente[]>([]);
-  const [ingMateria, setIngMateria] = useState('');
-  const [ingCantidad, setIngCantidad] = useState('');
 
   const panelRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast, showToast } = useToast();
-
-  const estado = calcularEstado(form.cantidad);
+ 
 
   /* ---------- Carga de datos ---------- */
   const cargarProductos = useCallback(async () => {
@@ -98,23 +89,11 @@ export default function MenuAdmin() {
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const cargarMaterias = useCallback(async () => {
-    try {
-      const r = await apiClient.get<MateriaPrima[]>('/materias-primas');
-      setMaterias(Array.isArray(r.data) ? r.data : []);
-    } catch {
-      showToast('Error al cargar materias primas', true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    cargarProductos();
-    cargarMaterias();
-  }, [cargarProductos, cargarMaterias]);
+  cargarProductos();
+}, [cargarProductos]);
 
   // Vista previa de la imagen elegida (y limpieza del object URL)
   useEffect(() => {
@@ -145,9 +124,6 @@ export default function MenuAdmin() {
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [campo]: e.target.value }));
 
-  const soloEnteros = (e: ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, cantidad: e.target.value.replace(/\D/g, '') }));
-
   const elegirArchivo = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
     if (!f) return;
@@ -161,29 +137,8 @@ export default function MenuAdmin() {
     setArchivo(null);
     setPreview(null);
     setImgActual(false);
-    setIngredientes([]);
-    setIngMateria('');
-    setIngCantidad('');
     if (fileRef.current) fileRef.current.value = '';
     setMostrarForm(false); 
-  };
-
-  const cargarReceta = async (productoId: number) => {
-    try {
-      const r = await apiClient.get<{ id: number; materia_id: number; cantidad_usada: number | string; nombre_materia: string }[]>(
-        `/productos/${productoId}/receta`,
-      );
-      setIngredientes(
-        r.data.map((d) => ({
-          id: d.id,
-          materia_id: d.materia_id,
-          nombre: d.nombre_materia,
-          cantidad: Number(d.cantidad_usada),
-        })),
-      );
-    } catch {
-      showToast('Error al cargar ingredientes', true);
-    }
   };
 
   const prepararEdicion = (p: Producto) => {
@@ -191,92 +146,43 @@ export default function MenuAdmin() {
     setForm({
       nombre: p.nombre,
       valor: String(Number(p.valor)),
-      cantidad: String(p.cantidad ?? '0'),
+      estado: p.estado === 'Agotado' ? 'Agotado' : 'Disponible',
       categoria: p.categoria,
       descripcion: p.descripcion ?? '',
     });
     setArchivo(null);
-    setPreview(p.img || null);
+    setPreview(imgValida(p.img) ? p.img : null);
     setImgActual(!!p.img);
     if (fileRef.current) fileRef.current.value = '';
-    setIngredientes([]);
-    cargarReceta(p.id);
     setMostrarForm(true);
     setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-  };
-
-  /* ---------- Ingredientes ---------- */
-  const agregarIngrediente = async () => {
-    const materia = materias.find((m) => m.id === Number(ingMateria));
-    const cantidad = parseFloat(ingCantidad);
-    if (!materia) { showToast('Selecciona una materia prima', true); return; }
-    if (!cantidad || cantidad <= 0) { showToast('Ingresa una cantidad válida', true); return; }
-
-    if (editId) {
-      try {
-        await apiClient.post(`/productos/${editId}/receta`, { materia_id: materia.id, cantidad_usada: cantidad });
-        showToast('Ingrediente agregado');
-        await cargarReceta(editId);
-      } catch (err) {
-        showToast(mensajeError(err, 'No se pudo agregar el ingrediente'), true);
-        return;
-      }
-    } else {
-      setIngredientes((l) => [...l, { id: null, materia_id: materia.id, nombre: materia.nombre, cantidad }]);
-      showToast('Ingrediente agregado');
-    }
-    setIngMateria('');
-    setIngCantidad('');
-  };
-
-  const quitarIngrediente = async (ing: Ingrediente, idx: number) => {
-    if (ing.id === null) {
-      setIngredientes((l) => l.filter((_, i) => i !== idx));
-      return;
-    }
-    try {
-      await apiClient.delete(`/recetas/${ing.id}`);
-      showToast('Ingrediente eliminado');
-      if (editId) await cargarReceta(editId);
-    } catch {
-      showToast('No se pudo eliminar', true);
-    }
   };
 
   /* ---------- Guardar ---------- */
   const guardar = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
-    if (form.valor === '' || Number(form.valor) < 0) { showToast('Ingresa un precio válido', true); return; }
+    if (form.valor === '' || Number(form.valor) <= 0) { showToast('Ingresa un precio mayor a 0', true); return; }
     if (!form.categoria) { showToast('Selecciona una categoría', true); return; }
-    if (!editId && !archivo) { showToast('La imagen es obligatoria para un producto nuevo', true); return; }
+    if (!form.estado) { showToast('Selecciona un estado', true); return; }
+    if (!form.descripcion.trim()) { showToast('La descripción es obligatoria', true); return; }
+    if (!editId && !archivo) { showToast('La imagen es obligatoria', true); return; }
 
     const fd = new FormData();
     fd.append('nombre', form.nombre.trim());
     fd.append('valor', form.valor);
     fd.append('descripcion', form.descripcion.trim());
     fd.append('categoria', form.categoria);
-    fd.append('cantidad', form.cantidad || '0');
+    fd.append('estado', form.estado);
     if (archivo) fd.append('imagen', archivo);
 
     setGuardando(true);
     try {
-      let productoId = editId;
       if (editId) {
-        fd.append('_method', 'PUT'); // PHP no lee multipart en PUT real
+        fd.append('_method', 'PUT');
         await apiClient.post(`/productos/${editId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       } else {
-        const r = await apiClient.post<{ id: number }>('/productos', fd, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-        productoId = r.data.id;
-        // Los ingredientes elegidos antes de guardar se envían ahora que existe el id
-        for (const ing of ingredientes) {
-          await apiClient.post(`/productos/${productoId}/receta`, {
-            materia_id: ing.materia_id,
-            cantidad_usada: ing.cantidad,
-          });
-        }
+        await apiClient.post('/productos', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       }
       showToast(editId ? 'Producto actualizado' : 'Producto agregado');
       limpiarFormulario();
@@ -328,89 +234,87 @@ export default function MenuAdmin() {
 
           <form onSubmit={guardar} noValidate>
           <div className="mn-form-body">
-            <div className="mn-row-main">
-              <div className="mn-field">
-                <label htmlFor="mn-nombre">Nombre *</label>
-                <input id="mn-nombre" type="text" maxLength={40} placeholder="Ej: Hamburguesa Especial"
-                  value={form.nombre} onChange={setCampo('nombre')} />
-              </div>
-              <div className="mn-field">
-                <label htmlFor="mn-precio">Precio *</label>
-                <input id="mn-precio" type="number" min={0} placeholder="12000"
-                  value={form.valor} onChange={setCampo('valor')} />
-              </div>
-              <div className="mn-field">
-                <label htmlFor="mn-cantidad">Cantidad</label>
-                <input id="mn-cantidad" type="text" inputMode="numeric" placeholder="Ej: 10"
-                  value={form.cantidad} onChange={soloEnteros} />
-              </div>
-              <div className="mn-field">
-                <label htmlFor="mn-categoria">Categoría *</label>
-                <select id="mn-categoria" value={form.categoria} onChange={setCampo('categoria')}>
-                  <option value="">Selecciona...</option>
-                  {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </div>
-              <div className="mn-field">
-                <label>Estado</label>
-                <span className={`mn-estado-chip ${estadoClase(estado)}`}>{estado}</span>
-              </div>
-            </div>
+            <div className="mn-form-grid">
 
-            <div className="mn-row-secondary">
-              <div className="mn-field">
-                <label htmlFor="mn-desc">Descripción</label>
-                <textarea id="mn-desc" maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
-                  value={form.descripcion} onChange={setCampo('descripcion')} />
-              </div>
+              {/* Columna izquierda: datos */}
+              <div className="mn-form-left">
+                <div className="mn-field">
+                  <label htmlFor="mn-nombre">Nombre <span className="mn-req">*</span></label>
+                  <input id="mn-nombre" type="text" maxLength={40} placeholder="Ej: Hamburguesa Especial"
+                    value={form.nombre} onChange={setCampo('nombre')} />
+                </div>
 
-              <div className="mn-field">
-                <label>Imagen del producto</label>
-                <div className={`mn-upload${preview ? ' has-img' : ''}`} onClick={() => fileRef.current?.click()}>
-                  {preview ? <img className="mn-thumb" src={preview} alt="Vista previa" /> : <div className="mn-thumb-empty" />}
-                  <div className="mn-upload-info">
-                    <div className="mn-upload-name">
-                      {archivo ? archivo.name : imgActual ? 'Imagen actual cargada' : 'Ningún archivo seleccionado'}
+                <div className="mn-row-3">
+                  <div className="mn-field">
+                    <label htmlFor="mn-precio">Precio <span className="mn-req">*</span></label>
+                    <div className="mn-input-prefix">
+                      <span>$</span>
+                      <input id="mn-precio" type="number" min={0} placeholder="12000"
+                        value={form.valor} onChange={setCampo('valor')} />
                     </div>
-                    <div className="mn-upload-hint">Al editar, se conserva la imagen actual si no cambias.</div>
-                    <button type="button" className="mn-btn-pick"
-                      onClick={(ev) => { ev.stopPropagation(); fileRef.current?.click(); }}>
-                      Seleccionar
+                  </div>
+                  <div className="mn-field">
+                    <label htmlFor="mn-categoria">Categoría <span className="mn-req">*</span></label>
+                    <select id="mn-categoria" value={form.categoria} onChange={setCampo('categoria')}>
+                      <option value="">Selecciona...</option>
+                      {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+                  </div>
+                  <div className="mn-field">
+                    <label htmlFor="mn-estado">Estado <span className="mn-req">*</span></label>
+                    <select
+                      id="mn-estado"
+                      className={form.estado ? `est-${form.estado}` : ''}
+                      value={form.estado}
+                      onChange={setCampo('estado')}
+                    >
+                      <option value="">Selecciona...</option>
+                      <option value="Disponible">Disponible</option>
+                      <option value="Agotado">Agotado</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mn-field">
+                  <label htmlFor="mn-desc">Descripción <span className="mn-req">*</span></label>
+                  <textarea id="mn-desc" maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
+                    value={form.descripcion} onChange={setCampo('descripcion')} />
+                  <span className="mn-counter">{form.descripcion.length}/255</span>
+                </div>
+              </div>
+
+              {/* Columna derecha: imagen */}
+              <div className="mn-form-right">
+                <div className="mn-field">
+                  <label>Imagen del producto {!editId && <span className="mn-req">*</span>}</label>
+                  <div className={`mn-upload${preview ? ' has-img' : ''}`} onClick={() => fileRef.current?.click()}>
+                    {preview ? (
+                      <img className="mn-upload-img" src={preview} alt="Vista previa" />
+                    ) : (
+                      <div className="mn-upload-empty">
+                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor"
+                          strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect x="3" y="3" width="18" height="18" rx="3" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <path d="M21 15l-5-5L5 21" />
+                        </svg>
+                        <strong>Haz clic para subir una imagen</strong>
+                        <small>PNG, JPG o WEBP · máx. 4 MB</small>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mn-upload-bar">
+                    <span className="mn-upload-name">
+                      {archivo ? archivo.name : imgActual ? 'Imagen actual' : 'Ningún archivo seleccionado'}
+                    </span>
+                    <button type="button" className="mn-btn-pick" onClick={() => fileRef.current?.click()}>
+                      {preview ? 'Cambiar' : 'Seleccionar'}
                     </button>
                   </div>
+                  <input ref={fileRef} className="mn-file-input" type="file" accept="image/*" onChange={elegirArchivo} />
                 </div>
-                <input ref={fileRef} className="mn-file-input" type="file" accept="image/*" onChange={elegirArchivo} />
               </div>
 
-              <div className="mn-field">
-                <label>Ingredientes</label>
-                <div className="mn-ing">
-                  <div className="mn-ing-row">
-                    <select value={ingMateria} onChange={(e) => setIngMateria(e.target.value)}>
-                      <option value="">Seleccionar materia prima…</option>
-                      {materias.map((m) => (
-                        <option key={m.id} value={m.id}>{m.nombre} ({m.cantidad} {m.unidad_medida || ''})</option>
-                      ))}
-                    </select>
-                    <input type="number" min={0.01} step={0.01} placeholder="Cant."
-                      value={ingCantidad} onChange={(e) => setIngCantidad(e.target.value)} />
-                    <button type="button" className="mn-btn-add" onClick={agregarIngrediente}>+</button>
-                  </div>
-                  <ul className="mn-ing-list">
-                    {ingredientes.length === 0 ? (
-                      <li className="mn-ing-empty">Sin ingredientes asignados.</li>
-                    ) : (
-                      ingredientes.map((ing, idx) => (
-                        <li key={`${ing.id ?? 'n'}-${idx}`}>
-                          <span>{ing.nombre} — <strong>{ing.cantidad}</strong></span>
-                          <button type="button" className="mn-btn-del-ing" aria-label={`Quitar ${ing.nombre}`}
-                            onClick={() => quitarIngrediente(ing, idx)}>✕</button>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -463,7 +367,7 @@ export default function MenuAdmin() {
                         <div className="mn-card-desc">{p.descripcion || ''}</div>
                         <div className="mn-card-meta">
                           <div className="mn-card-price">${Number(p.valor).toLocaleString('es-CO')}</div>
-                          <span className={`mn-card-estado ${estadoClase(est)}`}>{est}: {p.cantidad ?? 0}</span>
+                          <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
                         </div>
                       </div>
                       <div className="mn-card-actions">
