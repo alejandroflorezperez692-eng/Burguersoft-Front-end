@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import apiClient from '../../api/client';
 import marcaFallback from '../../assets/img/marca-comercial.png';
 import AdminLoading from '../../components/AdminLoading';
+import '../../styles/nu-admin.css';
 
 interface Marca {
   id: number;
@@ -28,6 +29,7 @@ export default function MarcasAdmin() {
   const [editId, setEditId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [detalle, setDetalle] = useState<Marca | null>(null);
+  const [intentado, setIntentado] = useState(false);
   const [closing, setClosing] = useState(false);
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
   const toastTimer = useRef<number | undefined>(undefined);
@@ -56,7 +58,7 @@ export default function MarcasAdmin() {
     [m.nombre, m.correo, m.telefono].some((v) => v?.toLowerCase().includes(q.toLowerCase()))
   );
 
-  const openNew = () => { setForm(empty); setEditId(null); setModal(true); };
+  const openNew = () => { setForm(empty); setEditId(null); setIntentado(false); setModal(true); };
 
   const openEdit = (m: Marca) => {
     setForm({
@@ -67,24 +69,39 @@ export default function MarcasAdmin() {
       nit: m.nit,
     });
     setEditId(m.id);
+    setIntentado(false);
     setModal(true);
     closeDetail();
   };
 
 
+  const soloNitNum = (v: string) => v.split('-')[0].replace(/[^0-9]/g, '');
+
+  const errores = {
+    nombre: !form.nombre.trim(),
+    img: !form.img.trim(),
+    telefono: form.telefono.replace(/[^0-9]/g, '').length < 7,
+    correo: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim()),
+    nit: !editId && !soloNitNum(form.nit),
+  };
+
+  const bordeError = (malo: boolean): React.CSSProperties | undefined =>
+    intentado && malo ? { borderColor: 'var(--danger)' } : undefined;
+
   const save = async () => {
-    if (!form.nombre.trim()) {
-      showToast('El nombre es obligatorio', true);
-      return;
-    }
+    setIntentado(true);
+    if (errores.nombre) { showToast('El nombre es obligatorio', true); return; }
+    if (errores.img) { showToast('El logo (URL) es obligatorio', true); return; }
+    if (errores.telefono) { showToast('Escribe un teléfono válido (mínimo 7 dígitos)', true); return; }
+    if (errores.correo) { showToast('Escribe un correo válido', true); return; }
+    if (errores.nit) { showToast('El NIT es obligatorio', true); return; }
     try {
       if (editId) {
         const { nit, ...body } = form;
-        await apiClient.put(`/marcas/${editId}`, body);
+        await apiClient.put(`/marcas/${editId}`, { ...body, nombre: body.nombre.trim(), img: body.img.trim(), telefono: body.telefono.trim(), correo: body.correo.trim() });
         showToast('Marca actualizada correctamente');
       } else {
-        const soloNit = form.nit.split('-')[0].replace(/[^0-9]/g, '');
-        await apiClient.post('/marcas', { ...form, nit: Number(soloNit) });
+        await apiClient.post('/marcas', { ...form, nombre: form.nombre.trim(), img: form.img.trim(), telefono: form.telefono.trim(), correo: form.correo.trim(), nit: Number(soloNitNum(form.nit)) });
         showToast('Marca creada correctamente');
       }
       setModal(false);
@@ -195,37 +212,54 @@ export default function MarcasAdmin() {
 
       {modal && (
         <div className="modal-overlay open" onClick={() => setModal(false)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h2>{editId ? 'Editar Marca' : 'Nueva Marca'}</h2>
-            <div className="form-group">
-              <label>Nombre</label>
-              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Postobón" />
+          <div className="modal-box" style={{ maxWidth: 560, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>{editId ? 'Editar Marca' : 'Nueva Marca'}</h2>
+
+            <div className="form-group" style={{ marginBottom: 14 }}>
+              <label>Nombre <span className="mn-req">*</span></label>
+              <input style={bordeError(errores.nombre)} value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Postobón" />
             </div>
-            <div className="form-group">
-              <label>Logo (URL)</label>
-              <input value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
-              <div className="logo-preview-wrap">
+
+            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', marginBottom: 14 }}>
+              <div
+                className="logo-preview-wrap"
+                style={{ width: 84, height: 84, minHeight: 0, padding: 6, marginBottom: 0, flexShrink: 0 }}
+              >
                 {form.img ? (
-                  <img src={form.img} alt="Vista previa" onError={(e) => { (e.target as HTMLImageElement).src = marcaFallback; }} />
+                  <img
+                    src={form.img}
+                    alt="Vista previa"
+                    style={{ maxHeight: 70 }}
+                    onError={(e) => { (e.target as HTMLImageElement).src = marcaFallback; }}
+                  />
                 ) : (
-                  <span style={{ color: 'var(--text-400)', fontSize: 12 }}>Sin logo</span>
+                  <span style={{ color: 'var(--text-400)', fontSize: 11 }}>Sin logo</span>
                 )}
               </div>
+              <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
+                <label>Logo (URL) <span className="mn-req">*</span></label>
+                <input style={bordeError(errores.img)} value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Teléfono</label>
-              <input value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Teléfono <span className="mn-req">*</span></label>
+                <input style={bordeError(errores.telefono)} inputMode="tel" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label>Correo <span className="mn-req">*</span></label>
+                <input style={bordeError(errores.correo)} type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Correo</label>
-              <input type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
-            </div>
+
             {!editId && (
-              <div className="form-group">
-                <label>NIT</label>
-                <input value={form.nit} onChange={(e) => setForm({ ...form, nit: e.target.value })} placeholder="Ej. 830.047.819-9" />
+              <div className="form-group" style={{ marginBottom: 14, maxWidth: 260 }}>
+                <label>NIT <span className="mn-req">*</span></label>
+                <input style={bordeError(errores.nit)} value={form.nit} onChange={(e) => setForm({ ...form, nit: e.target.value })} placeholder="Ej. 830.047.819-9" />
               </div>
             )}
+
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
               <button className="btn-save" onClick={save}>{editId ? 'Actualizar' : 'Crear'}</button>

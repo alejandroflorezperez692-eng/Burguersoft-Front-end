@@ -33,6 +33,17 @@ function formatFecha(fecha: Date): string {
   });
 }
 
+function saludo(fecha: Date): string {
+  const h = fecha.getHours();
+  if (h < 12) return 'Buenos días';
+  if (h < 19) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
+function capitalizar(t: string): string {
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+
 export default function Inicio() {
   const { user } = useAuth();
   const [ahora, setAhora] = useState(() => new Date());
@@ -82,15 +93,20 @@ export default function Inicio() {
 
   return (
     <div className="dashboard-wrap">
-      <div className="welcome-banner">
-        <div className="welcome-text">
-          <h2>Bienvenido {nombre} ({rol})</h2>
-          <div style={{ fontWeight: 700 }}>{formatFecha(ahora)}</div>
-          <div style={{ color: 'var(--brand)', fontWeight: 900 }}>
-            {formatReloj(ahora)}
+      <div className="wb">
+        <div className="wb-info">
+          <span className="wb-saludo">{saludo(ahora)}</span>
+          <h2 className="wb-nombre">{nombre}</h2>
+          <span className="wb-rol">{rol}</span>
+          <div className="wb-fecha">
+            <span>{capitalizar(formatFecha(ahora))}</span>
+            <span className="wb-punto">•</span>
+            <span className="wb-hora">{formatReloj(ahora)}</span>
           </div>
         </div>
-        <img src={usuarioPerfil} alt="" className="welcome-img" />
+        <div className="wb-avatar">
+          <img src={usuarioPerfil} alt="" />
+        </div>
       </div>
 
       <div className="dashboard-row">

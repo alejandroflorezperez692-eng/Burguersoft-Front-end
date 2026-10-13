@@ -2194,3 +2194,113 @@ body.dark-mode .chip-filtro:hover {
     font-size: 26px;
   }
 }
+/* ---------- Banner de bienvenida (Inicio) ---------- */
+.wb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 28px 36px 28px 44px;
+  background: linear-gradient(120deg, var(--surface) 0%, var(--surface) 55%, rgba(232, 130, 26, 0.12) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.wb::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background: var(--brand);
+}
+
+.wb-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+
+.wb-saludo {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
+.wb-nombre {
+  font-family: var(--font-sans);
+  font-size: 34px;
+  font-weight: 900;
+  letter-spacing: -0.6px;
+  line-height: 1.1;
+  color: var(--text-900);
+  margin: 0;
+}
+
+.wb-rol {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-600);
+}
+
+.wb-fecha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-600);
+}
+
+.wb-punto {
+  color: var(--brand);
+  font-size: 12px;
+}
+
+.wb-hora {
+  color: var(--brand);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-avatar {
+  flex-shrink: 0;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  border: 4px solid var(--brand);
+  background: var(--surface-3);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wb-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 640px) {
+  .wb {
+    flex-direction: column-reverse;
+    align-items: center;
+    text-align: center;
+    padding: 24px 20px 24px 28px;
+  }
+  .wb-info { align-items: center; }
+  .wb-nombre { font-size: 26px; }
+  .wb-fecha { justify-content: center; }
+  .wb-avatar { width: 88px; height: 88px; }
+}
