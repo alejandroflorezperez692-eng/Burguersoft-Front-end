@@ -14,7 +14,9 @@ import engranaje from '../assets/img/engranaje.png';
 import equipo from '../assets/img/equipo.png';
 import cerrarSesion from '../assets/img/cerrar-sesion.png';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
+import hamburguesaIA from '../assets/img/hamburguesa-ia.svg';
 import { useAuth } from '../hooks/useAuth';
+import AsistenteWidget from '../components/asistente/AsistenteWidget';
 import '../styles/admin.css';
 import AdminLoading from '../components/AdminLoading';
 
@@ -28,6 +30,7 @@ const navItemsAdmin = [
   { to: '/promociones', label: 'Promociones', icono: promocion },
   { to: '/backups', label: 'Copias de seguridad', icono: engranaje },
   { to: '/usuarios', label: 'Usuarios', icono: equipo },
+  { to: '/asistente-ia', label: 'Asistente IA', icono: hamburguesaIA },
 ];
 
 const navItemsCliente = [
@@ -46,7 +49,6 @@ export default function AdminLayout() {
   const cerrarMenu = () => setMenuOpen(false);
   const isCliente = user?.role === 'Cliente';
   const navItems = isCliente ? navItemsCliente : navItemsAdmin;
-
   const handleSalir = () => {
     setSaliendo(true);
     setTimeout(() => {
@@ -122,6 +124,7 @@ export default function AdminLayout() {
       <div className="main-content">
         <Outlet />
       </div>
+      {!isCliente && <AsistenteWidget />}
     </div>
   );
 }
