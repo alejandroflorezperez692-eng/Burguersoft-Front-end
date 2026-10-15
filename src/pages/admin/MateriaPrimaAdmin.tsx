@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import type React from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import '../../styles/nu-admin.css';
 
 interface MateriaPrima {
   id: number;
@@ -19,25 +21,49 @@ interface Marca {
   nombre: string;
 }
 
-type Filtro = 'todos' | 'disponible' | 'bajo' | 'agotado';
-
-const FILTROS: { key: Filtro; label: string }[] = [
-  { key: 'todos', label: 'Todos' },
-  { key: 'disponible', label: 'Disponible' },
-  { key: 'bajo', label: 'Bajo stock' },
-  { key: 'agotado', label: 'Agotado' },
-];
-
 const num = (v: unknown): number => Number(v ?? 0) || 0;
 
-const estadoKey = (stock: unknown): Filtro => {
+type EstadoStock = 'disponible' | 'bajo' | 'agotado';
+
+const estadoKey = (stock: unknown): EstadoStock => {
   const s = num(stock);
   return s > 10 ? 'disponible' : s > 0 ? 'bajo' : 'agotado';
 };
 
 const textoEstado = (stock: unknown) => {
-  const s = num(stock);
-  return s > 10 ? 'Disponible' : s > 0 ? 'Stock bajo' : 'Agotado';
+  const k = estadoKey(stock);
+  return k === 'disponible' ? 'Disponible' : k === 'bajo' ? 'Stock bajo' : 'Agotado';
+};
+
+const claseBadge = (stock: unknown) => {
+  const k = estadoKey(stock);
+  return k === 'agotado' ? 'badge-danger' : k === 'bajo' ? 'badge-warning' : 'badge-success';
+};
+
+/**
+ * Vista de solo lectura: el admin consulta cuánto queda de cada insumo
+ * (paquetes de pan, kilos de papa, carne, etc.). El stock se alimenta
+ * desde el módulo de Compras, por eso aquí no se crea, edita ni elimina.
+ */
+// Arma un mensaje con el motivo real que devolvió el servidor
+const mensajeError = (e: unknown, base: string): string => {
+  const r = (e as { response?: { status?: number; data?: { message?: string; error?: string; errors?: Record<string, string[]> } } })?.response;
+  if (!r) return `${base}: no hay conexión con el servidor`;
+  const primerError = r.data?.errors ? Object.values(r.data.errors)[0]?.[0] : undefined;
+  const detalle = primerError || r.data?.error || r.data?.message || '';
+  return `${base} (${r.status})${detalle ? `: ${detalle}` : ''}`;
+};
+
+// Deja solo dígitos y un punto decimal (acepta coma como punto)
+const soloNumero = (v: string): string => {
+  const limpio = v.replace(',', '.').replace(/[^0-9.]/g, '');
+  const [ent, ...dec] = limpio.split('.');
+  return dec.length ? `${ent}.${dec.join('')}` : ent;
+};
+
+const adornoBase: React.CSSProperties = {
+  position: 'absolute', top: '50%', transform: 'translateY(-50%)',
+  color: 'var(--text-400)', fontWeight: 600, fontSize: 14, pointerEvents: 'none',
 };
 
 const emptyForm = {
@@ -48,10 +74,10 @@ export default function MateriaPrimaAdmin() {
   const [items, setItems] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [q, setQ] = useState('');
-  const [filtro, setFiltro] = useState<Filtro>('todos');
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<number | null>(null);
+  const [eliminar, setEliminar] = useState<MateriaPrima | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast, showToast } = useToast();
 
@@ -83,27 +109,19 @@ export default function MateriaPrimaAdmin() {
     (marcas ?? []).find((x) => x?.id === id)?.nombre ?? '';
 
   const filtered = (items ?? []).filter((m) =>
-    (filtro === 'todos' || estadoKey(m?.cantidad) === filtro) &&
     (m?.nombre ?? '').toLowerCase().includes((q ?? '').toLowerCase())
   );
 
   const total = (items ?? []).length;
   const disponibles = (items ?? []).filter((m) => num(m?.cantidad) > 0).length;
   const agotados = (items ?? []).filter((m) => num(m?.cantidad) <= 0).length;
-  const valorInv = (items ?? []).reduce((a, m) => a + num(m?.valor) * num(m?.cantidad), 0);
-
-  const openNew = () => {
-    setForm({ ...emptyForm, marca_id: marcas[0]?.id ?? 1 });
-    setEditId(null);
-    setModal(true);
-  };
 
   const openEdit = (m: MateriaPrima) => {
     setForm({
       nombre: m?.nombre ?? '',
       tipo: m?.tipo ?? '',
-      valor: String(m?.valor ?? ''),
-      cantidad: String(m?.cantidad ?? ''),
+      valor: m?.valor != null ? String(Number(m.valor)) : '',
+      cantidad: m?.cantidad != null ? String(Number(m.cantidad)) : '',
       unidad_medida: m?.unidad_medida ?? '',
       marca_id: m?.marca_id ?? marcas[0]?.id ?? 1,
     });
@@ -112,6 +130,7 @@ export default function MateriaPrimaAdmin() {
   };
 
   const guardar = async () => {
+    if (!editId) return;
     if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
     if (Number(form.valor) < 0 || Number(form.cantidad) < 0) {
       showToast('El valor y el stock no pueden ser negativos', true);
@@ -123,33 +142,30 @@ export default function MateriaPrimaAdmin() {
       tipo: form.tipo.trim() || null,
       valor: Number(form.valor) || 0,
       cantidad: Number(form.cantidad) || 0,
-      unidad_medida: form.unidad_medida.trim() || null,
       marca_id: Number(form.marca_id),
     };
     try {
-      if (editId) {
-        await apiClient.put(`/materias-primas/${editId}`, body);
-        showToast('Materia prima actualizada');
-      } else {
-        await apiClient.post('/materias-primas', body);
-        showToast('Materia prima creada');
-      }
+      await apiClient.put(`/materias-primas/${editId}`, body);
+      showToast('Materia prima actualizada');
       setModal(false);
       load();
-    } catch {
-      showToast('No se pudo guardar la materia prima', true);
+    } catch (e) {
+      console.error('Error al actualizar materia prima:', e);
+      showToast(mensajeError(e, 'No se pudo actualizar'), true);
     }
   };
 
-  const del = async (id: number) => {
-    const m = (items ?? []).find((x) => x?.id === id);
-    if (!confirm(`¿Eliminar "${m?.nombre ?? id}"?`)) return;
+  const confirmarEliminar = async () => {
+    if (!eliminar) return;
+    const m = eliminar;
+    setEliminar(null);
     try {
-      await apiClient.delete(`/materias-primas/${id}`);
+      await apiClient.delete(`/materias-primas/${m.id}`);
       showToast('Materia prima eliminada');
       load();
-    } catch {
-      showToast('No se pudo eliminar la materia prima', true);
+    } catch (e) {
+      console.error('Error al eliminar materia prima:', e);
+      showToast(mensajeError(e, 'No se pudo eliminar'), true);
     }
   };
 
@@ -158,9 +174,8 @@ export default function MateriaPrimaAdmin() {
       <div className="page-header">
         <div>
           <h1>Materia Prima</h1>
-          <p className="subtitulo">Control de inventario de insumos</p>
+          <p className="subtitulo">Existencias actuales de tus insumos</p>
         </div>
-        <button className="btn-primary" onClick={openNew}>+ Nueva materia prima</button>
       </div>
 
       <div className="stat-grid">
@@ -176,38 +191,30 @@ export default function MateriaPrimaAdmin() {
           <span className="stat-label">Agotados</span>
           <span className="stat-val">{agotados}</span>
         </div>
-        <div className="stat-card">
-          <span className="stat-label">Valor inventario</span>
-          <span className="stat-val" style={{ fontSize: 24 }}>${valorInv.toLocaleString('es-CO')}</span>
-        </div>
       </div>
 
       <div className="search-bar">
         <input placeholder="Buscar insumo..." value={q} onChange={(e) => setQ(e.target.value)} />
-        <div className="filter-chips" style={{ flexBasis: '100%', marginBottom: 0 }}>
-          {FILTROS.map((f) => (
-            <button
-              key={f.key}
-              className={`chip-filtro${filtro === f.key ? ' active' : ''}`}
-              onClick={() => setFiltro(f.key)}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {loading ? (
         <AdminLoading texto="Cargando materia prima" subtexto="Revisando tu inventario" />
       ) : (
         <div className="tabla-responsive">
-          <table className="data-table">
+          <table className="data-table" style={{ tableLayout: 'fixed', minWidth: 980 }}>
+            <colgroup>
+              <col style={{ width: '20%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '14%' }} />
+              <col style={{ width: '24%' }} />
+            </colgroup>
             <thead>
               <tr>
-                <th>Nombre</th>
+                <th>Insumo</th>
                 <th>Tipo</th>
-                <th>Valor</th>
-                <th>Stock</th>
+                <th>Cantidad</th>
                 <th>Estado</th>
                 <th>Marca</th>
                 <th>Acciones</th>
@@ -218,22 +225,25 @@ export default function MateriaPrimaAdmin() {
                 <tr key={m?.id}>
                   <td style={{ fontWeight: 600 }}>{m?.nombre ?? 'Sin nombre'}</td>
                   <td>{m?.tipo || '—'}</td>
-                  <td>${num(m?.valor).toLocaleString('es-CO')}</td>
-                  <td>{m?.cantidad ?? '—'}</td>
+                  <td style={{ fontWeight: 600 }}>
+                    {num(m?.cantidad).toLocaleString('es-CO')} {m?.unidad_medida ?? ''}
+                  </td>
                   <td>
-                    <span className={`badge ${estadoKey(m?.cantidad) === 'agotado' ? 'badge-danger' : estadoKey(m?.cantidad) === 'bajo' ? 'badge-warning' : 'badge-success'}`}>
+                    <span className={`badge ${claseBadge(m?.cantidad)}`}>
                       {textoEstado(m?.cantidad)}
                     </span>
                   </td>
                   <td>{marcaNombre(m?.marca_id) || '—'}</td>
                   <td>
-                    <button className="btn-icon btn-icon-edit" onClick={() => openEdit(m)} title="Editar">✏</button>
-                    <button className="btn-icon btn-icon-del" onClick={() => m?.id != null && del(m.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)}>Editar</button>
+                      <button type="button" className="mn-btn-del" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => m?.id != null && setEliminar(m)}>Eliminar</button>
+                    </div>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron insumos</td></tr>
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron insumos</td></tr>
               )}
             </tbody>
           </table>
@@ -243,38 +253,64 @@ export default function MateriaPrimaAdmin() {
       {modal && (
         <div className="modal-overlay open" onClick={() => setModal(false)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
-            <h2>{editId ? 'Editar Materia Prima' : 'Nueva Materia Prima'}</h2>
+            <h2>Editar Materia Prima</h2>
             <div className="form-group">
               <label>Nombre</label>
-              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Harina" />
+              <input value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
             </div>
-            <div className="form-group">
-              <label>Tipo</label>
-              <input value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} placeholder="Ej. Básico / Carnes / Bebidas" />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-group">
+                <label>Tipo</label>
+                <input value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} />
+              </div>
+              <div className="form-group">
+                <label>Marca</label>
+                <select value={form.marca_id} onChange={(e) => setForm({ ...form, marca_id: Number(e.target.value) })}>
+                  {(marcas ?? []).map((m) => (
+                    <option key={m?.id} value={m?.id}>{m?.nombre ?? 'Sin nombre'}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="form-group">
-              <label>Valor unitario</label>
-              <input type="number" min={0} value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>Stock (cantidad)</label>
-              <input type="number" min={0} value={form.cantidad} onChange={(e) => setForm({ ...form, cantidad: e.target.value })} />
-            </div>
-            <div className="form-group">
-              <label>Unidad de medida</label>
-              <input value={form.unidad_medida} onChange={(e) => setForm({ ...form, unidad_medida: e.target.value })} placeholder="Ej. Kg, Unidades, Litros" />
-            </div>
-            <div className="form-group">
-              <label>Marca</label>
-              <select value={form.marca_id} onChange={(e) => setForm({ ...form, marca_id: Number(e.target.value) })}>
-                {(marcas ?? []).map((m) => (
-                  <option key={m?.id} value={m?.id}>{m?.nombre ?? 'Sin nombre'}</option>
-                ))}
-              </select>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="form-group">
+                <label>Precio</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ ...adornoBase, left: 14 }}>$</span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    style={{ paddingLeft: 30 }}
+                    value={form.valor}
+                    onChange={(e) => setForm({ ...form, valor: soloNumero(e.target.value) })}
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Cantidad que queda</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={form.cantidad}
+                  onChange={(e) => setForm({ ...form, cantidad: soloNumero(e.target.value) })}
+                />
+              </div>
             </div>
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
-              <button className="btn-save" onClick={guardar}>{editId ? 'Actualizar' : 'Crear'}</button>
+              <button className="btn-save" onClick={guardar}>Actualizar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {eliminar && (
+        <div className="mn-modal-overlay" onClick={() => setEliminar(null)}>
+          <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
+            <p>¿Eliminar "{eliminar.nombre}"? Se borrará también de las compras y recetas donde aparezca. Esta acción no se puede deshacer.</p>
+            <div className="mn-modal-actions">
+              <button type="button" className="mn-btn-cancel" onClick={() => setEliminar(null)}>Cancelar</button>
+              <button type="button" className="mn-btn-confirm" onClick={confirmarEliminar}>Sí, eliminar</button>
             </div>
           </div>
         </div>
