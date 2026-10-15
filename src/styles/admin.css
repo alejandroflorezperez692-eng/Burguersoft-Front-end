@@ -2304,3 +2304,14 @@ body.dark-mode .chip-filtro:hover {
   .wb-fecha { justify-content: center; }
   .wb-avatar { width: 88px; height: 88px; }
 }
+
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
