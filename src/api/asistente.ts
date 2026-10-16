@@ -5,6 +5,8 @@ export interface MensajeIA {
   content: string;
 }
 
+export interface ContextoAsistente {
+  pagina: string; // ej. /ventas, /menu, /materia-prima
   resumen?: string; // resumen numérico que cada página admin puede aportar
 }
 
