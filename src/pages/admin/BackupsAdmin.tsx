@@ -144,19 +144,16 @@ export default function BackupsAdmin() {
             </tr>
           </thead>
           <tbody>
-            {(items ?? []).map((b) => {
-              const f = b?.fecha ? new Date(b.fecha) : null;
-              return (
+            {(items ?? []).map((b) => (
               <tr key={b?.id}>
                 <td>{b?.id}</td>
                 <td style={{ fontWeight: 600 }}>{b?.nombre_tabla ?? b?.nombre ?? '—'}</td>
-                <td>{f && !isNaN(f.getTime()) ? f.toLocaleString() : '—'}</td>
+                <td>{b?.fecha ? new Date(b.fecha).toLocaleString() : '—'}</td>
                 <td>
                   <button className="btn-icon btn-icon-del" onClick={() => b?.id != null && del(b.id)} title="Eliminar">🗑</button>
                 </td>
               </tr>
-              );
-            })}
+            ))}
             {(items ?? []).length === 0 && (
               <tr><td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No hay registros de copias de seguridad</td></tr>
             )}

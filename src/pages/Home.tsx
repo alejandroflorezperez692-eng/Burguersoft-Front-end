@@ -34,8 +34,7 @@ export default function Home() {
     apiClient
       .get<any>('/promociones')
       .then(({ data }) => {
-        const raw = Array.isArray(data) ? data : (data?.data ?? []);
-        const lista: Promocion[] = Array.isArray(raw) ? raw : [];
+        const lista: Promocion[] = Array.isArray(data) ? data : data?.data ?? [];
         if (!cancelado) setPromos(lista);
       })
       .catch(() => {
