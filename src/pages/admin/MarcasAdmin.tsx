@@ -44,7 +44,9 @@ export default function MarcasAdmin() {
     setLoading(true);
     try {
       const r = await apiClient.get<Marca[]>('/marcas');
-      setItems(r.data);
+      // Robusto ante respuestas { data: [...] } o [...] directo (aporte de origin/main)
+      const lista = Array.isArray(r.data) ? r.data : ((r.data as unknown as { data?: Marca[] })?.data ?? []);
+      setItems(Array.isArray(lista) ? lista : []);
     } catch {
       showToast('No se pudieron cargar las marcas', true);
     } finally {
@@ -55,18 +57,18 @@ export default function MarcasAdmin() {
   useEffect(() => { load(); }, []);
 
   const filtered = items.filter((m) =>
-    [m.nombre, m.correo, m.telefono].some((v) => v?.toLowerCase().includes(q.toLowerCase()))
+    [m.nombre, m.correo, m.telefono].some((v) => (v ?? '').toString().toLowerCase().includes(q.toLowerCase()))
   );
 
   const openNew = () => { setForm(empty); setEditId(null); setIntentado(false); setModal(true); };
 
   const openEdit = (m: Marca) => {
     setForm({
-      nombre: m.nombre,
-      img: m.img,
-      telefono: m.telefono,
-      correo: m.correo,
-      nit: m.nit,
+      nombre: m.nombre ?? '',
+      img: m.img ?? '',
+      telefono: m.telefono != null ? String(m.telefono) : '',
+      correo: m.correo ?? '',
+      nit: m.nit != null ? String(m.nit) : '',
     });
     setEditId(m.id);
     setIntentado(false);
@@ -75,13 +77,13 @@ export default function MarcasAdmin() {
   };
 
 
-  const soloNitNum = (v: string) => v.split('-')[0].replace(/[^0-9]/g, '');
+  const soloNitNum = (v: string | number | null | undefined) => String(v ?? '').split('-')[0].replace(/[^0-9]/g, '');
 
   const errores = {
-    nombre: !form.nombre.trim(),
-    img: !form.img.trim(),
-    telefono: form.telefono.replace(/[^0-9]/g, '').length < 7,
-    correo: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.correo.trim()),
+    nombre: !String(form.nombre ?? '').trim(),
+    img: !String(form.img ?? '').trim(),
+    telefono: String(form.telefono ?? '').replace(/[^0-9]/g, '').length < 7,
+    correo: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(form.correo ?? '').trim()),
     nit: !editId && !soloNitNum(form.nit),
   };
 
