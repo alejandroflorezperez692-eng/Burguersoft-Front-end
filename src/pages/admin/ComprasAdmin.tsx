@@ -35,6 +35,26 @@ interface Linea {
   tipo: string;
   unidad_medida: string;
 }
+interface ItemIA {
+  descripcion: string;
+  materia_prima_id: number | null;
+  nombre_nuevo: string | null;
+  unidad_medida: string | null;
+  cantidad: number | null;
+  precio_total: number | null;
+}
+
+interface RespuestaIA {
+  fecha: string | null;
+  metodo_pago: string | null;
+  marca_id: number | null;
+  proveedor_texto: string | null;
+  items: ItemIA[];
+  total_factura: number | null;
+  suma_items: number;
+  cuadra: boolean | null;
+  observaciones: string | null;
+}
 
 const METODOS = ['Efectivo', 'Nequi', 'Daviplata'];
 const UNIDADES = ['Kg', 'Gramos', 'Libras', 'Litros', 'Mililitros', 'Unidades', 'Paquetes', 'Cajas', 'Bolsas', 'Botellas', 'Latas'];
@@ -157,6 +177,22 @@ const etiquetaFecha = (clave: string): string => {
   return texto;
 };
 
+const comprimirImagen = async (archivo: File): Promise<File> => {
+  if (!archivo.type.startsWith('image/')) return archivo;
+  try {
+    const bmp = await createImageBitmap(archivo);
+    const escala = Math.min(1, 1800 / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bmp.width * escala);
+    canvas.height = Math.round(bmp.height * escala);
+    canvas.getContext('2d')?.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((ok) => canvas.toBlob(ok, 'image/jpeg', 0.85));
+    return blob ? new File([blob], 'factura.jpg', { type: 'image/jpeg' }) : archivo;
+  } catch {
+    return archivo;
+  }
+};
+
 export default function ComprasAdmin() {
   const [items, setItems] = useState<Compra[]>([]);
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
@@ -171,6 +207,11 @@ export default function ComprasAdmin() {
   const [modalDetalle, setModalDetalle] = useState<Compra | null>(null);
   const [loading, setLoading] = useState(true);
   const cargado = useRef(false);
+
+  const [escaneando, setEscaneando] = useState(false);
+  const [aviso, setAviso] = useState<{ texto: string; alerta: boolean } | null>(null);
+  const [fechaIA, setFechaIA] = useState('');
+  const inputFactura = useRef<HTMLInputElement>(null);
 
   const load = () => {
     Promise.all([
@@ -247,6 +288,47 @@ export default function ComprasAdmin() {
 };
 
   const total = lineas.reduce((a, l) => a + (Number(l.precio_unitario) || 0), 0);
+  const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); };
+
+const escanear = async (archivo: File) => {
+  setEscaneando(true);
+  try {
+    const listo = await comprimirImagen(archivo);
+    const fd = new FormData();
+    fd.append('archivo', listo);
+    const { data } = await apiClient.post<RespuestaIA>('/compras/escanear', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    });
+
+    setLineas(data.items.map((it) => ({
+      materia_prima_id: it.materia_prima_id,
+      cantidad: it.cantidad ? String(it.cantidad) : '',
+      precio_unitario: it.precio_total ? String(Math.round(it.precio_total)) : '',
+      marca_id: data.marca_id ?? 0,
+      nombre_nuevo: it.materia_prima_id ? '' : (it.nombre_nuevo ?? ''),
+      tipo: '',
+      unidad_medida: it.materia_prima_id ? '' : (it.unidad_medida ?? ''),
+    })));
+    setMetodoPago(data.metodo_pago ?? '');
+    setFechaIA(data.fecha ?? '');
+    setShowForm(true);
+
+    const partes = ['Factura leída con IA. Revisa cada dato antes de registrar.'];
+    if (data.fecha) partes.push(`Fecha de la factura: ${data.fecha.split('-').reverse().join('/')}.`);
+    if (data.cuadra === false && data.total_factura) {
+      partes.push(`El total de la factura ($${data.total_factura.toLocaleString('es-CO')}) no coincide con la suma de los insumos ($${data.suma_items.toLocaleString('es-CO')}): puede ser IVA, un descuento o una línea mal leída.`);
+    }
+    if (data.observaciones) partes.push(data.observaciones);
+    setAviso({ texto: partes.join(' '), alerta: data.cuadra === false || !!data.observaciones });
+    showToast('Factura leída: revisa los datos y registra');
+  } catch (e) {
+    const err = e as { response?: { data?: { message?: string } } };
+    showToast(err?.response?.data?.message || 'No se pudo leer la factura', true);
+  } finally {
+    setEscaneando(false);
+  }
+};
 
 const save = () => {
   if (!metodoPago) { showToast('Selecciona el método de pago', true); return; }
@@ -262,7 +344,7 @@ const save = () => {
 
   const hoy = new Date();
   const payload = {
-    fecha: `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`,
+    fecha: fechaIA || `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`,
     metodo_pago: metodoPago,
     items: lineas.map((l) => ({
       materia_prima_id: l.materia_prima_id,
@@ -277,6 +359,8 @@ const save = () => {
   apiClient.post('/compras', payload).then(() => {
     showToast('Compra registrada: el stock se sumó a Materia Prima');
     setShowForm(false);
+    setAviso(null);
+    setFechaIA('');
     setMetodoPago('');
     setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
     load();
@@ -298,9 +382,30 @@ const save = () => {
           <h1>Gestión de Compras</h1>
           <p className="subtitulo">{items.length} compras registradas</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancelar' : '+ Nueva compra'}
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            className="btn-primary"
+            disabled={escaneando}
+            style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
+            onClick={() => inputFactura.current?.click()}
+          >
+            Escanear factura
+          </button>
+          <button className="btn-primary" onClick={() => (showForm ? cerrarForm() : setShowForm(true))}>
+            {showForm ? 'Cancelar' : '+ Nueva compra'}
+          </button>
+          <input
+            ref={inputFactura}
+            type="file"
+            accept="image/*,application/pdf"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) escanear(f);
+              e.target.value = '';
+            }}
+          />
+        </div>
       </div>
 
       <div className="stat-grid">
@@ -321,6 +426,27 @@ const save = () => {
       {showForm && (
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>Registrar Compra</h3>
+          {aviso && (
+            <div
+              style={{
+                display: 'flex',
+                gap: 10,
+                alignItems: 'flex-start',
+                padding: '12px 16px',
+                marginBottom: 16,
+                borderRadius: 12,
+                border: `1px solid ${aviso.alerta ? 'var(--danger)' : 'var(--brand)'}`,
+                background: aviso.alerta ? 'rgba(200, 56, 42, 0.08)' : 'rgba(232, 130, 26, 0.1)',
+                fontSize: 13,
+                fontWeight: 600,
+                color: 'var(--text-900)',
+                lineHeight: 1.5,
+              }}
+            >
+              <span>✨</span>
+              <div>{aviso.texto}</div>
+            </div>
+          )}
           <div className="form-group">
            <label>Método de pago <span className="mn-req">*</span></label>
             <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
@@ -394,7 +520,7 @@ const save = () => {
             <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 800, fontSize: 18, color: 'var(--text-900)' }}>Total: ${total.toLocaleString('es-CO')}</span>
           </div>
           <div className="modal-actions" style={{ marginTop: 16 }}>
-            <button className="btn-cancel" onClick={() => setShowForm(false)}>Cancelar</button>
+            <button className="btn-cancel" onClick={cerrarForm}>Cancelar</button>
             <button className="btn-save" onClick={save}>Registrar Compra</button>
           </div>
         </div>
@@ -505,6 +631,28 @@ const save = () => {
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModalDetalle(null)}>Cerrar</button>
             </div>
+          </div>
+        </div>
+      )}
+      {escaneando && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(22, 8, 0, 0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <style>{`@keyframes iaScan{0%,100%{top:6%}50%{top:90%}}@keyframes iaDots{0%,100%{opacity:.25}50%{opacity:1}}`}</style>
+          <div style={{ background: 'var(--surface)', borderRadius: 22, padding: '30px 38px', textAlign: 'center', maxWidth: 340, boxShadow: 'var(--shadow-md)' }}>
+            <div style={{ position: 'relative', width: 110, height: 140, margin: '0 auto 20px', border: '2px solid var(--border)', borderRadius: 12, background: 'var(--surface-2)', overflow: 'hidden', padding: '16px 12px' }}>
+              {[80, 100, 65, 90, 55].map((w, i) => (
+                <div key={i} style={{ height: 6, width: `${w}%`, borderRadius: 4, background: 'var(--border)', marginBottom: 12 }} />
+              ))}
+              <div style={{ position: 'absolute', left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #e8821a, #ffb347)', boxShadow: '0 0 14px #e8821a', animation: 'iaScan 1.8s ease-in-out infinite' }} />
+            </div>
+            <p style={{ margin: 0, fontWeight: 900, fontSize: 18, color: 'var(--text-900)' }}>
+              Leyendo tu factura
+              <span style={{ animation: 'iaDots 1.2s infinite' }}>.</span>
+              <span style={{ animation: 'iaDots 1.2s .2s infinite' }}>.</span>
+              <span style={{ animation: 'iaDots 1.2s .4s infinite' }}>.</span>
+            </p>
+            <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--text-400)', fontWeight: 500 }}>
+              La IA está identificando insumos, cantidades y precios
+            </p>
           </div>
         </div>
       )}
