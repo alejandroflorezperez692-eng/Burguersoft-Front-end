@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import apiClient from '../../api/client';
+import ComprasResumen from '../../components/ComprasResumen';
 import AdminLoading from '../../components/AdminLoading';
 import ToastMessage, { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
@@ -11,7 +13,7 @@ interface DetalleCompra {
   subtotal: number;
   materia_prima_id: number;
   marca_id: number;
-  materia_prima?: { nombre: string };
+  materia_prima?: { nombre: string; unidad_medida?: string | null };
   marca?: { nombre: string };
 }
 
@@ -21,6 +23,9 @@ interface Compra {
   metodo_pago: string;
   valor_total: number;
   detalles: DetalleCompra[];
+  /** El servidor indica si todavía están dentro de las 5 horas para eliminarla. */
+  puede_eliminarse?: boolean;
+  eliminable_hasta?: string | null;
 }
 
 interface MateriaPrima { id: number; nombre: string; valor: number; }
@@ -177,6 +182,29 @@ const etiquetaFecha = (clave: string): string => {
   return texto;
 };
 
+/** "Jueves, 15 de octubre de 2026" a partir de "2026-10-15" (sin desfases de zona horaria). */
+const fechaLarga = (fecha: string): string => {
+  const [y, m, d] = String(fecha).slice(0, 10).split('-').map(Number);
+  const larga = new Date(y, m - 1, d).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return larga.charAt(0).toUpperCase() + larga.slice(1);
+};
+
+const pesos = (n: number | string): string => `$${Math.round(Number(n)).toLocaleString('es-CO')}`;
+
+/** Número de compra discreto (en vez de "#17" en negrita). */
+const chipNumero: CSSProperties = {
+  display: 'inline-block',
+  padding: '3px 10px',
+  borderRadius: 999,
+  background: 'var(--surface-2)',
+  border: '1px solid var(--border)',
+  color: 'var(--text-400)',
+  fontSize: 12,
+  fontWeight: 700,
+  letterSpacing: 0.3,
+  whiteSpace: 'nowrap',
+};
+
 const comprimirImagen = async (archivo: File): Promise<File> => {
   if (!archivo.type.startsWith('image/')) return archivo;
   try {
@@ -232,6 +260,14 @@ export default function ComprasAdmin() {
   load();
 }, []);
 
+  // Cierra el detalle con la tecla Escape
+  useEffect(() => {
+    if (!modalDetalle) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setModalDetalle(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [modalDetalle]);
+
   const filtered = items.filter((c) =>
     String(c.id).includes(q) || c.metodo_pago.toLowerCase().includes(q.toLowerCase())
   );
@@ -248,14 +284,6 @@ export default function ComprasAdmin() {
       }, {})
   );
   const gruposVisibles = grupos.slice(0, diasVisibles);
-
-  const totalMes = items.filter((c) => {
-    const d = new Date(c.fecha);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).reduce((a, c) => a + Number(c.valor_total), 0);
-
-  const totalHisto = items.reduce((a, c) => a + Number(c.valor_total), 0);
 
   const addLinea = () => {
     setLineas([...lineas, { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
@@ -370,9 +398,26 @@ const save = () => {
   });
 };
 
-  const del = (id: number) => {
+  const HORAS_PARA_ELIMINAR = 5;
+  const MSG_FUERA_DE_PLAZO = `Esta compra ya no se puede eliminar: pasaron más de ${HORAS_PARA_ELIMINAR} horas desde que se registró.`;
+
+  const del = (c: Compra) => {
+    if (!c.puede_eliminarse) { showToast(MSG_FUERA_DE_PLAZO, true); return; }
     if (!confirm('¿Eliminar esta compra? Se revertirá el stock.')) return;
-    apiClient.delete(`/compras/${id}`).then(() => load());
+    apiClient.delete(`/compras/${c.id}`)
+      .then(() => { showToast('Compra eliminada y stock revertido'); load(); })
+      .catch((e) => {
+        showToast(e?.response?.data?.message || 'No se pudo eliminar la compra', true);
+        load();
+      });
+  };
+
+  /** Texto del botón Eliminar: hasta cuándo se puede, o por qué está bloqueado. */
+  const ayudaEliminar = (c: Compra): string => {
+    if (!c.puede_eliminarse) return MSG_FUERA_DE_PLAZO;
+    if (!c.eliminable_hasta) return 'Eliminar compra';
+    const hasta = new Date(c.eliminable_hasta).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+    return `Se puede eliminar hasta las ${hasta}`;
   };
 
   return (
@@ -408,20 +453,7 @@ const save = () => {
         </div>
       </div>
 
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span className="stat-label">Compras este mes</span>
-          <span className="stat-val">{items.filter((c) => { const d = new Date(c.fecha); const n = new Date(); return d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear(); }).length}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Invertido este mes</span>
-          <span className="stat-val">${totalMes.toLocaleString()}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Total histórico</span>
-          <span className="stat-val">${totalHisto.toLocaleString()}</span>
-        </div>
-      </div>
+      <ComprasResumen items={items} />
 
       {showForm && (
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
@@ -526,8 +558,13 @@ const save = () => {
         </div>
       )}
 
-      <div className="search-bar">
-        <input placeholder="Buscar compra..." value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="mn-search-wrap" style={{ marginBottom: 24 }}>
+        <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input className="mn-search" type="text" placeholder="Buscar compra..." value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
       {loading ? (
@@ -563,14 +600,23 @@ const save = () => {
             </tr>
             {lista.map((c) => (
               <tr key={c.id}>
-                <td style={{ fontWeight: 700 }}>#{c.id}</td>
+                <td><span style={chipNumero}>N.º {c.id}</span></td>
                 <td><span className="badge badge-info">{c.metodo_pago}</span></td>
                 <td>{(c.detalles ?? []).length}</td>
                 <td style={{ fontWeight: 700 }}>${Number(c.valor_total).toLocaleString('es-CO')}</td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)}>Ver detalle</button>
-                    <button type="button" className="mn-btn-del" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => del(c.id)}>Eliminar</button>
+                    <button
+                      type="button"
+                      className="mn-btn-del"
+                      disabled={!c.puede_eliminarse}
+                      title={ayudaEliminar(c)}
+                      style={{ flex: 'none', padding: '7px 14px', ...(c.puede_eliminarse ? {} : { opacity: 0.4, cursor: 'not-allowed' }) }}
+                      onClick={() => del(c)}
+                    >
+                      Eliminar
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -594,46 +640,83 @@ const save = () => {
 </>
       )}
 
-      {modalDetalle && (
-        <div className="modal-overlay open" onClick={() => setModalDetalle(null)}>
-          <div className="modal-box" style={{ maxWidth: 560 }} onClick={(e) => e.stopPropagation()}>
-            <h2>Factura Compra #{modalDetalle.id}</h2>
-            <p style={{ marginBottom: 8, fontSize: 13, color: 'var(--text-400)' }}>
-              {new Date(modalDetalle.fecha).toLocaleDateString()} — {modalDetalle.metodo_pago}
-            </p>
-            <div className="tabla-responsive" style={{ marginBottom: 16 }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Insumo</th>
-                    <th>Proveedor</th>
-                    <th>Cant.</th>
-                    <th>Precio Unit.</th>
-                    <th>Subtotal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {modalDetalle.detalles.map((d) => (
-                    <tr key={d.id}>
-                      <td>{d.materia_prima?.nombre ?? 'N/A'}</td>
-                      <td>{d.marca?.nombre ?? 'N/A'}</td>
-                      <td>{d.cantidad}</td>
-                      <td>${Number(d.precio_unitario).toLocaleString('es-CO')}</td>
-                      <td style={{ fontWeight: 600 }}>${Number(d.subtotal).toLocaleString('es-CO')}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div style={{ textAlign: 'right', fontWeight: 800, fontSize: 16 }}>
-              Total: ${Number(modalDetalle.valor_total).toLocaleString()}
-            </div>
-            <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModalDetalle(null)}>Cerrar</button>
+      {modalDetalle && (() => {
+        const detalles = modalDetalle.detalles ?? [];
+        const columnas = '1.5fr 1.2fr 1fr 1fr 1fr';
+        const etiquetaCol: CSSProperties = {
+          fontSize: 11,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: 0.8,
+          color: 'var(--text-400)',
+        };
+        return (
+          <div className="modal-overlay open" onClick={() => setModalDetalle(null)}>
+            <div className="modal-box" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Factura de compra ${modalDetalle.id}`}>
+              <div style={{ marginBottom: 20 }}>
+                <div>
+                  <div style={etiquetaCol}>Factura de compra · N.º {modalDetalle.id}</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 22, fontWeight: 800, color: 'var(--text-900)', margin: '6px 0 10px' }}>
+                    {fechaLarga(modalDetalle.fecha)}
+                  </div>
+                  <span className="badge badge-info">{modalDetalle.metodo_pago}</span>
+                </div>
+              </div>
+
+              <div style={{ border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', background: 'var(--surface)' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <div style={{ minWidth: 540 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '10px 18px', background: 'var(--surface-2)' }}>
+                      <span style={etiquetaCol}>Insumo</span>
+                      <span style={etiquetaCol}>Proveedor</span>
+                      <span style={etiquetaCol}>Cant.</span>
+                      <span style={etiquetaCol}>Precio unit.</span>
+                      <span style={{ ...etiquetaCol, textAlign: 'right' }}>Subtotal</span>
+                    </div>
+                    {detalles.length === 0 ? (
+                      <div style={{ padding: '18px', fontSize: 13, color: 'var(--text-400)' }}>Esta compra no tiene insumos registrados.</div>
+                    ) : (
+                      detalles.map((d) => (
+                        <div
+                          key={d.id}
+                          style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '13px 18px', borderTop: '1px solid var(--border)', alignItems: 'center', fontSize: 14, color: 'var(--text-900)' }}
+                        >
+                          <span style={{ fontWeight: 600 }}>{d.materia_prima?.nombre ?? 'N/A'}</span>
+                          <span style={{ color: 'var(--text-400)' }}>{d.marca?.nombre ?? 'N/A'}</span>
+                          <span style={{ whiteSpace: 'nowrap' }}>
+                            {Number(d.cantidad).toLocaleString('es-CO')}
+                            {d.materia_prima?.unidad_medida ? ` ${d.materia_prima.unidad_medida}` : ''}
+                          </span>
+                          <span>{pesos(d.precio_unitario)}</span>
+                          <span style={{ fontWeight: 700, textAlign: 'right' }}>{pesos(d.subtotal)}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, margin: '20px 4px 0' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-400)' }}>
+                  {detalles.length} {detalles.length === 1 ? 'insumo' : 'insumos'}
+                </span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={etiquetaCol}>Total</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 26, fontWeight: 800, color: 'var(--text-900)', lineHeight: 1.2 }}>
+                    {pesos(modalDetalle.valor_total)}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 22 }}>
+                <button type="button" className="btn-primary" style={{ padding: '11px 32px' }} onClick={() => setModalDetalle(null)}>
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
       {escaneando && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(22, 8, 0, 0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <style>{`@keyframes iaScan{0%,100%{top:6%}50%{top:90%}}@keyframes iaDots{0%,100%{opacity:.25}50%{opacity:1}}`}</style>

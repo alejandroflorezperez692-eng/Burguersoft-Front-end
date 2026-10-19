@@ -17,6 +17,7 @@ import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/admin.css';
 import AdminLoading from '../components/AdminLoading';
+import AsistenteIA from '../components/AsistenteIA';
 
 const navItemsAdmin = [
   { to: '/inicio', label: 'Inicio', icono: casa },
@@ -122,6 +123,8 @@ export default function AdminLayout() {
       <div className="main-content">
         <Outlet />
       </div>
+
+      <AsistenteIA />
     </div>
   );
 }
