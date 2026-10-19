@@ -100,11 +100,8 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
       updateUser({ name: nombreCompleto });
       localStorage.setItem('perfil_extra', JSON.stringify({ Tdocumento: tdoc, Ndocumento: ndoc, telefono }));
     } catch {
-      // si backend no existe, igual mostramos éxito local (para demo)
-      const msg = 'Datos actualizados correctamente.';
-      setSuccess(msg);
-      localStorage.setItem('perfil_extra', JSON.stringify({ Tdocumento: tdoc, Ndocumento: ndoc, telefono }));
-      updateUser({ name: nombreCompleto });
+      setSuccess('');
+      setError('No se pudieron actualizar los datos. Intenta de nuevo.');
     }
   };
 
@@ -289,7 +286,7 @@ const handlePassword = async (e: React.FormEvent) => {
                   </ul>
                 </div>
                 <div className="mp-field mp-full">
-                  <label className="mp-label">Confirmar nueva <span className="mp-req">*</span></label>
+                  <label className="mp-label">Confirmar nueva contraseña <span className="mp-req">*</span></label>
                   <div className="mp-pw">
                     <input type={mostrarConf ? 'text' : 'password'} value={confirmar} onChange={(e) => setConfirmar(e.target.value)} placeholder="Repite la contraseña" required />
                     <button type="button" className="mp-pw-toggle" onClick={() => setMostrarConf((v) => !v)}>{mostrarConf ? 'Ocultar' : 'Mostrar'}</button>
@@ -310,7 +307,7 @@ const handlePassword = async (e: React.FormEvent) => {
             <>
               <div className="mp-info-list">
                 <div className="mp-info-row"><span className="mp-info-lbl">Correo</span><span>{correo || '—'}</span></div>
-                <div className="mp-info-row"><span className="mp-info-lbl">Tipo documento</span><span>{tdoc || '—'}</span></div>
+                <div className="mp-info-row"><span className="mp-info-lbl">Tipo de documento</span><span>{tdoc || '—'}</span></div>
                 <div className="mp-info-row"><span className="mp-info-lbl">N.º documento</span><span>{ndoc || '—'}</span></div>
                 <div className="mp-info-row"><span className="mp-info-lbl">Teléfono</span><span>{telefono ? formatearTelefono(telefono) : '—'}</span></div>
                 <div className="mp-info-row"><span className="mp-info-lbl">Estado</span><span className="mp-badge-ok">✓ Activo</span></div>

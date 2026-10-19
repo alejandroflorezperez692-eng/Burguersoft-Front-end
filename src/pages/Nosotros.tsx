@@ -30,7 +30,7 @@ export default function Nosotros() {
             tradición con Sogamoso. Desde nuestro inicio, hemos trabajado con
             pasión para ofrecer hamburguesas, salchipapas y mucho más,
             preparados con ingredientes frescos y un toque único que nos ha
-            convertido en el favorito de las comidas rápidas en la ciudad.
+            convertido en el favorito de la ciudad para las comidas rápidas.
           </p>
           <p>
             Somos un lugar donde la buena atención, las porciones generosas y el
@@ -53,7 +53,7 @@ export default function Nosotros() {
           deliciosos platos en un ambiente acogedor y familiar.
         </p>
         <br />
-        <p className="section-text">Calle 9 #1A-43, Barrio El Oriente</p>
+        <p className="section-text">Calle 9 # 1A-43, Barrio El Oriente</p>
         <p className="section-text">Sogamoso, Boyacá</p>
         <br />
         <p className="section-text">¡Te esperamos con el mejor sabor de la ciudad!</p>

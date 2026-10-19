@@ -1267,6 +1267,14 @@ body.dark-mode .public-body .btn-ir-pagar:not(:disabled):active {
   box-shadow: 0 4px 12px rgba(232, 130, 26, 0.35) !important;
 }
 
+body.dark-mode .public-body .cart-fecha-row .cart-hora-hint {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+body.dark-mode .public-body .cart-fecha-row .cart-hora-error {
+  color: #ff8a65 !important;
+}
+
 /* ============================================= */
 /* MODO CLARO: CARRITO (naranja naranja, negro negro) */
 /* ============================================= */

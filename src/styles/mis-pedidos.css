@@ -208,3 +208,115 @@ body:not(.dark-mode) .mis-pedidos-page button:not(.btn-cancelar-pedido):hover:no
   transform: translateY(-2px) !important;
   box-shadow: 0 10px 28px rgba(232, 130, 26, 0.5) !important;
 }
+
+/* Modo oscuro: tarjetas de pedido */
+body.dark-mode .pedido-card {
+  background: #000000;
+  border-color: #333333;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .pedido-card:hover {
+  border-color: #E8821A;
+  box-shadow: 0 12px 30px rgba(232, 130, 26, 0.18);
+}
+
+body.dark-mode .pedido-head,
+body.dark-mode .pedido-foot {
+  background: #0d0d0d;
+  border-color: #333333;
+}
+
+body.dark-mode .progreso-container {
+  background: #000000;
+  border-color: #333333;
+}
+
+body.dark-mode .pedido-table,
+body.dark-mode .pedido-table thead tr {
+  background: #000000;
+}
+
+body.dark-mode .pedido-table th {
+  color: #ffffff;
+  border-color: #333333;
+}
+
+body.dark-mode .pedido-table td {
+  color: #e0e0e0;
+  border-color: #222222;
+}
+
+body.dark-mode .pedido-table tr:hover td {
+  background: rgba(232, 130, 26, 0.08);
+}
+
+body.dark-mode .producto-nombre {
+  color: #ffffff;
+}
+
+body.dark-mode .pedido-fecha,
+body.dark-mode .progreso-tipo,
+body.dark-mode .pedido-foot .label,
+body.dark-mode .precio-unit {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.dark-mode .pedido-num,
+body.dark-mode .progreso-estado-label {
+  color: #E8821A;
+}
+
+body.dark-mode .paso-label {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+body.dark-mode .paso-label.activo,
+body.dark-mode .paso-label.completado {
+  color: #ffffff;
+}
+
+body.dark-mode .paso-circulo {
+  background: #000000;
+  border-color: #444444;
+}
+
+body.dark-mode .progreso-linea-bg {
+  background: #333333;
+}
+
+body.dark-mode .pedido-metodo {
+  background: #1a1a1a;
+  color: #E8821A;
+}
+
+body.dark-mode .pedido-foot .total {
+  color: #ff8a65;
+}
+
+body.dark-mode .mis-pedidos-error {
+  background: #2a1210;
+  border-color: rgba(255, 138, 101, 0.5);
+  color: #ff8a65;
+}
+
+body.dark-mode .progreso-cancelado {
+  background: rgba(195, 64, 42, 0.12);
+  border-color: rgba(255, 138, 101, 0.35);
+}
+
+body.dark-mode .progreso-cancelado span,
+body.dark-mode .progreso-estado-label.cancelado {
+  color: #ff8a65;
+}
+
+body.dark-mode .btn-cancelar-pedido {
+  color: #ff8a65;
+  border-color: rgba(255, 138, 101, 0.5);
+}
+
+body.dark-mode .btn-cancelar-pedido:hover:not(:disabled) {
+  background: #c3402a;
+  border-color: #c3402a;
+  color: #ffffff;
+}
