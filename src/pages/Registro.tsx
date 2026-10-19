@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
+import ModalVerificarCorreo from '../components/ModalVerificarCorreo';
 import { useAuth } from '../hooks/useAuth';
 
 function getErrorMessage(error: unknown): string {
@@ -62,6 +63,7 @@ export default function Registro() {
   const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [modalAbierto, setModalAbierto] = useState(false);
 
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -132,8 +134,20 @@ export default function Registro() {
       setError('Las contraseñas no coinciden.');
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
+      setError('Ingrese un correo electrónico válido.');
+      return;
+    }
 
+    // Datos válidos: abrir modal de verificación. La cuenta se crea
+    // solo cuando el código del correo sea confirmado en el modal.
+    setModalAbierto(true);
+  };
+
+  const handleCodigoVerificado = async () => {
+    setModalAbierto(false);
     setLoading(true);
+    setError(null);
 
     try {
       await register(
@@ -375,6 +389,14 @@ export default function Registro() {
         ¿Ya tienes una cuenta?
         <Link to="/login">Inicio sesión</Link>
       </div>
+
+      {modalAbierto && (
+        <ModalVerificarCorreo
+          correo={correo}
+          onClose={() => setModalAbierto(false)}
+          onVerified={handleCodigoVerificado}
+        />
+      )}
     </AuthLayout>
   );
 }
