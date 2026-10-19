@@ -1682,3 +1682,152 @@ body.dark-mode .otp-slot--lleno {
   background: #000;
   border-color: var(--color-primario);
 }
+
+/* ===== Modal Verificar Correo (Registro) ===== */
+.verify-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+  padding: 16px;
+}
+
+.verify-modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 32px 28px 24px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.verify-modal h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--color-primario);
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.verify-modal-desc {
+  font-size: 14px;
+  color: var(--color-texto-suave);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.verify-modal-desc strong {
+  color: var(--color-oscuro);
+  word-break: break-all;
+}
+
+.verify-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--color-texto-suave);
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+}
+
+.verify-modal-close:hover:not(:disabled) {
+  color: var(--color-oscuro);
+}
+
+.verify-btn-enviar {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.verify-btn-verificar {
+  width: 100%;
+  margin-top: 6px;
+}
+
+.verify-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: var(--color-oscuro);
+  margin: 6px 0 12px;
+}
+
+.verify-info {
+  font-size: 13px;
+  color: var(--color-texto-suave);
+  background: #f7f2ea;
+  border: 1px solid #eadfc9;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.verify-mock {
+  font-size: 14px;
+  background: #fff8e1;
+  border: 1px dashed #e8a21a;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  color: #6d4c00;
+}
+
+.verify-desbloqueo {
+  font-size: 12px;
+  color: var(--color-texto-suave);
+  margin-top: 8px;
+}
+
+.verify-cancelar {
+  background: none;
+  border: none;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-texto-suave);
+  cursor: pointer;
+}
+
+.verify-cancelar:hover:not(:disabled) {
+  text-decoration: underline;
+  color: var(--color-oscuro);
+}
+
+body.dark-mode .verify-modal {
+  background: #1a1a1a;
+}
+
+body.dark-mode .verify-modal h2 {
+  color: #fff;
+}
+
+body.dark-mode .verify-modal-desc strong,
+body.dark-mode .verify-label {
+  color: #fff;
+}
+
+body.dark-mode .verify-info {
+  background: #2a2a2a;
+  border-color: #444;
+  color: #ddd;
+}
+
+@media (max-width: 520px) {
+  .verify-modal {
+    padding: 26px 18px 20px;
+  }
+}

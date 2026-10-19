@@ -456,7 +456,12 @@ export default function Checkout() {
             </div>
               <div className="form-group">
               <label>Teléfono</label>
-              <input value={formatearTelefono(telefono)} placeholder="300 345 8970" disabled />
+              <input
+                inputMode="tel"
+                value={formatearTelefono(telefono)}
+                onChange={(e) => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                placeholder="300 345 8970"
+              />
             </div>
           </div>
         </section>
