@@ -2315,3 +2315,161 @@ input[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
+.cfg-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 28px;
+}
+
+.cfg-titulo {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 18px;
+  color: var(--text-900);
+}
+
+.cfg-req {
+  color: #e63946;
+}
+
+.cfg-hint {
+  display: block;
+  font-size: 11px;
+  color: var(--text-400);
+  margin-top: 6px;
+}
+
+.cfg-hint-err {
+  color: #e63946;
+  font-weight: 600;
+}
+
+.cfg-hint-ok {
+  color: #2a9d48;
+  font-weight: 600;
+}
+
+.form-group input:disabled,
+.form-group select:disabled {
+  cursor: not-allowed;
+  background: var(--surface-3);
+  color: var(--text-400);
+}
+
+.cfg-pw {
+  position: relative;
+}
+
+.cfg-pw input {
+  padding-right: 82px;
+}
+
+.cfg-pw-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.cfg-pw-toggle:hover {
+  color: var(--brand-deep);
+}
+
+.cfg-barra {
+  width: 100%;
+  height: 6px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.cfg-barra-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.25s ease, background 0.25s ease;
+}
+
+.cfg-barra.rojo .cfg-barra-fill {
+  background: #e63946;
+}
+
+.cfg-barra.amarillo .cfg-barra-fill {
+  background: #f4a100;
+}
+
+.cfg-barra.verde .cfg-barra-fill {
+  background: #2a9d48;
+}
+
+.cfg-requisitos {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.cfg-requisito {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-600);
+}
+
+.cfg-requisito.cumple {
+  color: #2a9d48;
+  font-weight: 600;
+}
+
+.cfg-msg {
+  padding: 12px 18px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.cfg-msg-ok {
+  background: #d5f5e3;
+  color: #1a7a42;
+}
+
+.cfg-msg-err {
+  background: #fde8e8;
+  color: #922;
+}
+
+body.dark-mode .cfg-msg-ok {
+  background: #12351f;
+  color: #7bd79a;
+}
+
+body.dark-mode .cfg-msg-err {
+  background: #3a1414;
+  color: #ff9b9b;
+}
+
+body.dark-mode .cfg-requisito.cumple {
+  color: #7bd79a;
+}
+
+@media (max-width: 640px) {
+  .cfg-card {
+    padding: 20px;
+  }
+}

@@ -1,37 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import apiClient from '../api/client';
+import {
+  formatearTelefono,
+  maxLenDocumento,
+  reglasPassword,
+  tiposDoc,
+  validarDatos,
+  validarPassword,
+} from '../utils/perfil';
 
 
 type Tab = 'datos' | 'pwd' | 'info';
-
-const tiposDoc = [
-  'Cédula de Ciudadanía',
-  'Tarjeta de Identidad',
-  'Pasaporte',
-  'Cédula de Extranjería',
-] as const;
-
-function formatearTelefono(v: string): string {
-  const limpio = v.replace(/[^0-9]/g, '');
-  const partes = [limpio.slice(0, 3), limpio.slice(3, 6), limpio.slice(6, 10)];
-  return partes.filter(Boolean).join(' ');
-}
-
-function validarDatos(d: { nombre: string; apellido: string; tdoc: string; ndoc: string; telefono: string }): string | null {
-  if (!d.nombre.trim() || !d.apellido.trim()) return 'Nombre y apellido son obligatorios.';
-  if (!d.tdoc) return 'Debes seleccionar un tipo de documento.';
-  if (!d.ndoc.trim()) return 'El número de documento es obligatorio.';
-  const len = d.ndoc.trim().length;
-  if (d.tdoc === 'Cédula de Ciudadanía' && (len < 6 || len > 10)) return 'La cédula debe tener entre 6 y 10 dígitos.';
-  if (d.tdoc === 'Tarjeta de Identidad' && (len < 10 || len > 11)) return 'La tarjeta de identidad debe tener entre 10 y 11 dígitos.';
-  if (d.tdoc === 'Cédula de Extranjería' && (len < 6 || len > 10)) return 'La cédula de extranjería debe tener entre 6 y 10 dígitos.';
-  if (d.tdoc === 'Pasaporte' && (len < 6 || len > 9)) return 'El pasaporte debe tener entre 6 y 9 caracteres.';
-  if (!d.telefono.trim()) return 'El teléfono es obligatorio.';
-  const limpio = d.telefono.replace(/\s/g, '');
-  if (!/^(\+57|57)?3[0-9]{9}$/.test(limpio)) return 'El teléfono debe ser un número colombiano válido (ej: 3001234567).';
-  return null;
-}
 
 export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { user, updateUser } = useAuth();
@@ -105,7 +85,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
   }, [isOpen, user?.name, correo]);
 
   // configurar longitud según tipo documento (como PHP)
-  const maxLenDoc = tdoc === 'Cédula de Ciudadanía' ? 10 : tdoc === 'Tarjeta de Identidad' ? 11 : tdoc === 'Cédula de Extranjería' ? 10 : tdoc === 'Pasaporte' ? 9 : 12;
+  const maxLenDoc = maxLenDocumento(tdoc);
 
   const handleGuardarDatos = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,17 +112,9 @@ const handlePassword = async (e: React.FormEvent) => {
   e.preventDefault();
   setError(''); setSuccess('');
   if (!actual) { setError('La contraseña actual es obligatoria.'); return; }
-  if (nueva.length < 8) { setError('La nueva contraseña debe tener al menos 8 caracteres.'); return; }
-  if (nueva === actual) { setError('La nueva contraseña debe ser diferente a la actual.'); return; }
+  const errPwd = validarPassword(nueva, actual);
+  if (errPwd) { setError(errPwd); return; }
   if (nueva !== confirmar) { setError('Las contraseñas no coinciden.'); return; }
-  // validaciones extra de fortaleza (como en PHP + UI)
-  const hasMayus = /[A-Z]/.test(nueva);
-  const hasNum = /[0-9]/.test(nueva);
-  const hasEsp = /[^A-Za-z0-9]/.test(nueva);
-  if (!hasMayus || !hasNum || !hasEsp) {
-    setError('La contraseña debe tener mayúscula, número y símbolo.');
-    return;
-  }
   setEnviandoPwd(true);
   try {
     await apiClient.post('/perfil/password', { actual, nueva, confirmar });
@@ -163,12 +135,7 @@ const handlePassword = async (e: React.FormEvent) => {
 };
 
   // fuerza de contraseña
-  const reglas = {
-    longitud: nueva.length >= 8,
-    mayuscula: /[A-Z]/.test(nueva),
-    numero: /[0-9]/.test(nueva),
-    especial: /[^A-Za-z0-9]/.test(nueva),
-  };
+  const reglas = reglasPassword(nueva);
   const fuerza = Object.values(reglas).filter(Boolean).length;
 
   if (!isOpen) return null;

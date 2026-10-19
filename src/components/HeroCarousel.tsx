@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import slide1 from '../assets/img/carrusel-1.png';
+import slide2 from '../assets/img/carrusel-2.png';
+import slide3 from '../assets/img/carrusel-3.png';
+import slide4 from '../assets/img/carrusel-4.png';
+import slide5 from '../assets/img/carrusel-5.png';
+import slide6 from '../assets/img/carrusel-6.png';
+import slide7 from '../assets/img/carrusel-7.png';
 
-const SLIDES = [
-  'https://www.recetasnestle.com.ec/sites/default/files/srh_recipes/4e4293857c03d819e4ae51de1e86d66a.jpg',
-  'https://ranchera.com.co/wp-content/uploads/2022/11/perro-colombiano-1.jpg',
-  'https://chefstv.net/wp-content/uploads/2024/03/0045-empanadas-saltenas-fritas-wide-web.webp',
-  'https://www.elespectador.com/resizer/v2/4YMEEW2QBVGALOUC7LSPUFNKMU.jpg?auth=1913090d3e141e8a3ccce35509259201363e9dddf853024e2f30ac71ce6383a9&width=1110&height=739&smart=true&quality=60',
-];
+const SLIDES = [slide1, slide2, slide3, slide4, slide5, slide6, slide7];
 
 export default function HeroCarousel() {
   const [indice, setIndice] = useState(0);

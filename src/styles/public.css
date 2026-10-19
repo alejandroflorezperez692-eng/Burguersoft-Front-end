@@ -353,8 +353,8 @@
 
 .public-body .hero {
   position: relative;
-  height: 78vh;
-  min-height: 480px;
+  height: 0vh;
+  min-height: 700px;
   overflow: hidden;
 }
 
@@ -375,12 +375,14 @@
 .public-body .carousel-container {
   position: absolute;
   inset: 0;
+  background-color: #14100d;
 }
 
 .public-body .carousel-slide {
   position: absolute;
   inset: 0;
-  background-size: cover;
+  background-size: auto 200%;
+  background-repeat: no-repeat;
   background-position: center;
   opacity: 0;
   transform: scale(1.04);
@@ -994,7 +996,7 @@
   }
 
   .public-body .hero {
-    height: 52vh;
+    height: 10vh;
     min-height: 300px;
   }
 
@@ -1203,7 +1205,7 @@
   }
 
   .public-body .hero {
-    height: 46vh;
+    height: 10vh;
     min-height: 260px;
   }
 
