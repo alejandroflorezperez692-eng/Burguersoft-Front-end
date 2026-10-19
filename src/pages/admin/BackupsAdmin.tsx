@@ -19,6 +19,13 @@ export default function BackupsAdmin() {
   const [items, setItems] = useState<Backup[]>([]);
   const [tablas, setTablas] = useState<Tabla[]>([]);
   const [sel, setSel] = useState<string[]>([]);
+  const [buscar, setBuscar] = useState<string>('');
+
+  const filteredItems = items.filter((item) =>
+    (item.nombre_tabla + ' ' + item.nombre + ' ' + item.fecha)
+      .toLowerCase()
+      .includes(buscar.toLowerCase())
+  );
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [msg, setMsg] = useState<{ texto: string; error?: boolean } | null>(null);
@@ -31,12 +38,22 @@ export default function BackupsAdmin() {
       apiClient.get('/backups').catch(() => null),
       apiClient.get('/backups/tablas').catch(() => null),
     ]).then(([r1, r2]) => {
-      setItems(toArray<Backup>(r1?.data));
-      const t = toArray<Tabla>(r2?.data);
-      setTablas(t);
-      setSel((prev) => (prev.length === 0 ? t.map((x) => x.tabla) : prev));
+      const backups = toArray<Backup>(r1?.data);
+      const tablas = toArray<Tabla>(r2?.data);
+      
+      setItems(backups);
+      setTablas(tablas);
+      
+      // Siempre inicializar selección con todas las tablas al cargar
+      // Si ya tiene selección (del usuario), mantenerla
+      setSel(prev => (prev.length === 0 ? tablas.map((x) => x.tabla) : prev));
       setLoading(false);
-    }).catch(() => { setItems([]); setLoading(false); });
+    }).catch((e) => {
+      console.error('Error en load:', e);
+      setItems([]);
+      setTablas([]);
+      setLoading(false);
+    });
   };
 
   useEffect(() => { load(); }, []);
@@ -75,6 +92,14 @@ export default function BackupsAdmin() {
           <h1>Copias de Seguridad</h1>
           <p className="subtitulo">Respaldo y restauración de la base de datos</p>
         </div>
+        <div className="mn-search-wrap">
+          <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input className="mn-search" type="text" placeholder="Buscar copia..." value={buscar} onChange={(e) => setBuscar(e.target.value)} />
+        </div>
       </div>
 
       <div className="stat-grid">
@@ -94,7 +119,7 @@ export default function BackupsAdmin() {
         </div>
         <div className="stat-card">
           <span className="stat-label">Historial de copias</span>
-          <span className="stat-val">{(items ?? []).length}</span>
+          <span className="stat-val">{(filteredItems ?? []).length}</span>
           <span className="stat-sub">registros</span>
         </div>
       </div>
@@ -110,15 +135,18 @@ export default function BackupsAdmin() {
           </div>
         </div>
         <div style={{ maxHeight: 200, overflowY: 'auto', border: '1.5px solid var(--border)', borderRadius: 'var(--r-sm)', padding: 8, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 4 }}>
-          {tablas.length === 0 && (
+          {tablas.length > 0 ? (
+            <div>
+              {tablas.map((t) => (
+                <label key={t.tabla} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', borderRadius: 4, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-900)' }}>
+                  <input type="checkbox" checked={sel.includes(t.tabla)} onChange={() => toggle(t.tabla)} />
+                  {t.etiqueta}
+                </label>
+              ))}
+            </div>
+          ) : (
             <span style={{ color: 'var(--text-400)', fontSize: 12, padding: 6 }}>Cargando tablas...</span>
           )}
-          {tablas.map((t) => (
-            <label key={t.tabla} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', borderRadius: 4, cursor: 'pointer', fontSize: 13, fontWeight: 500, color: 'var(--text-900)' }}>
-              <input type="checkbox" checked={sel.includes(t.tabla)} onChange={() => toggle(t.tabla)} />
-              {t.etiqueta}
-            </label>
-          ))}
         </div>
         {msg && (
           <p style={{ fontSize: 13, fontWeight: 600, marginTop: 12, color: msg.error ? '#c0392b' : 'var(--text-900)' }}>{msg.texto}</p>
@@ -144,7 +172,7 @@ export default function BackupsAdmin() {
             </tr>
           </thead>
           <tbody>
-            {(items ?? []).map((b) => (
+            {(filteredItems ?? []).map((b) => (
               <tr key={b?.id}>
                 <td>{b?.id}</td>
                 <td style={{ fontWeight: 600 }}>{b?.nombre_tabla ?? b?.nombre ?? '—'}</td>
@@ -154,8 +182,8 @@ export default function BackupsAdmin() {
                 </td>
               </tr>
             ))}
-            {(items ?? []).length === 0 && (
-              <tr><td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No hay registros de copias de seguridad</td></tr>
+            {(filteredItems ?? []).length === 0 && (
+              <tr><td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>{(items ?? []).length === 0 ? 'No hay registros de copias de seguridad' : 'No hay copias que coincidan con tu búsqueda'}</td></tr>
             )}
           </tbody>
         </table>

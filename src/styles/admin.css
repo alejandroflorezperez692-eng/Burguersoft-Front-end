@@ -585,36 +585,38 @@ body.dark-mode .sidebar-header .logo-oscuro {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
   border: none;
   border-radius: var(--r-sm);
   cursor: pointer;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
   transition: all 0.18s var(--ease);
+  white-space: nowrap;
+  padding: 6px 12px;
 }
 
 .btn-icon:hover {
-  transform: scale(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(232, 130, 26, 0.35);
 }
 
 .btn-icon-edit {
-  background: #dbeafe;
-  color: #1a3f7e;
+  background: #3b82f6;
+  color: #fff;
 }
 
 .btn-icon-edit:hover {
-  background: #2d89ef;
+  background: #2563eb;
   color: #fff;
 }
 
 .btn-icon-del {
-  background: #fde8e8;
-  color: #922;
+  background: #ef4444;
+  color: #fff;
 }
 
 .btn-icon-del:hover {
-  background: var(--danger);
+  background: #dc2626;
   color: #fff;
 }
 
