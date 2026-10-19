@@ -1823,3 +1823,75 @@ body.dark-mode .mp-pw-toggle:focus-visible {
   background: transparent !important;
   color: #ffffff !important;
 }
+
+/* ============================================= */
+/* CARRUSEL DE IMÁGENES "SOBRE NOSOTROS"          */
+/* ============================================= */
+
+.public-body .nosotros-carousel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80%;
+  max-width: 680px;
+}
+
+.public-body .nosotros-carousel img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 899 / 581;
+  object-fit: cover;
+  box-sizing: border-box;
+  border: 3px solid #E8821A;
+  border-radius: 20px;
+  box-shadow: 4px 4px 18px 12px rgba(232, 130, 26, 0.6);
+  animation: nosotros-fade 0.9s ease both;
+  transition:
+    transform 0.55s ease,
+    box-shadow 0.55s ease,
+    border-color 0.55s ease;
+}
+
+body.dark-mode .public-body .nosotros-carousel img {
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 899 / 581;
+  object-fit: cover;
+  box-sizing: border-box;
+  border: 3px solid #E8821A;
+  border-radius: 20px;
+  box-shadow: 4px 4px 14px 14px rgba(232, 130, 26, 0.35);
+  animation: nosotros-fade 0.9s ease both;
+  transition:
+    transform 0.55s ease,
+    box-shadow 0.55s ease,
+    border-color 0.55s ease;
+}
+
+.public-body .nosotros-carousel img:hover {
+  border-color: #ff9d2e;
+  box-shadow: 4px 4px 20px 14px rgba(232, 130, 26, 0.8);
+}
+
+body.dark-mode .public-body .nosotros-carousel img:hover {
+  border-color: #ff9d2e;
+  box-shadow: 4px 4px 14px 14px rgba(232, 130, 26, 0.5);
+}
+
+@keyframes nosotros-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .public-body .nosotros-carousel {
+    width: 100%;
+  }
+}
