@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent } from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
@@ -12,8 +12,8 @@ interface Promocion {
   id: number;
   nombre: string;
   descripcion: string;
-  valor: number;
-  img: string;
+  precio: number;
+  imagen: string | null;
   fecha_inicio: string;
   fecha_fin: string;
   estado: string;
@@ -21,9 +21,13 @@ interface Promocion {
 }
 
 const emptyForm = {
-  nombre: '', descripcion: '', valor: '', img: '',
+  nombre: '', descripcion: '', precio: '',
   fecha_inicio: '', fecha_fin: '', estado: 'Activa',
 };
+
+// Solo acepta URLs de imagen utilizables (absolutas, data/blob o /storage).
+const imgValida = (img: string | null | undefined): boolean =>
+  !!img && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(img);
 
 const fechaLegible = (f?: string | null) =>
   f ? new Date(f + (f.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
@@ -35,6 +39,10 @@ export default function PromocionesAdmin() {
   const [filtro, setFiltro] = useState('todas');
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [imgActual, setImgActual] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [selectedProds, setSelectedProds] = useState<number[]>([]);
   const [editId, setEditId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,6 +72,28 @@ export default function PromocionesAdmin() {
 
   useEffect(() => { load(); }, []);
 
+  // Vista previa de la imagen elegida (y limpieza del object URL)
+  useEffect(() => {
+    if (!archivo) return;
+    const url = URL.createObjectURL(archivo);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [archivo]);
+
+  const limpiarImagen = () => {
+    setArchivo(null);
+    setPreview(null);
+    setImgActual(false);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const elegirArchivo = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    if (!f) return;
+    setArchivo(f);
+    setImgActual(false);
+  };
+
   const est = (p: Promocion) => {
     if (p?.estado === 'Inactiva' || p?.estado === 'Finalizada') return 'Inactiva';
     if (p?.fecha_fin && new Date(p.fecha_fin) < new Date()) return 'Finalizada';
@@ -81,6 +111,7 @@ export default function PromocionesAdmin() {
     setForm(emptyForm);
     setSelectedProds([]);
     setEditId(null);
+    limpiarImagen();
     setModal(true);
   };
 
@@ -88,14 +119,17 @@ export default function PromocionesAdmin() {
     setForm({
       nombre: p?.nombre ?? '',
       descripcion: p?.descripcion ?? '',
-      valor: String(p?.valor ?? ''),
-      img: p?.img ?? '',
+      precio: String(p?.precio ?? ''),
       fecha_inicio: p?.fecha_inicio?.slice(0, 10) ?? '',
       fecha_fin: p?.fecha_fin?.slice(0, 10) ?? '',
       estado: p?.estado ?? 'Activa',
     });
     setSelectedProds((p?.productos ?? []).map((pr) => pr?.id));
     setEditId(p?.id ?? null);
+    setArchivo(null);
+    if (fileRef.current) fileRef.current.value = '';
+    setPreview(imgValida(p?.imagen) ? p.imagen : null);
+    setImgActual(!!p?.imagen);
     setModal(true);
   };
 
@@ -105,21 +139,29 @@ export default function PromocionesAdmin() {
     );
   };
 
-  const guardar = async () => {
+  const guardar = async (e?: { preventDefault?: () => void }) => {
+    e?.preventDefault?.();
     if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
-    if (Number(form.valor) < 0) { showToast('El precio no puede ser negativo', true); return; }
+    if (form.precio === '' || Number(form.precio) < 0) { showToast('El precio no puede ser negativo', true); return; }
     if (selectedProds.length === 0) { showToast('Selecciona al menos un producto', true); return; }
-    const body = {
-      ...form,
-      valor: Number(form.valor) || 0,
-      productos_ids: selectedProds,
-    };
+
+    const fd = new FormData();
+    fd.append('nombre', form.nombre.trim());
+    fd.append('descripcion', form.descripcion.trim());
+    fd.append('precio', String(Number(form.precio) || 0));
+    fd.append('fecha_inicio', form.fecha_inicio);
+    fd.append('fecha_fin', form.fecha_fin);
+    fd.append('estado', form.estado);
+    selectedProds.forEach((id) => fd.append('productos_ids[]', String(id)));
+    if (archivo) fd.append('imagen', archivo);
+
     try {
       if (editId) {
-        await apiClient.put(`/promociones/${editId}`, body);
+        fd.append('_method', 'PUT');
+        await apiClient.post(`/promociones/${editId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
         showToast('Promoción actualizada');
       } else {
-        await apiClient.post('/promociones', body);
+        await apiClient.post('/promociones', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
         showToast('Promoción creada');
       }
       setModal(false);
@@ -173,9 +215,9 @@ export default function PromocionesAdmin() {
                 background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
                 boxShadow: 'var(--shadow-sm)', overflow: 'hidden', display: 'flex', flexDirection: 'column',
               }}>
-                {p?.img && (
+                {p?.imagen && (
                   <div style={{ height: 130, overflow: 'hidden', background: 'var(--surface-3)' }}>
-                    <img src={p.img} alt={p.nombre ?? 'promoción'} onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={p.imagen} alt={p.nombre ?? 'promoción'} onError={(ev) => { (ev.target as HTMLImageElement).style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                 )}
                 <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
@@ -195,7 +237,7 @@ export default function PromocionesAdmin() {
                     </div>
                   )}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 10, borderTop: '1px solid var(--border)' }}>
-                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: 20, fontWeight: 800, color: 'var(--brand)' }}>${Number(p?.valor || 0).toLocaleString()}</span>
+                    <span style={{ fontFamily: 'var(--font-sans)', fontSize: 20, fontWeight: 800, color: 'var(--brand)' }}>${Number(p?.precio || 0).toLocaleString()}</span>
                     <div>
                       <button className="btn-icon btn-icon-edit" onClick={() => openEdit(p)} title="Editar">✏</button>
                       <button className="btn-icon btn-icon-del" onClick={() => del(p.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
@@ -225,18 +267,21 @@ export default function PromocionesAdmin() {
             </div>
             <div className="form-group">
               <label>Precio del combo</label>
-              <input type="number" min={0} value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })} />
+              <input type="number" min={0} value={form.precio} onChange={(e) => setForm({ ...form, precio: e.target.value })} />
             </div>
             <div className="form-group">
-              <label>Imagen (URL)</label>
-              <input value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
+              <label>Imagen</label>
+              <input ref={fileRef} type="file" accept="image/*" onChange={elegirArchivo} style={{ fontFamily: 'var(--font-sans)' }} />
               <div className="logo-preview-wrap">
-                {form.img ? (
-                  <img src={form.img} alt="Vista previa" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                {preview ? (
+                  <img src={preview} alt="Vista previa" />
                 ) : (
                   <span style={{ color: 'var(--text-400)', fontSize: 12 }}>Sin imagen</span>
                 )}
               </div>
+              {imgActual && (
+                <p style={{ color: 'var(--text-400)', fontSize: 11, margin: '4px 0 0' }}>Se mantiene la imagen actual. Elige un archivo para cambiarla.</p>
+              )}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="form-group">
