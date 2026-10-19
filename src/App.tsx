@@ -33,45 +33,37 @@ function App() {
     <>
       <DemoAccess />
       <Routes>
-      <Route path="/" element={<Home />} />
-      <Route
-        path="/nosotros"
-        element={<Nosotros />}
-      />
-      <Route
-        path="/menu-publico"
-        element={<MenuPublico />}
-      />
-      <Route
-        path="/contactanos"
-        element={<Contactanos />}
-      />
+      <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/nosotros" element={<Nosotros />} />
+        <Route path="/menu-publico" element={<MenuPublico />} />
+        <Route path="/contactanos" element={<Contactanos />} />
+        <Route path="/mis-pedidos" element={<MisPedidos />} />
+        <Route path="/checkout" element={<Checkout />} />
+      </Route>
+
       <Route path="/login" element={<Login />} />
       <Route path="/social-callback" element={<SocialCallback />} /> 
       <Route path="/registro" element={<Registro />} />
       <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
       <Route path="/verificar-codigo" element={<VerificarCodigo />} />
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
-      <Route path="/mis-pedidos" element={<MisPedidos />} />
-      <Route path="/checkout" element={<Checkout />} />
       <Route path="/social-callback" element={<SocialCallback />} />
 
-
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute roles={['admin']} redirect="/" />}>
         <Route element={<AdminLayout />}>
           <Route path="/inicio" element={<Inicio />} />
           <Route path="/menu" element={<MenuAdmin />} />
+          <Route path="/configuracion" element={<ConfiguracionAdmin />} />
           <Route path="/ventas" element={<VentasAdmin />} />
           <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
           <Route path="/compras" element={<ComprasAdmin />} />
           <Route path="/gestion-marca" element={<MarcasAdmin />} />
           <Route path="/promociones" element={<PromocionesAdmin />} />
           <Route path="/backups" element={<BackupsAdmin />} />
-          <Route path="/configuracion" element={<ConfiguracionAdmin />} />
           <Route path="/usuarios" element={<UsuariosAdmin />} />
           <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
         </Route>
-
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

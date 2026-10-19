@@ -4,6 +4,7 @@ import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
 import apiClient from '../api/client';
 import AdminLoading from '../components/AdminLoading';
+import AlertasInicio from '../components/AlertasInicio';
 
 interface Movimiento {
   id: number;
@@ -108,6 +109,8 @@ export default function Inicio() {
           <img src={usuarioPerfil} alt="" />
         </div>
       </div>
+
+      {rol !== 'Cliente' && <AlertasInicio />}
 
       <div className="dashboard-row">
         <div className="historial-section">

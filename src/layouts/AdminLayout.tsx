@@ -17,6 +17,7 @@ import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
 import '../styles/admin.css';
 import AdminLoading from '../components/AdminLoading';
+import AsistenteIA from '../components/AsistenteIA';
 
 const navItemsAdmin = [
   { to: '/inicio', label: 'Inicio', icono: casa },
@@ -30,13 +31,6 @@ const navItemsAdmin = [
   { to: '/usuarios', label: 'Usuarios', icono: equipo },
 ];
 
-const navItemsCliente = [
-  { to: '/inicio', label: 'Inicio', icono: casa },
-  { to: '/menu', label: 'Menú', icono: cena },
-  { to: '/mis-pedidos', label: 'Mis Pedidos', icono: buy },
-  { to: '/pedidos', label: 'Pedidos', icono: insignia },
-];
-
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -44,8 +38,7 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
   const cerrarMenu = () => setMenuOpen(false);
-  const isCliente = user?.role === 'Cliente';
-  const navItems = isCliente ? navItemsCliente : navItemsAdmin;
+  const navItems = navItemsAdmin;
 
   const handleSalir = () => {
     setSaliendo(true);
@@ -122,6 +115,8 @@ export default function AdminLayout() {
       <div className="main-content">
         <Outlet />
       </div>
+
+      <AsistenteIA />
     </div>
   );
 }
