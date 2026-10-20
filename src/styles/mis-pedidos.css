@@ -150,3 +150,173 @@
 
 @keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes fadeUp   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Modo oscuro: saludo y estado vacío totalmente en blanco */
+body.dark-mode .mis-pedidos-header h1,
+body.dark-mode .mis-pedidos-header p,
+body.dark-mode .pedidos-empty,
+body.dark-mode .pedidos-empty p {
+  color: #ffffff !important;
+}
+
+/* Modo oscuro: botones de acción con los colores de "Guardar cambios" */
+body.dark-mode .pedidos-empty a,
+body.dark-mode .mis-pedidos-page button:not(.btn-cancelar-pedido) {
+  background: #E8821A !important;
+  background-color: #E8821A !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
+  box-shadow: 0 6px 20px rgba(232, 130, 26, 0.38) !important;
+  transition: all 0.2s !important;
+}
+
+body.dark-mode .pedidos-empty a:hover,
+body.dark-mode .mis-pedidos-page button:not(.btn-cancelar-pedido):hover:not(:disabled) {
+  background: #d4761a !important;
+  background-color: #d4761a !important;
+  color: #ffffff !important;
+  border-color: #d4761a !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 28px rgba(232, 130, 26, 0.5) !important;
+}
+
+/* Modo claro: textos en negro */
+body:not(.dark-mode) .mis-pedidos-page .mis-pedidos-header h1,
+body:not(.dark-mode) .mis-pedidos-page .mis-pedidos-header p,
+body:not(.dark-mode) .mis-pedidos-page .pedidos-empty,
+body:not(.dark-mode) .mis-pedidos-page .pedidos-empty p {
+  color: #000000 !important;
+}
+
+/* Modo claro: botones con el color y fondo de "Guardar cambios" */
+body:not(.dark-mode) .mis-pedidos-page .pedidos-empty a,
+body:not(.dark-mode) .mis-pedidos-page button:not(.btn-cancelar-pedido) {
+  background: #E8821A !important;
+  background-color: #E8821A !important;
+  color: #ffffff !important;
+  border-color: #E8821A !important;
+  box-shadow: 0 6px 20px rgba(232, 130, 26, 0.38) !important;
+  transition: all 0.2s !important;
+}
+
+body:not(.dark-mode) .mis-pedidos-page .pedidos-empty a:hover,
+body:not(.dark-mode) .mis-pedidos-page button:not(.btn-cancelar-pedido):hover:not(:disabled) {
+  background: #d4761a !important;
+  background-color: #d4761a !important;
+  color: #ffffff !important;
+  border-color: #d4761a !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 10px 28px rgba(232, 130, 26, 0.5) !important;
+}
+
+/* Modo oscuro: tarjetas de pedido */
+body.dark-mode .pedido-card {
+  background: #000000;
+  border-color: #333333;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .pedido-card:hover {
+  border-color: #E8821A;
+  box-shadow: 0 12px 30px rgba(232, 130, 26, 0.18);
+}
+
+body.dark-mode .pedido-head,
+body.dark-mode .pedido-foot {
+  background: #0d0d0d;
+  border-color: #333333;
+}
+
+body.dark-mode .progreso-container {
+  background: #000000;
+  border-color: #333333;
+}
+
+body.dark-mode .pedido-table,
+body.dark-mode .pedido-table thead tr {
+  background: #000000;
+}
+
+body.dark-mode .pedido-table th {
+  color: #ffffff;
+  border-color: #333333;
+}
+
+body.dark-mode .pedido-table td {
+  color: #e0e0e0;
+  border-color: #222222;
+}
+
+body.dark-mode .pedido-table tr:hover td {
+  background: rgba(232, 130, 26, 0.08);
+}
+
+body.dark-mode .producto-nombre {
+  color: #ffffff;
+}
+
+body.dark-mode .pedido-fecha,
+body.dark-mode .progreso-tipo,
+body.dark-mode .pedido-foot .label,
+body.dark-mode .precio-unit {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.dark-mode .pedido-num,
+body.dark-mode .progreso-estado-label {
+  color: #E8821A;
+}
+
+body.dark-mode .paso-label {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+body.dark-mode .paso-label.activo,
+body.dark-mode .paso-label.completado {
+  color: #ffffff;
+}
+
+body.dark-mode .paso-circulo {
+  background: #000000;
+  border-color: #444444;
+}
+
+body.dark-mode .progreso-linea-bg {
+  background: #333333;
+}
+
+body.dark-mode .pedido-metodo {
+  background: #1a1a1a;
+  color: #E8821A;
+}
+
+body.dark-mode .pedido-foot .total {
+  color: #ff8a65;
+}
+
+body.dark-mode .mis-pedidos-error {
+  background: #2a1210;
+  border-color: rgba(255, 138, 101, 0.5);
+  color: #ff8a65;
+}
+
+body.dark-mode .progreso-cancelado {
+  background: rgba(195, 64, 42, 0.12);
+  border-color: rgba(255, 138, 101, 0.35);
+}
+
+body.dark-mode .progreso-cancelado span,
+body.dark-mode .progreso-estado-label.cancelado {
+  color: #ff8a65;
+}
+
+body.dark-mode .btn-cancelar-pedido {
+  color: #ff8a65;
+  border-color: rgba(255, 138, 101, 0.5);
+}
+
+body.dark-mode .btn-cancelar-pedido:hover:not(:disabled) {
+  background: #c3402a;
+  border-color: #c3402a;
+  color: #ffffff;
+}

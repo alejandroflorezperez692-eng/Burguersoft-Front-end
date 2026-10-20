@@ -66,7 +66,7 @@ export default function HeroCarousel() {
             <button
               key={i}
               type="button"
-              aria-label={`Slide ${i + 1}`}
+              aria-label={`Imagen ${i + 1}`}
               className={`carousel-indicator${i === indice ? ' active' : ''}`}
               onMouseEnter={() => {
                 pausadoRef.current = true;
