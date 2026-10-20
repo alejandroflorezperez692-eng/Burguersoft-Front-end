@@ -9,13 +9,13 @@ const IVA_RATE = 0.08;
 const ZONA_HORARIA = 'America/Bogota';
 
 const HORARIOS: Record<number, { inicio: string; fin: string } | null> = {
-  0: { inicio: '15:00', fin: '22:00' },
-  1: { inicio: '15:30', fin: '22:00' },
-  2: { inicio: '15:30', fin: '22:00' },
-  3: { inicio: '15:30', fin: '22:00' },
-  4: { inicio: '15:30', fin: '22:00' },
-  5: { inicio: '15:30', fin: '22:00' },
-  6: { inicio: '15:00', fin: '23:00' },
+  0: { inicio: '3:00 p.m.', fin: '10:00 p.m.' },
+  1: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  2: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  3: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  4: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  5: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  6: { inicio: '3:00 p.m.', fin: '11:00 p.m.' },
 };
 
 function partesAhoraColombia() {

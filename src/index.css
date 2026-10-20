@@ -200,7 +200,7 @@ a {
   width: 48px;
   height: 48px;
   background: #fff;
-  border: 1.5px solid #e0e0e0;
+  border: 1.5px solid #000000;
   border-radius: 50%;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
   display: flex;
@@ -219,7 +219,7 @@ a {
 .acc-fab:focus,
 .acc-fab:focus-visible {
   outline: none;
-  border-color: #e0e0e0 !important;
+  border-color: #000000 !important;
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.08) !important;
 }
 
@@ -237,14 +237,14 @@ a {
 
 body.dark-mode .acc-fab {
   background: #1e1e1e;
-  border-color: #333;
+  border: 1.5px solid #ffffff;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
 }
 
 body.dark-mode .acc-fab:focus,
 body.dark-mode .acc-fab:focus-visible {
   outline: none;
-  border-color: #333 !important;
+  border-color: #ffffff !important;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -1173,6 +1173,42 @@ body.dark-mode .public-body .cart-cuando-row select:active {
 body.dark-mode .public-body .cart-cuando-row select option {
   background: #000000 !important;
   color: #ffffff !important;
+}
+
+body.dark-mode .public-body .cart-cuando-trigger,
+body.dark-mode .public-body .cart-cuando-trigger:hover,
+body.dark-mode .public-body .cart-cuando-trigger:focus,
+body.dark-mode .public-body .cart-cuando-trigger:focus-visible {
+  background: transparent !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.dark-mode .public-body .cart-cuando-lista {
+  background: #000000 !important;
+  border-color: #E8821A !important;
+}
+
+body.dark-mode .public-body .cart-cuando-opcion {
+  color: #ffffff !important;
+}
+
+body.dark-mode .public-body .cart-cuando-opcion:hover,
+body.dark-mode .public-body .cart-cuando-opcion:focus-visible {
+  background: #E8821A !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .public-body .cart-cuando-opcion + .cart-cuando-opcion {
+  margin-top: 3px;
+  padding-top: 9px;
+  border-top: 1px solid #E8821A;
+}
+
+body.dark-mode .public-body .cart-cuando-opcion:hover,
+body.dark-mode .public-body .cart-cuando-opcion:focus-visible {
+  border-top-color: transparent;
 }
 
 body.dark-mode .public-body .qty-stepper button {
