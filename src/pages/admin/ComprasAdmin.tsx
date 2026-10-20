@@ -220,7 +220,6 @@ const comprimirImagen = async (archivo: File): Promise<File> => {
     return archivo;
   }
 };
-
 export default function ComprasAdmin() {
   const [items, setItems] = useState<Compra[]>([]);
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
@@ -239,6 +238,11 @@ export default function ComprasAdmin() {
   const [escaneando, setEscaneando] = useState(false);
   const [aviso, setAviso] = useState<{ texto: string; alerta: boolean } | null>(null);
   const [fechaIA, setFechaIA] = useState('');
+  const [mostrarDictado, setMostrarDictado] = useState(false);
+  const [textoDictado, setTextoDictado] = useState('');
+  const [interpretando, setInterpretando] = useState(false);
+  const [escuchando, setEscuchando] = useState(false);
+  const vozRef = useRef<{ stop: () => void } | null>(null);
   const inputFactura = useRef<HTMLInputElement>(null);
 
   const load = () => {
@@ -317,6 +321,66 @@ export default function ComprasAdmin() {
 
   const total = lineas.reduce((a, l) => a + (Number(l.precio_unitario) || 0), 0);
   const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); };
+
+  const dictar = async () => {
+    const texto = textoDictado.trim();
+    if (!texto) return;
+    vozRef.current?.stop();
+    setInterpretando(true);
+    try {
+      const { data } = await apiClient.post<RespuestaIA>('/compras/dictar', { texto }, { timeout: 60000 });
+
+      setLineas(data.items.map((it) => ({
+        materia_prima_id: it.materia_prima_id,
+        cantidad: it.cantidad ? String(it.cantidad) : '',
+        precio_unitario: it.precio_total ? String(Math.round(it.precio_total)) : '',
+        marca_id: data.marca_id ?? 0,
+        nombre_nuevo: it.materia_prima_id ? '' : (it.nombre_nuevo ?? ''),
+        tipo: '',
+        unidad_medida: it.materia_prima_id ? '' : (it.unidad_medida ?? ''),
+      })));
+      setMetodoPago(data.metodo_pago ?? '');
+      setFechaIA(data.fecha ?? '');
+      setShowForm(true);
+      setMostrarDictado(false);
+      setTextoDictado('');
+
+      const partes = ['Compra interpretada con IA a partir de lo que dijiste. Revisa cada dato antes de registrar.'];
+      if (data.fecha) partes.push(`Fecha: ${data.fecha.split('-').reverse().join('/')}.`);
+      if (data.observaciones) partes.push(data.observaciones);
+      setAviso({ texto: partes.join(' '), alerta: !!data.observaciones });
+      showToast('Listo: revisa los datos y registra');
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } } };
+      showToast(err?.response?.data?.message || 'No se pudo interpretar la compra', true);
+    } finally {
+      setInterpretando(false);
+    }
+  };
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  // Dictado por voz del navegador (Chrome o Edge; necesita https o localhost)
+  const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const alternarMicrofono = () => {
+    if (escuchando) { vozRef.current?.stop(); return; }
+    const rec = new SpeechRec();
+    rec.lang = 'es-CO';
+    rec.continuous = true;
+    rec.interimResults = false;
+    rec.onresult = (ev: any) => {
+      let t = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        if (ev.results[i].isFinal) t += ev.results[i][0].transcript + ' ';
+      }
+      if (t.trim()) setTextoDictado((prev) => (prev ? prev.trim() + ' ' : '') + t.trim());
+    };
+    rec.onerror = () => setEscuchando(false);
+    rec.onend = () => setEscuchando(false);
+    vozRef.current = rec;
+    rec.start();
+    setEscuchando(true);
+  };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
 
 const escanear = async (archivo: File) => {
   setEscaneando(true);
@@ -436,6 +500,13 @@ const save = () => {
           >
             Escanear factura
           </button>
+          <button
+            className="btn-primary"
+            style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
+            onClick={() => setMostrarDictado((v) => !v)}
+          >
+            Dictar compra
+          </button>
           <button className="btn-primary" onClick={() => (showForm ? cerrarForm() : setShowForm(true))}>
             {showForm ? 'Cancelar' : '+ Nueva compra'}
           </button>
@@ -452,6 +523,38 @@ const save = () => {
           />
         </div>
       </div>
+
+            {mostrarDictado && (
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 24, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 6, color: 'var(--text-900)' }}>Cuéntame qué compraste</h3>
+          <p style={{ fontSize: 13, color: 'var(--text-400)', marginBottom: 12 }}>
+            Ejemplo: "Compré 20 kilos de papa a 40 mil y 5 paquetes de pan a 6 mil cada uno, pagué en Nequi".
+          </p>
+          <textarea
+            rows={3}
+            value={textoDictado}
+            onChange={(e) => setTextoDictado(e.target.value)}
+            placeholder="Escribe o usa el micrófono..."
+            style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 'var(--r-sm)', fontFamily: 'var(--font-sans)', fontSize: 14, background: 'var(--surface)', color: 'var(--text-900)', outline: 'none', resize: 'vertical' }}
+          />
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
+            {SpeechRec && (
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
+                onClick={alternarMicrofono}
+              >
+                {escuchando ? '⏹ Detener' : '🎤 Dictar con voz'}
+              </button>
+            )}
+            <button type="button" className="btn-cancel" onClick={() => { vozRef.current?.stop(); setMostrarDictado(false); }}>Cancelar</button>
+            <button type="button" className="btn-primary" disabled={interpretando || !textoDictado.trim()} onClick={dictar}>
+              {interpretando ? 'Interpretando...' : 'Llenar formulario'}
+            </button>
+          </div>
+        </div>
+      )}
 
       <ComprasResumen items={items} />
 
