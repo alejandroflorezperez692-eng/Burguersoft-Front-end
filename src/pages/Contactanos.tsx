@@ -57,30 +57,34 @@ export default function Contactanos() {
           </div>
 
           <div className="icon-box">
-            <button className="icon-button">
-              <a href="https://www.facebook.com/ComidasElOriente" target="_blank" rel="noopener noreferrer">
-                <img src="/estilos/img/facebook.png" alt="Facebook" />
-              </a>
-            </button>
-            <p>Comidas El Oriente</p>
+            <a
+              className="icon-button"
+              href="https://www.facebook.com/ComidasElOriente"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img src="/estilos/img/facebook.png" alt="Facebook" />
+            </a>
+            <p>Comidas Rápidas El Oriente</p>
           </div>
 
           <div className="icon-box">
-            <button className="icon-button">
-              <a href="https://www.instagram.com/ComidasElOriente" target="_blank" rel="noopener noreferrer">
-                <img src="/estilos/img/instagram.png" alt="Instagram" />
-              </a>
-            </button>
+            <a
+              className="icon-button"
+              href="https://www.instagram.com/ComidasElOriente"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <img src="/estilos/img/instagram.png" alt="Instagram" />
+            </a>
             <p>@ComidasElOriente</p>
           </div>
 
           <div className="icon-box">
-            <button className="icon-button">
-              <a href="mailto:ComidasElOriente@gmail.com">
-                <img src="/estilos/img/gmail.png" alt="Correo" />
-              </a>
-            </button>
-            <p>ElOriente@gmail.com</p>
+            <a className="icon-button" href="mailto:ComidasElOriente@gmail.com">
+              <img src="/estilos/img/gmail.png" alt="Correo" />
+            </a>
+            <p>ComidasElOriente@gmail.com</p>
           </div>
         </div>
       </section>

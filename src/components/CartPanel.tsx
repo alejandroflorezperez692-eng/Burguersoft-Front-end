@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import FacturaModal from './FacturaModal';
@@ -9,13 +9,13 @@ const IVA_RATE = 0.08;
 const ZONA_HORARIA = 'America/Bogota';
 
 const HORARIOS: Record<number, { inicio: string; fin: string } | null> = {
-  0: { inicio: '15:00', fin: '22:00' },
-  1: { inicio: '15:30', fin: '22:00' },
-  2: { inicio: '15:30', fin: '22:00' },
-  3: { inicio: '15:30', fin: '22:00' },
-  4: { inicio: '15:30', fin: '22:00' },
-  5: { inicio: '15:30', fin: '22:00' },
-  6: { inicio: '15:00', fin: '23:00' },
+  0: { inicio: '3:00 p.m.', fin: '10:00 p.m.' },
+  1: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  2: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  3: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  4: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  5: { inicio: '3:30 p.m.', fin: '10:00 p.m.' },
+  6: { inicio: '3:00 p.m.', fin: '11:00 p.m.' },
 };
 
 function partesAhoraColombia() {
@@ -90,6 +90,24 @@ export default function CartPanel() {
   const [showFactura, setShowFactura] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [confirmado, setConfirmado] = useState(() => localStorage.getItem('burguersoft_confirmado') === '1');
+  const [cuandoAbierto, setCuandoAbierto] = useState(false);
+  const cuandoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!cuandoAbierto) return;
+    const alClicFuera = (e: MouseEvent) => {
+      if (!cuandoRef.current?.contains(e.target as Node)) setCuandoAbierto(false);
+    };
+    const alTeclear = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setCuandoAbierto(false);
+    };
+    document.addEventListener('mousedown', alClicFuera);
+    document.addEventListener('keydown', alTeclear);
+    return () => {
+      document.removeEventListener('mousedown', alClicFuera);
+      document.removeEventListener('keydown', alTeclear);
+    };
+  }, [cuandoAbierto]);
 
   const rangoHorario = obtenerRangoHorario(fechaSeleccionada);
   const hoyStr = hoyColombiaStr();
@@ -136,7 +154,7 @@ export default function CartPanel() {
       <div className={`cart-panel ${isOpen ? 'active' : ''}`} id="cartPanel" style={{ visibility: isOpen ? 'visible' : 'hidden' }}>
         <div className="cart-header-title">
           <span>MI CARRITO</span>
-          <button className="close-cart" onClick={close}>&times;</button>
+          <button className="close-cart" onClick={close} aria-label="Cerrar carrito">&times;</button>
         </div>
 
         <div className="cart-entrega-toggle">
@@ -154,14 +172,47 @@ export default function CartPanel() {
 
         <div className="cart-cuando-row">
           <span className="cart-cuando-label">Cuándo:</span>
-          <select value={cuando} onChange={(e) => setCuando(e.target.value as (typeof CUANDO_OPCIONES)[number])}>
-            {CUANDO_OPCIONES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          <div className="cart-cuando-select" ref={cuandoRef}>
+            <button
+              type="button"
+              className="cart-cuando-trigger"
+              aria-haspopup="listbox"
+              aria-expanded={cuandoAbierto}
+              onClick={() => setCuandoAbierto((v) => !v)}
+            >
+              {cuando}
+              <span className="cart-cuando-arrow" aria-hidden="true">▾</span>
+            </button>
+            {cuandoAbierto && (
+              <ul className="cart-cuando-lista" role="listbox" aria-label="Cuándo">
+                {CUANDO_OPCIONES.map((c) => (
+                  <li
+                    key={c}
+                    role="option"
+                    aria-selected={cuando === c}
+                    tabIndex={0}
+                    className={`cart-cuando-opcion${cuando === c ? ' activa' : ''}`}
+                    onClick={() => { setCuando(c); setCuandoAbierto(false); }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setCuando(c);
+                        setCuandoAbierto(false);
+                      }
+                    }}
+                  >
+                    {c}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
         {cuando === 'Programar para más tarde' && (
           <div className="cart-fecha-row">
             <input
               type="date"
+              aria-label="Fecha del pedido"
               value={fechaSeleccionada}
               min={hoyStr}
               onChange={(e) => { setFechaSeleccionada(e.target.value); setHoraSeleccionada(''); }}
@@ -170,12 +221,13 @@ export default function CartPanel() {
               <>
                 <input
                   type="time"
+                  aria-label="Hora del pedido"
                   value={horaSeleccionada}
                   min={rangoHorario.min}
                   max={rangoHorario.max}
                   onChange={(e) => setHoraSeleccionada(e.target.value)}
                 />
-                <p className="cart-hora-hint">Horario disponible ese día: {rangoHorario.min} - {rangoHorario.max}</p>
+                <p className="cart-hora-hint">Horario disponible ese día: {rangoHorario.min} – {rangoHorario.max}</p>
                 {horaSeleccionada && !horaValida(fechaSeleccionada, horaSeleccionada) && (
                   <p className="cart-hora-error">Esa hora está fuera del horario de atención.</p>
                 )}
@@ -211,9 +263,9 @@ export default function CartPanel() {
                     <div className="cart-item-edit">
                       <span className="link-action link-editar">Editar</span>
                       <div className="qty-stepper">
-                        <button type="button" onClick={() => actualizarCantidad(it.id, it.cantidad - 1)}>−</button>
+                        <button type="button" aria-label={`Quitar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.id, it.cantidad - 1)}>−</button>
                         <span>{it.cantidad}</span>
-                        <button type="button" onClick={() => actualizarCantidad(it.id, it.cantidad + 1)}>+</button>
+                        <button type="button" aria-label={`Agregar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.id, it.cantidad + 1)}>+</button>
                       </div>
                     </div>
                   </div>
@@ -234,7 +286,7 @@ export default function CartPanel() {
           <label className="cart-confirm-row">
             <input type="checkbox" checked={confirmado} onChange={(e) => cambiarConfirmado(e.target.checked)} />
             <span>
-              Confirmo que quiero hacer mi pedido para <strong>{tipoEntrega}</strong>
+              Confirmo que quiero hacer mi pedido: <strong>{tipoEntrega}</strong>
             </span>
           </label>
 

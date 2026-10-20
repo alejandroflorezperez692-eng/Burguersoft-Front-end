@@ -391,7 +391,7 @@ body.dark-mode .boton-mostrar-password:hover {
 
 .descripcion {
   font-size: 14px;
-  color: var(--color-texto-suave);
+  color: #000000;
   text-align: center;
   margin-bottom: 20px;
   line-height: 1.6;
@@ -1343,7 +1343,7 @@ body.dark-mode #registroForm .encabezado {
 }
 
 body.dark-mode #registroForm .encabezado h2 {
-  color: #E8821A !important;
+  color: #ffffff !important;
 }
 
 body.dark-mode #registroForm .encabezado::after {
@@ -1387,6 +1387,13 @@ body.dark-mode .boton-mostrar-password:focus-visible {
   color: #E8821A !important;
   border: none !important;
   box-shadow: none !important;
+}
+
+body:not(.dark-mode) .boton-mostrar-password,
+body:not(.dark-mode) .boton-mostrar-password:hover,
+body:not(.dark-mode) .boton-mostrar-password:focus,
+body:not(.dark-mode) .boton-mostrar-password:focus-visible {
+  color: #000000 !important;
 }
 
 .card .boton-mostrar-password {
@@ -1674,13 +1681,14 @@ body.dark-mode .boton-mostrar-password:focus-visible {
 body.dark-mode .otp-slot {
   background: #000;
   color: #fff;
-  border-color: rgba(232, 130, 26, 0.22);
+  border-color: #ffffff;
 }
 
 body.dark-mode .otp-slot:focus,
 body.dark-mode .otp-slot--lleno {
   background: #000;
-  border-color: var(--color-primario);
+  color: #fff;
+  border-color: #ffffff;
 }
 
 /* ===== Modal Verificar Correo (Registro) ===== */
@@ -1805,6 +1813,30 @@ body.dark-mode .otp-slot--lleno {
 .verify-cancelar:hover:not(:disabled) {
   text-decoration: underline;
   color: var(--color-oscuro);
+}
+
+/* Modo claro: textos negros y bordes visibles en el panel de verificación */
+body:not(.dark-mode) .verify-modal-desc,
+body:not(.dark-mode) .verify-modal-desc strong,
+body:not(.dark-mode) .verify-label,
+body:not(.dark-mode) .verify-info,
+body:not(.dark-mode) .verify-mock,
+body:not(.dark-mode) .verify-mock strong,
+body:not(.dark-mode) .verify-desbloqueo,
+body:not(.dark-mode) .verify-cancelar,
+body:not(.dark-mode) .otp-titulo,
+body:not(.dark-mode) .otp-subtitulo,
+body:not(.dark-mode) .otp-estado {
+  color: #000000;
+}
+
+body:not(.dark-mode) .verify-modal-close {
+  color: #000000;
+}
+
+body:not(.dark-mode) .otp-slot {
+  border-color: #000000;
+  color: #000000;
 }
 
 body.dark-mode .verify-modal {

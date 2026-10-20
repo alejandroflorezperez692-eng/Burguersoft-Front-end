@@ -12,7 +12,7 @@ const enlaces = [
   { to: '/', label: 'Inicio', end: true },
   { to: '/nosotros', label: 'Nosotros', end: false },
   { to: '/menu-publico', label: 'Menú', end: false },
-  { to: '/contactanos', label: 'Contactanos', end: false },
+  { to: '/contactanos', label: 'Contáctanos', end: false },
 ];
 
 export default function PublicHeader() {
