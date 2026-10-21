@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
+import { conectarAlertas, desconectarAlertas } from '../api/echo';
 import { peso } from '../utils/variacion';
 
 interface Alerta {
@@ -39,6 +40,15 @@ const ICONO: Record<Alerta['tipo'], string> = {
 export default function AlertasInicio() {
   const [datos, setDatos] = useState<RespuestaAlertas | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [recarga, setRecarga] = useState(0);
+
+  // Aviso en vivo por websocket
+  useEffect(() => {
+    const canal = conectarAlertas(() => setRecarga((n) => n + 1));
+    return () => {
+      if (canal) desconectarAlertas(canal, () => undefined);
+    };
+  }, []);
 
   useEffect(() => {
     let vivo = true;
@@ -57,7 +67,7 @@ export default function AlertasInicio() {
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [recarga]);
 
   if (cargando || !datos) return null;
 

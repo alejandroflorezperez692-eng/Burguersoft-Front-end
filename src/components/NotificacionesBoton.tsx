@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
+import { conectarAlertas, desconectarAlertas } from '../api/echo';
 
 interface Alerta {
   tipo: 'stock' | 'precio';
@@ -37,8 +38,11 @@ function leerLeidas(): string[] {
 /* ---------- Sonido de campanita (Web Audio, no necesita archivos) ---------- */
 let audioCtx: AudioContext | null = null;
 let sonidoPendiente = false;
+let gestoRealizado = false;
 
 function obtenerAudio(): AudioContext | null {
+  // El navegador no permite crear el AudioContext sin un gesto previo del usuario.
+  if (!gestoRealizado) return null;
   try {
     const AC =
       window.AudioContext ||
@@ -77,7 +81,11 @@ function reproducir(ctx: AudioContext) {
 
 function sonarCampanita() {
   const ctx = obtenerAudio();
-  if (!ctx) return;
+  if (!ctx) {
+    // Aún no hubo gesto del usuario: el sonido queda pendiente para después.
+    sonidoPendiente = true;
+    return;
+  }
 
   if (ctx.state === 'running') {
     reproducir(ctx);
@@ -179,29 +187,43 @@ export default function NotificacionesBoton() {
       .catch(() => setAlertas([]));
   }, [mostrarAviso]);
 
-    useEffect(() => {
-    cargar();
-    const id = setInterval(cargar, CADA_MS);
+  const cargarRef = useRef(cargar);
+  useEffect(() => {
+    cargarRef.current = cargar;
+  }, [cargar]);
+
+  useEffect(() => {
+    const ejecutar = () => cargarRef.current();
+    ejecutar();
+    const id = setInterval(ejecutar, CADA_MS);
 
     const alVolver = () => {
-        if (!document.hidden) cargar();
+      if (!document.hidden) ejecutar();
     };
     window.addEventListener('focus', alVolver);
     document.addEventListener('visibilitychange', alVolver);
 
     return () => {
-        clearInterval(id);
-        window.removeEventListener('focus', alVolver);
-        document.removeEventListener('visibilitychange', alVolver);
+      clearInterval(id);
+      window.removeEventListener('focus', alVolver);
+      document.removeEventListener('visibilitychange', alVolver);
     };
-    }, [cargar]);
+  }, []);
+
+  // Aviso en vivo por websocket: cuando el backend avisa por Reverb, recargamos al instante.
+  useEffect(() => {
+    const canal = conectarAlertas(cargar);
+    return () => {
+      if (canal) desconectarAlertas(canal, cargar);
+    };
+  }, [cargar]);
 
   // Desbloquea el audio con el primer clic/tecla y toca el sonido que quedó pendiente
   useEffect(() => {
-    const ctx = obtenerAudio();
-    if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => undefined);
+    const eventos = ['pointerdown', 'click', 'keydown', 'touchstart'] as const;
 
     const desbloquear = () => {
+      gestoRealizado = true;
       const c = obtenerAudio();
       if (!c) return;
       c.resume()
@@ -216,7 +238,6 @@ export default function NotificacionesBoton() {
         .catch(() => undefined);
     };
 
-    const eventos = ['pointerdown', 'click', 'keydown', 'touchstart', 'mousemove'] as const;
     const quitar = () => eventos.forEach((e) => window.removeEventListener(e, desbloquear));
     eventos.forEach((e) => window.addEventListener(e, desbloquear, { passive: true }));
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
+import { conectarAlertas, desconectarAlertas } from '../api/echo';
 
 interface Alerta {
   tipo: 'stock' | 'precio';
@@ -24,6 +25,15 @@ const COLORES = {
 export default function AlertasIA() {
   const [datos, setDatos] = useState<RespuestaAlertas | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [recarga, setRecarga] = useState(0);
+
+  // Aviso en vivo por websocket
+  useEffect(() => {
+    const canal = conectarAlertas(() => setRecarga((n) => n + 1));
+    return () => {
+      if (canal) desconectarAlertas(canal, () => undefined);
+    };
+  }, []);
 
   useEffect(() => {
     let vivo = true;
@@ -41,7 +51,7 @@ export default function AlertasIA() {
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [recarga]);
 
   const tarjeta = {
     background: 'var(--surface)',
