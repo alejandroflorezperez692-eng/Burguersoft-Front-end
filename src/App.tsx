@@ -28,6 +28,7 @@ import Accesibilidad from './components/Accesibilidad';
 import DemoAccess from './components/DemoAccess';
 import Checkout from './pages/Checkout';
 import { ConAsistenteCliente } from './components/AsistenteCliente';
+import CierreInventarioAdmin from './pages/admin/CierreInventarioAdmin';
 
 function App() {
   return (
@@ -61,6 +62,7 @@ function App() {
           <Route path="/ventas" element={<VentasAdmin />} />
           <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
           <Route path="/compras" element={<ComprasAdmin />} />
+          <Route path="/cierre-inventario" element={<CierreInventarioAdmin />} />
           <Route path="/gestion-marca" element={<MarcasAdmin />} />
           <Route path="/promociones" element={<PromocionesAdmin />} />
           <Route path="/backups" element={<BackupsAdmin />} />

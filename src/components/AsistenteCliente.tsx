@@ -9,6 +9,35 @@ interface Mensaje {
   content: string;
 }
 
+const MAPS_URL = 'https://www.google.com/maps/search/?api=1&query=5.707974,-72.920502';
+
+const RESPUESTA_UBICACION =
+  'Comidas Rápidas El Oriente\n' +
+  'Cl. 9 # 1A-43, Sogamoso, Boyacá\n' +
+  '📍 ' + MAPS_URL;
+
+const pideUbicacion = (t: string) =>
+  /(d[oó]nde (queda|est[aá]n|los encuentro)|direcci[oó]n|ubicaci[oó]n|ubicados|c[oó]mo (llego|llegar)|maps|mapa)/i.test(t) &&
+  !/(pedido|orden|compra|hora|horario|abren|cierran)/i.test(t);
+
+function conEnlaces(texto: string) {
+  return texto.split(/(https?:\/\/[^\s]*[^\s.,;:!?)])/g).map((parte, i) =>
+    /^https?:\/\//.test(parte) ? (
+      <a
+        key={i}
+        href={parte}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: '#cf6e12', fontWeight: 700, textDecoration: 'underline' }}
+      >
+        {parte.includes('google.com/maps') ? 'Abrir en Google Maps' : parte}
+      </a>
+    ) : (
+      parte
+    ),
+  );
+}
+
 const ESTILOS = `
   .burgi-ojos{transform-box:fill-box;transform-origin:center;animation:burgiParpadeo 5s ease-in-out infinite}
   .burgi-led{animation:burgiLed 2.6s ease-in-out infinite}
@@ -84,6 +113,8 @@ export default function AsistenteCliente() {
   const sugerencias: { texto: string; icono: string }[] = [
     { texto: '¿Qué me recomiendas?', icono: '🍔' },
     { texto: '¿Qué promociones hay?', icono: '🏷️' },
+    { texto: '¿Qué horarios tienen?', icono: '🕒' },
+    { texto: '¿Cómo puedo pagar?', icono: '💳' },
     ...(user ? [{ texto: '¿Cómo va mi pedido?', icono: '🧾' }] : []),
   ];
 
@@ -94,15 +125,25 @@ export default function AsistenteCliente() {
     const historial = mensajes.slice(-8);
     setMensajes((m) => [...m, { role: 'user', content: mensaje }]);
     setTexto('');
+
+    if (pideUbicacion(mensaje)) {
+      setMensajes((m) => [...m, { role: 'assistant', content: RESPUESTA_UBICACION }]);
+      return;
+    }
+
     setPensando(true);
 
     try {
-      const { data } = await apiClient.post<{ respuesta: string }>('/cliente/chat', { mensaje, historial });
+      const { data } = await apiClient.post<{ respuesta: string }>(
+        '/cliente/chat',
+        { mensaje, historial },
+        { timeout: 100000  },
+      );
       setMensajes((m) => [...m, { role: 'assistant', content: data.respuesta }]);
     } catch (e) {
       const err = e as { response?: { status?: number; data?: { message?: string } } };
       const aviso = !err.response
-        ? 'No hay conexión con el servidor. Intenta de nuevo en un momento.'
+        ? 'No pude conectarme con el servidor. Revisa tu conexión e intenta de nuevo.'
         : err.response.data?.message || 'No pude responder. Intenta de nuevo.';
       setMensajes((m) => [...m, { role: 'assistant', content: aviso }]);
     } finally {
@@ -246,7 +287,7 @@ export default function AsistenteCliente() {
                         wordBreak: 'break-word',
                       }}
                     >
-                      {m.content}
+                      {conEnlaces(m.content)}
                     </div>
                   </div>
                 ),
@@ -388,12 +429,12 @@ export default function AsistenteCliente() {
   );
 }
 
-/** Envuelve las páginas del cliente para mostrar el chat en todas ellas. */
 export function ConAsistenteCliente() {
+  const { user } = useAuth();
   return (
     <>
       <Outlet />
-      <AsistenteCliente />
+      {user && <AsistenteCliente />}
     </>
   );
 }

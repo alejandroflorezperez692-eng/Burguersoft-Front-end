@@ -71,6 +71,8 @@ export default function MateriaPrimaAdmin() {
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState<number | null>(null);
+  const [cantidadOriginal, setCantidadOriginal] = useState(0);
+  const [motivo, setMotivo] = useState('');
   const [eliminar, setEliminar] = useState<MateriaPrima | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast, showToast } = useToast();
@@ -119,6 +121,8 @@ export default function MateriaPrimaAdmin() {
       marca_id: m?.marca_id ?? marcas[0]?.id ?? 1,
     });
     setEditId(m?.id ?? null);
+    setCantidadOriginal(num(m?.cantidad));
+    setMotivo('');
     setModal(true);
   };
 
@@ -130,12 +134,18 @@ export default function MateriaPrimaAdmin() {
       return;
     }
     if (!form.marca_id) { showToast('Selecciona una marca', true); return; }
+    const cambioCantidad = Number(form.cantidad) !== cantidadOriginal;
+    if (cambioCantidad && !motivo.trim()) {
+      showToast('Escribe el motivo del ajuste de inventario', true);
+      return;
+    }
     const body = {
       nombre: form.nombre.trim(),
       tipo: form.tipo.trim() || null,
       valor: Number(form.valor) || 0,
       cantidad: Number(form.cantidad) || 0,
       marca_id: Number(form.marca_id),
+      ...(cambioCantidad ? { motivo: motivo.trim() } : {}),
     };
     try {
       await apiClient.put(`/materias-primas/${editId}`, body);
@@ -186,8 +196,13 @@ export default function MateriaPrimaAdmin() {
         </div>
       </div>
 
-      <div className="search-bar">
-        <input placeholder="Buscar insumo..." value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="mn-search-wrap" style={{ marginBottom: 24 }}>
+        <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input className="mn-search" type="text" placeholder="Buscar insumo..." value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
       {loading ? (
@@ -205,7 +220,7 @@ export default function MateriaPrimaAdmin() {
             </colgroup>
             <thead>
               <tr>
-                <th>Insumo</th>
+                <th>Nombre del insumo</th>
                 <th>Tipo</th>
                 <th>Cantidad</th>
                 <th>Estado</th>
@@ -280,7 +295,7 @@ export default function MateriaPrimaAdmin() {
                 </div>
               </div>
               <div className="form-group">
-                <label>Cantidad que queda</label>
+                <label>Cantidad real (ajuste de inventario)</label>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -289,6 +304,18 @@ export default function MateriaPrimaAdmin() {
                 />
               </div>
             </div>
+            {Number(form.cantidad) !== cantidadOriginal && (
+              <div className="form-group">
+                <label>
+                  Motivo del ajuste (antes: {cantidadOriginal.toLocaleString('es-CO')}, ahora: {(Number(form.cantidad) || 0).toLocaleString('es-CO')})
+                </label>
+                <input
+                  placeholder="Ej: conteo físico, producto dañado, error de digitación..."
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                />
+              </div>
+            )}
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
               <button className="btn-save" onClick={guardar}>Actualizar</button>

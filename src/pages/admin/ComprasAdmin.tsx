@@ -232,6 +232,7 @@ export default function ComprasAdmin() {
     { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' },
   ]);
   const [modalDetalle, setModalDetalle] = useState<Compra | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const cargado = useRef(false);
 
@@ -320,7 +321,26 @@ export default function ComprasAdmin() {
 };
 
   const total = lineas.reduce((a, l) => a + (Number(l.precio_unitario) || 0), 0);
-  const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); };
+  const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); setEditId(null); };
+
+  /** Carga una compra existente en el formulario para modificarla (solo dentro de las 5 horas). */
+  const abrirEditar = (c: Compra) => {
+    setEditId(c.id);
+    setMetodoPago(c.metodo_pago);
+    setFechaIA(c.fecha.slice(0, 10));
+    setLineas((c.detalles ?? []).map((d) => ({
+      materia_prima_id: d.materia_prima_id,
+      cantidad: String(Number(d.cantidad)),
+      precio_unitario: String(Math.round(Number(d.subtotal))),
+      marca_id: d.marca_id,
+      nombre_nuevo: '',
+      tipo: '',
+      unidad_medida: '',
+    })));
+    setAviso(null);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const dictar = async () => {
     const texto = textoDictado.trim();
@@ -444,21 +464,25 @@ const save = () => {
       precio_total: Number(l.precio_unitario),
       marca_id: l.marca_id,
       nombre_nuevo: l.materia_prima_id ? undefined : l.nombre_nuevo.trim(),
-      tipo: l.materia_prima_id ? undefined : l.tipo,
+      tipo: l.materia_prima_id ? undefined : (l.tipo.trim() || undefined),
       unidad_medida: l.materia_prima_id ? undefined : l.unidad_medida.trim(),
     })),
   };
-  apiClient.post('/compras', payload).then(() => {
-    showToast('Compra registrada: el stock se sumó a Materia Prima');
+  const peticion = editId
+    ? apiClient.put(`/compras/${editId}`, payload)
+    : apiClient.post('/compras', payload);
+  peticion.then(() => {
+    showToast(editId ? 'Compra modificada: el stock se recalculó' : 'Compra registrada: el stock se sumó a Materia Prima');
     setShowForm(false);
     setAviso(null);
     setFechaIA('');
+    setEditId(null);
     setMetodoPago('');
     setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
     load();
   }).catch((e) => {
     const d = e?.response?.data;
-    showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || 'No se pudo registrar la compra', true);
+    showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || (editId ? 'No se pudo modificar la compra' : 'No se pudo registrar la compra'), true);
   });
 };
 
@@ -615,10 +639,22 @@ const save = () => {
 
               {l.materia_prima_id === null && (
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Nombre <span className="mn-req">*</span></label>
+                  <label>Nombre del insumo<span className="mn-req">*</span></label>
                   <input value={l.nombre_nuevo} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
                 </div>
               )}
+
+              {l.materia_prima_id === null && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Tipo (opcional)</label>
+                  <input
+                    placeholder="Ej: Carnes, Salsas..."
+                    value={l.tipo}
+                    onChange={(e) => updateLinea(i, 'tipo', e.target.value)}
+                  />
+                </div>
+              )}
+
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Cantidad <span className="mn-req">*</span></label>
@@ -656,7 +692,7 @@ const save = () => {
           </div>
           <div className="modal-actions" style={{ marginTop: 16 }}>
             <button className="btn-cancel" onClick={cerrarForm}>Cancelar</button>
-            <button className="btn-save" onClick={save}>Registrar Compra</button>
+            <button className="btn-save" onClick={save}>{editId ? 'Guardar cambios' : 'Registrar Compra'}</button>
           </div>
         </div>
       )}
@@ -710,6 +746,16 @@ const save = () => {
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)}>Ver detalle</button>
+                    <button
+                      type="button"
+                      className="mn-btn-edit"
+                      disabled={!c.puede_eliminarse}
+                      title={c.puede_eliminarse ? 'Modificar compra' : 'Ya pasaron más de 5 horas: no se puede modificar'}
+                      style={{ flex: 'none', padding: '7px 14px', ...(c.puede_eliminarse ? {} : { opacity: 0.4, cursor: 'not-allowed' }) }}
+                      onClick={() => abrirEditar(c)}
+                    >
+                      Modificar
+                    </button>
                     <button
                       type="button"
                       className="mn-btn-del"

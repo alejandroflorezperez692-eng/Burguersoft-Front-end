@@ -26,6 +26,7 @@ const navItemsAdmin = [
   { to: '/ventas', label: 'Ventas', icono: insignia },
   { to: '/materia-prima', label: 'Materia Prima', icono: hierbas },
   { to: '/compras', label: 'Compras', icono: buy },
+  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas },
   { to: '/gestion-marca', label: 'Marcas', icono: marca },
   { to: '/promociones', label: 'Promociones', icono: promocion },
   { to: '/backups', label: 'Copias de seguridad', icono: engranaje },
