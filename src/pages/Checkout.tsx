@@ -263,8 +263,9 @@ async function obtenerDireccion(latitude: number, longitude: number): Promise<Ge
   return { linea1, barrio };
 }
 
-// WhatsApp del local (línea principal de Contáctanos: 311 538 7534)
-const WHATSAPP_LOCAL = '573115387534';
+// WhatsApp donde el cliente envia el comprobante de pago y el detalle del
+// pedido (314 220 8706).
+const WHATSAPP_LOCAL = '573142208706';
 
 const ETIQUETA_PAGO: Record<string, string> = {
   nequi: 'Nequi',
@@ -273,12 +274,36 @@ const ETIQUETA_PAGO: Record<string, string> = {
   efectivo: 'Efectivo (contra entrega)',
 };
 
-// El QR de cobro es un codigo Bre-B (estandar de pagos inmediatos del Banco
-// de la Republica), por eso el MISMO codigo lo puede pagar el cliente desde
-// Nequi, Daviplata, Bancolombia, Davivienda o cualquier otra entidad
-// habilitada en Bre-B. Si mas adelante seWant separate QR por entidad, se
-// cambia esta constante por un mapa metodo -> imagen.
-const QR_BREB = '/estilos/img/qr-breb.jpeg';
+// Los QR de cobro son codigos Bre-B (estandar de pagos inmediatos del Banco
+// de la Republica), asi que cada uno se puede pagar desde cualquier entidad
+// habilitada en Bre-B (Nequi, Daviplata, Bancolombia, Davivienda...).
+//
+// OJO CON LA CADUCIDAD: el QR NO lleva fecha de expiracion dentro, la
+// vencimiento la guarda el banco en la llave registrada. La llave Daviplata
+// @plata3115387534 (contrato CC02C39E5B) esta CADUCADA en Bre-B, por eso la
+// app de Daviplata lee el codigo pero responde "vencido".
+// Mientras tanto todos los metodos usan el codigo de Nequi (@3115387534),
+// que si funciona y se puede pagar escaneando desde CUALQUIER app (incluida
+// Daviplata, porque Bre-B es interoperable).
+//
+// Cuando generes un QR nuevo en la app de Daviplata: guarda la imagen en
+// public/estilos/img/qr-daviplata.png y cambia la linea de "daviplata" de
+// QR_RUTAS y la llave de CUENTA_QR.
+//
+// Los PNG son codigos regenerados en alta resolucion (810x810, modulos de
+// 10px y zona de silencio de 4 modulos) para que las apps los lean sin problema.
+const QR_RUTAS: Record<string, string> = {
+  nequi: '/estilos/img/qr-breb.png',
+  daviplata: '/estilos/img/qr-breb.png',
+  bancolombia: '/estilos/img/qr-breb.png',
+};
+
+// Datos de la cuenta que recibe el pago (para que el cliente verifique).
+const CUENTA_QR: Record<string, { titular: string; llave: string }> = {
+  nequi: { titular: '314 2208706', llave: '@3115387534' },
+  daviplata: { titular: '314 2208706', llave: '@3115387534' },
+  bancolombia: { titular: '314 2208706', llave: '@3115387534' },
+};
 
 const NOMBRE_QR: Record<string, string> = {
   nequi: 'Nequi',
@@ -434,6 +459,14 @@ export default function Checkout() {
   const [metodoPago, setMetodoPago] = useState<'nequi' | 'daviplata' | 'bancolombia' | 'efectivo'>('nequi');
   const [qrNoDisponible, setQrNoDisponible] = useState<Record<string, boolean>>({});
 
+  // Pedido ya registrado: se muestra el panel de confirmacion con el boton
+  // para abrir el chat de WhatsApp (por si el navegador bloqueo la ventana).
+  const [pedidoConfirmado, setPedidoConfirmado] = useState<{
+    id: number | null;
+    total: number;
+    url: string;
+  } | null>(null);
+
   // Mapa promoción -> productos (el backend solo acepta producto_id en el
   // carrito y aplica el precio de la promo automáticamente).
   const [mapaPromoProductos, setMapaPromoProductos] = useState<Map<number, number[]>>(new Map());
@@ -532,7 +565,7 @@ export default function Checkout() {
 
     setEnviando(true);
     try {
-      await apiClient.post('/ventas', {
+      const respuesta = await apiClient.post('/ventas', {
         carrito: expandirCarrito(),
         tipo_entrega: TIPO_ENTREGA_BACKEND[tipoEntrega] ?? 'Domicilio',
         metodo_pago: METODO_PAGO_BACKEND[metodoPago] ?? 'Efectivo',
@@ -547,16 +580,20 @@ export default function Checkout() {
           : { nombre: facturaNombre, apellido: facturaApellido, numeroDocumento: facturaDocumento },
       });
 
-      const urlWsp = `https://wa.me/${WHATSAPP_LOCAL}?text=${encodeURIComponent(construirFacturaWhatsApp())}`;
-      if (ventanaWsp) {
-        ventanaWsp.location.href = urlWsp;
-      } else {
-        window.location.href = urlWsp;
-      }
+      // Numero del pedido registrado en el backend, va en el mensaje.
+      const idVenta = respuesta.data?.id ?? null;
+      const urlWsp = `https://wa.me/${WHATSAPP_LOCAL}?text=${encodeURIComponent(construirFacturaWhatsApp(idVenta))}`;
 
       vaciar();
-      navigate('/');
-      alert('¡Pedido realizado con éxito! Te abrimos el WhatsApp del local con tu factura.');
+
+      // Queda el panel de confirmacion en pantalla: si el navegador bloqueo la
+      // ventana emergente, el cliente pulsa el boton y se abre igual (un clic
+      // si cuenta como gesto del usuario y no lo bloquea el navegador).
+      setPedidoConfirmado({ id: idVenta, total, url: urlWsp });
+
+      if (ventanaWsp) {
+        ventanaWsp.location.href = urlWsp;
+      }
     } catch (err) {
       ventanaWsp?.close();
       alert(mensajeErrorPago(err));
@@ -565,15 +602,20 @@ export default function Checkout() {
     }
   };
 
-  // Arma el texto de la factura que se envía al WhatsApp del local.
-  const construirFacturaWhatsApp = (): string => {
+  // Arma el texto que llega al chat de WhatsApp del local: el pedido, el
+  // total y el reclamo del comprobante de pago.
+  const construirFacturaWhatsApp = (idVenta: number | null = null): string => {
     const lineas: string[] = [];
     const fechaPedido = new Date().toLocaleString('es-CO', {
       dateStyle: 'medium',
       timeStyle: 'short',
     });
 
-    lineas.push('🧾 *NUEVO PEDIDO - BURGUERSOFT EL ORIENTE*');
+    lineas.push(
+      `Hola, soy ${nombre} ${apellido}. Acabo de hacer un pedido en *Burguersoft El Oriente* y les mando el *comprobante de pago* de este pedido.`,
+    );
+    lineas.push('');
+    lineas.push(`*PEDIDO${idVenta ? ` #${idVenta}` : ''}*`);
     lineas.push(`Fecha: ${fechaPedido}`);
     lineas.push('------------------------');
     lineas.push('*CLIENTE*');
@@ -608,7 +650,10 @@ export default function Checkout() {
     lineas.push('------------------------');
     lineas.push(`Método de pago: ${ETIQUETA_PAGO[metodoPago] ?? metodoPago}`);
     if (metodoPago !== 'efectivo') {
-      lineas.push('Acción: el cliente enviará el comprobante de pago por este chat');
+      lineas.push(`Llave Bre-B: ${CUENTA_QR[metodoPago]?.llave ?? ''}`);
+      lineas.push('*Adjunto el comprobante de pago por este chat.*');
+    } else {
+      lineas.push('Pago contra entrega.');
     }
     if (usarMismosDatos) {
       lineas.push('Facturación: mismos datos del cliente');
@@ -617,6 +662,7 @@ export default function Checkout() {
     }
 
     return lineas.join('\n');
+
   };
 
   const resumenEntrega = useMemo(() => {
@@ -637,6 +683,56 @@ export default function Checkout() {
       <PublicHeader />
       <div className="checkout-page">
         <div className="checkout-main">
+          {pedidoConfirmado ? (
+            /* ---- Pedido registrado: confirmacion + acceso al chat ---- */
+            <section className="checkout-card">
+              <div className="checkout-encabezado">
+                <h2>¡Pedido realizado con éxito!</h2>
+                <p>
+                  Te abrimos el chat de WhatsApp del local para que envíes el comprobante de pago
+                  y el detalle del pedido.
+                </p>
+              </div>
+
+              <div className="checkout-seccion">
+                <div className="checkout-form">
+                  <div className="checkout-info-row">
+                    <span className="checkout-info-icon">PEDIDO</span>
+                    <div>
+                      <strong>Pedido {pedidoConfirmado.id ? `#${pedidoConfirmado.id}` : 'registrado'}</strong>
+                      <p>Total a pagar: {fmtCOP(pedidoConfirmado.total)}</p>
+                    </div>
+                  </div>
+
+                  <a
+                    className="btn-pagar-ahora"
+                    href={pedidoConfirmado.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Enviar comprobante por WhatsApp
+                  </a>
+
+                  <div className="checkout-grid-2">
+                    <button
+                      type="button"
+                      className="btn-ubicacion"
+                      onClick={() => navigate('/mis-pedidos')}
+                    >
+                      Ver mis pedidos
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-ubicacion"
+                      onClick={() => navigate('/menu-publico')}
+                    >
+                      Hacer otro pedido
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          ) : (
           <section className="checkout-card">
             <div className="checkout-encabezado">
               <h2>Finaliza tu pedido</h2>
@@ -782,12 +878,18 @@ export default function Checkout() {
                 {metodoPago !== 'efectivo' && (
                   <div className="pago-qr-caja" key={metodoPago}>
                     {!qrNoDisponible[metodoPago] ? (
-                      <img
-                        className="pago-qr-img"
-                        src={QR_BREB}
-                        alt="Código QR Bre-B para pagar el pedido"
-                        onError={() => setQrNoDisponible((v) => ({ ...v, [metodoPago]: true }))}
-                      />
+                      <>
+                        <img
+                          className="pago-qr-img"
+                          src={QR_RUTAS[metodoPago]}
+                          alt="Código QR Bre-B para pagar el pedido"
+                          onError={() => setQrNoDisponible((v) => ({ ...v, [metodoPago]: true }))}
+                        />
+                        <div className="pago-qr-cuenta">
+                          <strong>{CUENTA_QR[metodoPago]?.titular}</strong>
+                          <span>Llave Bre-B · {CUENTA_QR[metodoPago]?.llave}</span>
+                        </div>
+                      </>
                     ) : (
                       <div className="pago-qr-vacio">
                         Paga con {NOMBRE_QR[metodoPago]} y guarda tu comprobante.
@@ -803,9 +905,11 @@ export default function Checkout() {
               </div>
             </div>
           </section>
+          )}
         </div>
 
         {/* ---- Resumen / botón pagar ---- */}
+        {!pedidoConfirmado && (
         <aside className="checkout-resumen">
           <div className="checkout-resumen-titulo">Tu pedido</div>
           <div className="checkout-resumen-items">
@@ -825,6 +929,7 @@ export default function Checkout() {
             {enviando ? 'Procesando...' : 'Pagar ahora'}
           </button>
         </aside>
+        )}
       </div>
       <Footer />
     </div>

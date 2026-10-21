@@ -204,17 +204,19 @@
 
 .pago-zona {
   display: flex;
+  flex-wrap: wrap;
   gap: 20px;
   align-items: flex-start;
+  justify-content: center;
 }
 
 .pago-opciones {
-  flex: 0 0 500px;
-  width: 500px;
+  flex: 1 1 320px;
+  width: auto;
+  min-width: 280px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
-  min-width: 0;
 }
 
 .pago-chip {
@@ -286,9 +288,10 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  flex: 0 0 188px;
-  width: 188px;
-  padding: 16px;
+  flex: 0 1 441px;
+  width: 100%;
+  max-width: 441px;
+  padding: 18px;
   background: #fff;
   border: 1px solid #f0e8d8;
   border-radius: 16px;
@@ -301,11 +304,32 @@
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* 405px = 81 modulos x 5px exactos: se muestra en escala 2:1 del PNG (810px),
+   asi los modulos quedan nitidos y las apps leen el codigo sin problema. */
 .pago-qr-img {
-  width: 156px;
-  height: 156px;
+  width: 100%;
+  max-width: 405px;
+  height: auto;
+  aspect-ratio: 1 / 1;
   object-fit: contain;
+  background: #fff;
   border-radius: 8px;
+}
+
+.pago-qr-cuenta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+.pago-qr-cuenta strong {
+  font-size: 14px;
+  color: #1C1410;
+}
+.pago-qr-cuenta span {
+  font-size: 12px;
+  color: #8a7a63;
 }
 
 .pago-qr-vacio {
@@ -420,6 +444,12 @@
   box-shadow: 0 6px 16px rgba(232, 98, 44, 0.3);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
+/* Cuando se usa como enlace (boton de WhatsApp) */
+a.btn-pagar-ahora {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
 .btn-pagar-ahora:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(232, 98, 44, 0.38);
@@ -451,7 +481,7 @@
 @media (max-width: 900px) {
   .pago-zona { flex-direction: column; }
   .pago-opciones { flex: 1 1 auto; width: 100%; }
-  .pago-qr-caja { flex: 1 1 auto; width: 100%; }
+  .pago-qr-caja { flex: 1 1 auto; width: 100%; max-width: 100%; }
 }
 
 @media (max-width: 800px) {
