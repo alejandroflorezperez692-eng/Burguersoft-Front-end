@@ -18,6 +18,7 @@ import { useAuth } from '../hooks/useAuth';
 import '../styles/admin.css';
 import AdminLoading from '../components/AdminLoading';
 import AsistenteIA from '../components/AsistenteIA';
+import NotificacionesBoton from '../components/NotificacionesBoton';
 
 const navItemsAdmin = [
   { to: '/inicio', label: 'Inicio', icono: casa },
@@ -93,22 +94,30 @@ export default function AdminLayout() {
             </div>
           ))}
         </div>
+
+        <div className="sidebar-item sidebar-salir">
+          <button type="button" onClick={() => { cerrarMenu(); handleSalir(); }}>
+            <img src={cerrarSesion} alt="" className="icono-sidebar" />
+            Cerrar sesión
+          </button>
+        </div>
       </aside>
       <div className={`sidebar-backdrop${menuOpen ? ' show' : ''}`} onClick={cerrarMenu} />
 
       <nav className="header-nav">
         <button type="button" className="topbar-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú">☰</button>
-        <NavLink to="/configuracion" className="nav-item admin-name" onClick={cerrarMenu}>
-
-          <img src={usuarioPerfil} alt="perfil" className="icono-sidebar-perfil" />
-          <span>{user?.name ?? user?.email ?? 'Administrador'}</span>
-        </NavLink>
-        <hr />
-        <button type="button" className="nav-item nav-logout" onClick={handleSalir}>
-          <img src={cerrarSesion} alt="" className="icono" />
-          Salir
-        </button>
-      </nav>
+          <div className="header-actions">
+            <NotificacionesBoton />
+            <span className="header-sep" aria-hidden="true" />
+            <NavLink to="/configuracion" className="header-user" onClick={cerrarMenu} title="Mi perfil">
+              <img src={usuarioPerfil} alt="" className="header-avatar" />
+              <span className="header-user-info">
+                <span className="header-user-name">{user?.name ?? user?.email ?? 'Administrador'}</span>
+                <span className="header-user-role">{user?.role ?? 'Administrador'}</span>
+              </span>
+            </NavLink>
+          </div>
+        </nav>
 
       {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
 

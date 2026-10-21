@@ -4,7 +4,7 @@ import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
 import apiClient from '../api/client';
 import AdminLoading from '../components/AdminLoading';
-import AlertasInicio from '../components/AlertasInicio';
+import AlertasIA from '../components/AlertasIA';
 
 interface Movimiento {
   id: number;
@@ -110,7 +110,7 @@ export default function Inicio() {
         </div>
       </div>
 
-      {rol !== 'Cliente' && <AlertasInicio />}
+      {rol !== 'Cliente' && <AlertasIA />}
 
       <div className="dashboard-row">
         <div className="historial-section">

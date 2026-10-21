@@ -32,7 +32,7 @@ const estadoKey = (stock: unknown): EstadoStock => {
 
 const textoEstado = (stock: unknown) => {
   const k = estadoKey(stock);
-  return k === 'disponible' ? 'Disponible' : k === 'bajo' ? 'Stock bajo' : 'Agotado';
+  return k === 'disponible' ? 'Disponible' : k === 'bajo' ? 'Bajo' : 'Agotado';
 };
 
 const claseBadge = (stock: unknown) => {
@@ -40,12 +40,6 @@ const claseBadge = (stock: unknown) => {
   return k === 'agotado' ? 'badge-danger' : k === 'bajo' ? 'badge-warning' : 'badge-success';
 };
 
-/**
- * Vista de solo lectura: el admin consulta cuánto queda de cada insumo
- * (paquetes de pan, kilos de papa, carne, etc.). El stock se alimenta
- * desde el módulo de Compras, por eso aquí no se crea, edita ni elimina.
- */
-// Arma un mensaje con el motivo real que devolvió el servidor
 const mensajeError = (e: unknown, base: string): string => {
   const r = (e as { response?: { status?: number; data?: { message?: string; error?: string; errors?: Record<string, string[]> } } })?.response;
   if (!r) return `${base}: no hay conexión con el servidor`;
@@ -104,7 +98,6 @@ export default function MateriaPrimaAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  // El index no trae la marca: se resuelve con la lista de /marcas
   const marcaNombre = (id: unknown): string =>
     (marcas ?? []).find((x) => x?.id === id)?.nombre ?? '';
 

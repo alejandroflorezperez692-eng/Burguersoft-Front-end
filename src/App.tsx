@@ -27,6 +27,7 @@ import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
 import Accesibilidad from './components/Accesibilidad';
 import DemoAccess from './components/DemoAccess';
 import Checkout from './pages/Checkout';
+import { ConAsistenteCliente } from './components/AsistenteCliente';
 
 function App() {
   return (
@@ -34,12 +35,14 @@ function App() {
       <DemoAccess />
       <Routes>
       <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/nosotros" element={<Nosotros />} />
-        <Route path="/menu-publico" element={<MenuPublico />} />
-        <Route path="/contactanos" element={<Contactanos />} />
-        <Route path="/mis-pedidos" element={<MisPedidos />} />
-        <Route path="/checkout" element={<Checkout />} />
+        <Route element={<ConAsistenteCliente />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/nosotros" element={<Nosotros />} />
+          <Route path="/menu-publico" element={<MenuPublico />} />
+          <Route path="/contactanos" element={<Contactanos />} />
+          <Route path="/mis-pedidos" element={<MisPedidos />} />
+          <Route path="/checkout" element={<Checkout />} />
+        </Route>
       </Route>
 
       <Route path="/login" element={<Login />} />

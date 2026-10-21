@@ -2,9 +2,51 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
 
+interface Grafica {
+  titulo: string;
+  formato: 'peso' | 'num';
+  datos: { etiqueta: string; valor: number }[];
+}
+
 interface Mensaje {
   role: 'user' | 'assistant';
   content: string;
+  grafica?: Grafica;
+}
+
+/** Gráfica de barras horizontales (sin librerías) para las respuestas de Burgi */
+function GraficaBarras({ g }: { g: Grafica }) {
+  const max = Math.max(...g.datos.map((d) => d.valor), 1);
+  const fmt = (v: number) =>
+    g.formato === 'peso'
+      ? '$' + Math.round(v).toLocaleString('es-CO')
+      : Math.round(v).toLocaleString('es-CO');
+
+  return (
+    <div style={{ marginTop: 12, minWidth: 250, whiteSpace: 'normal' }} role="img" aria-label={g.titulo}>
+      <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 8, color: 'var(--text-900)' }}>{g.titulo}</div>
+      {g.datos.map((d, i) => (
+        <div key={d.etiqueta + i} style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 11.5, marginBottom: 3 }}>
+            <span style={{ color: 'var(--text-600)', fontWeight: 600 }}>{d.etiqueta}</span>
+            <span style={{ fontWeight: 800, color: 'var(--text-900)' }}>{fmt(d.valor)}</span>
+          </div>
+          <div style={{ height: 9, borderRadius: 999, background: 'rgba(232,130,26,0.14)', overflow: 'hidden' }}>
+            <div
+              className="burgi-barra"
+              style={{
+                width: `${Math.max((d.valor / max) * 100, d.valor > 0 ? 3 : 0)}%`,
+                height: '100%',
+                borderRadius: 999,
+                background: 'linear-gradient(90deg, #E8821A, #ffb02e)',
+                animationDelay: `${i * 70}ms`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 const SUGERENCIAS = [
@@ -13,11 +55,12 @@ const SUGERENCIAS = [
   '¿Cuánto he gastado en compras este mes?',
   '¿Qué se vendió más esta semana?',
   '¿Subió el precio de algún insumo?',
+  'Muéstrame una gráfica de ventas de la semana',
 ];
-const ICONOS = ['💰', '📦', '🧾', '🔥', '📈'];
+const ICONOS = ['💰', '📦', '🧾', '🔥', '📈', '📊'];
 
 /** Burgi: hamburguesa-robot dibujada en SVG (quieta, solo parpadea) */
-function BurgiRobot({ size, uid }: { size: number; uid: string }) {
+export function BurgiRobot({ size, uid }: { size: number; uid: string }) {
   const g = (n: string) => `${uid}-${n}`;
   return (
     <svg width={size} height={size} viewBox="0 0 100 100" aria-hidden="true" style={{ display: 'block' }}>
@@ -91,7 +134,7 @@ function BurgiRobot({ size, uid }: { size: number; uid: string }) {
 }
 
 /** Avatar de Burgi: mini orbe de cristal con el robot dentro */
-function AvatarBurgi({ size, uid, online, className }: { size: number; uid: string; online?: boolean; className?: string }) {
+export function AvatarBurgi({ size, uid, online, className }: { size: number; uid: string; online?: boolean; className?: string }) {
   return (
     <span
       className={className}
@@ -117,7 +160,7 @@ function AvatarBurgi({ size, uid, online, className }: { size: number; uid: stri
 }
 
 /** Chispas ✨ que titilan alrededor del orbe (posición relativa al botón de 52px) */
-const CHISPAS = [
+export const CHISPAS = [
   { left: 41, top: -8, size: 12, color: '#ffb02e', dur: 2.6, delay: 0 },
   { left: 51, top: 31, size: 9, color: '#35d0e0', dur: 3.1, delay: 0.9 },
   { left: -9, top: 5, size: 10, color: '#35d0e0', dur: 2.9, delay: 1.5 },
@@ -125,7 +168,7 @@ const CHISPAS = [
   { left: 14, top: -10, size: 7, color: '#E8821A', dur: 3.3, delay: 2 },
 ];
 
-function Chispa({ size, color }: { size: number; color: string }) {
+export function Chispa({ size, color }: { size: number; color: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" aria-hidden="true" style={{ display: 'block', filter: `drop-shadow(0 0 3px ${color})` }}>
       <path d="M10 0 C10.8 6 14 9.2 20 10 C14 10.8 10.8 14 10 20 C9.2 14 6 10.8 0 10 C6 9.2 9.2 6 10 0 Z" fill={color} />
@@ -172,12 +215,12 @@ export default function AsistenteIA() {
     setPensando(true);
 
     try {
-      const { data } = await apiClient.post<{ respuesta: string }>('/asistente/chat', {
+      const { data } = await apiClient.post<{ respuesta: string; grafica?: Grafica | null }>('/asistente/chat', {
         mensaje,
         pagina: pathname,
         historial,
       });
-      setMensajes((m) => [...m, { role: 'assistant', content: data.respuesta }]);
+      setMensajes((m) => [...m, { role: 'assistant', content: data.respuesta, grafica: data.grafica ?? undefined }]);
     } catch (e) {
       const status = (e as { response?: { status?: number } })?.response?.status;
       let aviso: string;
@@ -213,7 +256,8 @@ export default function AsistenteIA() {
         .burgi-sug:focus-visible,.burgi-mini:focus-visible,.burgi-enviar:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
         .burgi-enviar{transition:transform .15s ease, box-shadow .15s ease}
         .burgi-enviar:not(:disabled):hover{transform:scale(1.07);box-shadow:0 6px 16px rgba(232,130,26,.45)}
-        /* Si se abre el panel de accesibilidad, Burgi se esconde para no taparse */
+        .burgi-barra{transform-origin:left center;animation:burgiBarra .7s cubic-bezier(.2,.8,.3,1) both}
+        @keyframes burgiBarra{from{transform:scaleX(0)}to{transform:scaleX(1)}}
         body:has(.acc-panel.open) .burgi-dock,
         body:has(.acc-panel.open) .burgi-dialogo,
         body:has(.acc-panel.open) .burgi-globo{display:none}
@@ -226,7 +270,7 @@ export default function AsistenteIA() {
         @keyframes burgiEntrar{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
         @keyframes burgiGlobo{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
         @media (prefers-reduced-motion: reduce){
-          .burgi-ojos,.burgi-led,.burgi-brillo{animation:none !important}
+          .burgi-ojos,.burgi-led,.burgi-brillo,.burgi-barra{animation:none !important}
           .burgi-chispa{animation:none !important;opacity:.85;transform:scale(.8)}
         }
       `}</style>
@@ -361,9 +405,10 @@ export default function AsistenteIA() {
                         wordBreak: 'break-word',
                       }}
                     >
-                      {m.content}
-                    </div>
-                  </div>
+                {m.content}
+                {m.grafica && <GraficaBarras g={m.grafica} />}
+                </div>
+                </div>
                 ),
               )}
 
