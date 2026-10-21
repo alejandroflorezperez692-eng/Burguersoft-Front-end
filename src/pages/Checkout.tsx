@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
@@ -7,25 +7,21 @@ import '../styles/public.css';
 import '../styles/checkout.css';
 import PublicHeader from '../components/PublicHeader';
 import Footer from '../components/Footer';
-import logoPse from '../assets/img/pse.svg';
+import logoNequi from '../assets/img/nequi.png';
+import logoDaviplata from '../assets/img/daviplata.png';
 import logoBancolombia from '../assets/img/bancolombia.svg';
 import logoEfectivo from '../assets/img/efectivo.svg';
+import logoUbicacion from '../assets/img/Ubicacion.png';
 
 const IVA_RATE = 0.08;
 const TIPOS_DOCUMENTO = ['CC', 'CE', 'NIT', 'Pasaporte', 'Otro'];
 
-function IconoLinea() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M2 12h20" />
-      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-    </svg>
-  );
+function IconoNequi() {
+  return <img src={logoNequi} alt="Nequi" className="pago-logo-img" />;
 }
 
-function IconoPSE() {
-  return <img src={logoPse} alt="PSE" className="pago-logo-img" />;
+function IconoDaviplata() {
+  return <img src={logoDaviplata} alt="Daviplata" className="pago-logo-img" />;
 }
 
 function IconoBancolombia() {
@@ -39,21 +35,255 @@ function IconoEfectivo() {
 type Direccion = {
   linea1: string;
   barrio: string;
-  ciudad: string;
   referencia: string;
   lat: number | null;
   lng: number | null;
 };
 
-const direccionVacia: Direccion = { linea1: '', barrio: '', ciudad: '', referencia: '', lat: null, lng: null };
+const direccionVacia: Direccion = { linea1: '', barrio: '', referencia: '', lat: null, lng: null };
+
+// ---------------------------------------------------------------------------
+// Geocodificación inversa
+//
+// La mayoría de geocodificadores públicos (OpenStreetMap) solo conocen la
+// calle donde estás, no el número de casa de tu casa/apartamento. Por eso
+// usamos una cascada de proveedores y nos quedamos con el primero que
+// entregue la dirección más completa:
+//
+//   1. Google Maps  -> requiere VITE_GOOGLE_MAPS_KEY y billing activo en GCP.
+//   2. ArcGIS       -> endpoint gratuito, interpola el número de casa.
+//   3. OpenStreetMap (Nominatim) -> sin API key, pero suele traer la calle.
+// ---------------------------------------------------------------------------
+
+const ARCGIS_REVERSE = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode';
+const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
+const GOOGLE_REVERSE = 'https://maps.googleapis.com/maps/api/geocode/json';
+
+// Abreviaturas de vías que devuelve Nominatim en Colombia.
+const ABREVIATURAS_VIA: Array<[RegExp, string]> = [
+  [/^(cl|cll|calle)\.?\s+/i, 'Calle '],
+  [/^(cra|crr|carrera)\.?\s+/i, 'Carrera '],
+  [/^(av|ave|avenida)\.?\s+/i, 'Avenida '],
+  [/^(diag|diagonal)\.?\s+/i, 'Diagonal '],
+  [/^(circ|circular)\.?\s+/i, 'Circular '],
+  [/^(manz|manzana)\.?\s+/i, 'Manzana '],
+  [/^(via)\.?\s+/i, 'Vía '],
+];
+
+type GeoResultado = { linea1: string; barrio: string };
+
+// Tipos de vía usados para detectar la transversal en una dirección colombiana.
+const TIPO_VIA =
+  '(?:Calle|Carrera|Cra|Cl|Avenida|Av|Diagonal|Diag|Circular|Circ|V[ií]a|Carril|Carretera|Transversal|Manzana|Manz)';
+
+/** Normaliza "cl 60" -> "Calle 60", "cra 15" -> "Carrera 15", etc. */
+function normalizarVia(via: string): string {
+  const v = via.trim().replace(/\s+/g, ' ');
+  for (const [re, prefijo] of ABREVIATURAS_VIA) {
+    if (re.test(v)) return (prefijo + v.replace(re, '')).trim();
+  }
+  return v;
+}
+
+/**
+ * ArcGIS devuelve "Carrera 30 33 35" (vía + transversal + casa).
+ * En formato colombiano eso es "Carrera 30 # 33-35".
+ */
+function formatearDireccionColombia(address: string, addNum: string): string {
+  const limpio = address.trim().replace(/\s+/g, ' ');
+  if (!limpio) return '';
+
+  // "Cra 33 # 45-20" (ya viene con el "#").
+  if (limpio.includes('#')) {
+    const [via, ...resto] = limpio.split('#');
+    const casa = resto.join('#').trim();
+    const v = via.trim();
+    return casa ? `${v} # ${casa}` : v;
+  }
+
+  // Une tokens numéricos seguidos de una letra suelta: "33 A" -> "33A".
+  const tokens: string[] = [];
+  for (const t of limpio.split(' ')) {
+    const prev = tokens[tokens.length - 1];
+    if (prev && /^\d+$/.test(prev) && /^[A-Za-z]$/.test(t)) tokens[tokens.length - 1] = prev + t;
+    else tokens.push(t);
+  }
+
+  // El número de casa es el último token numérico.
+  const ultimo = tokens[tokens.length - 1];
+  let casa = '';
+  if (/^\d/.test(ultimo)) {
+    casa = ultimo;
+    tokens.pop();
+  } else if (/^\d/.test(addNum)) {
+    casa = addNum;
+  }
+
+  const resto = tokens.join(' ');
+
+  // "Calle 60" es la vía sin número de casa: el token quitado era el de la vía.
+  if (casa && !/\d/.test(resto) && new RegExp(`${TIPO_VIA}$`, 'i').test(resto)) {
+    return `${resto} ${casa}`;
+  }
+
+  // "Calle 35 23" -> vía "Calle 35" + transversal "23".
+  const m = resto.match(new RegExp(`^(.*\\b${TIPO_VIA}\\s+\\d+[A-Za-z]?)\\s+(\\d+[A-Za-z]?)$`, 'i'));
+  if (m) return casa ? `${m[1]} # ${m[2]}-${casa}` : `${m[1]} # ${m[2]}`;
+
+  return casa ? `${resto} # ${casa}` : resto;
+}
+
+/** ¿La dirección incluye número de casa? */
+function tieneNumero(linea1: string): boolean {
+  return /\d/.test(linea1);
+}
+
+/** 1) Google Maps (opcional, necesita billing activo). */
+async function reverseGeocodeGoogle(latitude: number, longitude: number): Promise<GeoResultado | null> {
+  const key = import.meta.env.VITE_GOOGLE_MAPS_KEY as string | undefined;
+  if (!key) return null;
+
+  const url = new URL(GOOGLE_REVERSE);
+  url.searchParams.set('latlng', `${latitude},${longitude}`);
+  url.searchParams.set('language', 'es');
+  url.searchParams.set('key', key);
+
+  const res = await fetch(url.toString());
+  const data = await res.json();
+  if (data.status !== 'OK' || !Array.isArray(data.results) || data.results.length === 0) return null;
+
+  const componentes: Array<{ long_name: string; types: string[] }> = data.results[0].address_components ?? [];
+  const buscar = (tipo: string) => componentes.find((c) => c.types?.includes(tipo))?.long_name ?? '';
+
+  const via = buscar('route');
+  const numero = buscar('street_number');
+  const linea1 = via && numero ? `${via} # ${numero}` : via;
+  // Solo el barrio (nunca la ciudad): neighborhood -> sublocality.
+  const barrio =
+    buscar('neighborhood') || buscar('sublocality_level_2') || buscar('sublocality_level_1') || '';
+
+  return { linea1, barrio };
+}
+
+/** 2) ArcGIS: trae el número de casa (interpolado sobre la vía). */
+async function reverseGeocodeArcGIS(latitude: number, longitude: number): Promise<GeoResultado | null> {
+  const url = new URL(ARCGIS_REVERSE);
+  url.searchParams.set('location', `${longitude},${latitude}`);
+  url.searchParams.set('f', 'json');
+  url.searchParams.set('outSR', '4326');
+  url.searchParams.set('lang', 'es');
+
+  const res = await fetch(url.toString());
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const a = data?.address ?? {};
+  const tipo = String(a.Addr_type ?? '');
+  const esCalle = tipo === 'StreetAddress' || tipo === 'PointAddress';
+
+  const linea1 = esCalle ? formatearDireccionColombia(String(a.Address ?? ''), String(a.AddNum ?? '')) : '';
+  // Solo el barrio: ArcGIS lo llama "Neighborhood" (Antonio Santos, Mejoras
+  // Publicas...). District/City son la ciudad y no nos sirven.
+  // Si el match no es a nivel de calle (Locality/POI), su "Neighborhood" es
+  // más general (p.ej. el corregimiento), así que lo descartamos y dejamos
+  // que OSM aporte el barrio específico.
+  const barrio = esCalle ? String(a.Neighborhood || '') : String(a.Block || a.Sector || '');
+
+  return { linea1, barrio };
+}
+
+/** 3) OpenStreetMap (Nominatim): sin API key, pero muchas veces sin número. */
+async function reverseGeocodeOSM(latitude: number, longitude: number): Promise<GeoResultado | null> {
+  const url = new URL(NOMINATIM_REVERSE);
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('lat', String(latitude));
+  url.searchParams.set('lon', String(longitude));
+  url.searchParams.set('zoom', '18');
+  url.searchParams.set('addressdetails', '1');
+  url.searchParams.set('extratags', '1');
+  url.searchParams.set('namedetails', '1');
+  url.searchParams.set('accept-language', 'es');
+
+  const res = await fetch(url.toString(), { headers: { 'Accept-Language': 'es' } });
+  if (!res.ok) throw new Error(`El geocodificador respondió ${res.status}`);
+
+  const data = await res.json();
+  if (!data || data.error || !data.address) throw new Error('El geocodificador no devolvió resultados');
+
+  const a: Record<string, string> = data.address;
+  const extra: Record<string, string> = data.extratags ?? {};
+
+  const via = normalizarVia(
+    a.road || extra['addr:street'] || a.pedestrian || a.footway || a.path || a.residential || a.place || '',
+  );
+  // OSM a veces mete valores raros en el numero de casa: solo aceptamos
+  // valores que empiecen por digito.
+  const numeroBruto = a.house_number || extra['addr:housenumber'] || a.house || '';
+  const numero = /^\d/.test(numeroBruto) ? numeroBruto : '';
+  let linea1 = via && numero ? `${via} # ${numero}` : via || numero;
+  if (!linea1) {
+    linea1 = String(data.display_name ?? '').split(',')[0].trim();
+  }
+
+  // Solo el barrio. Se descartan "city"/"locality" porque son la ciudad.
+  // Orden: barrio mapeado (neighbourhood) -> sector -> comuna (suburb).
+  const barrio =
+    a.neighbourhood || a.quarter || a.residential ||
+    a.suburb || a.city_district || a.hamlet ||
+    a.town || a.village || '';
+
+  return { linea1, barrio };
+}
+
+/**
+ * Corre los proveedores en cascada y devuelve la dirección más completa
+ * que se pueda construir.
+ */
+async function obtenerDireccion(latitude: number, longitude: number): Promise<GeoResultado> {
+  let linea1 = '';
+  let barrio = '';
+
+  const google = await reverseGeocodeGoogle(latitude, longitude).catch(() => null);
+  if (google?.barrio && !barrio) barrio = google.barrio;
+  if (google?.linea1) linea1 = google.linea1;
+
+  const arcgis = await reverseGeocodeArcGIS(latitude, longitude).catch(() => null);
+  if (arcgis?.barrio && !barrio) barrio = arcgis.barrio;
+  // ArcGIS solo gana si Google no dio nada o dio una dirección sin número.
+  if (!linea1 || !tieneNumero(linea1)) {
+    if (arcgis?.linea1 && (!linea1 || tieneNumero(arcgis.linea1))) {
+      linea1 = arcgis.linea1;
+    }
+  }
+
+  const osm = await reverseGeocodeOSM(latitude, longitude).catch(() => null);
+  if (osm?.barrio && !barrio) barrio = osm.barrio;
+  if (!linea1 && osm?.linea1) linea1 = osm.linea1;
+
+  return { linea1, barrio };
+}
 
 // WhatsApp del local (línea principal de Contáctanos: 311 538 7534)
 const WHATSAPP_LOCAL = '573115387534';
 
 const ETIQUETA_PAGO: Record<string, string> = {
-  pse: 'PSE',
-  bancolombia: 'Botón Bancolombia',
+  nequi: 'Nequi',
+  daviplata: 'Daviplata',
+  bancolombia: 'Bancolombia',
   efectivo: 'Efectivo (contra entrega)',
+};
+
+// El QR de cobro es un codigo Bre-B (estandar de pagos inmediatos del Banco
+// de la Republica), por eso el MISMO codigo lo puede pagar el cliente desde
+// Nequi, Daviplata, Bancolombia, Davivienda o cualquier otra entidad
+// habilitada en Bre-B. Si mas adelante seWant separate QR por entidad, se
+// cambia esta constante por un mapa metodo -> imagen.
+const QR_BREB = '/estilos/img/qr-breb.jpeg';
+
+const NOMBRE_QR: Record<string, string> = {
+  nequi: 'Nequi',
+  daviplata: 'Daviplata',
+  bancolombia: 'Bancolombia',
 };
 
 const fmtCOP = (v: number) => `$${Math.round(v).toLocaleString('es-CO')}`;
@@ -80,71 +310,91 @@ export default function Checkout() {
   // ---- Dirección de entrega (solo aplica si tipoEntrega === 'Domicilio') ----
   const [direccion, setDireccion] = useState<Direccion>(direccionVacia);
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false);
+  const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
+  const avisoTimer = useRef<number | null>(null);
+  const refReferencia = useRef<HTMLTextAreaElement | null>(null);
 
-    const usarUbicacionActual = () => {
+  const showToastUbicacion = (msg: string) => {
+    setAvisoUbicacion(msg);
+    if (avisoTimer.current) window.clearTimeout(avisoTimer.current);
+    avisoTimer.current = window.setTimeout(() => setAvisoUbicacion(null), 5000);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (avisoTimer.current) window.clearTimeout(avisoTimer.current);
+    };
+  }, []);
+
+  // El campo de referencia crece solo con el texto, pero nunca se encoge
+  // si el cliente lo agrandó a mano arrastrando la esquina.
+  useEffect(() => {
+    const el = refReferencia.current;
+    if (!el) return;
+    const necesario = el.scrollHeight;
+    if (necesario > el.clientHeight) {
+      el.style.height = 'auto';
+      el.style.height = `${necesario}px`;
+    }
+  }, [direccion.referencia]);
+
+  const usarUbicacionActual = () => {
     if (!navigator.geolocation) {
       alert('Tu navegador no soporta geolocalización. Ingresa la dirección manualmente.');
       return;
     }
     setBuscandoUbicacion(true);
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
+
+        // Guardamos las coordenadas de entrada: si el geocodificador falla,
+        // el pedido conserva el punto exacto y el cliente escribe la dirección.
+        setDireccion((prev) => ({ ...prev, lat: latitude, lng: longitude }));
+
         try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1&zoom=18`,
-          );
-          const data = await res.json();
-          const a = data.address || {};
-
-          const linea1 = [a.road, a.house_number].filter(Boolean).join(' #');
-
-          // Nominatim usa distintos nombres de campo según el sector mapeado,
-          // probamos varios antes de dejarlo vacío.
-          const barrio =
-            a.suburb || a.neighbourhood || a.quarter || a.residential ||
-            a.city_district || a.borough || a.hamlet || a.locality || '';
-
-          const ciudad =
-            a.city || a.town || a.village || a.municipality || a.county || '';
-
-          setDireccion({
-            linea1: linea1 || data.display_name || '',
-            barrio,
-            ciudad,
-            referencia: '',
+          const { linea1, barrio } = await obtenerDireccion(latitude, longitude);
+          setDireccion((prev) => ({
+            ...prev,
+            linea1: linea1 || prev.linea1,
+            barrio: barrio || prev.barrio,
             lat: latitude,
             lng: longitude,
-          });
+          }));
 
-          if (!barrio) {
-            showToastUbicacion('Ubicación encontrada. Completa el barrio manualmente, no estaba disponible en el mapa.');
+          if (!linea1) {
+            showToastUbicacion('Encontramos tu ubicación pero sin dirección en el mapa. Escríbela manualmente.');
+          } else if (!tieneNumero(linea1)) {
+            showToastUbicacion('Ubicación encontrada en la calle, pero falta el número de casa. Agrégalo para que el domiciliario llegue.');
+          } else if (!barrio) {
+            showToastUbicacion('Ubicación encontrada. Completa el barrio manualmente, no venía en el mapa.');
           }
         } catch {
-          alert('No se pudo obtener la dirección desde tu ubicación. Ingrésala manualmente.');
+          showToastUbicacion('Encontramos tu ubicación pero no pudimos convertirla en dirección. Escríbela manualmente.');
         } finally {
           setBuscandoUbicacion(false);
         }
       },
-      () => {
-        alert('No pudimos acceder a tu ubicación. Revisa los permisos del navegador.');
+      (err) => {
         setBuscandoUbicacion(false);
+        if (err.code === err.PERMISSION_DENIED) {
+          alert('No pudimos acceder a tu ubicación: denegaste el permiso del navegador. Habilítalo e inténtalo de nuevo.');
+        } else if (err.code === err.TIMEOUT) {
+          alert('La solicitud de ubicación tardó demasiado. Inténtalo de nuevo.');
+        } else {
+          alert('No pudimos determinar tu ubicación. Revisa el GPS del dispositivo e inténtalo de nuevo.');
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000 },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
     );
   };
 
-  const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
-  const showToastUbicacion = (msg: string) => {
-    setAvisoUbicacion(msg);
-    setTimeout(() => setAvisoUbicacion(null), 4000);
-  };
-  
   const [tipoDocumento, setTipoDocumento] = useState('CC');
   const [numeroDocumento, setNumeroDocumento] = useState('');
-  const [nombre, setNombre] = useState(nombreInicial);
-  const [apellido, setApellido] = useState(apellidoInicial);
-  const [correo, setCorreo] = useState(user?.email ?? '');
+  const [nombre] = useState(nombreInicial);
+  const [apellido] = useState(apellidoInicial);
+  const [correo] = useState(user?.email ?? '');
   const [telefono, setTelefono] = useState('');
 
   useEffect(() => {
@@ -181,7 +431,8 @@ export default function Checkout() {
   const [facturaDocumento, setFacturaDocumento] = useState('');
 
   // ---- Método de pago ----
-  const [metodoPago, setMetodoPago] = useState<'pse' | 'bancolombia' | 'efectivo'>('pse');
+  const [metodoPago, setMetodoPago] = useState<'nequi' | 'daviplata' | 'bancolombia' | 'efectivo'>('nequi');
+  const [qrNoDisponible, setQrNoDisponible] = useState<Record<string, boolean>>({});
 
   // Mapa promoción -> productos (el backend solo acepta producto_id en el
   // carrito y aplica el precio de la promo automáticamente).
@@ -208,8 +459,9 @@ export default function Checkout() {
     'En restaurante': 'Consumir',
   };
   const METODO_PAGO_BACKEND: Record<string, string> = {
-    pse: 'PSE',
-    bancolombia: 'Transferencia',
+    nequi: 'Nequi',
+    daviplata: 'Daviplata',
+    bancolombia: 'Bancolombia',
     efectivo: 'Efectivo',
   };
 
@@ -253,7 +505,7 @@ export default function Checkout() {
 
   const validar = (): string | null => {
     if (items.length === 0) return 'Tu carrito está vacío.';
-    if (requiereDireccion && (!direccion.linea1 || !direccion.ciudad)) {
+    if (requiereDireccion && (!direccion.linea1 || !direccion.barrio)) {
       return 'Completa la dirección de entrega (o usa el botón de ubicación actual).';
     }
     if (!numeroDocumento || !nombre || !apellido || !correo || !telefono) {
@@ -341,7 +593,6 @@ export default function Checkout() {
     if (requiereDireccion) {
       lineas.push(`Dirección: ${direccion.linea1}`);
       lineas.push(`Barrio: ${direccion.barrio}`);
-      lineas.push(`Ciudad: ${direccion.ciudad}`);
       if (direccion.referencia) lineas.push(`Referencia: ${direccion.referencia}`);
     }
 
@@ -356,6 +607,9 @@ export default function Checkout() {
     lineas.push(`*TOTAL: ${fmtCOP(total)}*`);
     lineas.push('------------------------');
     lineas.push(`Método de pago: ${ETIQUETA_PAGO[metodoPago] ?? metodoPago}`);
+    if (metodoPago !== 'efectivo') {
+      lineas.push('Acción: el cliente enviará el comprobante de pago por este chat');
+    }
     if (usarMismosDatos) {
       lineas.push('Facturación: mismos datos del cliente');
     } else {
@@ -367,185 +621,210 @@ export default function Checkout() {
 
   const resumenEntrega = useMemo(() => {
     if (tipoEntrega === 'Domicilio') return 'Domicilio';
-    if (tipoEntrega === 'Para recoger') return 'Para recoger';
+    if (tipoEntrega === 'Para recoger') return 'Para llevar';
     return 'En restaurante';
   }, [tipoEntrega]);
+
+  const METODOS_PAGO = [
+    { id: 'nequi' as const, etiqueta: 'Nequi', icono: <IconoNequi /> },
+    { id: 'daviplata' as const, etiqueta: 'Daviplata', icono: <IconoDaviplata /> },
+    { id: 'bancolombia' as const, etiqueta: 'Transferencia Bancolombia', icono: <IconoBancolombia /> },
+    { id: 'efectivo' as const, etiqueta: 'Contra entrega (efectivo)', icono: <IconoEfectivo /> },
+  ];
 
   return (
     <div className="public-body checkout-wrapper">
       <PublicHeader />
       <div className="checkout-page">
-      <div className="checkout-main">
-        {/* ---- Dirección de entrega ---- */}
-        <section className="checkout-card">
-          <h3>{requiereDireccion ? 'Dirección de entrega' : 'Detalles del pedido'}</h3>
+        <div className="checkout-main">
+          <section className="checkout-card">
+            <div className="checkout-encabezado">
+              <h2>Finaliza tu pedido</h2>
+              <p>Completa los pasos y paga con el método que prefieras.</p>
+            </div>
 
-          {requiereDireccion ? (
-            <div className="checkout-form">
-              <button type="button" className="btn-ubicacion" onClick={usarUbicacionActual} disabled={buscandoUbicacion}>
-                📍 {buscandoUbicacion ? 'Buscando tu ubicación...' : 'Usar mi ubicación actual'}
-              </button>
-              {avisoUbicacion && (<p className="checkout-aviso"><span>ℹ️</span> {avisoUbicacion}</p>)}
+            {/* ---- Paso 1: Entrega ---- */}
+            <div className="checkout-seccion">
+              <div className="checkout-seccion-titulo">
+                <span className="checkout-paso">1</span>
+                <h3>{requiereDireccion ? 'Dirección de entrega' : 'Detalles del pedido'}</h3>
+              </div>
+
+              {requiereDireccion ? (
+                <div className="checkout-form">
+                  <button type="button" className="btn-ubicacion" onClick={usarUbicacionActual} disabled={buscandoUbicacion}>
+                    <img src={logoUbicacion} alt="" className="btn-ubicacion-icono" />
+                    {buscandoUbicacion ? 'Buscando tu ubicación...' : 'Usar mi ubicación actual'}
+                  </button>
+                  {avisoUbicacion && (<p className="checkout-aviso"><span></span> {avisoUbicacion}</p>)}
+
+                  <div className="form-group">
+                    <label>Dirección <span className="checkout-required">*</span></label>
+                    <input
+                      value={direccion.linea1}
+                      onChange={(e) => setDireccion({ ...direccion, linea1: e.target.value })}
+                      placeholder="Calle 10 # 20-30"
+                      required
+                    />
+                  </div>
+                  <div className="checkout-grid-2">
+                    <div className="form-group">
+                      <label>Barrio <span className="checkout-required">*</span></label>
+                      <input value={direccion.barrio} onChange={(e) => setDireccion({ ...direccion, barrio: e.target.value })} required />
+                    </div>
+                  </div>
+                    <div className="form-group">
+                      <label>Referencia (opcional)</label>
+                      <textarea
+                        ref={refReferencia}
+                        className="checkout-referencia"
+                        rows={2}
+                        value={direccion.referencia}
+                        onChange={(e) => setDireccion({ ...direccion, referencia: e.target.value })}
+                        placeholder="Portón negro, casa esquinera, apto 301..."
+                      />
+                      <span className="checkout-hint">Puedes arrastrar la esquina inferior para agrandar el campo.</span>
+                    </div>
+
+                </div>
+              ) : (
+                <div className="checkout-info-row">
+                  <span className="checkout-info-icon">🕒</span>
+                  <div>
+                    <strong>{resumenEntrega}</strong>
+                    <p>{cuando === 'Lo antes posible' ? 'Lo antes posible' : `${fechaProgramada} · ${horaProgramada}`}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ---- Paso 2: Tus datos ---- */}
+            <div className="checkout-seccion">
+              <div className="checkout-seccion-titulo">
+                <span className="checkout-paso">2</span>
+                <h3>Tus datos</h3>
+              </div>
+
+              <div className="checkout-datos-fila">
+                <div className="checkout-dato">
+                  <span className="checkout-dato-label">Nombre</span>
+                  <span className="checkout-dato-valor">{nombre} {apellido}</span>
+                </div>
+                <div className="checkout-dato">
+                  <span className="checkout-dato-label">Documento</span>
+                  <span className="checkout-dato-valor">{tipoDocumento} · {numeroDocumento || '—'}</span>
+                </div>
+                <div className="checkout-dato">
+                  <span className="checkout-dato-label">Correo</span>
+                  <span className="checkout-dato-valor">{correo || '—'}</span>
+                </div>
+              </div>
 
               <div className="form-group">
-                <label>Dirección <span className="checkout-required">*</span></label>
+                <label>Teléfono <span className="checkout-required">*</span></label>
                 <input
-                  value={direccion.linea1}
-                  onChange={(e) => setDireccion({ ...direccion, linea1: e.target.value })}
-                  placeholder="Calle 10 # 20-30"
-                  required
+                  inputMode="tel"
+                  value={formatearTelefono(telefono)}
+                  onChange={(e) => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="300 345 8970"
                 />
               </div>
-              <div className="checkout-grid-2">
-                <div className="form-group">
-                  <label>Barrio <span className="checkout-required">*</span></label>
-                  <input value={direccion.barrio} onChange={(e) => setDireccion({ ...direccion, barrio: e.target.value })} required />
+
+              <div className="checkout-subtitulo">Facturación electrónica</div>
+              <label className="checkout-checkbox-row">
+                <input type="checkbox" checked={usarMismosDatos} onChange={(e) => setUsarMismosDatos(e.target.checked)} />
+                <span>Utilizar mi información para la facturación</span>
+              </label>
+
+              {!usarMismosDatos && (
+                <div className="checkout-form" style={{ marginTop: 12 }}>
+                  <div className="checkout-grid-2">
+                    <div className="form-group">
+                      <label>Nombre</label>
+                      <input value={facturaNombre} onChange={(e) => setFacturaNombre(e.target.value)} />
+                    </div>
+                    <div className="form-group">
+                      <label>Apellido</label>
+                      <input value={facturaApellido} onChange={(e) => setFacturaApellido(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Número de documento</label>
+                    <input value={facturaDocumento} onChange={(e) => setFacturaDocumento(e.target.value.replace(/\D/g, ''))} />
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label>Ciudad <span className="checkout-required">*</span></label>
-                  <input value={direccion.ciudad} onChange={(e) => setDireccion({ ...direccion, ciudad: e.target.value })} required />
+              )}
+            </div>
+
+            {/* ---- Paso 3: Método de pago ---- */}
+            <div className="checkout-seccion checkout-seccion-pago">
+              <div className="checkout-seccion-titulo">
+                <span className="checkout-paso">3</span>
+                <h3>Método de pago</h3>
+              </div>
+
+              <div className="pago-zona">
+                <div className="pago-opciones">
+                  {METODOS_PAGO.map((m) => (
+                    <label key={m.id} className="pago-chip">
+                      <input
+                        type="radio"
+                        name="metodo"
+                        checked={metodoPago === m.id}
+                        onChange={() => setMetodoPago(m.id)}
+                      />
+                      <span className={`pago-icono pago-icono-${m.id}`}>{m.icono}</span>
+                      <span className="pago-chip-texto">{m.etiqueta}</span>
+                    </label>
+                  ))}
                 </div>
-              </div>
-              <div className="form-group">
-                <label>Referencia (opcional)</label>
-                <input
-                  value={direccion.referencia}
-                  onChange={(e) => setDireccion({ ...direccion, referencia: e.target.value })}
-                  placeholder="Portón negro, casa esquinera..."
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="checkout-info-row">
-              <span className="checkout-info-icon">🕒</span>
-              <div>
-                <strong>{resumenEntrega}</strong>
-                <p>{cuando === 'Lo antes posible' ? 'Lo antes posible' : `${fechaProgramada} · ${horaProgramada}`}</p>
-              </div>
-            </div>
-          )}
-        </section>
 
-        {/* ---- Datos de la compra ---- */}
-         <section className="checkout-card">
-          <h3>Datos de la compra</h3>
-          <div className="checkout-form">
-            <div className="form-group">
-              <label>Tipo de documento</label>
-              <select value={tipoDocumento} onChange={(e) => setTipoDocumento(e.target.value)} disabled>
-                {TIPOS_DOCUMENTO.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Número de documento</label>
-              <input value={numeroDocumento} onChange={(e) => setNumeroDocumento(e.target.value.replace(/\D/g, ''))} placeholder="0000000000" disabled />
-            </div>
-            <div className="checkout-grid-2">
-              <div className="form-group">
-                <label>Nombre</label>
-                <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" disabled />
-              </div>
-              <div className="form-group">
-                <label>Apellido</label>
-                <input value={apellido} onChange={(e) => setApellido(e.target.value)} placeholder="Apellido" disabled />
+                {metodoPago !== 'efectivo' && (
+                  <div className="pago-qr-caja" key={metodoPago}>
+                    {!qrNoDisponible[metodoPago] ? (
+                      <img
+                        className="pago-qr-img"
+                        src={QR_BREB}
+                        alt="Código QR Bre-B para pagar el pedido"
+                        onError={() => setQrNoDisponible((v) => ({ ...v, [metodoPago]: true }))}
+                      />
+                    ) : (
+                      <div className="pago-qr-vacio">
+                        Paga con {NOMBRE_QR[metodoPago]} y guarda tu comprobante.
+                      </div>
+                    )}
+                    <div className="pago-qr-texto">
+                      Escanea este código <strong>Bre-B</strong> desde la app de tu banco o billetera
+                      (Nequi, Daviplata, Bancolombia, Davivienda...) y digita el total a pagar.
+                      Al finalizar tu compra se abrirá WhatsApp para que envíes el comprobante de pago.
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="form-group">
-              <label>Correo electrónico</label>
-              <input type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} placeholder="hola@email.com" disabled />
-            </div>
-              <div className="form-group">
-              <label>Teléfono</label>
-              <input
-                inputMode="tel"
-                value={formatearTelefono(telefono)}
-                onChange={(e) => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                placeholder="300 345 8970"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ---- Facturación ---- */}
-        <section className="checkout-card">
-          <h3>Datos de facturación electrónica</h3>
-          <label className="checkout-checkbox-row">
-            <input type="checkbox" checked={usarMismosDatos} onChange={(e) => setUsarMismosDatos(e.target.checked)} />
-            <span>Utilizar mi información para la facturación</span>
-          </label>
-
-          {!usarMismosDatos && (
-            <div className="checkout-form" style={{ marginTop: 12 }}>
-              <div className="checkout-grid-2">
-                <div className="form-group">
-                  <label>Nombre</label>
-                  <input value={facturaNombre} onChange={(e) => setFacturaNombre(e.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label>Apellido</label>
-                  <input value={facturaApellido} onChange={(e) => setFacturaApellido(e.target.value)} />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>Número de documento</label>
-                <input value={facturaDocumento} onChange={(e) => setFacturaDocumento(e.target.value.replace(/\D/g, ''))} />
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* ---- Método de pago ---- */}
-        <section className="checkout-card">
-          <h3>Método de pago</h3>
-
-          <label className="checkout-radio-row">
-            <input type="radio" checked readOnly />
-            <span className="pago-icono pago-icono-linea">
-              <IconoLinea />
-            </span>
-            <span>Pago en línea</span>
-          </label>
-
-          <div className="checkout-subopciones">
-
-            <label className="checkout-radio-row">
-              <input type="radio" name="metodo" checked={metodoPago === 'pse'} onChange={() => setMetodoPago('pse')} />
-              <span className="pago-icono pago-icono-pse">
-                <IconoPSE />
-              </span>
-              <span>Paga con PSE</span>
-            </label>
-
-            <label className="checkout-radio-row">
-              <input type="radio" name="metodo" checked={metodoPago === 'bancolombia'} onChange={() => setMetodoPago('bancolombia')} />
-              <span className="pago-icono pago-icono-bancolombia">
-                <IconoBancolombia />
-              </span>
-              <span>Botón Bancolombia</span>
-            </label>
-
-            <label className="checkout-radio-row">
-              <input type="radio" name="metodo" checked={metodoPago === 'efectivo'} onChange={() => setMetodoPago('efectivo')} />
-              <span className="pago-icono pago-icono-efectivo">
-                <IconoEfectivo />
-              </span>
-              <span>Pago contra entrega (efectivo)</span>
-            </label>
-          </div>
-        </section>
-      </div>
-
-      {/* ---- Resumen / botón pagar ---- */}
-        <aside className="checkout-resumen">
-        <div className="checkout-resumen-rows">
-          <div><span>Subtotal</span><span>${subtotal.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span></div>
-          <div><span>Impuestos</span><span>${impuestos.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</span></div>
-          <div className="checkout-resumen-total"><span>Total</span><span>${total.toLocaleString('es-CO')}</span></div>
+          </section>
         </div>
-        <button className="btn-pagar-ahora" onClick={pagarAhora} disabled={enviando}>
-          {enviando ? 'Procesando…' : 'Pagar ahora'}
-        </button>
-      </aside>
+
+        {/* ---- Resumen / botón pagar ---- */}
+        <aside className="checkout-resumen">
+          <div className="checkout-resumen-titulo">Tu pedido</div>
+          <div className="checkout-resumen-items">
+            {items.map((i) => (
+              <div className="checkout-resumen-item" key={i.id}>
+                <span className="checkout-resumen-item-nombre">{i.cantidad}x {i.nombre}</span>
+                <span>{fmtCOP(i.precio * i.cantidad)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="checkout-resumen-rows">
+            <div><span>Subtotal</span><span>{fmtCOP(subtotal)}</span></div>
+            <div><span>Impuestos</span><span>{fmtCOP(impuestos)}</span></div>
+            <div className="checkout-resumen-total"><span>Total</span><span>{fmtCOP(total)}</span></div>
+          </div>
+          <button className="btn-pagar-ahora" onClick={pagarAhora} disabled={enviando}>
+            {enviando ? 'Procesando...' : 'Pagar ahora'}
+          </button>
+        </aside>
       </div>
       <Footer />
     </div>

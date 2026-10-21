@@ -14,12 +14,13 @@ export type User = {
   role?: string;
 };
 
+type RolBackend = string | { id?: number; nombre?: string };
 type UsuarioApi = {
   id_Usuario?: number; id?: number;
   nombre_usuario?: string; nombre?: string;
   apellido_usuario?: string; apellido?: string;
   correo_personal?: string; correo?: string; email?: string;
-  rol?: string; rol_id?: number;
+  rol?: RolBackend; rol_id?: number;
 };
 type LoginResponse = {
   token?: string;
@@ -60,6 +61,12 @@ function readStoredUser(): User | null {
   }
 }
 
+function extraerRol(rol?: RolBackend): string | undefined {
+  if (typeof rol === 'string') return rol;
+  if (rol && typeof rol === 'object') return rol.nombre;
+  return undefined;
+}
+
 function mapUsuarioApi(u: UsuarioApi | undefined, fallbackEmail?: string): User {
   return {
     id: u?.id_Usuario ?? u?.id,
@@ -68,7 +75,7 @@ function mapUsuarioApi(u: UsuarioApi | undefined, fallbackEmail?: string): User 
         .filter(Boolean)
         .join(' ') || undefined,
     email: u?.correo_personal ?? u?.correo ?? u?.email ?? fallbackEmail,
-    role: u?.rol,
+    role: extraerRol(u?.rol),
   };
 }
 
@@ -97,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: u?.id_Usuario ?? u?.id,
         name: [u?.nombre_usuario ?? u?.nombre, u?.apellido_usuario ?? u?.apellido].filter(Boolean).join(' ') || undefined,
         email: u?.correo_personal ?? u?.correo ?? u?.email ?? email,
-        role: u?.rol,
+        role: extraerRol(u?.rol),
       };
 
 
