@@ -17,7 +17,7 @@ interface AvisoEmergente {
 }
 
 const CLAVE_LEIDAS = 'notificaciones_leidas';
-const CADA_MS = 10_000; // revisa si hay alertas nuevas cada 10 segundos
+const CADA_MS = 60_000;
 const DURACION_AVISO = 3000; // el aviso se queda 3 segundos
 const DURACION_SALIDA = 300; // animación de subida
 

@@ -233,6 +233,7 @@ export default function ComprasAdmin() {
   ]);
   const [modalDetalle, setModalDetalle] = useState<Compra | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
+  const [eliminarCompra, setEliminarCompra] = useState<Compra | null>(null);
   const [loading, setLoading] = useState(true);
   const cargado = useRef(false);
 
@@ -339,7 +340,6 @@ export default function ComprasAdmin() {
     })));
     setAviso(null);
     setShowForm(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const dictar = async () => {
@@ -491,13 +491,26 @@ const save = () => {
 
   const del = (c: Compra) => {
     if (!c.puede_eliminarse) { showToast(MSG_FUERA_DE_PLAZO, true); return; }
-    if (!confirm('¿Eliminar esta compra? Se revertirá el stock.')) return;
+    setEliminarCompra(c);
+  };
+
+  const confirmarEliminarCompra = () => {
+    const c = eliminarCompra;
+    if (!c) return;
+    setEliminarCompra(null);
     apiClient.delete(`/compras/${c.id}`)
       .then(() => { showToast('Compra eliminada y stock revertido'); load(); })
       .catch((e) => {
         showToast(e?.response?.data?.message || 'No se pudo eliminar la compra', true);
         load();
       });
+  };
+
+  /** Estilo del formulario cuando se abre como modal (Modificar). */
+  const estiloModalCompra: CSSProperties = {
+    background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '28px 32px',
+    width: 'min(820px, 94vw)', maxHeight: '90vh', overflowY: 'auto',
+    boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
   };
 
   /** Texto del botón Eliminar: hasta cuándo se puede, o por qué está bloqueado. */
@@ -583,8 +596,9 @@ const save = () => {
       <ComprasResumen items={items} />
 
       {showForm && (
-        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>Registrar Compra</h3>
+        <div className={editId ? 'mn-modal-overlay' : undefined} onClick={editId ? cerrarForm : undefined}>
+        <div style={editId ? estiloModalCompra : { background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }} onClick={(e) => e.stopPropagation()}>
+          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>{editId ? `Modificar compra N.º ${editId}` : 'Registrar Compra'}</h3>
           {aviso && (
             <div
               style={{
@@ -694,6 +708,7 @@ const save = () => {
             <button className="btn-cancel" onClick={cerrarForm}>Cancelar</button>
             <button className="btn-save" onClick={save}>{editId ? 'Guardar cambios' : 'Registrar Compra'}</button>
           </div>
+        </div>
         </div>
       )}
 
@@ -885,6 +900,17 @@ const save = () => {
             <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--text-400)', fontWeight: 500 }}>
               La IA está identificando insumos, cantidades y precios
             </p>
+          </div>
+        </div>
+      )}
+      {eliminarCompra && (
+        <div className="mn-modal-overlay" onClick={() => setEliminarCompra(null)}>
+          <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
+            <p>¿Eliminar la compra N.º {eliminarCompra.id}? Se revertirá el stock de sus insumos. Esta acción no se puede deshacer.</p>
+            <div className="mn-modal-actions">
+              <button type="button" className="mn-btn-cancel" onClick={() => setEliminarCompra(null)}>Cancelar</button>
+              <button type="button" className="mn-btn-confirm" onClick={confirmarEliminarCompra}>Sí, eliminar</button>
+            </div>
           </div>
         </div>
       )}
