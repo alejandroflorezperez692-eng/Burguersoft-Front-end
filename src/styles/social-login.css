@@ -31,6 +31,18 @@
   box-shadow: 0 4px 16px rgba(232, 130, 26, 0.25);
 }
 
+body:not(.dark-mode) .btn-social:hover {
+  background: #E8821A;
+  background-color: #E8821A;
+  border-color: #E8821A;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(232, 130, 26, 0.45);
+}
+
+body:not(.dark-mode) .btn-social:hover span {
+  color: #ffffff;
+}
+
 .btn-social:active {
   transform: scale(0.98);
 }
@@ -51,12 +63,18 @@
 body.dark-mode .btn-social {
   background: #000;
   color: #fff;
-  border-color: rgba(232, 130, 26, 0.5);
+  border-color: #E8821A;
 }
 
 body.dark-mode .btn-social:hover {
-  background: #1a1a1a;
-  border-color: var(--color-primario);
+  background: #E8821A;
+  background-color: #E8821A;
+  border-color: #E8821A;
+  color: #ffffff;
+}
+
+body.dark-mode .btn-social:hover span {
+  color: #ffffff;
 }
 
 .btn-social-phone {
