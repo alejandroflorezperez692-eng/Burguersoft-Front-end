@@ -1540,7 +1540,7 @@ body.dark-mode .form-group input,
 body.dark-mode .form-group select,
 body.dark-mode .form-group textarea {
   background: var(--surface-2);
-  border-color: rgba(232, 130, 26, 0.25);
+  border-color: #E8821A;
   color: var(--text-900);
 }
 
@@ -1553,7 +1553,7 @@ body.dark-mode .form-group textarea:focus {
 
 body.dark-mode .search-bar input {
   background: var(--surface);
-  border-color: var(--border);
+  border-color: #E8821A;
   color: var(--text-900);
 }
 
@@ -1661,7 +1661,7 @@ body.dark-mode .historial-columnas {
 
 body.dark-mode select {
   background: var(--surface-2);
-  border-color: var(--border);
+  border-color: #E8821A;
   color: var(--text-900);
 }
 

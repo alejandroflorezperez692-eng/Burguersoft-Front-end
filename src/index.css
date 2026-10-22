@@ -606,7 +606,7 @@ body.dark-mode .mp-panel {
 body.dark-mode .mp-panel select {
   background: #000000 !important;
   color: #ffffff !important;
-  border: 1px solid rgba(232, 130, 26, 0.22) !important;
+  border: 1.5px solid #E8821A !important;
 }
 
 body.dark-mode .mp-panel select option {
@@ -1042,7 +1042,7 @@ body.dark-mode .btn-checkout {
 body.dark-mode #registroForm .campo input,
 body.dark-mode #registroForm .custom-select-trigger,
 body.dark-mode #registroForm .custom-select-options {
-  border-color: rgba(232, 130, 26, 0.22) !important;
+  border-color: #E8821A !important;
 }
 
 body.dark-mode #registroForm .campo input:focus,
