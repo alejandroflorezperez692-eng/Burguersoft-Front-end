@@ -282,6 +282,10 @@
   color: var(--text-400);
   pointer-events: none;
 }
+.mn-search {
+  padding-left: 40px;
+  box-sizing: border-box;
+}
 
 .mn-container { display: flex; flex-direction: column; gap: 36px; }
 .mn-empty { text-align: center; padding: 60px; color: var(--text-400); }

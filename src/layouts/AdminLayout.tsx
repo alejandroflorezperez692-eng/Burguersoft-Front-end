@@ -27,7 +27,7 @@ const navItemsAdmin = [
   { to: '/compras', label: 'Compras', icono: buy },
   { to: '/gestion-marca', label: 'Marcas', icono: marca },
   { to: '/promociones', label: 'Promociones', icono: promocion },
-  { to: '/backups', label: 'Copias de seguridad', icono: engranaje },
+  { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje },
   { to: '/usuarios', label: 'Usuarios', icono: equipo },
 ];
 
