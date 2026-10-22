@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+﻿import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
@@ -182,7 +182,7 @@ export default function Registro() {
           </div>
 
           <p className="descripcion-registro">
-            Llena cada uno de los siguientes campos para tu Registro
+            Llena cada uno de los siguientes campos para tu registro
           </p>
 
           <div className="fila">
