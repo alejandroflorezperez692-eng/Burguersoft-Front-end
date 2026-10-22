@@ -299,10 +299,12 @@ const QR_RUTAS: Record<string, string> = {
 };
 
 // Datos de la cuenta que recibe el pago (para que el cliente verifique).
+// El 314 2208706 NO va aqui: ese numero solo se usa para el chat de
+// WhatsApp donde el cliente manda el comprobante.
 const CUENTA_QR: Record<string, { titular: string; llave: string }> = {
-  nequi: { titular: '314 2208706', llave: '@3115387534' },
-  daviplata: { titular: '314 2208706', llave: '@3115387534' },
-  bancolombia: { titular: '314 2208706', llave: '@3115387534' },
+  nequi: { titular: 'Flor Avella', llave: '@3115387534' },
+  daviplata: { titular: 'Flor Avella', llave: '@3115387534' },
+  bancolombia: { titular: 'Flor Avella', llave: '@3115387534' },
 };
 
 const NOMBRE_QR: Record<string, string> = {
@@ -465,6 +467,7 @@ export default function Checkout() {
     id: number | null;
     total: number;
     url: string;
+    correo: string | null;
   } | null>(null);
 
   // Mapa promoción -> productos (el backend solo acepta producto_id en el
@@ -589,7 +592,12 @@ export default function Checkout() {
       // Queda el panel de confirmacion en pantalla: si el navegador bloqueo la
       // ventana emergente, el cliente pulsa el boton y se abre igual (un clic
       // si cuenta como gesto del usuario y no lo bloquea el navegador).
-      setPedidoConfirmado({ id: idVenta, total, url: urlWsp });
+      setPedidoConfirmado({
+        id: idVenta,
+        total,
+        url: urlWsp,
+        correo: respuesta.data?.recibo_correo ?? null,
+      });
 
       if (ventanaWsp) {
         ventanaWsp.location.href = urlWsp;
@@ -692,12 +700,17 @@ export default function Checkout() {
                   Te abrimos el chat de WhatsApp del local para que envíes el comprobante de pago
                   y el detalle del pedido.
                 </p>
+                {pedidoConfirmado.correo && (
+                  <p>
+                    También enviamos tu factura en PDF a <strong>{pedidoConfirmado.correo}</strong>.
+                  </p>
+                )}
               </div>
 
               <div className="checkout-seccion">
                 <div className="checkout-form">
                   <div className="checkout-info-row">
-                    <span className="checkout-info-icon">PEDIDO</span>
+                    <span className="checkout-info-icon">🧾</span>
                     <div>
                       <strong>Pedido {pedidoConfirmado.id ? `#${pedidoConfirmado.id}` : 'registrado'}</strong>
                       <p>Total a pagar: {fmtCOP(pedidoConfirmado.total)}</p>

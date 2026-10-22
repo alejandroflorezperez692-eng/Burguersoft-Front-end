@@ -111,6 +111,26 @@ export default function VentasAdmin() {
       .catch(() => alert('No se pudo cambiar el estado.'));
   };
 
+  const verFactura = async (id: number) => {
+    const ventana = window.open('', '_blank');
+
+    try {
+      const respuesta = await apiClient.get(`/ventas/${id}/recibo.pdf`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([respuesta.data], { type: 'application/pdf' }));
+
+      if (ventana) {
+        ventana.location.href = url;
+      } else {
+        window.open(url, '_blank');
+      }
+
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      ventana?.close();
+      alert('No se pudo abrir la factura.');
+    }
+  };
+
   const selectedProd = (productos ?? []).find((p) => p?.id === productoId);
 
   return (
@@ -198,6 +218,7 @@ export default function VentasAdmin() {
               <th>Total</th>
               <th>Método</th>
               <th>Estado</th>
+              <th>Factura</th>
             </tr>
           </thead>
           <tbody>
@@ -230,10 +251,20 @@ export default function VentasAdmin() {
                     ))}
                   </select>
                 </td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn-save"
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+                    onClick={() => verFactura(v.id)}
+                  >
+                    Ver factura
+                  </button>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}
           </tbody>
         </table>
