@@ -8,6 +8,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import SocialCallback from './pages/SocialCallback';
 import Registro from './pages/Registro';
+import TerminosCondiciones from './pages/TerminosCondiciones';
+import PoliticaPrivacidad from './pages/PoliticaPrivacidad';
 import RecuperarContrasena from './pages/RecuperarContrasena';
 import VerificarCodigo from './pages/VerificarCodigo';
 import RestablecerContrasena from './pages/RestablecerContrasena';
@@ -27,6 +29,7 @@ import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
 import Accesibilidad from './components/Accesibilidad';
 import DemoAccess from './components/DemoAccess';
 import Checkout from './pages/Checkout';
+import TerminosPrivacidad from './pages/TerminosPrivacidad';
 
 function App() {
   return (
@@ -38,6 +41,7 @@ function App() {
         <Route path="/nosotros" element={<Nosotros />} />
         <Route path="/menu-publico" element={<MenuPublico />} />
         <Route path="/contactanos" element={<Contactanos />} />
+        <Route path="/terminos-y-condiciones" element={<TerminosPrivacidad />} />
         <Route path="/mis-pedidos" element={<MisPedidos />} />
         <Route path="/checkout" element={<Checkout />} />
       </Route>
@@ -45,6 +49,8 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/social-callback" element={<SocialCallback />} /> 
       <Route path="/registro" element={<Registro />} />
+<Route path="/terminos" element={<TerminosCondiciones />} />
+      <Route path="/privacidad" element={<PoliticaPrivacidad />} />
       <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
       <Route path="/verificar-codigo" element={<VerificarCodigo />} />
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />

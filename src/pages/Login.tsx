@@ -69,7 +69,7 @@ export default function Login() {
 
 
   return (
-    <AuthLayout>
+    <AuthLayout regresarA="/">
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
         {passwordCambiada && (

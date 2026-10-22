@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { isAxiosError } from 'axios';
 import { enviarCodigoRegistro, verificarCodigoRegistro } from '../api/auth';
 
@@ -248,16 +249,62 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
   const puedeReenviar = segundosReenvio <= 0 && !loadingEnviar && !exito;
 
   return (
-    <div
-      className="verify-modal-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Verificar correo electrónico"
-      onClick={() => {
-        if (!loadingVerificar && !exito) onClose();
-      }}
-    >
-      <div className="verify-modal" onClick={(e) => e.stopPropagation()}>
+    <>
+      {createPortal(
+        <>
+          {error ? (
+            <div
+              className={bloqueado ? 'error-bloqueo' : 'auth-error'}
+              role="alert"
+              style={{
+                position: 'fixed',
+                top: 16,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 2147483647,
+                maxWidth: 520,
+                width: 'calc(100% - 24px)',
+                textAlign: 'center',
+                margin: 0,
+                boxShadow: '0 10px 30px rgba(0,0,0,.25)',
+              }}
+            >
+              {error}
+            </div>
+          ) : null}
+          {info ? (
+            <div
+              className="verify-info"
+              role="status"
+              style={{
+                position: 'fixed',
+                top: 16,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 2147483647,
+                maxWidth: 520,
+                width: 'calc(100% - 24px)',
+                textAlign: 'center',
+                margin: 0,
+                boxShadow: '0 10px 30px rgba(0,0,0,.25)',
+              }}
+            >
+              {info}
+            </div>
+          ) : null}
+        </>,
+        document.body
+      )}
+      <div
+        className="verify-modal-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Verificar correo electrónico"
+        onClick={() => {
+          if (!loadingVerificar && !exito) onClose();
+        }}
+      >
+        <div className="verify-modal" onClick={(e) => e.stopPropagation()}>
         <button
           type="button"
           className="verify-modal-close"
@@ -288,11 +335,6 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
               : 'Enviar código'}
         </button>
 
-        {info && (
-          <p className="verify-info" role="status">
-            {info}
-          </p>
-        )}
         {modoMock && codigoMockVisible && (
           <p className="verify-mock" role="status">
             Modo prueba — tu código es: <strong>{codigoMockVisible}</strong>
@@ -300,7 +342,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
         )}
         {!codigoEnviado && !loadingEnviar && (
           <p className="otp-estado" role="status">
-            Presiona «Enviar código` para recibir el código en tu correo.
+            Presiona «Enviar código» para recibir el código en tu correo.
           </p>
         )}
 
@@ -347,12 +389,6 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
                   : ''}
         </p>
 
-        {error && (
-          <p className={bloqueado ? 'error-bloqueo' : 'auth-error'} role="alert">
-            {error}
-          </p>
-        )}
-
         <button
           type="button"
           className="btn-primario verify-btn-verificar"
@@ -385,5 +421,6 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
         </button>
       </div>
     </div>
+    </>
   );
 }
