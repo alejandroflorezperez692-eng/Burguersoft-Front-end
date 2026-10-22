@@ -24,6 +24,7 @@ import PromocionesAdmin from './pages/admin/PromocionesAdmin';
 import VentasAdmin from './pages/admin/VentasAdmin';
 import BackupsAdmin from './pages/admin/BackupsAdmin';
 import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
+import AyudaAdmin from './pages/admin/AyudaAdmin';
 import Accesibilidad from './components/Accesibilidad';
 import DemoAccess from './components/DemoAccess';
 import Checkout from './pages/Checkout';
@@ -64,6 +65,7 @@ function App() {
           {/* Ruta anterior en ingles: se redirige para no romper enlaces guardados */}
           <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />
           <Route path="/usuarios" element={<UsuariosAdmin />} />
+          <Route path="/ayuda" element={<AyudaAdmin />} />
           <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
         </Route>
       </Route>

@@ -62,7 +62,7 @@ export default function UsuariosAdmin() {
 
   const total = items.length;
   const admins = items.filter((u) => u.rol?.nombre === 'Administrador').length;
-  const activos = items.filter((u) => u.estado === 'Activo').length;
+  const activos = items.filter((u) => String(u.estado).toLowerCase() === 'activo').length;
 
   const openEdit = (u: Usuario) => {
     setSel(u);
@@ -87,7 +87,8 @@ export default function UsuariosAdmin() {
 
   const del = async (id: number) => {
     const u = items.find((x) => x.id === id);
-    if (!confirm(`¿Eliminar a "${u?.nombre} ${u?.apellido ?? ''}"?`)) return;
+    const nombre = u ? `${u.nombre} ${u.apellido ?? ''}` : 'este usuario';
+    if (!confirm(`¿Eliminar a "${nombre}"?`)) return;
     try {
       await apiClient.delete(`/usuarios/${id}`);
       showToast('Usuario eliminado');
