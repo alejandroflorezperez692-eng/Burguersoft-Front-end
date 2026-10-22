@@ -606,18 +606,52 @@ body.dark-mode .sidebar-header .logo-oscuro {
 }
 
 .btn-icon-edit:hover {
-  background: #2563eb;
+  background: #2d89ef;
   color: #fff;
 }
 
 .btn-icon-del {
-  background: #ef4444;
+  background: #C8382A;
   color: #fff;
 }
 
 .btn-icon-del:hover {
   background: #dc2626;
   color: #fff;
+}
+
+.btn-icon-restore {
+  background: #10b981;
+  color: #fff;
+}
+
+.btn-icon-restore:hover {
+  background: #059669;
+  color: #fff;
+}
+
+/* Botones de accion con texto: ancho uniforme para alinear la columna */
+.btn-accion {
+  min-width: 100px;
+  justify-content: center;
+}
+
+/* Encabezado de la columna de acciones, alineado con los botones */
+.data-table thead th.th-acciones {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.data-table tbody td.td-acciones {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-icon:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-icon-cancel {

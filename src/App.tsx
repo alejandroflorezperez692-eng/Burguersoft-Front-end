@@ -60,7 +60,9 @@ function App() {
           <Route path="/compras" element={<ComprasAdmin />} />
           <Route path="/gestion-marca" element={<MarcasAdmin />} />
           <Route path="/promociones" element={<PromocionesAdmin />} />
-          <Route path="/backups" element={<BackupsAdmin />} />
+          <Route path="/copias-de-seguridad" element={<BackupsAdmin />} />
+          {/* Ruta anterior en ingles: se redirige para no romper enlaces guardados */}
+          <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />
           <Route path="/usuarios" element={<UsuariosAdmin />} />
           <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
         </Route>
