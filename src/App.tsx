@@ -33,6 +33,7 @@ import Checkout from './pages/Checkout';
 import { ConAsistenteCliente } from './components/AsistenteCliente';
 import CierreInventarioAdmin from './pages/admin/CierreInventarioAdmin';
 import TerminosPrivacidad from './pages/TerminosPrivacidad';
+import Ayuda from './pages/admin/Ayuda';
 
 
 function App() {
@@ -68,6 +69,7 @@ function App() {
       <Route path="/verificar-codigo" element={<VerificarCodigo />} />
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
       <Route path="/social-callback" element={<SocialCallback />} />
+      <Route path="/ayuda" element={<Ayuda />} />
 
       <Route element={<ProtectedRoute roles={['admin']} redirect="/" />}>
         <Route element={<AdminLayout />}>

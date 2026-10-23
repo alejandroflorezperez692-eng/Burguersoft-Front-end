@@ -516,7 +516,7 @@ body.dark-mode .btn-secundario:active {
   width: 100%;
   padding: 36px 40px 30px;
   text-align: center;
-  border-bottom: 2px solid var(--color-primario);
+  border-bottom: 1.5px solid var(--color-primario);
 }
 
 .encabezado::after {
@@ -1274,7 +1274,7 @@ body.dark-mode .contenedor-registro {
 
 body.dark-mode .encabezado {
   background: #000000;
-  border-bottom: 2px solid var(--color-primario);
+  border-bottom: 1.5px solid var(--color-primario);
 }
 
 body.dark-mode .encabezado p {
