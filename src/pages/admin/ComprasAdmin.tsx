@@ -28,7 +28,7 @@ interface Compra {
   eliminable_hasta?: string | null;
 }
 
-interface MateriaPrima { id: number; nombre: string; valor: number; }
+  interface MateriaPrima { id: number; nombre: string; valor: number; tipo?: string | null; unidad_medida?: string | null; }
 interface Marca { id: number; nombre: string; }
 
 interface Linea {
@@ -274,6 +274,8 @@ export default function ComprasAdmin() {
     return () => window.removeEventListener('keydown', onKey);
   }, [modalDetalle]);
 
+  useEffect(() => { setDiasVisibles(5); }, [q]);
+
   const filtered = items.filter((c) =>
     String(c.id).includes(q) || c.metodo_pago.toLowerCase().includes(q.toLowerCase())
   );
@@ -324,6 +326,17 @@ export default function ComprasAdmin() {
   const total = lineas.reduce((a, l) => a + (Number(l.precio_unitario) || 0), 0);
   const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); setEditId(null); };
 
+  /** Abre el formulario en blanco para registrar una compra nueva. */
+  const abrirNuevo = () => {
+    if (showForm) { cerrarForm(); return; }
+    setEditId(null);
+    setMetodoPago('');
+    setFechaIA('');
+    setAviso(null);
+    setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+    setShowForm(true);
+  };
+
   /** Carga una compra existente en el formulario para modificarla (solo dentro de las 5 horas). */
   const abrirEditar = (c: Compra) => {
     setEditId(c.id);
@@ -365,7 +378,7 @@ export default function ComprasAdmin() {
       setMostrarDictado(false);
       setTextoDictado('');
 
-      const partes = ['Compra interpretada con IA a partir de lo que dijiste. Revisa cada dato antes de registrar.'];
+      const partes = ['Compra interpretada por Burgi a partir de lo que dijiste. Revisa cada dato antes de registrar.'];
       if (data.fecha) partes.push(`Fecha: ${data.fecha.split('-').reverse().join('/')}.`);
       if (data.observaciones) partes.push(data.observaciones);
       setAviso({ texto: partes.join(' '), alerta: !!data.observaciones });
@@ -426,14 +439,14 @@ const escanear = async (archivo: File) => {
     setFechaIA(data.fecha ?? '');
     setShowForm(true);
 
-    const partes = ['Factura leída con IA. Revisa cada dato antes de registrar.'];
+    const partes = ['Factura leída por Burgi. Revisa cada dato antes de registrar.'];
     if (data.fecha) partes.push(`Fecha de la factura: ${data.fecha.split('-').reverse().join('/')}.`);
     if (data.cuadra === false && data.total_factura) {
       partes.push(`El total de la factura ($${data.total_factura.toLocaleString('es-CO')}) no coincide con la suma de los insumos ($${data.suma_items.toLocaleString('es-CO')}): puede ser IVA, un descuento o una línea mal leída.`);
     }
     if (data.observaciones) partes.push(data.observaciones);
     setAviso({ texto: partes.join(' '), alerta: data.cuadra === false || !!data.observaciones });
-    showToast('Factura leída: revisa los datos y registra');
+    showToast('Factura leída por Burgi: revisa los datos y registra');
   } catch (e) {
     const err = e as { response?: { data?: { message?: string } } };
     showToast(err?.response?.data?.message || 'No se pudo leer la factura', true);
@@ -451,7 +464,7 @@ const save = () => {
     if (!(Number(l.cantidad) > 0)) { showToast(`${n}: escribe la cantidad`, true); return; }
     if (l.materia_prima_id === null && !l.unidad_medida.trim()) { showToast(`${n}: selecciona la unidad de medida`, true); return; }
     if (!(Number(l.precio_unitario) > 0)) { showToast(`${n}: escribe el precio total`, true); return; }
-    if (!l.marca_id) { showToast(`${n}: selecciona el proveedor`, true); return; }
+    if (!l.marca_id) { showToast(`${n}: selecciona la marca`, true); return; }
   }
 
   const hoy = new Date();
@@ -499,7 +512,7 @@ const save = () => {
     if (!c) return;
     setEliminarCompra(null);
     apiClient.delete(`/compras/${c.id}`)
-      .then(() => { showToast('Compra eliminada y stock revertido'); load(); })
+      .then(() => { showToast('Compra eliminada y cantidad revertida de Materia Prima'); load(); })
       .catch((e) => {
         showToast(e?.response?.data?.message || 'No se pudo eliminar la compra', true);
         load();
@@ -544,7 +557,7 @@ const save = () => {
           >
             Dictar compra
           </button>
-          <button className="btn-primary" onClick={() => (showForm ? cerrarForm() : setShowForm(true))}>
+          <button className="btn-primary" onClick={abrirNuevo}>
             {showForm ? 'Cancelar' : '+ Nueva compra'}
           </button>
           <input
@@ -669,6 +682,16 @@ const save = () => {
                 </div>
               )}
 
+              {editId && l.materia_prima_id !== null && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Tipo <span style={{ opacity: 0.6, fontWeight: 500 }}>(del insumo)</span></label>
+                  <input
+                    disabled
+                    value={materias.find((x) => x.id === l.materia_prima_id)?.tipo || ''}
+                  />
+                </div>
+              )}
+
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Cantidad <span className="mn-req">*</span></label>
@@ -682,13 +705,23 @@ const save = () => {
                 </div>
               )}
 
+              {editId && l.materia_prima_id !== null && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Unidad <span style={{ opacity: 0.6, fontWeight: 500 }}>(del insumo)</span></label>
+                  <input
+                    disabled
+                    value={materias.find((x) => x.id === l.materia_prima_id)?.unidad_medida || ''}
+                  />
+                </div>
+              )}
+
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Precio total <span className="mn-req">*</span></label>
                 <input type="text" inputMode="numeric" placeholder="$ 0" value={miles(l.precio_unitario)} onChange={(e) => updateLinea(i, 'precio_unitario', soloDigitos(e.target.value))} />
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Proveedor <span className="mn-req">*</span></label>
+                <label>Marca <span className="mn-req">*</span></label>
                 <select value={l.marca_id} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
                   <option value={0}>Seleccionar...</option>
                   {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
@@ -794,11 +827,18 @@ const save = () => {
     </table>
   </div>
 
-    {grupos.length > diasVisibles && (
-    <div style={{ textAlign: 'center', marginTop: 18 }}>
-      <button className="btn-primary" onClick={() => setDiasVisibles(diasVisibles + 5)}>
-        Ver más días ({grupos.length - diasVisibles} restantes)
-      </button>
+    {(grupos.length > diasVisibles || diasVisibles > 5) && (
+    <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 16 }}>
+      {grupos.length > diasVisibles && (
+        <button className="btn-primary" onClick={() => setDiasVisibles(diasVisibles + 5)}>
+          Mostrar más ({grupos.length - diasVisibles} de {grupos.length})
+        </button>
+      )}
+      {diasVisibles > 5 && (
+        <button className="btn-primary" onClick={() => setDiasVisibles(5)}>
+          Mostrar menos
+        </button>
+      )}
     </div>
   )}
 </>
@@ -832,7 +872,7 @@ const save = () => {
                   <div style={{ minWidth: 540 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '10px 18px', background: 'var(--surface-2)' }}>
                       <span style={etiquetaCol}>Insumo</span>
-                      <span style={etiquetaCol}>Proveedor</span>
+                      <span style={etiquetaCol}>Marca</span>
                       <span style={etiquetaCol}>Cant.</span>
                       <span style={etiquetaCol}>Precio unit.</span>
                       <span style={{ ...etiquetaCol, textAlign: 'right' }}>Subtotal</span>
@@ -898,7 +938,7 @@ const save = () => {
               <span style={{ animation: 'iaDots 1.2s .4s infinite' }}>.</span>
             </p>
             <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--text-400)', fontWeight: 500 }}>
-              La IA está identificando insumos, cantidades y precios
+              Burgi está identificando insumos, cantidades y precios
             </p>
           </div>
         </div>
@@ -906,7 +946,7 @@ const save = () => {
       {eliminarCompra && (
         <div className="mn-modal-overlay" onClick={() => setEliminarCompra(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
-            <p>¿Eliminar la compra N.º {eliminarCompra.id}? Se revertirá el stock de sus insumos. Esta acción no se puede deshacer.</p>
+            <p>¿Eliminar la compra N.º {eliminarCompra.id}? Se descontará de Materia Prima lo que sumó. Esta acción no se puede deshacer.</p>
             <div className="mn-modal-actions">
               <button type="button" className="mn-btn-cancel" onClick={() => setEliminarCompra(null)}>Cancelar</button>
               <button type="button" className="mn-btn-confirm" onClick={confirmarEliminarCompra}>Sí, eliminar</button>

@@ -17,7 +17,7 @@ interface AvisoEmergente {
 }
 
 const CLAVE_LEIDAS = 'notificaciones_leidas';
-const CADA_MS = 60_000;
+const CADA_MS = 180_000; // cada 3 minutos
 const DURACION_AVISO = 3000; // el aviso se queda 3 segundos
 const DURACION_SALIDA = 300; // animación de subida
 
@@ -156,7 +156,16 @@ export default function NotificacionesBoton() {
     [cerrarAviso, sacudirCampana],
   );
 
-  const cargar = useCallback(() => {
+  // Evita peticiones duplicadas: una sola en vuelo y, salvo que se fuerce, mínimo 10 s entre cargas
+  const enCurso = useRef(false);
+  const ultimaCarga = useRef(0);
+
+  const cargar = useCallback((forzar = false) => {
+    if (enCurso.current) return;
+    if (!forzar && Date.now() - ultimaCarga.current < 10_000) return;
+    enCurso.current = true;
+    ultimaCarga.current = Date.now();
+
     apiClient
       .get<{ alertas: Alerta[] }>('/alertas')
       .then(({ data }) => {
@@ -184,7 +193,10 @@ export default function NotificacionesBoton() {
 
         if (nuevas.length > 0) mostrarAviso(nuevas);
       })
-      .catch(() => setAlertas([]));
+      .catch(() => setAlertas([]))
+      .finally(() => {
+        enCurso.current = false;
+      });
   }, [mostrarAviso]);
 
   const cargarRef = useRef(cargar);
@@ -193,28 +205,35 @@ export default function NotificacionesBoton() {
   }, [cargar]);
 
   useEffect(() => {
-    const ejecutar = () => cargarRef.current();
-    ejecutar();
-    const id = setInterval(ejecutar, CADA_MS);
-
-    const alVolver = () => {
-      if (!document.hidden) ejecutar();
+    let ultima = 0;
+    const ejecutar = () => {
+      ultima = Date.now();
+      cargarRef.current();
     };
-    window.addEventListener('focus', alVolver);
+    ejecutar();
+    // Con la pestaña oculta no se consulta nada
+    const id = setInterval(() => {
+      if (!document.hidden) ejecutar();
+    }, CADA_MS);
+
+    // Al volver a la pestaña solo se consulta si pasó más de 1 minuto desde la última vez
+    const alVolver = () => {
+      if (!document.hidden && Date.now() - ultima > 60_000) ejecutar();
+    };
     document.addEventListener('visibilitychange', alVolver);
 
     return () => {
       clearInterval(id);
-      window.removeEventListener('focus', alVolver);
       document.removeEventListener('visibilitychange', alVolver);
     };
   }, []);
 
   // Aviso en vivo por websocket: cuando el backend avisa por Reverb, recargamos al instante.
   useEffect(() => {
-    const canal = conectarAlertas(cargar);
+    const alEvento = () => cargar(true);
+    const canal = conectarAlertas(alEvento);
     return () => {
-      if (canal) desconectarAlertas(canal, cargar);
+      if (canal) desconectarAlertas(canal, alEvento);
     };
   }, [cargar]);
 

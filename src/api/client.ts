@@ -16,4 +16,20 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const token = localStorage.getItem('token');
+    const esLogin = error.config?.url?.includes('/login');
+    const esDemo = token === 'demo-token-sin-backend';
+
+    if (error.response?.status === 401 && token && !esLogin && !esDemo) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default apiClient;
