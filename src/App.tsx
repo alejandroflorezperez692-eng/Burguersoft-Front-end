@@ -30,6 +30,7 @@ import Accesibilidad from './components/Accesibilidad';
 import DemoAccess from './components/DemoAccess';
 import Checkout from './pages/Checkout';
 import TerminosPrivacidad from './pages/TerminosPrivacidad';
+import Ayuda from './pages/admin/Ayuda';
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
       <Route path="/verificar-codigo" element={<VerificarCodigo />} />
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
       <Route path="/social-callback" element={<SocialCallback />} />
+      <Route path="/ayuda" element={<Ayuda />} />
 
       <Route element={<ProtectedRoute roles={['admin']} redirect="/" />}>
         <Route element={<AdminLayout />}>
