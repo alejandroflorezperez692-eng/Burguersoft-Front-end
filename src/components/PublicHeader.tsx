@@ -13,6 +13,7 @@ const enlaces = [
   { to: '/nosotros', label: 'Nosotros', end: false },
   { to: '/menu-publico', label: 'Menú', end: false },
   { to: '/contactanos', label: 'Contáctanos', end: false },
+  { to: '/ayuda', label: 'Ayuda', end: false },
 ];
 
 export default function PublicHeader() {
