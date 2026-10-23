@@ -207,7 +207,7 @@ export default function UsuariosAdmin() {
                 <option value="">Seleccionar rol...</option>
                 <option value="Administrador">Administrador</option>
                 <option value="Cajero">Cajero</option>
-                <option value="Mesero">Mesero</option>
+                <option value="Cocinero">Cocinero</option>
                 <option value="Cliente">Cliente</option>
               </select>
             </div>
