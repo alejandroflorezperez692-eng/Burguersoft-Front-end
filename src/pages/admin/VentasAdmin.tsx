@@ -482,13 +482,13 @@ export default function VentasAdmin() {
                 <td style={{ fontWeight: 600 }}>{nombreCliente(v) || '—'}</td>
                 <td>
                   <div className="venta-detalles">
-                    {(v?.detalles ?? []).map((d) => (
-                      <span key={d?.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
+                    {(v?.detalles ?? []).map((d, i) => (
+                      <span key={`${d?.id}-${i}`} style={{ fontSize: 12, color: 'var(--text-600)' }}>
                         {d?.producto?.nombre ?? 'Producto'} x{d?.cantidad ?? 0}
                       </span>
                     ))}
-                    {(v?.promociones ?? []).map((p) => (
-                      <span key={p?.id} className="badge badge-info" style={{ fontSize: 10 }}>{p?.nombre}</span>
+                    {(v?.promociones ?? []).map((p, i) => (
+                      <span key={`${p?.id}-${i}`} className="badge badge-info" style={{ fontSize: 10 }}>{p?.nombre}</span>
                     ))}
                   </div>
                 </td>
