@@ -626,22 +626,24 @@ body.dark-mode .sidebar-header .logo-oscuro {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
   border: none;
   border-radius: var(--r-sm);
   cursor: pointer;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
   transition: all 0.18s var(--ease);
+  white-space: nowrap;
+  padding: 6px 12px;
 }
 
 .btn-icon:hover {
-  transform: scale(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(232, 130, 26, 0.35);
 }
 
 .btn-icon-edit {
-  background: #dbeafe;
-  color: #1a3f7e;
+  background: #3b82f6;
+  color: #fff;
 }
 
 .btn-icon-edit:hover {
@@ -650,13 +652,47 @@ body.dark-mode .sidebar-header .logo-oscuro {
 }
 
 .btn-icon-del {
-  background: #fde8e8;
-  color: #922;
+  background: #C8382A;
+  color: #fff;
 }
 
 .btn-icon-del:hover {
-  background: var(--danger);
+  background: #dc2626;
   color: #fff;
+}
+
+.btn-icon-restore {
+  background: #10b981;
+  color: #fff;
+}
+
+.btn-icon-restore:hover {
+  background: #059669;
+  color: #fff;
+}
+
+/* Botones de accion con texto: ancho uniforme para alinear la columna */
+.btn-accion {
+  min-width: 100px;
+  justify-content: center;
+}
+
+/* Encabezado de la columna de acciones, alineado con los botones */
+.data-table thead th.th-acciones {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.data-table tbody td.td-acciones {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-icon:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .btn-icon-cancel {
@@ -1581,7 +1617,7 @@ body.dark-mode .form-group input,
 body.dark-mode .form-group select,
 body.dark-mode .form-group textarea {
   background: var(--surface-2);
-  border-color: rgba(232, 130, 26, 0.25);
+  border-color: #E8821A;
   color: var(--text-900);
 }
 
@@ -1594,7 +1630,7 @@ body.dark-mode .form-group textarea:focus {
 
 body.dark-mode .search-bar input {
   background: var(--surface);
-  border-color: var(--border);
+  border-color: #E8821A;
   color: var(--text-900);
 }
 
@@ -1702,7 +1738,7 @@ body.dark-mode .historial-columnas {
 
 body.dark-mode select {
   background: var(--surface-2);
-  border-color: var(--border);
+  border-color: #E8821A;
   color: var(--text-900);
 }
 

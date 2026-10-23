@@ -24,6 +24,15 @@ function formatCOP(valor: number): string {
   return `$${valor.toLocaleString('es-CO')}`;
 }
 
+function formatFecha(fecha?: string | null): string {
+  if (!fecha) return '';
+  const soloFecha = String(fecha).slice(0, 10);
+  const partes = soloFecha.split('-');
+  if (partes.length !== 3 || partes[0].length !== 4) return String(fecha);
+  const [anio, mes, dia] = partes;
+  return `${dia}/${mes}/${anio}`;
+}
+
 export default function Home() {
   const [promos, setPromos] = useState<Promocion[] | null>(null);
   const { isAuthenticated } = useAuth();
@@ -59,14 +68,14 @@ export default function Home() {
       <HeroCarousel />
 
       <section className="promociones">
-        <h2>BURGUERSOFT</h2>
+        <h2>Combos</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
         {promos === null ? (
-          <AdminLoading texto="Cargando combos" subtexto="Preparando las mejores promociones" />
+          <AdminLoading texto="Cargando combos" subtexto="Preparando los mejores combos" />
         ) : (
           <div className="grid-promociones">
             {activas.length === 0 ? (
-              <p className="promo-vacio">No hay promociones activas en este momento.</p>
+              <p className="promo-vacio">No hay combos disponibles en este momento.</p>
             ) : (
               activas.map((promo) => (
                 <div className="promo-card-pub" key={promo.id}>
@@ -85,8 +94,8 @@ export default function Home() {
                     {promo.descripcion && <p>{promo.descripcion}</p>}
                     {(promo.fecha_inicio || promo.fecha_fin) && (
                       <div className="promo-fechas">
-                        {promo.fecha_inicio && <>Desde {promo.fecha_inicio}</>}
-                        {promo.fecha_fin && <> hasta {promo.fecha_fin}</>}
+                        {promo.fecha_inicio && <>Desde {formatFecha(promo.fecha_inicio)}</>}
+                        {promo.fecha_fin && <> hasta {formatFecha(promo.fecha_fin)}</>}
                       </div>
                     )}
                     <div className="promo-footer-pub">

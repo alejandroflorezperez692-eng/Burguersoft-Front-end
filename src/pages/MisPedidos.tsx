@@ -46,15 +46,14 @@ const ORDEN_GLOBAL = [
 function normalizarTipoEntrega(tipo?: string): string {
   const t = (tipo ?? '').trim().toLowerCase();
   if (t.includes('domi')) return 'Domicilio';
-  if (t.includes('recog')) return 'Recoger';
-  if (t.includes('consum') || t.includes('local') || t.includes('mesa')) return 'Consumir en local';
-  return 'Recoger';
+  if (t.includes('recog') || t.includes('llevar')) return 'Para recoger';
+  return 'En restaurante';
 }
 
 function pasosPara(tipoEntrega: string): string[] {
   const t = normalizarTipoEntrega(tipoEntrega);
   if (t === 'Domicilio') return PASOS_DOMICILIO;
-  if (t === 'Recoger') return PASOS_RECOGER;
+  if (t === 'Para recoger') return PASOS_RECOGER;
   return PASOS_CONSUMIR;
 }
 
@@ -414,7 +413,7 @@ export default function MisPedidos() {
         </div>
 
         {pedidos === null ? (
-          <p style={{ textAlign: 'center', color: '#888' }}>Cargando...</p>
+          <p style={{ textAlign: 'center', color: '#888' }}>Cargando…</p>
         ) : pedidos.length === 0 ? (
           <div className="pedidos-empty">
             <p>Aún no tienes pedidos registrados.</p>

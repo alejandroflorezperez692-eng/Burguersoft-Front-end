@@ -25,15 +25,15 @@ export default function Footer() {
         <div className="footer-section">
           <h4>Horarios de atención</h4>
           <ul className="footer-horarios">
-            <li><span>Lunes – Viernes:</span> <span>3:30 PM – 10:00 PM</span></li>
-            <li><span>Sábado:</span> <span>3:00 PM – 11:00 PM</span></li>
-            <li><span>Domingo:</span> <span>3:00 PM – 10:00 PM</span></li>
+            <li><span>Lunes – Viernes:</span> <span>3:30 p. m. – 10:00 p. m.</span></li>
+            <li><span>Sábado:</span> <span>3:00 p. m. – 11:00 p. m.</span></li>
+            <li><span>Domingo:</span> <span>3:00 p. m. – 10:00 p. m.</span></li>
           </ul>
         </div>
       </div>
 
       <div className="footer-bottom">
-        <p>&copy; 2026 BURGUERSOFT - EL ORIENTE. Todos los derechos reservados.</p>
+        <p>&copy; 2026 BURGUERSOFT – EL ORIENTE. Todos los derechos reservados.</p>
       </div>
     </footer>
   );

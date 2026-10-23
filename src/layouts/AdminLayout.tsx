@@ -29,7 +29,7 @@ const navItemsAdmin = [
   { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas },
   { to: '/gestion-marca', label: 'Marcas', icono: marca },
   { to: '/promociones', label: 'Promociones', icono: promocion },
-  { to: '/backups', label: 'Copias de seguridad', icono: engranaje },
+  { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje },
   { to: '/usuarios', label: 'Usuarios', icono: equipo },
 ];
 

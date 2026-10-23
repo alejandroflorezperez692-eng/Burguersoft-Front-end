@@ -13,12 +13,6 @@ interface Usuario {
   rol: { nombre: string } | null;
 }
 
-type FiltroEstado = 'todos' | 'Activo' | 'Inactivo' | 'Suspendido';
-type FiltroRol = 'todos' | string;
-
-const ESTADOS: FiltroEstado[] = ['todos', 'Activo', 'Inactivo', 'Suspendido'];
-const ROLES = ['todos', 'Administrador', 'Cajero', 'Mesero', 'Cliente'];
-
 const badgeClass = (e: string) =>
   e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
 
@@ -39,8 +33,6 @@ function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string
 export default function UsuariosAdmin() {
   const [items, setItems] = useState<Usuario[]>([]);
   const [q, setQ] = useState('');
-  const [fEstado, setFEstado] = useState<FiltroEstado>('todos');
-  const [fRol, setFRol] = useState<FiltroRol>('todos');
   const [modal, setModal] = useState(false);
   const [sel, setSel] = useState<Usuario | null>(null);
   const [rol, setRol] = useState('');
@@ -62,11 +54,11 @@ export default function UsuariosAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = items.filter((u) =>
-    (fEstado === 'todos' || u.estado === fEstado) &&
-    (fRol === 'todos' || u.rol?.nombre === fRol) &&
-    `${u.nombre} ${u.apellido} ${u.correo} ${u.telefono ?? ''}`.toLowerCase().includes(q.toLowerCase())
-  );
+  const filtered = items
+    .filter((u) =>
+      `${u.nombre} ${u.apellido} ${u.correo} ${u.telefono ?? ''}`.toLowerCase().includes(q.toLowerCase())
+    )
+    .sort((a, b) => a.id - b.id);
 
   const total = items.length;
   const admins = items.filter((u) => u.rol?.nombre === 'Administrador').length;
@@ -129,21 +121,13 @@ export default function UsuariosAdmin() {
         </div>
       </div>
 
-      <div className="search-bar">
-        <input placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => setQ(e.target.value)} />
-        <div className="filter-chips" style={{ flexBasis: '100%', marginBottom: 0 }}>
-          {ESTADOS.map((e) => (
-            <button key={e} className={`chip-filtro${fEstado === e ? ' active' : ''}`} onClick={() => setFEstado(e)}>
-              {e === 'todos' ? 'Todos los estados' : e}
-            </button>
-          ))}
-          <span style={{ width: 1, alignSelf: 'stretch', background: 'var(--border)' }} />
-          {ROLES.map((r) => (
-            <button key={r} className={`chip-filtro${fRol === r ? ' active' : ''}`} onClick={() => setFRol(r)}>
-              {r === 'todos' ? 'Todos los roles' : r}
-            </button>
-          ))}
-        </div>
+      <div className="search-bar" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, minWidth: 220, padding: '11px 16px' }} />
       </div>
 
       <div className="meta-bar">
@@ -163,30 +147,32 @@ export default function UsuariosAdmin() {
                 <th>Teléfono</th>
                 <th>Estado</th>
                 <th>Rol</th>
-                <th>Acciones</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>
             {filtered.map((u) => (
-              <tr key={u.id}>
-                <td>{u.id}</td>
+              <tr key={u.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}>
+                <td style={{ fontWeight: 600, color: 'var(--text-600)' }}>{u.id}</td>
                 <td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <Avatar nombre={u.nombre} apellido={u.apellido} estado={u.estado} />
-                    <span style={{ fontWeight: 600 }}>{u.nombre} {u.apellido}</span>
+                    <span>{u.nombre} {u.apellido}</span>
                   </div>
                 </td>
                 <td>{u.correo}</td>
                 <td>{u.telefono || '—'}</td>
                 <td><span className={`badge ${badgeClass(u.estado)}`}>{u.estado}</span></td>
                 <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
-                <td>
-                  <button className="btn-icon btn-icon-edit" onClick={() => openEdit(u)} title="Editar">✏</button>
-                  <button className="btn-icon btn-icon-del" onClick={() => del(u.id)} title="Eliminar" style={{ marginLeft: 6 }}>🗑</button>
+                <td className="td-acciones">
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                    <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar">Editar</button>
+                    <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar">Eliminar</button>
+                  </div>
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && (
+            {(filtered.length === 0 && (items.length > 0)) && (
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron usuarios</td></tr>
             )}
           </tbody>

@@ -1,9 +1,21 @@
+import { useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
 import HeroCarousel from '../components/HeroCarousel';
 import Footer from '../components/Footer';
-import localImg from '../assets/img/Local.png';
+import nosotrosImg1 from '../assets/img/nosotros-1.png';
+import nosotrosImg2 from '../assets/img/nosotros-2.png';
+
+const IMAGENES_NOSOTROS = [nosotrosImg1, nosotrosImg2];
 
 export default function Nosotros() {
+  const [indice, setIndice] = useState(0);
+  const total = IMAGENES_NOSOTROS.length;
+
+  useEffect(() => {
+    const t = window.setInterval(() => setIndice((i) => (i + 1) % total), 3000);
+    return () => window.clearInterval(t);
+  }, [total]);
+
   return (
     <div className="public-body">
       <PublicHeader />
@@ -18,7 +30,7 @@ export default function Nosotros() {
             tradición con Sogamoso. Desde nuestro inicio, hemos trabajado con
             pasión para ofrecer hamburguesas, salchipapas y mucho más,
             preparados con ingredientes frescos y un toque único que nos ha
-            convertido en el favorito de las comidas rápidas en la ciudad.
+            convertido en el favorito de la ciudad para las comidas rápidas.
           </p>
           <p>
             Somos un lugar donde la buena atención, las porciones generosas y el
@@ -28,7 +40,9 @@ export default function Nosotros() {
           <p>14 años de sabor y tradición. Calidad en cada plato, calidez en cada visita.</p>
         </div>
         <div className="nosotros-img">
-          <img src={localImg} alt="Nuestro Local" />
+          <div className="nosotros-carousel">
+            <img key={indice} src={IMAGENES_NOSOTROS[indice]} alt="Nuestro Local" />
+          </div>
         </div>
       </section>
 
@@ -39,7 +53,7 @@ export default function Nosotros() {
           deliciosos platos en un ambiente acogedor y familiar.
         </p>
         <br />
-        <p className="section-text">Calle 9 #1A-43, Barrio El Oriente</p>
+        <p className="section-text">Calle 9 # 1A-43, Barrio El Oriente</p>
         <p className="section-text">Sogamoso, Boyacá</p>
         <br />
         <p className="section-text">¡Te esperamos con el mejor sabor de la ciudad!</p>

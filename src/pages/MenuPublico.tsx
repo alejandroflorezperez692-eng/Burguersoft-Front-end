@@ -21,13 +21,20 @@ type Producto = {
 };
 
 const CATEGORIAS = [
-  'Hamburguesa', 'Perros Caliente', 'Salchipapa', 'Fritos',
-  'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
+  'Hamburguesa', 'Perros Calientes', 'Salchipapa', 'Fritos',
+  'Arepas', 'Picada', 'Bebidas Frías', 'Bebidas Calientes', 'Pizza', 'Combos',
 ];
 
+const ALIAS_CATEGORIA: Record<string, string> = {
+  'Perros Caliente': 'Perros Calientes',
+  'Bebidas Frias': 'Bebidas Frías',
+};
+
 const catNombre = (c: unknown): string => {
-  if (typeof c === 'number') return CATEGORIAS[c - 1] ?? '';
-  return (c as string | null | undefined) ?? '';
+  const nombre = typeof c === 'number'
+    ? CATEGORIAS[c - 1] ?? ''
+    : (c as string | null | undefined) ?? '';
+  return ALIAS_CATEGORIA[nombre] ?? nombre;
 };
 
 function formatCOP(valor: number): string {

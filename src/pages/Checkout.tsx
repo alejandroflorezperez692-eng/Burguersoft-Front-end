@@ -367,7 +367,7 @@ export default function Checkout() {
 
   const resumenEntrega = useMemo(() => {
     if (tipoEntrega === 'Domicilio') return 'Domicilio';
-    if (tipoEntrega === 'Para recoger') return 'Para llevar';
+    if (tipoEntrega === 'Para recoger') return 'Para recoger';
     return 'En restaurante';
   }, [tipoEntrega]);
 
@@ -503,7 +503,7 @@ export default function Checkout() {
             <span className="pago-icono pago-icono-linea">
               <IconoLinea />
             </span>
-            <span>Pago En Línea</span>
+            <span>Pago en línea</span>
           </label>
 
           <div className="checkout-subopciones">
@@ -543,7 +543,7 @@ export default function Checkout() {
           <div className="checkout-resumen-total"><span>Total</span><span>${total.toLocaleString('es-CO')}</span></div>
         </div>
         <button className="btn-pagar-ahora" onClick={pagarAhora} disabled={enviando}>
-          {enviando ? 'Procesando...' : 'Pagar ahora'}
+          {enviando ? 'Procesando…' : 'Pagar ahora'}
         </button>
       </aside>
       </div>

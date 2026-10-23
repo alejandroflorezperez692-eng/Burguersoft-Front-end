@@ -60,6 +60,6 @@ export function validarPassword(nueva: string, actual?: string): string | null {
   if (nueva.length < 8) return 'La nueva contraseña debe tener al menos 8 caracteres.';
   if (actual !== undefined && nueva === actual) return 'La nueva contraseña debe ser diferente a la actual.';
   const r = reglasPassword(nueva);
-  if (!r.mayuscula || !r.numero || !r.especial) return 'La contraseña debe tener mayúscula, número y símbolo.';
+  if (!r.mayuscula || !r.numero || !r.especial) return 'La contraseña debe tener al menos una mayúscula, un número y un símbolo.';
   return null;
 }
