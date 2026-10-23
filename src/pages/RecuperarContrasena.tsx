@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { isAxiosError } from 'axios';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
@@ -77,42 +78,46 @@ export default function RecuperarContrasena() {
   };
 
   return (
-    <AuthLayout regresarA="/login">
-      <div className="header-bar">¿TIENES PROBLEMAS?</div>
-      <div className="card">
-        <form onSubmit={handleSubmit} noValidate>
-          <div className="icono-card">
-            <img src={iconoBloqueo} alt="Imagen Bloqueo" />
+    <>
+      {createPortal(
+        bloqueado && (
+          <div className="error-bloqueo" role="alert" style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 2147483647, maxWidth: 520, width: 'calc(100% - 24px)', textAlign: 'center', margin: 0 }}>
+            {castigado ? (
+              <>
+                Pusiste 3 veces el código mal. Espera <span>{bloqueo}</span> segundo(s) para pedir otro.
+              </>
+            ) : (
+              <>Debes esperar <span>{bloqueo}</span> segundo(s) antes de intentarlo de nuevo.</>
+            )}
           </div>
-          <p className="descripcion descripcion-recuperacion">
-            Ingresa tu correo electrónico registrado para recibir el código de recuperación.
-          </p>
-          {castigado && bloqueado && (
-            <p className="error-bloqueo" role="alert">
-              Pusiste 3 veces el código mal. Espera <span>{bloqueo}</span> segundo(s) para pedir otro.
+        ),
+        document.body
+      )}
+      <AuthLayout regresarA="/login">
+        <div className="header-bar">¿TIENES PROBLEMAS?</div>
+        <div className="card">
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="icono-card">
+              <img src={iconoBloqueo} alt="Imagen Bloqueo" />
+            </div>
+            <p className="descripcion descripcion-recuperacion">
+              Ingresa tu correo electrónico registrado para recibir el código de recuperación.
             </p>
-          )}
-          <input
-            id="rec-email"
-            type="email"
-            className="input"
-            placeholder="Correo electrónico (obligatorio)"
-            value={correo}
-            onChange={(e) => setCorreo(e.target.value)}
-            required
-            disabled={bloqueado}
-          />
-          {error && (
-            <p className={bloqueado ? 'error-bloqueo' : 'auth-error'} role="alert">
-              {bloqueado ? (
-                <>
-                  Debes esperar <span>{bloqueo}</span> segundo(s) antes de intentarlo de nuevo.
-                </>
-              ) : (
-                error
-              )}
-            </p>
-          )}
+            <input
+              id="rec-email"
+              type="email"
+              className="input"
+              placeholder="Correo electrónico (obligatorio)"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+              required
+              disabled={bloqueado}
+            />
+            {error && !bloqueado && (
+              <p className="auth-error" role="alert">
+                {error}
+              </p>
+            )}
           <button type="submit" className="btn-primario" disabled={loading || bloqueado}>
             {bloqueado ? `ESPERA ${bloqueo}s` : loading ? 'ENVIANDO…' : 'Enviar código de recuperación'}
           </button>
@@ -127,6 +132,7 @@ export default function RecuperarContrasena() {
           </Link>
         </form>
       </div>
-    </AuthLayout>
+      </AuthLayout>
+    </>
   );
 }

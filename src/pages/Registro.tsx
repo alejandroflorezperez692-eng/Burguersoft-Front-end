@@ -64,6 +64,8 @@ export default function Registro() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const [errorTerminos, setErrorTerminos] = useState<string | null>(null);
 
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -138,6 +140,10 @@ export default function Registro() {
       setError('Ingrese un correo electrónico válido.');
       return;
     }
+    if (!aceptaTerminos) {
+      setErrorTerminos('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.');
+      return;
+    }
 
     // Datos válidos: abrir modal de verificación. La cuenta se crea
     // solo cuando el código del correo sea confirmado en el modal.
@@ -167,7 +173,7 @@ export default function Registro() {
   };
 
   return (
-    <AuthLayout>
+    <AuthLayout regresarA="/login">
       <form id="registroForm" onSubmit={handleSubmit} noValidate>
         <div className="contenedor-registro">
           <div className="encabezado">
@@ -370,12 +376,32 @@ export default function Registro() {
                   {mostrarConfirmPassword ? 'Ocultar' : 'Mostrar'}
                 </button>
               </div>
+              {confirmPassword && confirmPassword !== password && <p className="pwd-nomatch" style={{ fontSize: 12, marginTop: 5 }}>Las contraseñas no coinciden.</p>}
+              {confirmPassword && confirmPassword === password && password && <p className="pwd-match" style={{ fontSize: 12, marginTop: 5 }}>✓ Coinciden</p>}
             </div>
           </div>
 
           {error && (
             <p className="auth-error" role="alert" style={{ marginTop: '20px' }}>
               {error}
+            </p>
+          )}
+
+          <div style={{ marginTop: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <input
+              type="checkbox"
+              id="aceptaTerminos"
+              checked={aceptaTerminos}
+              onChange={(e) => { setAceptaTerminos(e.target.checked); if (e.target.checked) setErrorTerminos(null); }}
+              style={{ marginTop: 4 }}
+            />
+            <label htmlFor="aceptaTerminos" style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--text-700)' }}>
+              He leído y acepto los <Link to="/terminos" className="auth-legal-link" onClick={(e) => e.stopPropagation()}>Términos y Condiciones</Link> y autorizo el tratamiento de mis datos personales conforme a la <Link to="/privacidad" className="auth-legal-link" onClick={(e) => e.stopPropagation()}>Política de Privacidad</Link>.
+            </label>
+          </div>
+          {errorTerminos && (
+            <p className="auth-error" role="alert" style={{ marginTop: '8px' }}>
+              {errorTerminos}
             </p>
           )}
 
