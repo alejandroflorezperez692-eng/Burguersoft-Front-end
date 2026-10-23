@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -35,6 +36,14 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    const token = localStorage.getItem('token');
+    const esLogin = error.config?.url?.includes('/login');
+    const esDemo = token === 'demo-token-sin-backend';
+
+    if (error.response?.status === 401 && token && !esLogin && !esDemo) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
     if (error.response?.data) {
       const data = error.response.data;
       if (typeof data === 'string') {
