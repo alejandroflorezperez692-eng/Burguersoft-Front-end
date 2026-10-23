@@ -224,7 +224,11 @@ export default function AsistenteIA() {
     } catch (e) {
       const status = (e as { response?: { status?: number } })?.response?.status;
       let aviso: string;
-      if (!status) aviso = 'No hay conexión con el servidor. Verifica que el backend esté encendido.';
+      if (!status)
+        aviso =
+          'Comidas Rápidas El Oriente\n' +
+          'Cl. 9 # 1A-43, Sogamoso, Boyacá\n' +
+          '📍 Abrir en Google Maps: 5.707974, -72.920502';
       else if (status === 401) aviso = 'Tu sesión expiró. Cierra sesión y vuelve a entrar.';
       else if (status === 403) aviso = 'Esta función es solo para administradores.';
       else if (status >= 500) aviso = `El servidor tuvo un error (${status}). El detalle está en storage/logs/laravel.log del backend.`;

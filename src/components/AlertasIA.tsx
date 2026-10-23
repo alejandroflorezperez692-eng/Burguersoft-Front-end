@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import type { AxiosResponse } from 'axios';
 import apiClient from '../api/client';
 import { conectarAlertas, desconectarAlertas } from '../api/echo';
 
@@ -22,6 +23,8 @@ const COLORES = {
   baja: { barra: '#2e9e5b', fondo: 'rgba(46, 158, 91, 0.08)' },
 } as const;
 
+let peticionEnCurso: Promise<AxiosResponse<RespuestaAlertas>> | null = null;
+
 export default function AlertasIA() {
   const [datos, setDatos] = useState<RespuestaAlertas | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -37,8 +40,13 @@ export default function AlertasIA() {
 
   useEffect(() => {
     let vivo = true;
-    apiClient
-      .get<RespuestaAlertas>('/asistente/alertas')
+    // Si ya hay una petición en curso (StrictMode), se comparte en vez de repetirla
+    const peticion =
+      peticionEnCurso ??
+      (peticionEnCurso = apiClient.get<RespuestaAlertas>('/asistente/alertas').finally(() => {
+        peticionEnCurso = null;
+      }));
+    peticion
       .then(({ data }) => {
         if (vivo) setDatos(data);
       })

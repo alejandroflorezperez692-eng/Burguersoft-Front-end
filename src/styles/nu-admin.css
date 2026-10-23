@@ -282,6 +282,10 @@
   color: var(--text-400);
   pointer-events: none;
 }
+.mn-search {
+  padding-left: 40px;
+  box-sizing: border-box;
+}
 
 .mn-container { display: flex; flex-direction: column; gap: 36px; }
 .mn-empty { text-align: center; padding: 60px; color: var(--text-400); }
@@ -547,4 +551,11 @@
   background-color: #fde8e8;
   border-color: #c8382a;
   font-weight: 700;
+}
+
+body.dark-mode .mn-field input,
+body.dark-mode .mn-field select,
+body.dark-mode .mn-field textarea,
+body.dark-mode .mn-ing-row input {
+  border: 1.5px solid #E8821A;
 }

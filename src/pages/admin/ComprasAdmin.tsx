@@ -28,7 +28,7 @@ interface Compra {
   eliminable_hasta?: string | null;
 }
 
-interface MateriaPrima { id: number; nombre: string; valor: number; }
+  interface MateriaPrima { id: number; nombre: string; valor: number; tipo?: string | null; unidad_medida?: string | null; }
 interface Marca { id: number; nombre: string; }
 
 interface Linea {
@@ -232,6 +232,8 @@ export default function ComprasAdmin() {
     { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' },
   ]);
   const [modalDetalle, setModalDetalle] = useState<Compra | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
+  const [eliminarCompra, setEliminarCompra] = useState<Compra | null>(null);
   const [loading, setLoading] = useState(true);
   const cargado = useRef(false);
 
@@ -271,6 +273,8 @@ export default function ComprasAdmin() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [modalDetalle]);
+
+  useEffect(() => { setDiasVisibles(5); }, [q]);
 
   const filtered = items.filter((c) =>
     String(c.id).includes(q) || c.metodo_pago.toLowerCase().includes(q.toLowerCase())
@@ -320,7 +324,36 @@ export default function ComprasAdmin() {
 };
 
   const total = lineas.reduce((a, l) => a + (Number(l.precio_unitario) || 0), 0);
-  const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); };
+  const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); setEditId(null); };
+
+  /** Abre el formulario en blanco para registrar una compra nueva. */
+  const abrirNuevo = () => {
+    if (showForm) { cerrarForm(); return; }
+    setEditId(null);
+    setMetodoPago('');
+    setFechaIA('');
+    setAviso(null);
+    setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+    setShowForm(true);
+  };
+
+  /** Carga una compra existente en el formulario para modificarla (solo dentro de las 5 horas). */
+  const abrirEditar = (c: Compra) => {
+    setEditId(c.id);
+    setMetodoPago(c.metodo_pago);
+    setFechaIA(c.fecha.slice(0, 10));
+    setLineas((c.detalles ?? []).map((d) => ({
+      materia_prima_id: d.materia_prima_id,
+      cantidad: String(Number(d.cantidad)),
+      precio_unitario: String(Math.round(Number(d.subtotal))),
+      marca_id: d.marca_id,
+      nombre_nuevo: '',
+      tipo: '',
+      unidad_medida: '',
+    })));
+    setAviso(null);
+    setShowForm(true);
+  };
 
   const dictar = async () => {
     const texto = textoDictado.trim();
@@ -345,7 +378,7 @@ export default function ComprasAdmin() {
       setMostrarDictado(false);
       setTextoDictado('');
 
-      const partes = ['Compra interpretada con IA a partir de lo que dijiste. Revisa cada dato antes de registrar.'];
+      const partes = ['Compra interpretada por Burgi a partir de lo que dijiste. Revisa cada dato antes de registrar.'];
       if (data.fecha) partes.push(`Fecha: ${data.fecha.split('-').reverse().join('/')}.`);
       if (data.observaciones) partes.push(data.observaciones);
       setAviso({ texto: partes.join(' '), alerta: !!data.observaciones });
@@ -406,14 +439,14 @@ const escanear = async (archivo: File) => {
     setFechaIA(data.fecha ?? '');
     setShowForm(true);
 
-    const partes = ['Factura leída con IA. Revisa cada dato antes de registrar.'];
+    const partes = ['Factura leída por Burgi. Revisa cada dato antes de registrar.'];
     if (data.fecha) partes.push(`Fecha de la factura: ${data.fecha.split('-').reverse().join('/')}.`);
     if (data.cuadra === false && data.total_factura) {
       partes.push(`El total de la factura ($${data.total_factura.toLocaleString('es-CO')}) no coincide con la suma de los insumos ($${data.suma_items.toLocaleString('es-CO')}): puede ser IVA, un descuento o una línea mal leída.`);
     }
     if (data.observaciones) partes.push(data.observaciones);
     setAviso({ texto: partes.join(' '), alerta: data.cuadra === false || !!data.observaciones });
-    showToast('Factura leída: revisa los datos y registra');
+    showToast('Factura leída por Burgi: revisa los datos y registra');
   } catch (e) {
     const err = e as { response?: { data?: { message?: string } } };
     showToast(err?.response?.data?.message || 'No se pudo leer la factura', true);
@@ -431,7 +464,7 @@ const save = () => {
     if (!(Number(l.cantidad) > 0)) { showToast(`${n}: escribe la cantidad`, true); return; }
     if (l.materia_prima_id === null && !l.unidad_medida.trim()) { showToast(`${n}: selecciona la unidad de medida`, true); return; }
     if (!(Number(l.precio_unitario) > 0)) { showToast(`${n}: escribe el precio total`, true); return; }
-    if (!l.marca_id) { showToast(`${n}: selecciona el proveedor`, true); return; }
+    if (!l.marca_id) { showToast(`${n}: selecciona la marca`, true); return; }
   }
 
   const hoy = new Date();
@@ -444,21 +477,25 @@ const save = () => {
       precio_total: Number(l.precio_unitario),
       marca_id: l.marca_id,
       nombre_nuevo: l.materia_prima_id ? undefined : l.nombre_nuevo.trim(),
-      tipo: l.materia_prima_id ? undefined : l.tipo,
+      tipo: l.materia_prima_id ? undefined : (l.tipo.trim() || undefined),
       unidad_medida: l.materia_prima_id ? undefined : l.unidad_medida.trim(),
     })),
   };
-  apiClient.post('/compras', payload).then(() => {
-    showToast('Compra registrada: el stock se sumó a Materia Prima');
+  const peticion = editId
+    ? apiClient.put(`/compras/${editId}`, payload)
+    : apiClient.post('/compras', payload);
+  peticion.then(() => {
+    showToast(editId ? 'Compra modificada: el stock se recalculó' : 'Compra registrada: el stock se sumó a Materia Prima');
     setShowForm(false);
     setAviso(null);
     setFechaIA('');
+    setEditId(null);
     setMetodoPago('');
     setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
     load();
   }).catch((e) => {
     const d = e?.response?.data;
-    showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || 'No se pudo registrar la compra', true);
+    showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || (editId ? 'No se pudo modificar la compra' : 'No se pudo registrar la compra'), true);
   });
 };
 
@@ -467,13 +504,26 @@ const save = () => {
 
   const del = (c: Compra) => {
     if (!c.puede_eliminarse) { showToast(MSG_FUERA_DE_PLAZO, true); return; }
-    if (!confirm('¿Eliminar esta compra? Se revertirá el stock.')) return;
+    setEliminarCompra(c);
+  };
+
+  const confirmarEliminarCompra = () => {
+    const c = eliminarCompra;
+    if (!c) return;
+    setEliminarCompra(null);
     apiClient.delete(`/compras/${c.id}`)
-      .then(() => { showToast('Compra eliminada y stock revertido'); load(); })
+      .then(() => { showToast('Compra eliminada y cantidad revertida de Materia Prima'); load(); })
       .catch((e) => {
         showToast(e?.response?.data?.message || 'No se pudo eliminar la compra', true);
         load();
       });
+  };
+
+  /** Estilo del formulario cuando se abre como modal (Modificar). */
+  const estiloModalCompra: CSSProperties = {
+    background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '28px 32px',
+    width: 'min(820px, 94vw)', maxHeight: '90vh', overflowY: 'auto',
+    boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
   };
 
   /** Texto del botón Eliminar: hasta cuándo se puede, o por qué está bloqueado. */
@@ -507,7 +557,7 @@ const save = () => {
           >
             Dictar compra
           </button>
-          <button className="btn-primary" onClick={() => (showForm ? cerrarForm() : setShowForm(true))}>
+          <button className="btn-primary" onClick={abrirNuevo}>
             {showForm ? 'Cancelar' : '+ Nueva compra'}
           </button>
           <input
@@ -559,8 +609,9 @@ const save = () => {
       <ComprasResumen items={items} />
 
       {showForm && (
-        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>Registrar Compra</h3>
+        <div className={editId ? 'mn-modal-overlay' : undefined} onClick={editId ? cerrarForm : undefined}>
+        <div style={editId ? estiloModalCompra : { background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }} onClick={(e) => e.stopPropagation()}>
+          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>{editId ? `Modificar compra N.º ${editId}` : 'Registrar Compra'}</h3>
           {aviso && (
             <div
               style={{
@@ -615,10 +666,32 @@ const save = () => {
 
               {l.materia_prima_id === null && (
                 <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Nombre <span className="mn-req">*</span></label>
+                  <label>Nombre del insumo<span className="mn-req">*</span></label>
                   <input value={l.nombre_nuevo} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
                 </div>
               )}
+
+              {l.materia_prima_id === null && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Tipo (opcional)</label>
+                  <input
+                    placeholder="Ej: Carnes, Salsas..."
+                    value={l.tipo}
+                    onChange={(e) => updateLinea(i, 'tipo', e.target.value)}
+                  />
+                </div>
+              )}
+
+              {editId && l.materia_prima_id !== null && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Tipo <span style={{ opacity: 0.6, fontWeight: 500 }}>(del insumo)</span></label>
+                  <input
+                    disabled
+                    value={materias.find((x) => x.id === l.materia_prima_id)?.tipo || ''}
+                  />
+                </div>
+              )}
+
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Cantidad <span className="mn-req">*</span></label>
@@ -632,13 +705,23 @@ const save = () => {
                 </div>
               )}
 
+              {editId && l.materia_prima_id !== null && (
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label>Unidad <span style={{ opacity: 0.6, fontWeight: 500 }}>(del insumo)</span></label>
+                  <input
+                    disabled
+                    value={materias.find((x) => x.id === l.materia_prima_id)?.unidad_medida || ''}
+                  />
+                </div>
+              )}
+
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Precio total <span className="mn-req">*</span></label>
                 <input type="text" inputMode="numeric" placeholder="$ 0" value={miles(l.precio_unitario)} onChange={(e) => updateLinea(i, 'precio_unitario', soloDigitos(e.target.value))} />
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Proveedor <span className="mn-req">*</span></label>
+                <label>Marca <span className="mn-req">*</span></label>
                 <select value={l.marca_id} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
                   <option value={0}>Seleccionar...</option>
                   {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
@@ -656,8 +739,9 @@ const save = () => {
           </div>
           <div className="modal-actions" style={{ marginTop: 16 }}>
             <button className="btn-cancel" onClick={cerrarForm}>Cancelar</button>
-            <button className="btn-save" onClick={save}>Registrar Compra</button>
+            <button className="btn-save" onClick={save}>{editId ? 'Guardar cambios' : 'Registrar Compra'}</button>
           </div>
+        </div>
         </div>
       )}
 
@@ -712,6 +796,16 @@ const save = () => {
                     <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)}>Ver detalle</button>
                     <button
                       type="button"
+                      className="mn-btn-edit"
+                      disabled={!c.puede_eliminarse}
+                      title={c.puede_eliminarse ? 'Modificar compra' : 'Ya pasaron más de 5 horas: no se puede modificar'}
+                      style={{ flex: 'none', padding: '7px 14px', ...(c.puede_eliminarse ? {} : { opacity: 0.4, cursor: 'not-allowed' }) }}
+                      onClick={() => abrirEditar(c)}
+                    >
+                      Modificar
+                    </button>
+                    <button
+                      type="button"
                       className="mn-btn-del"
                       disabled={!c.puede_eliminarse}
                       title={ayudaEliminar(c)}
@@ -733,11 +827,18 @@ const save = () => {
     </table>
   </div>
 
-    {grupos.length > diasVisibles && (
-    <div style={{ textAlign: 'center', marginTop: 18 }}>
-      <button className="btn-primary" onClick={() => setDiasVisibles(diasVisibles + 5)}>
-        Ver más días ({grupos.length - diasVisibles} restantes)
-      </button>
+    {(grupos.length > diasVisibles || diasVisibles > 5) && (
+    <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 16 }}>
+      {grupos.length > diasVisibles && (
+        <button className="btn-primary" onClick={() => setDiasVisibles(diasVisibles + 5)}>
+          Mostrar más ({grupos.length - diasVisibles} de {grupos.length})
+        </button>
+      )}
+      {diasVisibles > 5 && (
+        <button className="btn-primary" onClick={() => setDiasVisibles(5)}>
+          Mostrar menos
+        </button>
+      )}
     </div>
   )}
 </>
@@ -771,7 +872,7 @@ const save = () => {
                   <div style={{ minWidth: 540 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '10px 18px', background: 'var(--surface-2)' }}>
                       <span style={etiquetaCol}>Insumo</span>
-                      <span style={etiquetaCol}>Proveedor</span>
+                      <span style={etiquetaCol}>Marca</span>
                       <span style={etiquetaCol}>Cant.</span>
                       <span style={etiquetaCol}>Precio unit.</span>
                       <span style={{ ...etiquetaCol, textAlign: 'right' }}>Subtotal</span>
@@ -837,8 +938,19 @@ const save = () => {
               <span style={{ animation: 'iaDots 1.2s .4s infinite' }}>.</span>
             </p>
             <p style={{ margin: '8px 0 0', fontSize: 13, color: 'var(--text-400)', fontWeight: 500 }}>
-              La IA está identificando insumos, cantidades y precios
+              Burgi está identificando insumos, cantidades y precios
             </p>
+          </div>
+        </div>
+      )}
+      {eliminarCompra && (
+        <div className="mn-modal-overlay" onClick={() => setEliminarCompra(null)}>
+          <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
+            <p>¿Eliminar la compra N.º {eliminarCompra.id}? Se descontará de Materia Prima lo que sumó. Esta acción no se puede deshacer.</p>
+            <div className="mn-modal-actions">
+              <button type="button" className="mn-btn-cancel" onClick={() => setEliminarCompra(null)}>Cancelar</button>
+              <button type="button" className="mn-btn-confirm" onClick={confirmarEliminarCompra}>Sí, eliminar</button>
+            </div>
           </div>
         </div>
       )}
