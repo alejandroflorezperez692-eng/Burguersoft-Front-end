@@ -18,7 +18,7 @@ export default function AuthLayout({ children, regresarA }: AuthLayoutProps) {
     if (regresarA) {
       navigate(regresarA);
     } else {
-      navigate(-1);
+      navigate('/');
     }
   };
 

@@ -8,6 +8,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import SocialCallback from './pages/SocialCallback';
 import Registro from './pages/Registro';
+import TerminosCondiciones from './pages/TerminosCondiciones';
+import PoliticaPrivacidad from './pages/PoliticaPrivacidad';
 import RecuperarContrasena from './pages/RecuperarContrasena';
 import VerificarCodigo from './pages/VerificarCodigo';
 import RestablecerContrasena from './pages/RestablecerContrasena';
@@ -28,6 +30,10 @@ import AyudaAdmin from './pages/admin/AyudaAdmin';
 import Accesibilidad from './components/Accesibilidad';
 import DemoAccess from './components/DemoAccess';
 import Checkout from './pages/Checkout';
+import { ConAsistenteCliente } from './components/AsistenteCliente';
+import CierreInventarioAdmin from './pages/admin/CierreInventarioAdmin';
+import TerminosPrivacidad from './pages/TerminosPrivacidad';
+
 
 function App() {
   return (
@@ -35,10 +41,20 @@ function App() {
       <DemoAccess />
       <Routes>
       <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
+
+        <Route element={<ConAsistenteCliente />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/nosotros" element={<Nosotros />} />
+          <Route path="/menu-publico" element={<MenuPublico />} />
+          <Route path="/contactanos" element={<Contactanos />} />
+          <Route path="/mis-pedidos" element={<MisPedidos />} />
+          <Route path="/checkout" element={<Checkout />} />
+        </Route>
         <Route path="/" element={<Home />} />
         <Route path="/nosotros" element={<Nosotros />} />
         <Route path="/menu-publico" element={<MenuPublico />} />
         <Route path="/contactanos" element={<Contactanos />} />
+        <Route path="/terminos-y-condiciones" element={<TerminosPrivacidad />} />
         <Route path="/mis-pedidos" element={<MisPedidos />} />
         <Route path="/checkout" element={<Checkout />} />
       </Route>
@@ -46,6 +62,8 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/social-callback" element={<SocialCallback />} /> 
       <Route path="/registro" element={<Registro />} />
+<Route path="/terminos" element={<TerminosCondiciones />} />
+      <Route path="/privacidad" element={<PoliticaPrivacidad />} />
       <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
       <Route path="/verificar-codigo" element={<VerificarCodigo />} />
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
@@ -59,6 +77,7 @@ function App() {
           <Route path="/ventas" element={<VentasAdmin />} />
           <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
           <Route path="/compras" element={<ComprasAdmin />} />
+          <Route path="/cierre-inventario" element={<CierreInventarioAdmin />} />
           <Route path="/gestion-marca" element={<MarcasAdmin />} />
           <Route path="/promociones" element={<PromocionesAdmin />} />
           <Route path="/copias-de-seguridad" element={<BackupsAdmin />} />

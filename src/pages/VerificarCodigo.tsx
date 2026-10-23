@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { isAxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
@@ -143,8 +144,24 @@ export default function VerificarCodigo() {
   };
 
   return (
-    <AuthLayout regresarA="/recuperar-contrasena">
-      <div className="header-bar">INGRESA TU CÓDIGO</div>
+    <>
+      {createPortal(
+        <>
+          {bloqueado && (
+            <div className="alerta-codigo" role="alert" style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 2147483647, maxWidth: 520, width: 'calc(100% - 24px)', textAlign: 'center', margin: 0, boxShadow: '0 10px 30px rgba(0,0,0,.25)' }}>
+              Demasiados intentos fallidos. Espera <span>{segundos}</span> segundo(s).
+            </div>
+          )}
+          {error && !bloqueado && (
+            <div className="auth-error" role="alert" style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 2147483647, maxWidth: 520, width: 'calc(100% - 24px)', textAlign: 'center', margin: 0, boxShadow: '0 10px 30px rgba(0,0,0,.25)' }}>
+              {error}
+            </div>
+          )}
+        </>,
+        document.body
+      )}
+      <AuthLayout regresarA="/recuperar-contrasena">
+        <div className="header-bar">INGRESA TU CÓDIGO</div>
       <div className="card">
         <div className="icono-card">
           <img src={iconoBloqueo} alt="Candado" />
@@ -153,17 +170,6 @@ export default function VerificarCodigo() {
           Te enviamos un código de 6 dígitos a<br />
           <strong>{correo}</strong>
         </p>
-        {error && (
-          <p className={bloqueado ? 'error-bloqueo' : 'auth-error'} role="alert">
-            {bloqueado ? (
-              <>
-                Demasiados intentos fallidos. Espera <span>{segundos}</span> segundo(s).
-              </>
-            ) : (
-              error
-            )}
-          </p>
-        )}
         <div className={`otp-sello${loading ? ' otp-sello--visible' : ''}${exito ? ' otp-sello--verificado' : ''}`} aria-hidden={!loading && !exito}>
           {exito ? (
             <svg className="otp-check" viewBox="0 0 36 36">
@@ -213,6 +219,7 @@ export default function VerificarCodigo() {
           ¿No recibiste el código? <Link to="/recuperar-contrasena">Enviar de nuevo</Link>
         </p>
       </div>
-    </AuthLayout>
+      </AuthLayout>
+    </>
   );
 }

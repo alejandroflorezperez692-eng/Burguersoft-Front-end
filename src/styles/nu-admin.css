@@ -552,3 +552,10 @@
   border-color: #c8382a;
   font-weight: 700;
 }
+
+body.dark-mode .mn-field input,
+body.dark-mode .mn-field select,
+body.dark-mode .mn-field textarea,
+body.dark-mode .mn-ing-row input {
+  border: 1.5px solid #E8821A;
+}

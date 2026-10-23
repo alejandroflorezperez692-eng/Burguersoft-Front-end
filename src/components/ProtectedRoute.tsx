@@ -10,7 +10,7 @@ type ProtectedRouteProps = {
 };
 
 function normalizarRol(rol?: string): RolNormalizado | '' {
-  const limpio = (rol ?? '')
+  const limpio = String(rol ?? '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')

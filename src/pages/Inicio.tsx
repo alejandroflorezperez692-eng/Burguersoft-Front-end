@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
+import type { AxiosResponse } from 'axios';
 import apiClient from '../api/client';
 import AdminLoading from '../components/AdminLoading';
-import AlertasInicio from '../components/AlertasInicio';
+import AlertasIA from '../components/AlertasIA';
 
 interface Movimiento {
   id: number;
@@ -45,6 +46,9 @@ function capitalizar(t: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
+type RespuestaHistorial = Movimiento[] | { data?: Movimiento[] };
+let historialEnCurso: { clave: string; promesa: Promise<AxiosResponse<RespuestaHistorial>> } | null = null;
+
 export default function Inicio() {
   const { user } = useAuth();
   const [ahora, setAhora] = useState(() => new Date());
@@ -61,8 +65,17 @@ export default function Inicio() {
   useEffect(() => {
     let vivo = true;
     setLoading(true);
-    apiClient
-      .get('/reportes/historial', { params: user?.id ? { usuario_id: user.id } : {} })
+    // Si ya hay una petición en curso (StrictMode), se comparte en vez de repetirla
+    const clave = String(user?.id ?? '');
+    if (historialEnCurso?.clave !== clave) {
+      const promesa = apiClient
+        .get<RespuestaHistorial>('/reportes/historial', { params: user?.id ? { usuario_id: user.id } : {} })
+        .finally(() => {
+          if (historialEnCurso?.promesa === promesa) historialEnCurso = null;
+        });
+      historialEnCurso = { clave, promesa };
+    }
+    historialEnCurso!.promesa
       .then(({ data }) => {
         const lista: Movimiento[] = Array.isArray(data) ? data : data?.data ?? [];
         if (vivo) setMovs(lista);
@@ -110,7 +123,7 @@ export default function Inicio() {
         </div>
       </div>
 
-      {rol !== 'Cliente' && <AlertasInicio />}
+      {rol !== 'Cliente' && <AlertasIA />}
 
       <div className="dashboard-row">
         <div className="historial-section">

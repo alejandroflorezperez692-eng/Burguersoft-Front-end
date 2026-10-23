@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import '../../styles/nu-admin.css';
 
 interface Usuario {
   id: number;
@@ -122,13 +123,13 @@ export default function UsuariosAdmin() {
         </div>
       </div>
 
-      <div className="search-bar" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1, minWidth: 220, padding: '11px 16px' }} />
+      <div className="mn-search-wrap" style={{ marginBottom: 24 }}>
+        <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
       <div className="meta-bar">
