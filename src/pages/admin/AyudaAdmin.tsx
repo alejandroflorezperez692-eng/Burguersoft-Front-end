@@ -35,7 +35,7 @@ type Pregunta = {
   respuesta: string;
 };
 
-const CORREO_SOPORTE = "soporte@burguersoft.com";
+const CORREO_SOPORTE = "burguersoft@gmail.com";
 
 const categorias: Categoria[] = [
   {
@@ -398,9 +398,11 @@ const AyudaAdmin = () => {
             </div>
           </div>
           <a
-            className="ayuda-boton-reportar"
-            href={`mailto:${CORREO_SOPORTE}?subject=Reporte de problema - BurgerSoft`}
-          >
+        className="ayuda-boton-reportar"
+         href={`https://mail.google.com/mail/?view=cm&fs=1&to=${CORREO_SOPORTE}&su=${encodeURIComponent("Reporte de problema - BurgerSoft")}`}
+        target="_blank"
+         rel="noopener noreferrer"
+         >
             <Mail size={18} />
             Reportar un problema
             <ArrowRight size={16} />
