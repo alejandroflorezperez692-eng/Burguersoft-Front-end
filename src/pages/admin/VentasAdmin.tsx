@@ -44,7 +44,7 @@ interface Promocion {
   estado?: string;
 }
 
-const METODOS = ['Efectivo', 'Tarjeta', 'Transferencia', 'Nequi', 'Daviplata', 'PSE'];
+const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
 const ESTADOS = ['En barra', 'En cocina', 'En camino', 'Listo para recoger', 'Entregado', 'Pagado', 'Cancelado', 'Reembolsada'];
 

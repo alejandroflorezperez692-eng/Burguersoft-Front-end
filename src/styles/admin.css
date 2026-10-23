@@ -2727,38 +2727,31 @@ body.dark-mode .cfg-requisito.cumple {
 
 .ventas-contenido-medio {
   width: 100%;
-  max-width: 560px;
+  max-width: 450px;
   margin: 0 auto;
 }
 
 .ventas-grafica {
-  animation: ventas-entra-pequena 0.5s var(--ease);
+  height: 220px;
+  overflow: hidden;
 }
 
 .ventas-grafica.ventas-grafica-ancha {
-  animation: ventas-entra-grande 0.55s var(--ease);
+  height: 420px;
+  justify-content: center;
 }
 
-@keyframes ventas-entra-pequena {
-  from {
-    opacity: 0;
-    transform: translate(12px, 18px) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+/* El contenido se queda dentro de la tarjeta, sin cambiar su tamaño */
+.ventas-grafica .ventas-barras {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
 }
 
-@keyframes ventas-entra-grande {
-  from {
-    opacity: 0;
-    transform: translateY(-16px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
+.ventas-grafica svg {
+  max-height: 100%;
 }
 
 .ventas-grafica-ancha .ventas-dona {
@@ -2769,23 +2762,23 @@ body.dark-mode .cfg-requisito.cumple {
   max-width: 200px;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ventas-grafica {
-    animation: none;
-  }
-}
-
-.ventas-grafica.ventas-grafica-ancha {
-  min-height: clamp(300px, 30vw, 470px);
-  justify-content: center;
-}
-
 @media (max-width: 720px) {
   .ventas-graficas {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .ventas-grafica,
   .ventas-grafica.ventas-grafica-ancha {
-    min-height: 0;
+    height: 340px;
   }
+}
+
+/* Gráficas totalmente estáticas */
+.ventas-grafica,
+.ventas-grafica *,
+.ventas-grafica *::before,
+.ventas-grafica *::after {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
 }

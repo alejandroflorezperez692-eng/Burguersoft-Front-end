@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { EstadisticasVentas } from '../types/Ventas';
 
 const PALETA = ['#E8821A', '#C2410C', '#7C9A3C', '#2F7FB8', '#8E5BB5', '#B5563F'];
+
+const METODOS_PAGO = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 
 const dinero = (valor: number) =>
   Math.abs(valor) >= 1000000
@@ -23,18 +24,8 @@ interface Props {
 }
 
 export default function VentasGraficas({ datos, cargando, error, dias, onCambiarDias }: Props) {
-  const [orden, setOrden] = useState<number[]>([0, 1, 2]);
-  const [pausado, setPausado] = useState(false);
-
-  useEffect(() => {
-    if (pausado) return;
-
-    const temporizador = window.setInterval(() => {
-      setOrden(([primera, segunda, tercera]) => [tercera, primera, segunda]);
-    }, 5000);
-
-    return () => window.clearInterval(temporizador);
-  }, [pausado]);
+  // Orden fijo: Ingresos por día (0) siempre primera y grande
+  const orden: number[] = [0, 1, 2];
 
   const serie = datos?.por_dia ?? [];
   const claves = serie.map((d) => d.dia);
@@ -49,7 +40,10 @@ export default function VentasGraficas({ datos, cargando, error, dias, onCambiar
       : null;
 
   const topProductos: [string, number][] = (datos?.por_producto ?? []).map((p) => [p.nombre, Number(p.cantidad) || 0]);
-  const metodos: [string, number][] = (datos?.por_pago ?? []).map((p) => [p.metodo, Number(p.total) || 0]);
+  const metodos: [string, number][] = METODOS_PAGO.map((nombre) => [
+    nombre,
+    Number((datos?.por_pago ?? []).find((p) => String(p.metodo).toLowerCase() === nombre.toLowerCase())?.total) || 0,
+  ]);
   const totalMetodos = metodos.reduce((a, [, valor]) => a + valor, 0);
 
   const graficaIngresos = (grande: boolean): ReactNode => {
@@ -221,7 +215,7 @@ export default function VentasGraficas({ datos, cargando, error, dias, onCambiar
       titulo: 'Métodos de pago',
       sub: 'Participación en ingresos',
       contenido: graficaMetodos,
-      vacia: metodos.length === 0,
+      vacia: totalMetodos === 0,
     },
   ];
 
@@ -229,8 +223,6 @@ export default function VentasGraficas({ datos, cargando, error, dias, onCambiar
     <section
       className="ventas-graficas"
       aria-busy={cargando}
-      onMouseEnter={() => setPausado(true)}
-      onMouseLeave={() => setPausado(false)}
     >
       <div className="ventas-graficas-cabecera">
         <div>
