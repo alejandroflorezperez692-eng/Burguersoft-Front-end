@@ -44,6 +44,8 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    }
+
     if (error.response?.data) {
       const data = error.response.data;
       if (typeof data === 'string') {
