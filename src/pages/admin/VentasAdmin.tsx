@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
+import VentasGraficas from '../../components/VentasGraficas';
+import type { EstadisticasVentas } from '../../types/Ventas';
 
 interface DetalleVenta {
   id: number;
@@ -65,6 +67,11 @@ export default function VentasAdmin() {
   const [cantidadCombo, setCantidadCombo] = useState('1');
   const [combos, setCombos] = useState<{ promocion_id: number; cantidad: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [version, setVersion] = useState(0);
+  const [dias, setDias] = useState(7);
+  const [stats, setStats] = useState<EstadisticasVentas | null>(null);
+  const [cargandoStats, setCargandoStats] = useState(true);
+  const [errorStats, setErrorStats] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -88,6 +95,26 @@ export default function VentasAdmin() {
 
   useEffect(() => { load(); }, []);
 
+  useEffect(() => {
+    let activo = true;
+    setCargandoStats(true);
+
+    apiClient.get<EstadisticasVentas>('/ventas/estadisticas', { params: { dias } })
+      .then(({ data }) => {
+        if (!activo) return;
+        setStats(data);
+        setErrorStats(false);
+      })
+      .catch(() => {
+        if (activo) setErrorStats(true);
+      })
+      .finally(() => {
+        if (activo) setCargandoStats(false);
+      });
+
+    return () => { activo = false; };
+  }, [dias, version]);
+
   if (loading) {
     return <AdminLoading texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
   }
@@ -101,9 +128,10 @@ export default function VentasAdmin() {
   );
 
   const hoy = new Date().toISOString().slice(0, 10);
-  const ventasHoy = (items ?? []).filter((v) => (v?.fecha ?? '').slice(0, 10) === hoy);
-  const ingresosHoy = ventasHoy.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
-  const ingresosTotal = (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+  const ventasHoy = stats ? stats.ventas_hoy : (items ?? []).filter((v) => (v?.fecha ?? '').slice(0, 10) === hoy).length;
+  const ingresosHoy = stats ? stats.ingresos_hoy : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+  const totalVentas = stats ? stats.total_ventas : items.length;
+  const ingresosTotal = stats ? stats.ingresos_totales : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
   const save = () => {
     if (carrito.length === 0 && combos.length === 0) return;
@@ -116,6 +144,7 @@ export default function VentasAdmin() {
     };
     apiClient.post('/ventas', body).then(() => {
       cerrarFormulario();
+      setVersion((v) => v + 1);
       load();
     }).catch(() => alert('No se pudo registrar la venta. Revisa el stock y los datos.'));
   };
@@ -195,7 +224,7 @@ export default function VentasAdmin() {
 
   const updateEstado = (id: number, estado: string) => {
     apiClient.patch(`/ventas/${id}/estado`, { estado })
-      .then(() => load())
+      .then(() => { setVersion((v) => v + 1); load(); })
       .catch(() => alert('No se pudo cambiar el estado.'));
   };
 
@@ -234,21 +263,29 @@ export default function VentasAdmin() {
       <div className="stat-grid">
         <div className="stat-card">
           <span className="stat-label">Ventas hoy</span>
-          <span className="stat-val">{ventasHoy.length}</span>
+          <span className="stat-val">{ventasHoy}</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Ingresos hoy</span>
-          <span className="stat-val">${ingresosHoy.toLocaleString('es-CO')}</span>
+          <span className="stat-val stat-val-dinero" title={`$${Math.round(ingresosHoy).toLocaleString('es-CO')}`}>${Math.round(ingresosHoy).toLocaleString('es-CO')}</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Total ventas</span>
-          <span className="stat-val">{items.length}</span>
+          <span className="stat-val">{totalVentas}</span>
         </div>
         <div className="stat-card">
           <span className="stat-label">Ingresos totales</span>
-          <span className="stat-val">${ingresosTotal.toLocaleString('es-CO')}</span>
+          <span className="stat-val stat-val-dinero" title={`$${Math.round(ingresosTotal).toLocaleString('es-CO')}`}>${Math.round(ingresosTotal).toLocaleString('es-CO')}</span>
         </div>
       </div>
+
+      <VentasGraficas
+        datos={stats}
+        cargando={cargandoStats}
+        error={errorStats}
+        dias={dias}
+        onCambiarDias={setDias}
+      />
 
       {showForm && (
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
