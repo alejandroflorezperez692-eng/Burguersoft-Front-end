@@ -12,6 +12,7 @@ import marca from '../assets/img/marca-comercial.png';
 import promocion from '../assets/img/promocion.png';
 import engranaje from '../assets/img/engranaje.png';
 import equipo from '../assets/img/equipo.png';
+import accesibilidad from '../assets/img/accesibilidad.png';
 import cerrarSesion from '../assets/img/cerrar-sesion.png';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
@@ -31,6 +32,7 @@ const navItemsAdmin = [
   { to: '/promociones', label: 'Promociones', icono: promocion },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje },
   { to: '/usuarios', label: 'Usuarios', icono: equipo },
+  { to: '/ayuda', label: 'Ayuda', icono: accesibilidad },
 ];
 
 export default function AdminLayout() {
