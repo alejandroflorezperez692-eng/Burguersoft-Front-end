@@ -5,6 +5,7 @@ import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
 import '../styles/social-login.css';
+import { rutaInicio } from '../utils/roles';
 
 
 function getErrorMessage(error: unknown): string {
@@ -40,7 +41,7 @@ export default function Login() {
     (location.state as { toast?: string } | null)?.toast === 'password_ok';
 
   if (isAuthenticated) {
-    return <Navigate to={user?.role === 'Cliente' ? '/' : '/inicio'} replace />;
+    return <Navigate to={rutaInicio(user?.role)} replace />;
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -52,7 +53,7 @@ export default function Login() {
       await login(email, password);
       const stored = sessionStorage.getItem('user');
       const rol = stored ? JSON.parse(stored).role : null;
-      navigate(rol === 'Cliente' ? '/' : '/inicio', { replace: true, state: { toast: 'login_ok' } });
+      navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

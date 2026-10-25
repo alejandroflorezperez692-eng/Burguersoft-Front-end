@@ -777,3 +777,75 @@ body.dark-mode .mn-ing-row input {
 @media (max-width: 600px) {
   .pm-prod-cat { display: none; }
 }
+/* ===== Footer del panel admin ===== */
+.admin-footer {
+  background: #2c1810;
+  border-top: 1px solid #33261e;
+  color: #ffffff;
+  text-align: center;
+  padding: 26px 20px 30px;
+  margin-top: auto;
+}
+.admin-footer p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* ===== Paginación de usuarios ===== */
+.us-pag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+.us-pag-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-600);
+}
+.us-pag-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.us-pag-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 14px;
+  border: 1.5px solid var(--border-strong, var(--border));
+  border-radius: var(--r-sm, 10px);
+  background: var(--surface);
+  color: var(--text-900);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.us-pag-num { padding: 0 8px; }
+.us-pag-btn:hover:not(:disabled):not(.activa) {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+.us-pag-btn.activa {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+  cursor: default;
+}
+.us-pag-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.us-pag-dots {
+  padding: 0 4px;
+  color: var(--text-400);
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .us-pag { justify-content: center; }
+}

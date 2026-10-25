@@ -1,25 +1,12 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-
-type RolNormalizado = 'admin' | 'cliente';
+import { normalizarRol, rutaInicio, type RolNormalizado } from '../utils/roles';
 
 type ProtectedRouteProps = {
   roles?: RolNormalizado[];
   redirect?: string;
   allowGuest?: boolean;
 };
-
-function normalizarRol(rol?: string): RolNormalizado | '' {
-  const limpio = String(rol ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim();
-
-  if (limpio === 'admin' || limpio === 'administrador') return 'admin';
-  if (limpio === 'cliente') return 'cliente';
-  return '';
-}
 
 export default function ProtectedRoute({
   roles,
@@ -38,7 +25,8 @@ export default function ProtectedRoute({
   if (roles && roles.length > 0) {
     const rol = normalizarRol(user?.role);
     if (!rol || !roles.includes(rol)) {
-      return <Navigate to={redirect} replace />;
+      // Cada rol vuelve a SU pantalla de inicio (así no hay bucles de redirección)
+      return <Navigate to={rol ? rutaInicio(rol) : redirect} replace />;
     }
   }
 

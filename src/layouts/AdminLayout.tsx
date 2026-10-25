@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import logoClaro from '../assets/img/icono1.png';
@@ -20,11 +19,13 @@ import '../styles/admin.css';
 import AdminLoading from '../components/AdminLoading';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
+import { normalizarRol } from '../utils/roles';
 
 const navItemsAdmin = [
   { to: '/inicio', label: 'Inicio', icono: casa },
   { to: '/menu', label: 'Menú', icono: cena },
   { to: '/ventas', label: 'Ventas', icono: insignia },
+  { to: '/pedidos', label: 'Pedidos', icono: cena },
   { to: '/materia-prima', label: 'Materia Prima', icono: hierbas },
   { to: '/compras', label: 'Compras', icono: buy },
   { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas },
@@ -32,7 +33,16 @@ const navItemsAdmin = [
   { to: '/promociones', label: 'Promociones', icono: promocion },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje },
   { to: '/usuarios', label: 'Usuarios', icono: equipo },
-  { to: '/ayuda', label: 'Ayuda', icono: accesibilidad },
+  { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad },
+];
+
+const navItemsCajero = [
+  { to: '/ventas', label: 'Ventas', icono: insignia },
+  { to: '/pedidos', label: 'Pedidos', icono: cena },
+];
+
+const navItemsCocinero = [
+  { to: '/pedidos', label: 'Cocina', icono: cena },
 ];
 
 export default function AdminLayout() {
@@ -42,7 +52,12 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
   const cerrarMenu = () => setMenuOpen(false);
-  const navItems = navItemsAdmin;
+  const rol = normalizarRol(user?.role);
+  const esAdmin = rol === 'admin';
+  const navItems =
+    rol === 'cajero' ? navItemsCajero : rol === 'cocinero' ? navItemsCocinero : navItemsAdmin;
+
+
 
   const handleSalir = () => {
     setSaliendo(true);
@@ -110,8 +125,8 @@ export default function AdminLayout() {
       <nav className="header-nav">
         <button type="button" className="topbar-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú">☰</button>
           <div className="header-actions">
-            <NotificacionesBoton />
-            <span className="header-sep" aria-hidden="true" />
+            {esAdmin && <NotificacionesBoton />}
+            {esAdmin && <span className="header-sep" aria-hidden="true" />}
             <NavLink to="/configuracion" className="header-user" onClick={cerrarMenu} title="Mi perfil">
               <img src={usuarioPerfil} alt="" className="header-avatar" />
               <span className="header-user-info">
@@ -126,9 +141,24 @@ export default function AdminLayout() {
 
       <div className="main-content">
         <Outlet />
+
+        <footer
+          style={{
+            background: '#2c1810',
+            borderTop: '1px solid #33261e',
+            color: '#fff',
+            textAlign: 'center',
+            padding: '26px 20px 30px',
+            marginTop: 'auto',
+          }}
+        >
+          <p style={{ margin: 0, fontSize: '0.9rem' }}>
+            &copy; 2026 BURGUERSOFT – EL ORIENTE. Todos los derechos reservados.
+          </p>
+        </footer>
       </div>
 
-      <AsistenteIA />
+      {esAdmin && <AsistenteIA />}
     </div>
   );
 }
