@@ -987,7 +987,7 @@ body.dark-mode .sidebar-header .logo-oscuro {
 }
 
 .marca-card::after {
-  content: 'Haga clic para ver la información';
+  content: 'Haga clic para ver la informaciÃ³n';
   position: absolute;
   top: 50%;
   left: 50%;
@@ -2922,6 +2922,316 @@ body.dark-mode .cfg-requisito.cumple {
   }
 }
 
+/* ---- Ventas: graficas ---- */
+.ventas-graficas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.ventas-graficas-cabecera {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ventas-graficas-titulo {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.ventas-graficas-resumen {
+  margin: 4px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-400);
+}
+
+.ventas-periodo {
+  display: flex;
+  gap: 6px;
+}
+
+.ventas-periodo button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-600);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.18s var(--ease);
+}
+
+.ventas-periodo button.activo {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+
+.ventas-grafica {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 20px 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.ventas-grafica-ancha {
+  grid-column: 1 / -1;
+}
+
+.ventas-grafica h4 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.ventas-grafica-sub {
+  margin: -6px 0 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-400);
+}
+
+.ventas-grafica svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.ventas-grafica .eje {
+  font-size: 9px;
+  fill: var(--text-400);
+  font-family: var(--font-sans);
+}
+
+.ventas-grafica .grid-linea {
+  stroke: var(--border);
+  stroke-dasharray: 3 4;
+}
+
+.ventas-grafica-vacia {
+  margin: 0;
+  padding: 28px 0;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-400);
+}
+
+.ventas-barras {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.ventas-barra-fila {
+  display: grid;
+  grid-template-columns: 44% 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.ventas-barra-label {
+  color: var(--text-600);
+  line-height: 1.2;
+}
+
+.ventas-barra-track {
+  display: block;
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ventas-barra-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s var(--ease);
+}
+
+.ventas-barra-valor {
+  min-width: 28px;
+  text-align: right;
+  font-weight: 700;
+  color: var(--text-900);
+}
+
+.ventas-dona {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  max-width: 400px;
+}
+
+.ventas-dona svg {
+  max-width: 150px;
+}
+
+.ventas-dona-total {
+  font-size: 17px;
+  font-weight: 800;
+  fill: var(--text-900);
+  font-family: var(--font-sans);
+}
+
+.ventas-dona-detalle {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  fill: var(--text-400);
+  font-family: var(--font-sans);
+}
+
+.ventas-leyenda {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 130px;
+  flex: 1;
+}
+
+.ventas-leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-600);
+}
+
+.ventas-leyenda-punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.ventas-leyenda-item strong {
+  margin-left: auto;
+  color: var(--text-900);
+}
+
+@media (max-width: 640px) {
+  .ventas-grafica {
+    padding: 16px;
+  }
+}
+
+.ventas-variacion {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.ventas-variacion.positiva {
+  background: rgba(124, 154, 60, 0.14);
+  color: #5f7a26;
+}
+
+.ventas-variacion.negativa {
+  background: rgba(192, 57, 43, 0.12);
+  color: #b03a2e;
+}
+
+.ventas-cargando {
+  margin-left: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-400);
+  text-transform: lowercase;
+}
+
+.stat-card .stat-val.stat-val-dinero {
+  font-size: clamp(19px, 1.7vw, 27px);
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+
+.ventas-contenido-medio {
+  width: 100%;
+  max-width: 450px;
+  margin: 0 auto;
+}
+
+.ventas-grafica {
+  height: 220px;
+  overflow: hidden;
+}
+
+.ventas-grafica.ventas-grafica-ancha {
+  height: 420px;
+  justify-content: center;
+}
+
+/* El contenido se queda dentro de la tarjeta, sin cambiar su tamaño */
+.ventas-grafica .ventas-barras {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.ventas-grafica svg {
+  max-height: 100%;
+}
+
+.ventas-grafica-ancha .ventas-dona {
+  justify-content: center;
+}
+
+.ventas-grafica-ancha .ventas-dona svg {
+  max-width: 200px;
+}
+
+@media (max-width: 720px) {
+  .ventas-graficas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ventas-grafica,
+  .ventas-grafica.ventas-grafica-ancha {
+    height: 340px;
+  }
+}
+
+/* Gráficas totalmente estáticas */
+.ventas-grafica,
+.ventas-grafica *,
+.ventas-grafica *::before,
+.ventas-grafica *::after {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
+
+
 /* ── Tarjetas de estado (Materia Prima) ── */
 .stat-grid.stat-grid-4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2936,4 +3246,5 @@ body.dark-mode .cfg-requisito.cumple {
 }
 @media (max-width: 768px) {
   .stat-grid.stat-grid-4 { grid-template-columns: 1fr; }
+}
 }

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  timeout: 10000,
+  timeout: 50000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -36,6 +36,7 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    console.log('[API ERROR]', error.config?.url, error.code, error.message);
     const token = localStorage.getItem('token');
     const esLogin = error.config?.url?.includes('/login');
     const esDemo = token === 'demo-token-sin-backend';
