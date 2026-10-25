@@ -15,34 +15,25 @@ import accesibilidad from '../assets/img/accesibilidad.png';
 import cerrarSesion from '../assets/img/cerrar-sesion.png';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
+import { ACCESO, normalizarRol } from '../utils/roles';
 import '../styles/admin.css';
 import AdminLoading from '../components/AdminLoading';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
-import { normalizarRol } from '../utils/roles';
 
-const navItemsAdmin = [
-  { to: '/inicio', label: 'Inicio', icono: casa },
-  { to: '/menu', label: 'Menú', icono: cena },
-  { to: '/ventas', label: 'Ventas', icono: insignia },
-  { to: '/pedidos', label: 'Pedidos', icono: cena },
-  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas },
-  { to: '/compras', label: 'Compras', icono: buy },
-  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas },
-  { to: '/gestion-marca', label: 'Marcas', icono: marca },
-  { to: '/promociones', label: 'Promociones', icono: promocion },
-  { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje },
-  { to: '/usuarios', label: 'Usuarios', icono: equipo },
-  { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad },
-];
-
-const navItemsCajero = [
-  { to: '/ventas', label: 'Ventas', icono: insignia },
-  { to: '/pedidos', label: 'Pedidos', icono: cena },
-];
-
-const navItemsCocinero = [
-  { to: '/pedidos', label: 'Cocina', icono: cena },
+// Cada opción dice qué roles la ven (ver ACCESO en utils/roles.ts)
+const todosLosItems = [
+  { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
+  { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.cocina },
+  { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.caja },
+  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.personal },
+  { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.personal },
+  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas, roles: ACCESO.cocina },
+  { to: '/gestion-marca', label: 'Marcas', icono: marca, roles: ACCESO.cocina },
+  { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.cocina },
+  { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
+  { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
+  { to: '/ayuda', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.cocina },
 ];
 
 export default function AdminLayout() {
@@ -54,10 +45,7 @@ export default function AdminLayout() {
   const cerrarMenu = () => setMenuOpen(false);
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
-  const navItems =
-    rol === 'cajero' ? navItemsCajero : rol === 'cocinero' ? navItemsCocinero : navItemsAdmin;
-
-
+  const navItems = todosLosItems.filter((item) => rol !== '' && item.roles.includes(rol));
 
   const handleSalir = () => {
     setSaliendo(true);
@@ -141,21 +129,6 @@ export default function AdminLayout() {
 
       <div className="main-content">
         <Outlet />
-
-        <footer
-          style={{
-            background: '#2c1810',
-            borderTop: '1px solid #33261e',
-            color: '#fff',
-            textAlign: 'center',
-            padding: '26px 20px 30px',
-            marginTop: 'auto',
-          }}
-        >
-          <p style={{ margin: 0, fontSize: '0.9rem' }}>
-            &copy; 2026 BURGUERSOFT – EL ORIENTE. Todos los derechos reservados.
-          </p>
-        </footer>
       </div>
 
       {esAdmin && <AsistenteIA />}

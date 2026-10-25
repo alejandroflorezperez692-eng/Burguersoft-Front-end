@@ -32,7 +32,7 @@ import { ConAsistenteCliente } from './components/AsistenteCliente';
 import CierreInventarioAdmin from './pages/admin/CierreInventarioAdmin';
 import TerminosPrivacidad from './pages/TerminosPrivacidad';
 import Ayuda from './pages/admin/Ayuda';
-import TableroPedidos from './pages/pedidos/TableroPedidos';
+import { ACCESO } from './utils/roles';
 
 
 function App() {
@@ -71,28 +71,35 @@ function App() {
       <Route path="/ayuda" element={<Ayuda />} />
 
 
-      <Route element={<ProtectedRoute roles={['admin', 'cajero', 'cocinero']} redirect="/" />}>
+      {/* Panel interno: admin, cajero y cocinero comparten el mismo layout */}
+      <Route element={<ProtectedRoute roles={ACCESO.personal} redirect="/" />}>
         <Route element={<AdminLayout />}>
 
-          <Route path="/pedidos" element={<TableroPedidos />} />
+          {/* Admin + cajero + cocinero */}
+          <Route path="/inicio" element={<Inicio />} />
+          <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
+          <Route path="/compras" element={<ComprasAdmin />} />
           <Route path="/configuracion" element={<ConfiguracionAdmin />} />
 
-          <Route element={<ProtectedRoute roles={['admin', 'cajero']} />}>
+          {/* Admin + cajero */}
+          <Route element={<ProtectedRoute roles={ACCESO.caja} />}>
             <Route path="/ventas" element={<VentasAdmin />} />
           </Route>
 
-          <Route element={<ProtectedRoute roles={['admin']} />}>
-            <Route path="/inicio" element={<Inicio />} />
+          {/* Admin + cocinero */}
+          <Route element={<ProtectedRoute roles={ACCESO.cocina} />}>
             <Route path="/menu" element={<MenuAdmin />} />
-            <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
-            <Route path="/compras" element={<ComprasAdmin />} />
             <Route path="/cierre-inventario" element={<CierreInventarioAdmin />} />
             <Route path="/gestion-marca" element={<MarcasAdmin />} />
             <Route path="/promociones" element={<PromocionesAdmin />} />
+            <Route path="/ayuda-admin" element={<AyudaAdmin />} />
+          </Route>
+
+          {/* Solo admin */}
+          <Route element={<ProtectedRoute roles={ACCESO.soloAdmin} />}>
             <Route path="/copias-de-seguridad" element={<BackupsAdmin />} />
             <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />
             <Route path="/usuarios" element={<UsuariosAdmin />} />
-            <Route path="/ayuda-admin" element={<AyudaAdmin />} />
           </Route>
 
         </Route>
