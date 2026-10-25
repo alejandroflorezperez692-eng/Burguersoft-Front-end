@@ -50,7 +50,7 @@ export default function Login() {
 
     try {
       await login(email, password);
-      const stored = localStorage.getItem('user');
+      const stored = sessionStorage.getItem('user');
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rol === 'Cliente' ? '/' : '/inicio', { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {

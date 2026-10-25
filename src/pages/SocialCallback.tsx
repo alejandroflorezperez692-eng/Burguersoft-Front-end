@@ -21,7 +21,7 @@ export default function SocialCallback() {
 
     loginWithToken(token)
       .then(() => {
-        const stored = localStorage.getItem('user');
+        const stored = sessionStorage.getItem('user');
         const rol = stored ? JSON.parse(stored).role : null;
         navigate(rol === 'Cliente' ? '/' : '/inicio', {
           replace: true,

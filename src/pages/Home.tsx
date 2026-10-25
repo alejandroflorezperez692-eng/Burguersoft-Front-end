@@ -16,6 +16,7 @@ type Promocion = {
   descripcion?: string | null;
   precio: number;
   imagen?: string | null;
+  estado?: string;
   fecha_inicio?: string | null;
   fecha_fin?: string | null;
 };
@@ -54,10 +55,12 @@ export default function Home() {
     };
   }, []);
 
-  const hoy = new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const hoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const activas = (promos ?? []).filter((p) => {
-    if (p.fecha_fin && p.fecha_fin < hoy) return false;
-    if (p.fecha_inicio && p.fecha_inicio > hoy) return false;
+    if (p.estado !== 'Activa') return false;
+    if (p.fecha_fin && p.fecha_fin.slice(0, 10) < hoy) return false;
+    if (p.fecha_inicio && p.fecha_inicio.slice(0, 10) > hoy) return false;
     return true;
   });
 
