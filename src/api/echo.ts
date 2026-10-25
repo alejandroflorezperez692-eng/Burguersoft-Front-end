@@ -11,7 +11,7 @@ let echo: EchoReverb | null = null;
 /** Crea (una sola vez) la conexión websocket con Reverb. Devuelve null si no hay sesión. */
 export function getEcho(): EchoReverb | null {
   if (echo) return echo;
-  if (!localStorage.getItem('token')) return null;
+  if (!sessionStorage.getItem('token')) return null;
 
   const llave = import.meta.env.VITE_REVERB_APP_KEY;
   if (!llave) return null;

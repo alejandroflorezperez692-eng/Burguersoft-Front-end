@@ -26,7 +26,7 @@ const traducirMensaje = (mensaje: string): string => {
 };
 
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -37,13 +37,13 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     console.log('[API ERROR]', error.config?.url, error.code, error.message);
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     const esLogin = error.config?.url?.includes('/login');
     const esDemo = token === 'demo-token-sin-backend';
 
     if (error.response?.status === 401 && token && !esLogin && !esDemo) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       window.location.href = '/login';
     }
 

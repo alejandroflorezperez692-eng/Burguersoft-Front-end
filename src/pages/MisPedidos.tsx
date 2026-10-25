@@ -309,7 +309,7 @@ export default function MisPedidos() {
   useEffect(() => {
     if (!isAuthenticated) return;
     // Token demo sin backend: no hay nada que pedir
-    if (localStorage.getItem('token') === 'demo-token-sin-backend') {
+    if (sessionStorage.getItem('token') === 'demo-token-sin-backend') {
       setPedidos([]);
       return;
     }

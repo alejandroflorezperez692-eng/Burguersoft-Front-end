@@ -52,7 +52,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export { AuthContext };
 
 function readStoredUser(): User | null {
-  const stored = localStorage.getItem('user');
+  const stored = sessionStorage.getItem('user');
   if (!stored) return null;
   try {
     return JSON.parse(stored) as User;
@@ -81,7 +81,7 @@ function mapUsuarioApi(u: UsuarioApi | undefined, fallbackEmail?: string): User 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     return token ? readStoredUser() : null;
   });
   const [loading, setLoading] = useState(false);
@@ -108,8 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
 
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(nextUser));
+      sessionStorage.setItem('token', data.token);
+      sessionStorage.setItem('user', JSON.stringify(nextUser));
       setUser(nextUser);
     } finally {
       setLoading(false);
@@ -120,15 +120,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // (viene en la URL tras el redirect de Laravel), así que solo hay que
   // guardarlo y pedir los datos del usuario a /me para completar la sesión.
   const loginWithToken = useCallback(async (token: string) => {
-    localStorage.setItem('token', token);
+    sessionStorage.setItem('token', token);
 
     try {
       const { data } = await apiClient.get<UsuarioApi>('/me');
       const nextUser = mapUsuarioApi(data);
-      localStorage.setItem('user', JSON.stringify(nextUser));
+      sessionStorage.setItem('user', JSON.stringify(nextUser));
       setUser(nextUser);
     } catch (err) {
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       throw err;
     }
   }, []);
@@ -156,8 +156,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     setLoading(true);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setUser(null);
     setLoading(false);
   }, []);
@@ -165,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = useCallback((partial: Partial<User>) => {
     setUser((prev) => {
       const next = { ...(prev ?? {}), ...partial };
-      localStorage.setItem('user', JSON.stringify(next));
+      sessionStorage.setItem('user', JSON.stringify(next));
       return next;
     });
   }, []);
@@ -178,8 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: esAdmin ? 'admin@demo.com' : 'cliente@demo.com',
       role: esAdmin ? 'admin' : 'cliente',
     };
-    localStorage.setItem('token', 'demo-token-sin-backend');
-    localStorage.setItem('user', JSON.stringify(demoUser));
+    sessionStorage.setItem('token', 'demo-token-sin-backend');
+    sessionStorage.setItem('user', JSON.stringify(demoUser));
     setUser(demoUser);
   }, []);
 
