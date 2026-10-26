@@ -3253,5 +3253,5 @@ body.dark-mode .cfg-requisito.cumple {
 }
 @media (max-width: 768px) {
   .stat-grid.stat-grid-4 { grid-template-columns: 1fr; }
-
+}
 }

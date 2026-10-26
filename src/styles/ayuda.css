@@ -1,0 +1,394 @@
+.ayuda-page {
+  width: min(1080px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 54px 0 72px;
+  flex: 1;
+}
+
+.ayuda-hero {
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.ayuda-etiqueta {
+  display: inline-block;
+  color: var(--color-secundario);
+  font-size: 1.30rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.ayuda-hero .ayuda-etiqueta {
+  font-size: 2.4rem;
+  font-weight: 900;
+}
+
+.ayuda-hero h1 {
+  margin: 12px auto;
+  color: var(--color-primario);
+  font-size: clamp(1.20rem, 2vw, 1.75rem);
+  line-height: 1.12;
+}
+
+.ayuda-hero > p {
+  max-width: 680px;
+  margin: 0 auto;
+  color: var(--color-texto-suave);
+  font-size: 1.05rem;
+}
+
+body:not(.dark-mode) .ayuda-hero h1,
+body:not(.dark-mode) .ayuda-hero > p {
+  color: #000;
+}
+
+.ayuda-acciones {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.ayuda-boton {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border: 1px solid var(--color-secundario);
+  border-radius: 10px;
+  font-weight: 800;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.ayuda-boton:hover {
+  transform: translateY(-2px);
+}
+
+.ayuda-boton-principal {
+  background: var(--color-secundario);
+  color: #fff;
+}
+
+.ayuda-boton-principal:hover {
+  background: #cf6e12;
+  color: #fff;
+}
+
+.ayuda-boton-secundario {
+  color: var(--color-primario);
+}
+
+.ayuda-boton-secundario:hover {
+  background: rgba(232, 130, 26, 0.12);
+}
+
+.ayuda-indice {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 26px 0 42px;
+}
+
+.ayuda-indice a {
+  padding: 9px 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: 999px;
+  color: var(--color-texto-suave);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.ayuda-indice a:hover,
+.ayuda-indice a:focus-visible {
+  border-color: var(--color-secundario);
+  color: var(--color-secundario);
+}
+
+.ayuda-seccion {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 22px;
+  padding: 34px 0;
+  border-top: 1px solid var(--color-borde);
+  scroll-margin-top: 28px;
+}
+
+.ayuda-seccion-numero {
+  color: var(--color-secundario);
+  font-size: 1.8rem;
+  font-weight: 900;
+}
+
+.ayuda-seccion-contenido h2,
+.ayuda-explorar h2 {
+  margin: 8px 0 10px;
+  color: var(--color-primario);
+  font-size: clamp(1.3rem, 2vw, 1rem);
+}
+
+.ayuda-seccion-contenido > p,
+.ayuda-explorar > div > p {
+  color: var(--color-texto-suave);
+}
+
+.ayuda-pasos,
+.ayuda-lista {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+  padding-left: 24px;
+  color: var(--color-texto);
+}
+
+.ayuda-pasos li,
+.ayuda-lista li {
+  padding-left: 4px;
+}
+
+.ayuda-pasos li::marker {
+  color: var(--color-secundario);
+  font-weight: 800;
+}
+
+.ayuda-nota {
+  padding: 13px 16px;
+  border-left: 3px solid var(--color-secundario);
+  border-radius: 0 8px 8px 0;
+  background: rgba(232, 130, 26, 0.09);
+}
+
+.ayuda-enlace {
+  display: inline-flex;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--color-secundario);
+  font-weight: 800;
+}
+
+.ayuda-enlace:hover,
+.ayuda-enlace:focus-visible {
+  text-decoration: underline;
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-enlace {
+  color: #E8821A;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-enlace:hover,
+body:not(.dark-mode) .ayuda-page .ayuda-enlace:focus-visible {
+  color: #E8821A;
+  background: transparent;
+  text-decoration: underline;
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-contacto a {
+  color: #E8821A;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-contacto a:hover,
+body:not(.dark-mode) .ayuda-page .ayuda-contacto a:focus-visible {
+  color: #E8821A;
+  background: transparent;
+  text-decoration: underline;
+}
+
+.ayuda-explorar {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+  gap: 32px;
+  margin-top: 24px;
+  padding: 30px;
+  scroll-margin-top: 28px;
+}
+
+.ayuda-enlaces-explorar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ayuda-enlaces-explorar a {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: 10px;
+  background: var(--color-fondo);
+  color: var(--color-primario);
+  font-weight: 800;
+}
+
+.ayuda-enlaces-explorar a:hover,
+.ayuda-enlaces-explorar a:focus-visible {
+  border-color: var(--color-secundario);
+}
+
+.ayuda-enlaces-explorar span {
+  color: var(--color-texto-suave);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+.ayuda-contacto {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 34px;
+  color: var(--color-texto-suave);
+  text-align: center;
+}
+
+.ayuda-contacto a {
+  color: var(--color-secundario);
+  font-weight: 800;
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-boton {
+  border: 1.5px solid #E8821A;
+  background: #fff;
+  color: #2c1810;
+  box-shadow: 0 6px 20px rgba(232, 130, 26, 0.15);
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-boton:hover {
+  border-color: #E8821A;
+  background: #E8821A;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(232, 130, 26, 0.45);
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-indice a {
+  border: 1.5px solid #E8821A;
+  background: #fff;
+  color: #2c1810;
+  box-shadow: 0 6px 20px rgba(232, 130, 26, 0.15);
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-indice a:hover,
+body:not(.dark-mode) .ayuda-page .ayuda-indice a:focus-visible {
+  border-color: #E8821A;
+  background: #E8821A;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(232, 130, 26, 0.45);
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-hero h1,
+body:not(.dark-mode) .ayuda-page .ayuda-hero > p,
+body:not(.dark-mode) .ayuda-page .ayuda-seccion-contenido h2,
+body:not(.dark-mode) .ayuda-page .ayuda-explorar h2,
+body:not(.dark-mode) .ayuda-page .ayuda-seccion-contenido > p,
+body:not(.dark-mode) .ayuda-page .ayuda-explorar > div > p,
+body:not(.dark-mode) .ayuda-page .ayuda-pasos,
+body:not(.dark-mode) .ayuda-page .ayuda-lista,
+body:not(.dark-mode) .ayuda-page .ayuda-indice a,
+body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a,
+body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar span,
+body:not(.dark-mode) .ayuda-page .ayuda-contacto > p,
+body:not(.dark-mode) .ayuda-page .ayuda-boton {
+  color: #000;
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-indice a:hover,
+body:not(.dark-mode) .ayuda-page .ayuda-indice a:focus-visible {
+  border-color: #E8821A;
+  background: #E8821A;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(232, 130, 26, 0.45);
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-boton:hover,
+body:not(.dark-mode) .ayuda-page .ayuda-boton:focus-visible {
+  color: #000;
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a {
+  border-color: #E8821A;
+  background: #fff;
+  color: #000;
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a span {
+  color: #000;
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a:hover,
+body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a:focus-visible {
+  border-color: #E8821A;
+  background: #E8821A;
+  color: #fff;
+}
+
+body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a:hover span,
+body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a:focus-visible span {
+  color: #fff;
+}
+
+@media (max-width: 700px) {
+  .ayuda-page {
+    width: min(100% - 28px, 560px);
+    padding: 28px 0 48px;
+  }
+
+  .ayuda-hero {
+    padding: 42px 18px;
+  }
+
+  .ayuda-seccion {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 12px;
+    padding: 28px 0;
+  }
+
+  .ayuda-seccion-numero {
+    font-size: 1.4rem;
+  }
+
+  .ayuda-explorar {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 22px 16px;
+  }
+}
+
+@media (max-width: 440px) {
+  .ayuda-enlaces-explorar {
+    grid-template-columns: 1fr;
+  }
+
+  .ayuda-indice {
+    justify-content: flex-start;
+  }
+
+  .ayuda-indice a {
+    font-size: 0.82rem;
+  }
+}
+
+.ayuda-page .ayuda-contacto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px 14px;
+  text-align: center;
+}
+
+.ayuda-page .ayuda-contacto p {
+  margin: 0;
+}
+
+.ayuda-page .ayuda-contacto a {
+  margin: 0;
+}

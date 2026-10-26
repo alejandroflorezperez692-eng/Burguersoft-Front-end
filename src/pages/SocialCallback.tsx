@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { rutaInicio } from '../utils/roles';
 
 export default function SocialCallback() {
   const navigate = useNavigate();
@@ -21,9 +22,9 @@ export default function SocialCallback() {
 
     loginWithToken(token)
       .then(() => {
-        const stored = localStorage.getItem('user');
+        const stored = sessionStorage.getItem('user');
         const rol = stored ? JSON.parse(stored).role : null;
-        navigate(rol === 'Cliente' ? '/' : '/inicio', {
+        navigate(rutaInicio(rol), {
           replace: true,
           state: { toast: 'login_ok' },
         });

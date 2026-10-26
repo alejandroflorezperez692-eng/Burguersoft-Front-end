@@ -446,8 +446,8 @@ export default function BackupsAdmin() {
         generarPDF(total, sel, {
           archivo: nombreArchivo,
           carpeta: data.carpeta,
-          tamanoBytes: Number(data.tamano_bytes) || undefined,
-          totalRegistros: Number(data.total_registros) || undefined,
+          tamanoBytes: data.tamano_bytes !== undefined ? Number(data.tamano_bytes) : undefined,
+          totalRegistros: data.total_registros !== undefined ? Number(data.total_registros) : undefined,
         }).catch((e) => {
           console.error('Error generando el PDF del respaldo:', e);
         });

@@ -1,6 +1,4 @@
-
 import { Navigate, Route, Routes } from 'react-router-dom';
-import PaginaModulo from './components/PaginaModulo';
 import Contactanos from './pages/Contactanos';
 import MenuPublico from './pages/MenuPublico';
 import AdminLayout from './layouts/AdminLayout';
@@ -26,12 +24,15 @@ import PromocionesAdmin from './pages/admin/PromocionesAdmin';
 import VentasAdmin from './pages/admin/VentasAdmin';
 import BackupsAdmin from './pages/admin/BackupsAdmin';
 import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
+import AyudaAdmin from './pages/admin/AyudaAdmin';
 import Accesibilidad from './components/Accesibilidad';
 import DemoAccess from './components/DemoAccess';
 import Checkout from './pages/Checkout';
 import { ConAsistenteCliente } from './components/AsistenteCliente';
 import CierreInventarioAdmin from './pages/admin/CierreInventarioAdmin';
 import TerminosPrivacidad from './pages/TerminosPrivacidad';
+import Ayuda from './pages/admin/Ayuda';
+import { ACCESO } from './utils/roles';
 
 
 function App() {
@@ -61,29 +62,46 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/social-callback" element={<SocialCallback />} /> 
       <Route path="/registro" element={<Registro />} />
-<Route path="/terminos" element={<TerminosCondiciones />} />
+      <Route path="/terminos" element={<TerminosCondiciones />} />
       <Route path="/privacidad" element={<PoliticaPrivacidad />} />
       <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
       <Route path="/verificar-codigo" element={<VerificarCodigo />} />
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
       <Route path="/social-callback" element={<SocialCallback />} />
+      <Route path="/ayuda" element={<Ayuda />} />
 
-      <Route element={<ProtectedRoute roles={['admin']} redirect="/" />}>
+
+      {/* Panel interno: admin, cajero y cocinero comparten el mismo layout */}
+      <Route element={<ProtectedRoute roles={ACCESO.personal} redirect="/" />}>
         <Route element={<AdminLayout />}>
+
+          {/* Admin + cajero + cocinero */}
           <Route path="/inicio" element={<Inicio />} />
-          <Route path="/menu" element={<MenuAdmin />} />
-          <Route path="/configuracion" element={<ConfiguracionAdmin />} />
-          <Route path="/ventas" element={<VentasAdmin />} />
           <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
           <Route path="/compras" element={<ComprasAdmin />} />
-          <Route path="/cierre-inventario" element={<CierreInventarioAdmin />} />
-          <Route path="/gestion-marca" element={<MarcasAdmin />} />
-          <Route path="/promociones" element={<PromocionesAdmin />} />
-          <Route path="/copias-de-seguridad" element={<BackupsAdmin />} />
-          {/* Ruta anterior en ingles: se redirige para no romper enlaces guardados */}
-          <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />
-          <Route path="/usuarios" element={<UsuariosAdmin />} />
-          <Route path="/pedidos" element={<PaginaModulo titulo="Pedidos" />} />
+          <Route path="/configuracion" element={<ConfiguracionAdmin />} />
+
+          {/* Admin + cajero */}
+          <Route element={<ProtectedRoute roles={ACCESO.caja} />}>
+            <Route path="/ventas" element={<VentasAdmin />} />
+          </Route>
+
+          {/* Admin + cocinero */}
+          <Route element={<ProtectedRoute roles={ACCESO.cocina} />}>
+            <Route path="/menu" element={<MenuAdmin />} />
+            <Route path="/cierre-inventario" element={<CierreInventarioAdmin />} />
+            <Route path="/gestion-marca" element={<MarcasAdmin />} />
+            <Route path="/promociones" element={<PromocionesAdmin />} />
+            <Route path="/ayuda-admin" element={<AyudaAdmin />} />
+          </Route>
+
+          {/* Solo admin */}
+          <Route element={<ProtectedRoute roles={ACCESO.soloAdmin} />}>
+            <Route path="/copias-de-seguridad" element={<BackupsAdmin />} />
+            <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />
+            <Route path="/usuarios" element={<UsuariosAdmin />} />
+          </Route>
+
         </Route>
       </Route>
 

@@ -9,6 +9,16 @@
   background-image:
     radial-gradient(circle at 15% 25%, rgba(232, 130, 26, 0.10) 0%, transparent 55%),
     radial-gradient(circle at 85% 75%, rgba(200, 56, 42, 0.07) 0%, transparent 50%);
+  position: relative;
+}
+
+
+/* El resto del contenido va por encima del fondo */
+.auth-navbar,
+.header-bar,
+.card {
+  position: relative;
+  z-index: 1;
 }
 
 .auth-center {
@@ -506,7 +516,7 @@ body.dark-mode .btn-secundario:active {
   width: 100%;
   padding: 36px 40px 30px;
   text-align: center;
-  border-bottom: 2px solid var(--color-primario);
+  border-bottom: 1.5px solid var(--color-primario);
 }
 
 .encabezado::after {
@@ -1264,7 +1274,7 @@ body.dark-mode .contenedor-registro {
 
 body.dark-mode .encabezado {
   background: #000000;
-  border-bottom: 2px solid var(--color-primario);
+  border-bottom: 1.5px solid var(--color-primario);
 }
 
 body.dark-mode .encabezado p {

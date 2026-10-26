@@ -3,6 +3,8 @@ import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
+import { useAuth } from '../../hooks/useAuth';
+import { normalizarRol } from '../../utils/roles';
 
 interface DetalleVenta {
   id: number;
@@ -52,6 +54,8 @@ const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
 export default function VentasAdmin() {
+  const { user } = useAuth();
+  const esAdmin = normalizarRol(user?.role) === 'admin';
   const [items, setItems] = useState<Venta[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
@@ -70,7 +74,7 @@ export default function VentasAdmin() {
   const [version, setVersion] = useState(0);
   const [dias, setDias] = useState(7);
   const [stats, setStats] = useState<EstadisticasVentas | null>(null);
-  const [cargandoStats, setCargandoStats] = useState(true);
+  const [cargandoStats, setCargandoStats] = useState(esAdmin);
   const [errorStats, setErrorStats] = useState(false);
 
   const load = async () => {
@@ -96,6 +100,7 @@ export default function VentasAdmin() {
   useEffect(() => { load(); }, []);
 
   useEffect(() => {
+    if (!esAdmin) return; // las estadísticas son solo del administrador
     let activo = true;
     setCargandoStats(true);
 
@@ -113,7 +118,7 @@ export default function VentasAdmin() {
       });
 
     return () => { activo = false; };
-  }, [dias, version]);
+  }, [dias, version, esAdmin]);
 
   if (loading) {
     return <AdminLoading texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
@@ -252,7 +257,7 @@ export default function VentasAdmin() {
     <div className="page-inner">
       <div className="page-header">
         <div>
-          <h1>Gestión de Ventas</h1>
+          <h1>{esAdmin ? 'Gestión de Ventas' : 'Caja'}</h1>
           <p className="subtitulo">{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
@@ -269,23 +274,29 @@ export default function VentasAdmin() {
           <span className="stat-label">Ingresos hoy</span>
           <span className="stat-val stat-val-dinero" title={`$${Math.round(ingresosHoy).toLocaleString('es-CO')}`}>${Math.round(ingresosHoy).toLocaleString('es-CO')}</span>
         </div>
-        <div className="stat-card">
-          <span className="stat-label">Total ventas</span>
-          <span className="stat-val">{totalVentas}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Ingresos totales</span>
-          <span className="stat-val stat-val-dinero" title={`$${Math.round(ingresosTotal).toLocaleString('es-CO')}`}>${Math.round(ingresosTotal).toLocaleString('es-CO')}</span>
-        </div>
+        {esAdmin && (
+          <>
+            <div className="stat-card">
+              <span className="stat-label">Total ventas</span>
+              <span className="stat-val">{totalVentas}</span>
+            </div>
+            <div className="stat-card">
+              <span className="stat-label">Ingresos totales</span>
+              <span className="stat-val stat-val-dinero" title={`$${Math.round(ingresosTotal).toLocaleString('es-CO')}`}>${Math.round(ingresosTotal).toLocaleString('es-CO')}</span>
+            </div>
+          </>
+        )}
       </div>
 
-      <VentasGraficas
-        datos={stats}
-        cargando={cargandoStats}
-        error={errorStats}
-        dias={dias}
-        onCambiarDias={setDias}
-      />
+      {esAdmin && (
+        <VentasGraficas
+          datos={stats}
+          cargando={cargandoStats}
+          error={errorStats}
+          dias={dias}
+          onCambiarDias={setDias}
+        />
+      )}
 
       {showForm && (
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
@@ -482,13 +493,13 @@ export default function VentasAdmin() {
                 <td style={{ fontWeight: 600 }}>{nombreCliente(v) || '—'}</td>
                 <td>
                   <div className="venta-detalles">
-                    {(v?.detalles ?? []).map((d) => (
-                      <span key={d?.id} style={{ fontSize: 12, color: 'var(--text-600)' }}>
+                    {(v?.detalles ?? []).map((d, i) => (
+                      <span key={`${d?.id}-${i}`} style={{ fontSize: 12, color: 'var(--text-600)' }}>
                         {d?.producto?.nombre ?? 'Producto'} x{d?.cantidad ?? 0}
                       </span>
                     ))}
-                    {(v?.promociones ?? []).map((p) => (
-                      <span key={p?.id} className="badge badge-info" style={{ fontSize: 10 }}>{p?.nombre}</span>
+                    {(v?.promociones ?? []).map((p, i) => (
+                      <span key={`${p?.id}-${i}`} className="badge badge-info" style={{ fontSize: 10 }}>{p?.nombre}</span>
                     ))}
                   </div>
                 </td>
@@ -501,7 +512,7 @@ export default function VentasAdmin() {
                     style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                   >
                     {ESTADOS.map((e) => (
-                      <option key={e} value={e}>{e}</option>
+                      <option key={e} value={e} disabled={!esAdmin && e === 'Reembolsada'}>{e}</option>
                     ))}
                   </select>
                 </td>
