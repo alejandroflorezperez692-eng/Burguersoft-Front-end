@@ -17,7 +17,9 @@ import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
 import { ACCESO, normalizarRol } from '../utils/roles';
 import '../styles/admin.css';
+import '../styles/nu-admin.css';
 import AdminLoading from '../components/AdminLoading';
+import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
 
@@ -129,6 +131,7 @@ export default function AdminLayout() {
 
       <div className="main-content">
         <Outlet />
+        <AdminFooter />
       </div>
 
       {esAdmin && <AsistenteIA />}
