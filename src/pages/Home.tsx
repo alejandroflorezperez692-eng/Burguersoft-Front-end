@@ -103,7 +103,7 @@ export default function Home() {
       <HeroCarousel />
 
       <section className="promociones">
-        <h2>Combos</h2>
+        <h2>Combos y Promociones</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
         {promos === null ? (
           <AdminLoading texto="Cargando combos" subtexto="Preparando los mejores combos" />
