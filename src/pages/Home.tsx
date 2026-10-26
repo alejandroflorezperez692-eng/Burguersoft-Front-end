@@ -8,6 +8,7 @@ import promocionFallback from '../assets/img/promocion.png';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
 import AdminLoading from '../components/AdminLoading';
+import { IconoToast } from '../components/Toast';
 import '../styles/public.css';
 
 type Promocion = {
@@ -86,13 +87,15 @@ export default function Home() {
           role="status"
           style={{
             position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 10,
             background: '#1e3b1e', color: '#7ddc82', border: '2.5px solid #2e7d32',
             padding: '16px 26px', borderRadius: 10, fontSize: 14, fontWeight: 600,
             zIndex: 99999, maxWidth: '90%', textAlign: 'center',
             boxShadow: '0 8px 20px rgba(0,0,0,.25)',
           }}
         >
-          Has cerrado sesión correctamente.
+          <IconoToast tipo="exito" />
+          <span>Has cerrado sesión correctamente.</span>
         </div>
       )}
       <PublicHeader />

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import FacturaModal from './FacturaModal';
+import { IconoToast } from './Toast';
 
 const TIPOS_ENTREGA = ['Domicilio', 'Para recoger', 'En restaurante'] as const;
 const CUANDO_OPCIONES = ['Lo antes posible', 'Programar para más tarde'] as const;
@@ -311,9 +312,13 @@ export default function CartPanel() {
       {toast && (
         <div style={{
           position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', alignItems: 'center', gap: 10,
           background: '#2f2a1f', color: '#fff', border: `2.5px solid ${COLOR_TOAST[toast.tipo]}`, padding: '12px 20px', borderRadius: 10,
           fontSize: 13, fontWeight: 600, zIndex: 99999, boxShadow: '0 8px 20px rgba(0,0,0,.25)'
-        }}>{toast.msg}</div>
+        }}>
+          <IconoToast tipo={toast.tipo === 'aviso' ? 'aviso' : toast.tipo === 'err' ? 'error' : 'exito'} />
+          <span>{toast.msg}</span>
+        </div>
       )}
 
       <FacturaModal isOpen={showFactura} onClose={() => setShowFactura(false)} />

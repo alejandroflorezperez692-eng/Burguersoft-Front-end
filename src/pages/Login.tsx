@@ -4,6 +4,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
+import { IconoToast } from '../components/Toast';
 import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
 
@@ -42,7 +43,7 @@ export default function Login() {
 
   // Aviso flotante (estilo toast) en el login: contraseña cambiada o sesión cerrada
   const MENSAJE_AVISO: Record<string, string> = {
-    password_ok: '✅ Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
+    password_ok: 'Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
     logout_ok: 'Has cerrado sesión correctamente.',
   };
   const [aviso, setAviso] = useState<string | null>(MENSAJE_AVISO[tipoToast] ?? null);
@@ -90,13 +91,15 @@ export default function Login() {
           role="status"
           style={{
             position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 10,
             background: '#1e3b1e', color: '#7ddc82', border: '2.5px solid #2e7d32',
             padding: '16px 26px', borderRadius: 10, fontSize: 14, fontWeight: 600,
             zIndex: 99999, maxWidth: '90%', textAlign: 'center',
             boxShadow: '0 8px 20px rgba(0,0,0,.25)',
           }}
         >
-          {aviso}
+          <IconoToast tipo="exito" />
+          <span>{aviso}</span>
         </div>
       )}
       <div className="header-bar">INICIAR SESIÓN</div>
