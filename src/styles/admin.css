@@ -1280,9 +1280,10 @@ body.dark-mode .sidebar-header .logo-oscuro {
   top: 20px;
   left: 50%;
   transform: translateX(-50%) translateY(-20px);
-  background: #2f2a1f;
-  color: #ffffff;
-  border: 2.5px solid #E8821A;
+  /* Verde: movimientos y validaciones correctos */
+  background: #1e3b1e;
+  color: #7ddc82;
+  border: 2.5px solid #2e7d32;
   padding: 18px 28px;
   border-radius: 10px;
   font-size: 14px;

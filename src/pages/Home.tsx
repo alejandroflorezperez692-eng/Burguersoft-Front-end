@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import HeroCarousel from '../components/HeroCarousel';
 import Footer from '../components/Footer';
@@ -38,6 +38,21 @@ export default function Home() {
   const [promos, setPromos] = useState<Promocion[] | null>(null);
   const { isAuthenticated } = useAuth();
   const { agregar } = useCart();
+  const location = useLocation();
+
+  // Aviso flotante al cerrar sesión (vuelve a la Home con toast: 'logout_ok')
+  const [avisoSesion, setAvisoSesion] = useState<string | null>(() =>
+    (location.state as { toast?: string } | null)?.toast === 'logout_ok'
+      ? 'Has cerrado sesión correctamente.'
+      : null,
+  );
+  useEffect(() => {
+    if ((location.state as { toast?: string } | null)?.toast !== 'logout_ok') return;
+    setAvisoSesion('Has cerrado sesión correctamente.');
+    const t = setTimeout(() => setAvisoSesion(null), 6000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -66,6 +81,20 @@ export default function Home() {
 
   return (
     <div className="public-body">
+      {avisoSesion && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+            background: '#1e3b1e', color: '#7ddc82', border: '2.5px solid #2e7d32',
+            padding: '16px 26px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+            zIndex: 99999, maxWidth: '90%', textAlign: 'center',
+            boxShadow: '0 8px 20px rgba(0,0,0,.25)',
+          }}
+        >
+          Has cerrado sesión correctamente.
+        </div>
+      )}
       <PublicHeader />
 
       <HeroCarousel />

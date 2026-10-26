@@ -37,17 +37,22 @@ export default function Login() {
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const passwordCambiada =
-    (location.state as { toast?: string } | null)?.toast === 'password_ok';
+  const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
+  const passwordCambiada = tipoToast === 'password_ok';
 
-  // Aviso flotante verde (estilo toast) cuando la contraseña se cambió con éxito
-  const [avisoPassword, setAvisoPassword] = useState(passwordCambiada);
+  // Aviso flotante (estilo toast) en el login: contraseña cambiada o sesión cerrada
+  const MENSAJE_AVISO: Record<string, string> = {
+    password_ok: '✅ Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
+    logout_ok: 'Has cerrado sesión correctamente.',
+  };
+  const [aviso, setAviso] = useState<string | null>(MENSAJE_AVISO[tipoToast] ?? null);
   useEffect(() => {
-    if (!passwordCambiada) return;
-    setAvisoPassword(true);
-    const t = setTimeout(() => setAvisoPassword(false), 6000);
+    if (!tipoToast) return;
+    setAviso(MENSAJE_AVISO[tipoToast] ?? null);
+    const t = setTimeout(() => setAviso(null), 6000);
     return () => clearTimeout(t);
-  }, [passwordCambiada]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipoToast]);
 
   if (isAuthenticated) {
     return <Navigate to={rutaInicio(user?.role)} replace />;
@@ -80,7 +85,7 @@ export default function Login() {
 
   return (
     <AuthLayout regresarA="/">
-      {avisoPassword && (
+      {aviso && (
         <div
           role="status"
           style={{
@@ -91,7 +96,7 @@ export default function Login() {
             boxShadow: '0 8px 20px rgba(0,0,0,.25)',
           }}
         >
-          ✅ Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.
+          {aviso}
         </div>
       )}
       <div className="header-bar">INICIAR SESIÓN</div>
