@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
@@ -39,6 +39,15 @@ export default function Login() {
   const passwordCambiada =
     (location.state as { toast?: string } | null)?.toast === 'password_ok';
 
+  // Aviso flotante verde (estilo toast) cuando la contraseña se cambió con éxito
+  const [avisoPassword, setAvisoPassword] = useState(passwordCambiada);
+  useEffect(() => {
+    if (!passwordCambiada) return;
+    setAvisoPassword(true);
+    const t = setTimeout(() => setAvisoPassword(false), 6000);
+    return () => clearTimeout(t);
+  }, [passwordCambiada]);
+
   if (isAuthenticated) {
     return <Navigate to={user?.role === 'Cliente' ? '/' : '/inicio'} replace />;
   }
@@ -70,6 +79,20 @@ export default function Login() {
 
   return (
     <AuthLayout regresarA="/">
+      {avisoPassword && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+            background: '#1e3b1e', color: '#7ddc82', border: '2.5px solid #2e7d32',
+            padding: '16px 26px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+            zIndex: 99999, maxWidth: '90%', textAlign: 'center',
+            boxShadow: '0 8px 20px rgba(0,0,0,.25)',
+          }}
+        >
+          ✅ Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.
+        </div>
+      )}
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
         {passwordCambiada && (

@@ -382,7 +382,7 @@ export default function ComprasAdmin() {
       if (data.fecha) partes.push(`Fecha: ${data.fecha.split('-').reverse().join('/')}.`);
       if (data.observaciones) partes.push(data.observaciones);
       setAviso({ texto: partes.join(' '), alerta: !!data.observaciones });
-      showToast('Listo: revisa los datos y registra');
+      showToast('Listo: revisa los datos y registra', false, true);
     } catch (e) {
       const err = e as { response?: { data?: { message?: string } } };
       showToast(err?.response?.data?.message || 'No se pudo interpretar la compra', true);
@@ -446,7 +446,7 @@ const escanear = async (archivo: File) => {
     }
     if (data.observaciones) partes.push(data.observaciones);
     setAviso({ texto: partes.join(' '), alerta: data.cuadra === false || !!data.observaciones });
-    showToast('Factura leída por Burgi: revisa los datos y registra');
+    showToast('Factura leída por Burgi: revisa los datos y registra', false, true);
   } catch (e) {
     const err = e as { response?: { data?: { message?: string } } };
     showToast(err?.response?.data?.message || 'No se pudo leer la factura', true);
@@ -503,7 +503,7 @@ const save = () => {
   const MSG_FUERA_DE_PLAZO = `Esta compra ya no se puede eliminar: pasaron más de ${HORAS_PARA_ELIMINAR} horas desde que se registró.`;
 
   const del = (c: Compra) => {
-    if (!c.puede_eliminarse) { showToast(MSG_FUERA_DE_PLAZO, true); return; }
+    if (!c.puede_eliminarse) { showToast(MSG_FUERA_DE_PLAZO, false, true); return; }
     setEliminarCompra(c);
   };
 

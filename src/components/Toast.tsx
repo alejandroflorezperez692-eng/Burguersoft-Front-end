@@ -1,13 +1,19 @@
 import { useRef, useState } from 'react';
 
-export type ToastPayload = { msg: string; error?: boolean };
+/**
+ * Colores del toast según la señal:
+ *  - verde  → éxito (movimientos/validaciones correctos)
+ *  - rojo   → error (errores, validaciones fallidas, movimientos inválidos)
+ *  - amarillo → información / advertencia
+ */
+export type ToastPayload = { msg: string; error?: boolean; aviso?: boolean };
 
 export function useToast() {
   const [toast, setToast] = useState<ToastPayload | null>(null);
   const timer = useRef<number | undefined>(undefined);
 
-  const showToast = (msg: string, error = false) => {
-    setToast({ msg, error });
+  const showToast = (msg: string, error = false, aviso = false) => {
+    setToast({ msg, error, aviso });
     window.clearTimeout(timer.current);
     timer.current = window.setTimeout(() => setToast(null), 3200);
   };
@@ -17,5 +23,6 @@ export function useToast() {
 
 export default function ToastMessage({ toast }: { toast: ToastPayload | null }) {
   if (!toast) return null;
-  return <div className={`toast-marca${toast.error ? ' toast-error' : ''}`}>{toast.msg}</div>;
+  const clase = toast.error ? ' toast-error' : toast.aviso ? ' toast-aviso' : '';
+  return <div className={`toast-marca${clase}`}>{toast.msg}</div>;
 }
