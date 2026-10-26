@@ -26,14 +26,14 @@ const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
   { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.cocina },
   { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.caja },
-  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.personal },
   { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.personal },
+  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.personal },
   { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas, roles: ACCESO.cocina },
   { to: '/gestion-marca', label: 'Marcas', icono: marca, roles: ACCESO.cocina },
   { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.cocina },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
   { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
-  { to: '/ayuda', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.cocina },
+  { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.cocina },
 ];
 
 export default function AdminLayout() {
