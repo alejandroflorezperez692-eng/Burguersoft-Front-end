@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import logoClaro from '../assets/img/icono1.png';
@@ -12,23 +11,31 @@ import marca from '../assets/img/marca-comercial.png';
 import promocion from '../assets/img/promocion.png';
 import engranaje from '../assets/img/engranaje.png';
 import equipo from '../assets/img/equipo.png';
+import accesibilidad from '../assets/img/accesibilidad.png';
 import cerrarSesion from '../assets/img/cerrar-sesion.png';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
+import { ACCESO, normalizarRol } from '../utils/roles';
 import '../styles/admin.css';
+import '../styles/nu-admin.css';
 import AdminLoading from '../components/AdminLoading';
+import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
+import NotificacionesBoton from '../components/NotificacionesBoton';
 
-const navItemsAdmin = [
-  { to: '/inicio', label: 'Inicio', icono: casa },
-  { to: '/menu', label: 'Menú', icono: cena },
-  { to: '/ventas', label: 'Ventas', icono: insignia },
-  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas },
-  { to: '/compras', label: 'Compras', icono: buy },
-  { to: '/gestion-marca', label: 'Marcas', icono: marca },
-  { to: '/promociones', label: 'Promociones', icono: promocion },
-  { to: '/backups', label: 'Copias de seguridad', icono: engranaje },
-  { to: '/usuarios', label: 'Usuarios', icono: equipo },
+// Cada opción dice qué roles la ven (ver ACCESO en utils/roles.ts)
+const todosLosItems = [
+  { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
+  { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.cocina },
+  { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.caja },
+  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.personal },
+  { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.personal },
+  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas, roles: ACCESO.cocina },
+  { to: '/gestion-marca', label: 'Marcas', icono: marca, roles: ACCESO.cocina },
+  { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.cocina },
+  { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
+  { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
+  { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.cocina },
 ];
 
 export default function AdminLayout() {
@@ -38,13 +45,16 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
   const cerrarMenu = () => setMenuOpen(false);
-  const navItems = navItemsAdmin;
+  const rol = normalizarRol(user?.role);
+  const esAdmin = rol === 'admin';
+  const navItems = todosLosItems.filter((item) => rol !== '' && item.roles.includes(rol));
 
   const handleSalir = () => {
     setSaliendo(true);
     setTimeout(() => {
       logout();
-      navigate('/login', { replace: true });
+      // navigate al login con aviso de sesión cerrada
+      navigate('/login', { replace: true, state: { toast: 'logout_ok' } });
       setSaliendo(false);
     }, 500);
   };
@@ -93,30 +103,39 @@ export default function AdminLayout() {
             </div>
           ))}
         </div>
+
+        <div className="sidebar-item sidebar-salir">
+          <button type="button" onClick={() => { cerrarMenu(); handleSalir(); }}>
+            <img src={cerrarSesion} alt="" className="icono-sidebar" />
+            Cerrar sesión
+          </button>
+        </div>
       </aside>
       <div className={`sidebar-backdrop${menuOpen ? ' show' : ''}`} onClick={cerrarMenu} />
 
       <nav className="header-nav">
         <button type="button" className="topbar-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú">☰</button>
-        <NavLink to="/configuracion" className="nav-item admin-name" onClick={cerrarMenu}>
-
-          <img src={usuarioPerfil} alt="perfil" className="icono-sidebar-perfil" />
-          <span>{user?.name ?? user?.email ?? 'Administrador'}</span>
-        </NavLink>
-        <hr />
-        <button type="button" className="nav-item nav-logout" onClick={handleSalir}>
-          <img src={cerrarSesion} alt="" className="icono" />
-          Salir
-        </button>
-      </nav>
+          <div className="header-actions">
+            {esAdmin && <NotificacionesBoton />}
+            {esAdmin && <span className="header-sep" aria-hidden="true" />}
+            <NavLink to="/configuracion" className="header-user" onClick={cerrarMenu} title="Mi perfil">
+              <img src={usuarioPerfil} alt="" className="header-avatar" />
+              <span className="header-user-info">
+                <span className="header-user-name">{user?.name ?? user?.email ?? 'Administrador'}</span>
+                <span className="header-user-role">{user?.role ?? 'Administrador'}</span>
+              </span>
+            </NavLink>
+          </div>
+        </nav>
 
       {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
 
       <div className="main-content">
         <Outlet />
+        <AdminFooter />
       </div>
 
-      <AsistenteIA />
+      {esAdmin && <AsistenteIA />}
     </div>
   );
 }

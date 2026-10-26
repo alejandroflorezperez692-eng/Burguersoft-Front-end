@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import apiClient from '../../api/client';
 import marcaFallback from '../../assets/img/marca-comercial.png';
 import AdminLoading from '../../components/AdminLoading';
+import { IconoToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 
 interface Marca {
@@ -269,7 +270,10 @@ export default function MarcasAdmin() {
       )}
 
       {toast && (
-        <div className={`toast-marca${toast.error ? ' toast-error' : ''}`}>{toast.msg}</div>
+        <div className={`toast-marca${toast.error ? ' toast-error' : ''}`}>
+          <IconoToast tipo={toast.error ? 'error' : 'exito'} />
+          <span>{toast.msg}</span>
+        </div>
       )}
     </div>
   );

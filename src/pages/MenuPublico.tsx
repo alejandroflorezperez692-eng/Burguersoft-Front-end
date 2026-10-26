@@ -62,7 +62,7 @@ export default function MenuPublico() {
     };
   }, []);
 
-  const disponibles = (items ?? []).filter((p) => (p.estado ?? 'Disponible') !== 'Agotado');
+  const disponibles = items ?? [];
 
   const grouped = CATEGORIAS.reduce<Record<string, Producto[]>>((acc, cat) => {
     const prods = disponibles.filter((p) => catNombre(p.categoria) === cat);
@@ -92,47 +92,59 @@ export default function MenuPublico() {
             <div key={cat} style={{ marginBottom: 40 }}>
               <h2 style={{ fontSize: 28 }}>{cat}</h2>
               <div className="grid-promociones">
-                {prods.map((p) => (
-                  <div className="promo-card-pub" key={p.id}>
-                    <div className="promo-img-pub">
-                      <img
-                        src={p.img || cenaFallback}
-                        alt={p.nombre ?? 'Producto'}
-                        onError={(e) => {
-                          e.currentTarget.src = cenaFallback;
-                        }}
-                      />
-                      <span className="promo-badge-pub">{cat.toUpperCase()}</span>
-                    </div>
-                    <div className="promo-info-pub">
-                      <h3>{p.nombre ?? 'Sin nombre'}</h3>
-                      {p.descripcion && <p>{p.descripcion}</p>}
-                      <div className="promo-footer-pub">
-                        <div className="promo-precio-pub">
-                          {formatCOP(Number(p.valor || 0))}
-                        </div>
-                        {isAuthenticated ? (
-                          <button
-                            type="button"
-                            className="btn-circular-add"
-                            title="Agregar al carrito"
-                            onClick={() =>
-                              agregar({ id: p.id, nombre: p.nombre ?? 'Producto', precio: Number(p.valor || 0), imagen: p.img })
-                            }
-                          >
-                            +
-                          </button>
-                        ) : (
-                          <Link to="/login" title="Inicia sesión para pedir">
-                            <button type="button" className="btn-circular-add btn-login">
-                              +
-                            </button>
-                          </Link>
+                {prods.map((p) => {
+                  const agotado = p.estado === 'Agotado';
+                  return (
+                    <div className={`promo-card-pub${agotado ? ' agotado' : ''}`} key={p.id}>
+                      <div className="promo-img-pub">
+                        <img
+                          src={p.img || cenaFallback}
+                          alt={p.nombre ?? 'Producto'}
+                          onError={(e) => {
+                            e.currentTarget.src = cenaFallback;
+                          }}
+                        />
+                        <span className="promo-badge-pub">{cat.toUpperCase()}</span>
+                        {agotado && (
+                          <div className="promo-agotado-overlay">
+                            <span>AGOTADO</span>
+                          </div>
                         )}
                       </div>
+                      <div className="promo-info-pub">
+                        <h3>{p.nombre ?? 'Sin nombre'}</h3>
+                        {p.descripcion && <p>{p.descripcion}</p>}
+                        <div className="promo-footer-pub">
+                          <div className="promo-precio-pub">
+                            {formatCOP(Number(p.valor || 0))}
+                          </div>
+                          {agotado ? (
+                            <button type="button" className="btn-circular-add" disabled title="Producto agotado">
+                              +
+                            </button>
+                          ) : isAuthenticated ? (
+                            <button
+                              type="button"
+                              className="btn-circular-add"
+                              title="Agregar al carrito"
+                              onClick={() =>
+                                agregar({ id: p.id, nombre: p.nombre ?? 'Producto', precio: Number(p.valor || 0), imagen: p.img })
+                              }
+                            >
+                              +
+                            </button>
+                          ) : (
+                            <Link to="/login" title="Inicia sesión para pedir">
+                              <button type="button" className="btn-circular-add btn-login">
+                                +
+                              </button>
+                            </Link>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))

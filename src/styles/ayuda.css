@@ -333,3 +333,20 @@ body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a:focus-visible span {
   }
 
 }
+
+.ayuda-page .ayuda-contacto {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px 14px;
+  text-align: center;
+}
+
+.ayuda-page .ayuda-contacto p {
+  margin: 0;
+}
+
+.ayuda-page .ayuda-contacto a {
+  margin: 0;
+}

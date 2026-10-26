@@ -14,12 +14,13 @@ export type User = {
   role?: string;
 };
 
+type RolBackend = string | { id?: number; nombre?: string };
 type UsuarioApi = {
   id_Usuario?: number; id?: number;
   nombre_usuario?: string; nombre?: string;
   apellido_usuario?: string; apellido?: string;
   correo_personal?: string; correo?: string; email?: string;
-  rol?: string; rol_id?: number;
+  rol?: RolBackend; rol_id?: number;
 };
 type LoginResponse = {
   token?: string;
@@ -51,13 +52,19 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export { AuthContext };
 
 function readStoredUser(): User | null {
-  const stored = localStorage.getItem('user');
+  const stored = sessionStorage.getItem('user');
   if (!stored) return null;
   try {
     return JSON.parse(stored) as User;
   } catch {
     return null;
   }
+}
+
+function extraerRol(rol?: RolBackend): string | undefined {
+  if (typeof rol === 'string') return rol;
+  if (rol && typeof rol === 'object') return rol.nombre;
+  return undefined;
 }
 
 function mapUsuarioApi(u: UsuarioApi | undefined, fallbackEmail?: string): User {
@@ -68,13 +75,13 @@ function mapUsuarioApi(u: UsuarioApi | undefined, fallbackEmail?: string): User 
         .filter(Boolean)
         .join(' ') || undefined,
     email: u?.correo_personal ?? u?.correo ?? u?.email ?? fallbackEmail,
-    role: u?.rol,
+    role: extraerRol(u?.rol),
   };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     return token ? readStoredUser() : null;
   });
   const [loading, setLoading] = useState(false);
@@ -97,12 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: u?.id_Usuario ?? u?.id,
         name: [u?.nombre_usuario ?? u?.nombre, u?.apellido_usuario ?? u?.apellido].filter(Boolean).join(' ') || undefined,
         email: u?.correo_personal ?? u?.correo ?? u?.email ?? email,
-        role: u?.rol,
+        role: extraerRol(u?.rol),
       };
 
 
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(nextUser));
+      sessionStorage.setItem('token', data.token);
+      sessionStorage.setItem('user', JSON.stringify(nextUser));
       setUser(nextUser);
     } finally {
       setLoading(false);
@@ -113,15 +120,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // (viene en la URL tras el redirect de Laravel), así que solo hay que
   // guardarlo y pedir los datos del usuario a /me para completar la sesión.
   const loginWithToken = useCallback(async (token: string) => {
-    localStorage.setItem('token', token);
+    sessionStorage.setItem('token', token);
 
     try {
       const { data } = await apiClient.get<UsuarioApi>('/me');
       const nextUser = mapUsuarioApi(data);
-      localStorage.setItem('user', JSON.stringify(nextUser));
+      sessionStorage.setItem('user', JSON.stringify(nextUser));
       setUser(nextUser);
     } catch (err) {
-      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
       throw err;
     }
   }, []);
@@ -149,8 +156,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     setLoading(true);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setUser(null);
     setLoading(false);
   }, []);
@@ -158,7 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateUser = useCallback((partial: Partial<User>) => {
     setUser((prev) => {
       const next = { ...(prev ?? {}), ...partial };
-      localStorage.setItem('user', JSON.stringify(next));
+      sessionStorage.setItem('user', JSON.stringify(next));
       return next;
     });
   }, []);
@@ -171,8 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: esAdmin ? 'admin@demo.com' : 'cliente@demo.com',
       role: esAdmin ? 'admin' : 'cliente',
     };
-    localStorage.setItem('token', 'demo-token-sin-backend');
-    localStorage.setItem('user', JSON.stringify(demoUser));
+    sessionStorage.setItem('token', 'demo-token-sin-backend');
+    sessionStorage.setItem('user', JSON.stringify(demoUser));
     setUser(demoUser);
   }, []);
 

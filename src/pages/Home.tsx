@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import PublicHeader from '../components/PublicHeader';
 import HeroCarousel from '../components/HeroCarousel';
 import Footer from '../components/Footer';
@@ -8,6 +8,7 @@ import promocionFallback from '../assets/img/promocion.png';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
 import AdminLoading from '../components/AdminLoading';
+import { IconoToast } from '../components/Toast';
 import '../styles/public.css';
 
 type Promocion = {
@@ -16,6 +17,7 @@ type Promocion = {
   descripcion?: string | null;
   precio: number;
   imagen?: string | null;
+  estado?: string;
   fecha_inicio?: string | null;
   fecha_fin?: string | null;
 };
@@ -37,6 +39,21 @@ export default function Home() {
   const [promos, setPromos] = useState<Promocion[] | null>(null);
   const { isAuthenticated } = useAuth();
   const { agregar } = useCart();
+  const location = useLocation();
+
+  // Aviso flotante al cerrar sesión (vuelve a la Home con toast: 'logout_ok')
+  const [avisoSesion, setAvisoSesion] = useState<string | null>(() =>
+    (location.state as { toast?: string } | null)?.toast === 'logout_ok'
+      ? 'Has cerrado sesión correctamente.'
+      : null,
+  );
+  useEffect(() => {
+    if ((location.state as { toast?: string } | null)?.toast !== 'logout_ok') return;
+    setAvisoSesion('Has cerrado sesión correctamente.');
+    const t = setTimeout(() => setAvisoSesion(null), 6000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -54,21 +71,39 @@ export default function Home() {
     };
   }, []);
 
-  const hoy = new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const hoy = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const activas = (promos ?? []).filter((p) => {
-    if (p.fecha_fin && p.fecha_fin < hoy) return false;
-    if (p.fecha_inicio && p.fecha_inicio > hoy) return false;
+    if (p.estado !== 'Activa') return false;
+    if (p.fecha_fin && p.fecha_fin.slice(0, 10) < hoy) return false;
+    if (p.fecha_inicio && p.fecha_inicio.slice(0, 10) > hoy) return false;
     return true;
   });
 
   return (
     <div className="public-body">
+      {avisoSesion && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: '#1e3b1e', color: '#7ddc82', border: '2.5px solid #2e7d32',
+            padding: '16px 26px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+            zIndex: 99999, maxWidth: '90%', textAlign: 'center',
+            boxShadow: '0 8px 20px rgba(0,0,0,.25)',
+          }}
+        >
+          <IconoToast tipo="exito" />
+          <span>Has cerrado sesión correctamente.</span>
+        </div>
+      )}
       <PublicHeader />
 
       <HeroCarousel />
 
       <section className="promociones">
-        <h2>Combos</h2>
+        <h2>Combos y Promociones</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
         {promos === null ? (
           <AdminLoading texto="Cargando combos" subtexto="Preparando los mejores combos" />

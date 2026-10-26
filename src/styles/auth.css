@@ -9,6 +9,16 @@
   background-image:
     radial-gradient(circle at 15% 25%, rgba(232, 130, 26, 0.10) 0%, transparent 55%),
     radial-gradient(circle at 85% 75%, rgba(200, 56, 42, 0.07) 0%, transparent 50%);
+  position: relative;
+}
+
+
+/* El resto del contenido va por encima del fondo */
+.auth-navbar,
+.header-bar,
+.card {
+  position: relative;
+  z-index: 1;
 }
 
 .auth-center {

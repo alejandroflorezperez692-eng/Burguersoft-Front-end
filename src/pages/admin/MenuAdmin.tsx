@@ -21,7 +21,7 @@ interface Producto {
 
 const CATEGORIAS = [
   'Hamburguesa', 'Perros Caliente', 'Salchipapa', 'Fritos',
-  'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza', 'Combos',
+  'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
 ];
 
 const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '' };
@@ -145,7 +145,7 @@ export default function MenuAdmin() {
     setEditId(p.id);
     setForm({
       nombre: p.nombre,
-      valor: String(Number(p.valor)),
+      valor: String(Math.round(Number(p.valor))),
       estado: p.estado === 'Agotado' ? 'Agotado' : 'Disponible',
       categoria: p.categoria,
       descripcion: p.descripcion ?? '',
@@ -154,8 +154,7 @@ export default function MenuAdmin() {
     setPreview(imgValida(p.img) ? p.img : null);
     setImgActual(!!p.img);
     if (fileRef.current) fileRef.current.value = '';
-    setMostrarForm(true);
-    setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+    setMostrarForm(false);
   };
 
   /* ---------- Guardar ---------- */
@@ -209,25 +208,9 @@ export default function MenuAdmin() {
     }
   };
 
-  /* ---------- Render ---------- */
-  return (
-    <div className="page-inner mn-page">
-      <div className="page-header">
-        <div>
-          <h1>Gestión del Menú</h1>
-          <p className="subtitulo">Productos disponibles en el menú</p>
-        </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
-        >
-          {mostrarForm ? '✕ Cerrar' : '+ Agregar producto'}
-        </button>
-      </div>
-
-      {mostrarForm && (
-        <div className="mn-form-panel" ref={panelRef}>
+  /* ---------- Formulario (panel para nuevo, modal para editar) ---------- */
+  const panelFormulario = (
+        <div className="mn-form-panel" ref={panelRef} style={editId !== null ? { marginBottom: 0, border: 0, boxShadow: 'none' } : undefined}>
           <div className="mn-form-header">
             <h3>{editId ? 'Editar producto' : 'Nuevo producto'}</h3>
           </div>
@@ -247,11 +230,11 @@ export default function MenuAdmin() {
                 <div className="mn-row-3">
                   <div className="mn-field">
                     <label htmlFor="mn-precio">Precio <span className="mn-req">*</span></label>
-                    <div className="mn-input-prefix">
-                      <span>$</span>
-                      <input id="mn-precio" type="number" min={0} placeholder="12000"
-                        value={form.valor} onChange={setCampo('valor')} />
-                    </div>
+                    <input id="mn-precio" type="text" inputMode="numeric" placeholder="$ 0"
+                      value={form.valor ? Number(form.valor).toLocaleString('es-CO') : ''}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, valor: e.target.value.replace(/\D/g, '').slice(0, 9) }))
+                      } />
                   </div>
                   <div className="mn-field">
                     <label htmlFor="mn-categoria">Categoría <span className="mn-req">*</span></label>
@@ -323,10 +306,40 @@ export default function MenuAdmin() {
               {guardando ? 'Guardando…' : editId ? 'Guardar cambios' : 'Guardar Producto'}
             </button>
             {editId && (
-              <button type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar edición</button>
+              <button type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
             )}
           </div>
         </form>
+        </div>
+  );
+
+  /* ---------- Render ---------- */
+  return (
+    <div className="page-inner mn-page">
+      <div className="page-header">
+        <div>
+          <h1>Gestión del Menú</h1>
+          <p className="subtitulo">Productos disponibles en el menú</p>
+        </div>
+        <button
+          type="button"
+          className="btn-primary"
+          onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
+        >
+          {mostrarForm ? 'Cancelar' : '+ Agregar producto'}
+        </button>
+      </div>
+
+      {mostrarForm && editId === null && panelFormulario}
+
+      {editId !== null && (
+        <div className="mn-modal-overlay">
+          <div
+            className="mn-modal-box"
+            style={{ maxWidth: 980, width: '95%', maxHeight: '92vh', overflowY: 'auto', padding: 0, textAlign: 'left' }}
+          >
+            {panelFormulario}
+          </div>
         </div>
       )}
 

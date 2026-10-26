@@ -309,7 +309,7 @@ export default function MisPedidos() {
   useEffect(() => {
     if (!isAuthenticated) return;
     // Token demo sin backend: no hay nada que pedir
-    if (localStorage.getItem('token') === 'demo-token-sin-backend') {
+    if (sessionStorage.getItem('token') === 'demo-token-sin-backend') {
       setPedidos([]);
       return;
     }
@@ -330,7 +330,7 @@ export default function MisPedidos() {
     setCancelandoId(pedido.id);
     setError(null);
     try {
-      const { data } = await apiClient.put(`/ventas/${pedido.id}`, { estado: 'Cancelado' });
+      const { data } = await apiClient.put(`/pedidos/${pedido.id}`, { estado: 'Cancelado' });
       // El backend puede devolver { success: true } o la venta actualizada
       if (data && data.success === false) {
         throw new Error(String(data.error ?? data.message ?? 'No se pudo cancelar el pedido.'));

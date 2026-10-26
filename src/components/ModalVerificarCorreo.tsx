@@ -35,6 +35,8 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
   const [agitar, setAgitar] = useState(false);
   const [exito, setExito] = useState(false);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+  // Guarda el último código que se envió automáticamente (evita dobles envíos)
+  const ultimoCodigoAuto = useRef('');
 
   const emailLimpio = correo.trim().toLowerCase();
 
@@ -83,6 +85,8 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
       dispararAgitado();
       setTimeout(() => {
         setDigitos(['', '', '', '', '', '']);
+        // Permite volver a auto-verificar cuando se reingrese un código
+        ultimoCodigoAuto.current = '';
         inputsRef.current[0]?.focus();
       }, 450);
     },
@@ -245,6 +249,18 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
       setLoadingVerificar(false);
     }
   };
+
+  // Verificación automática: apenas se complete el 6º dígito se verifica
+  // el código sin necesidad de presionar el botón (si ya fue enviado).
+  const codigoCompleto = digitos.every(Boolean) && codigoEnviado;
+  useEffect(() => {
+    if (! codigoCompleto || bloqueado || exito || loadingVerificar) return;
+    const codigo = digitos.join('');
+    if (ultimoCodigoAuto.current === codigo) return;
+    ultimoCodigoAuto.current = codigo;
+    void handleVerificar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codigoCompleto]);
 
   const puedeReenviar = segundosReenvio <= 0 && !loadingEnviar && !exito;
 
