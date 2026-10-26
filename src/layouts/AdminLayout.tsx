@@ -53,7 +53,8 @@ export default function AdminLayout() {
     setSaliendo(true);
     setTimeout(() => {
       logout();
-      navigate('/login', { replace: true });
+      // navigate al login con aviso de sesión cerrada
+      navigate('/login', { replace: true, state: { toast: 'logout_ok' } });
       setSaliendo(false);
     }, 500);
   };

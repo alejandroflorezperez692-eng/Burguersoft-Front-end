@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
+import { IconoToast } from '../components/Toast';
 import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
 
@@ -37,8 +38,22 @@ export default function Login() {
   const { login, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const passwordCambiada =
-    (location.state as { toast?: string } | null)?.toast === 'password_ok';
+  const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
+  const passwordCambiada = tipoToast === 'password_ok';
+
+  // Aviso flotante (estilo toast) en el login: contraseña cambiada o sesión cerrada
+  const MENSAJE_AVISO: Record<string, string> = {
+    password_ok: 'Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
+    logout_ok: 'Has cerrado sesión correctamente.',
+  };
+  const [aviso, setAviso] = useState<string | null>(MENSAJE_AVISO[tipoToast] ?? null);
+  useEffect(() => {
+    if (!tipoToast) return;
+    setAviso(MENSAJE_AVISO[tipoToast] ?? null);
+    const t = setTimeout(() => setAviso(null), 6000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipoToast]);
 
   if (isAuthenticated) {
     return <Navigate to={rutaInicio(user?.role)} replace />;
@@ -71,6 +86,22 @@ export default function Login() {
 
   return (
     <AuthLayout regresarA="/">
+      {aviso && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: '#1e3b1e', color: '#7ddc82', border: '2.5px solid #2e7d32',
+            padding: '16px 26px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+            zIndex: 99999, maxWidth: '90%', textAlign: 'center',
+            boxShadow: '0 8px 20px rgba(0,0,0,.25)',
+          }}
+        >
+          <IconoToast tipo="exito" />
+          <span>{aviso}</span>
+        </div>
+      )}
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
         {passwordCambiada && (

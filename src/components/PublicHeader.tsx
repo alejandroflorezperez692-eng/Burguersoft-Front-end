@@ -40,7 +40,7 @@ export default function PublicHeader() {
     setSaliendo(true);
     setTimeout(() => {
       logout();
-      navigate('/', { replace: true });
+      navigate('/', { replace: true, state: { toast: 'logout_ok' } });
       setSaliendo(false);
     }, 500);
   };
