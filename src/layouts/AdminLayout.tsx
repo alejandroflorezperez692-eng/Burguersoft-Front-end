@@ -35,7 +35,7 @@ const todosLosItems = [
   { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.cocina },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
   { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
-  { to: '/ayuda', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.cocina },
+  { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.cocina },
 ];
 
 export default function AdminLayout() {
