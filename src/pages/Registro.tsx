@@ -189,7 +189,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="nombre">Nombre*</label>
+              <label htmlFor="nombre">Nombre<span className="required-marker">*</span></label>
               <input
                 type="text"
                 id="nombre"
@@ -210,7 +210,7 @@ export default function Registro() {
               />
             </div>
             <div className="campo">
-              <label htmlFor="apellido">Apellido*</label>
+              <label htmlFor="apellido">Apellido<span className="required-marker">*</span></label>
               <input
                 type="text"
                 id="apellido"
@@ -234,7 +234,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="tipoDocumento">Tipo de documento*</label>
+              <label htmlFor="tipoDocumento">Tipo de documento<span className="required-marker">*</span></label>
               <div className="custom-select" ref={tipoRef}>
                 <button
                   type="button"
@@ -269,7 +269,7 @@ export default function Registro() {
               </div>
             </div>
             <div className="campo">
-              <label htmlFor="numeroDocumento">Número de documento*</label>
+              <label htmlFor="numeroDocumento">Número de documento<span className="required-marker">*</span></label>
               <input
                 type="text"
                 id="numeroDocumento"
@@ -295,7 +295,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="correo">Correo*</label>
+              <label htmlFor="correo">Correo<span className="required-marker">*</span></label>
               <input
                 type="email"
                 id="correo"
@@ -309,7 +309,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="password">Contraseña*</label>
+              <label htmlFor="password">Contraseña<span className="required-marker">*</span></label>
               <div className="campo-password">
                 <input
                   type={mostrarPassword ? 'text' : 'password'}
@@ -358,7 +358,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="confirmPassword">Confirmar Contraseña*</label>
+              <label htmlFor="confirmPassword">Confirmar Contraseña<span className="required-marker">*</span></label>
               <div className="campo-password">
                 <input
                   type={mostrarConfirmPassword ? 'text' : 'password'}

@@ -103,16 +103,21 @@ export default function RecuperarContrasena() {
             <p className="descripcion descripcion-recuperacion">
               Ingresa tu correo electrónico registrado para recibir el código de recuperación.
             </p>
-            <input
-              id="rec-email"
-              type="email"
-              className="input"
-              placeholder="Correo electrónico (obligatorio)"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-              required
-              disabled={bloqueado}
-            />
+            <div className="campo">
+              <label htmlFor="rec-email">
+                Correo electrónico<span className="required-marker">*</span>
+              </label>
+              <input
+                id="rec-email"
+                type="email"
+                className="input"
+                placeholder="Digite tu correo electrónico"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                required
+                disabled={bloqueado}
+              />
+            </div>
             {error && !bloqueado && (
               <p className="auth-error" role="alert">
                 {error}

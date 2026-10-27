@@ -75,7 +75,7 @@ export default function RestablecerContrasena() {
         </div>
         <p className="descripcion">Ingresa y confirma tu nueva contraseña.</p>
         <form onSubmit={handleSubmit} noValidate>
-          <h2>NUEVA CONTRASEÑA*</h2>
+          <h2>NUEVA CONTRASEÑA<span className="required-marker">*</span></h2>
           <div className="campo-password">
             <input
               type={show1 ? 'text' : 'password'}
@@ -109,7 +109,7 @@ export default function RestablecerContrasena() {
             ))}
           </ul>
 
-          <h2 style={{ marginTop: 18 }}>CONFIRMAR CONTRASEÑA*</h2>
+          <h2 style={{ marginTop: 18 }}>CONFIRMAR CONTRASEÑA<span className="required-marker">*</span></h2>
           <div className="campo-password">
             <input
               type={show2 ? 'text' : 'password'}

@@ -1,5 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Lato:wght@300;400;700;900&display=swap');
 
+.required-marker,
+.checkout-required,
+.cfg-req,
+.mn-req,
+.mp-req {
+  color: #E8821A !important;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+.required-marker::before,
+.checkout-required::before,
+.cfg-req::before,
+.mn-req::before,
+.mp-req::before {
+  content: ' ';
+  white-space: pre;
+}
+
 :root {
   --brand: #E8821A;
   --brand-deep: #cf6e12;
@@ -464,6 +483,19 @@ body.dark-mode .circulo {
 
 body.dark-mode .auth-center * {
   color: #ffffff !important;
+}
+
+body.dark-mode .auth-center .required-marker,
+body.dark-mode .auth-center .checkout-required,
+body.dark-mode .auth-center .cfg-req,
+body.dark-mode .auth-center .mn-req,
+body.dark-mode .auth-center .mp-req,
+body.dark-mode .required-marker,
+body.dark-mode .checkout-required,
+body.dark-mode .cfg-req,
+body.dark-mode .mn-req,
+body.dark-mode .mp-req {
+  color: #E8821A !important;
 }
 
 /* Excepciones que deben mantener su color propio (badges, precios, botones con color de marca) - opcional, si quieres que TODO sea blanco comenta este bloque */
@@ -1360,4 +1392,3 @@ body:not(.dark-mode) .public-body .cart-panel .btn-ir-pagar:not(:disabled):activ
   transform: translateY(0) !important;
   box-shadow: 0 4px 12px rgba(232, 130, 26, 0.35) !important;
 }
-
