@@ -201,7 +201,7 @@ export default function UsuariosAdmin() {
   const del = async (id: number) => {
     const u = items.find((x) => x.id === id);
     const nombreCompleto = u ? `${u.nombre} ${u.apellido ?? ''}` : 'este usuario';
-    if (!(await confirmar(`¿Eliminar a "${nombreCompleto}"?`))) return;
+    if (!(await confirmar(`¿Eliminar a "${nombreCompleto}"? Esta acción no se puede deshacer.`, 'Sí, eliminar'))) return;
     try {
       await apiClient.delete(`/usuarios/${id}`);
       showToast('Usuario eliminado');

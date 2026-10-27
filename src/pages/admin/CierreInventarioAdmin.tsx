@@ -162,7 +162,7 @@ export default function CierreInventarioAdmin() {
     }
     const sinContar = filas.length - contados.length;
     const aviso = sinContar > 0 ? ` Las ${sinContar} que no contaste quedan como están.` : '';
-    if (!(await confirmar(`¿Guardar el cierre de ${contados.length} materias primas?${aviso}`))) return;
+    if (!(await confirmar(`¿Guardar el cierre de ${contados.length} materias primas?${aviso}`, 'Sí, guardar'))) return;
     setGuardando(true);
     try {
       await apiClient.post('/inventario/cierres', {

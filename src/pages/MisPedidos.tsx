@@ -328,7 +328,7 @@ export default function MisPedidos() {
       setError('Este pedido ya no se puede cancelar. Contáctanos por WhatsApp.');
       return;
     }
-    if (!(await confirmar(`¿Seguro que deseas cancelar el pedido #${pedido.numero_secuencial}?`))) return;
+    if (!(await confirmar(`¿Seguro que deseas cancelar el pedido #${pedido.numero_secuencial}?`, 'Sí, cancelar'))) return;
     setCancelandoId(pedido.id);
     setError(null);
     try {

@@ -107,7 +107,7 @@ export default function MarcasAdmin() {
 
   const del = async (id: number) => {
     const m = items.find((x) => x.id === id);
-    if (!(await confirmar(`¿Eliminar la marca "${m?.nombre ?? id}"?`))) return;
+    if (!(await confirmar(`¿Eliminar la marca "${m?.nombre ?? id}"? Esta acción no se puede deshacer.`, 'Sí, eliminar'))) return;
     try {
       await apiClient.delete(`/marcas/${id}`);
       showToast('Marca eliminada');

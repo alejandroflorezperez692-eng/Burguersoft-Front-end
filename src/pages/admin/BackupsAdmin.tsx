@@ -465,7 +465,7 @@ export default function BackupsAdmin() {
   };
 
   const del = async (id: number) => {
-    if (!(await confirmar('¿Eliminar este registro de backup?'))) return;
+    if (!(await confirmar('¿Eliminar este registro de backup? Esta acción no se puede deshacer.', 'Sí, eliminar'))) return;
     apiClient.delete(`/backups/${id}`).then(() => load());
   };
 
@@ -475,7 +475,8 @@ export default function BackupsAdmin() {
       `Copia: ${resumen}\n\n` +
       `ATENCIÓN: Se reemplazarán los datos actuales de las tablas incluidas ` +
       `en la copia por los datos guardados. Esta acción no se puede deshacer.\n\n` +
-      `¿Deseas continuar?`
+      `¿Deseas continuar?`,
+      'Sí, restaurar'
     );
     if (!ok) return;
 
