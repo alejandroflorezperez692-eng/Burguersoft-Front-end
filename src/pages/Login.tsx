@@ -39,7 +39,6 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
-  const passwordCambiada = tipoToast === 'password_ok';
 
   // Aviso flotante (estilo toast) en el login: contraseña cambiada o sesión cerrada
   const MENSAJE_AVISO: Record<string, string> = {
@@ -104,11 +103,6 @@ export default function Login() {
       )}
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
-        {passwordCambiada && (
-          <p className="descripcion" role="status" style={{ color: '#1e8e3e', fontWeight: 700 }}>
-            Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.
-          </p>
-        )}
         <form onSubmit={handleSubmit} noValidate>
           <h2>CORREO*</h2>
           <input

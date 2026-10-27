@@ -290,7 +290,7 @@ export default function CierreInventarioAdmin() {
                 <col style={{ width: '16%' }} />
               </colgroup>
               <thead>
-                <tr><th>N.º</th><th>Fecha y hora</th><th>Responsable</th><th>Materias primas</th><th>Con diferencia</th><th>Observación</th><th>Detalle</th></tr>
+                <tr><th>#</th><th>Fecha y hora</th><th>Responsable</th><th>Materias primas</th><th>Con diferencia</th><th>Observación</th><th>Detalle</th></tr>
               </thead>
               <tbody>
                 {cierres.map((h) => (

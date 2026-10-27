@@ -256,7 +256,7 @@ export default function UsuariosAdmin() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>#</th>
                 <th>Usuario</th>
                 <th>Correo</th>
                 <th>Teléfono</th>
