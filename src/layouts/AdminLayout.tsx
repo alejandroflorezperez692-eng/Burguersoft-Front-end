@@ -32,6 +32,8 @@ const todosLosItems = [
   { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.personal },
   { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas, roles: ACCESO.cocina },
   { to: '/gestion-marca', label: 'Marcas', icono: marca, roles: ACCESO.cocina },
+  { to: '/reportes', label: 'Reportes', icono: insignia, roles: ACCESO.soloAdmin },
+  { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.cocina },
   { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.cocina },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
   { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
