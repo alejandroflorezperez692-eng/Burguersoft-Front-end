@@ -4,7 +4,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
-import { IconoToast } from '../components/Toast';
+import { IconoToast, useToast } from '../components/Toast';
 import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
 
@@ -32,14 +32,15 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
 
   const { login, isAuthenticated, user } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
-  const passwordCambiada = tipoToast === 'password_ok';
+
 
   // Aviso flotante (estilo toast) en el login: contraseña cambiada o sesión cerrada
   const MENSAJE_AVISO: Record<string, string> = {
@@ -61,7 +62,6 @@ export default function Login() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
     setLoading(true);
 
     try {
@@ -70,7 +70,7 @@ export default function Login() {
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
-      setError(getErrorMessage(err));
+      showToast(getErrorMessage(err), true);
     } finally {
       setLoading(false);
     }
@@ -104,11 +104,7 @@ export default function Login() {
       )}
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
-        {passwordCambiada && (
-          <p className="descripcion" role="status" style={{ color: '#1e8e3e', fontWeight: 700 }}>
-            Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.
-          </p>
-        )}
+
         <form onSubmit={handleSubmit} noValidate>
           <h2>CORREO*</h2>
           <input
@@ -143,11 +139,7 @@ export default function Login() {
             </button>
           </div>
 
-          {error && (
-            <p className="auth-error" role="alert">
-              {error}
-            </p>
-          )}
+
 
           <button type="submit" className="btn-primario" disabled={loading}>
             {loading ? 'INGRESANDO…' : 'INICIAR SESIÓN'}

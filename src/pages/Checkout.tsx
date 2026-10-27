@@ -340,21 +340,14 @@ export default function Checkout() {
   // ---- Dirección de entrega (solo aplica si tipoEntrega === 'Domicilio') ----
   const [direccion, setDireccion] = useState<Direccion>(direccionVacia);
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false);
-  const [avisoUbicacion, setAvisoUbicacion] = useState<string | null>(null);
-  const avisoTimer = useRef<number | null>(null);
+
   const refReferencia = useRef<HTMLTextAreaElement | null>(null);
 
   const showToastUbicacion = (msg: string) => {
-    setAvisoUbicacion(msg);
-    if (avisoTimer.current) window.clearTimeout(avisoTimer.current);
-    avisoTimer.current = window.setTimeout(() => setAvisoUbicacion(null), 5000);
+    showToastGlobal(msg, false, true);
   };
 
-  useEffect(() => {
-    return () => {
-      if (avisoTimer.current) window.clearTimeout(avisoTimer.current);
-    };
-  }, []);
+
 
   // El campo de referencia crece solo con el texto, pero nunca se encoge
   // si el cliente lo agrandó a mano arrastrando la esquina.
@@ -768,7 +761,7 @@ export default function Checkout() {
                     <img src={logoUbicacion} alt="" className="btn-ubicacion-icono" />
                     {buscandoUbicacion ? 'Buscando tu ubicación...' : 'Usar mi ubicación actual'}
                   </button>
-                  {avisoUbicacion && (<p className="checkout-aviso"><span></span> {avisoUbicacion}</p>)}
+
 
                   <div className="form-group">
                     <label>Dirección <span className="checkout-required">*</span></label>
