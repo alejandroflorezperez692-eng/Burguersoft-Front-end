@@ -7,8 +7,8 @@ import iconoBloqueo from '../assets/img/bloquear.png';
 
 export default function RestablecerContrasena() {
   const navigate = useNavigate();
-  const correo = sessionStorage.getItem('correo_recuperacion') ?? '';
-  const codigo = sessionStorage.getItem('codigo_verificado') ?? '';
+  const [correo] = useState(() => sessionStorage.getItem('correo_recuperacion') ?? '');
+  const [codigo] = useState(() => sessionStorage.getItem('codigo_verificado') ?? '');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [show1, setShow1] = useState(false);

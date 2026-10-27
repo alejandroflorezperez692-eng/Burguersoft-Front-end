@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import ModalVerificarCorreo from '../components/ModalVerificarCorreo';
+import ModalLegal, { type DocumentoLegal } from '../components/ModalLegal';
 import { useAuth } from '../hooks/useAuth';
 
 function getErrorMessage(error: unknown): string {
@@ -64,6 +65,7 @@ export default function Registro() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [documentoLegal, setDocumentoLegal] = useState<DocumentoLegal | null>(null);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [errorTerminos, setErrorTerminos] = useState<string | null>(null);
 
@@ -396,7 +398,7 @@ export default function Registro() {
               style={{ marginTop: 4 }}
             />
             <label htmlFor="aceptaTerminos" style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--text-700)' }}>
-              He leído y acepto los <Link to="/terminos" className="auth-legal-link" onClick={(e) => e.stopPropagation()}>Términos y Condiciones</Link> y autorizo el tratamiento de mis datos personales conforme a la <Link to="/privacidad" className="auth-legal-link" onClick={(e) => e.stopPropagation()}>Política de Privacidad</Link>.
+              He leído y acepto los <Link to="/terminos" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('terminos'); }}>Términos y Condiciones</Link> y autorizo el tratamiento de mis datos personales conforme a la <Link to="/privacidad" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('privacidad'); }}>Política de Privacidad</Link>.
             </label>
           </div>
           {errorTerminos && (
@@ -421,6 +423,12 @@ export default function Registro() {
           correo={correo}
           onClose={() => setModalAbierto(false)}
           onVerified={handleCodigoVerificado}
+        />
+      )}
+      {documentoLegal && (
+        <ModalLegal
+          documentoInicial={documentoLegal}
+          onClose={() => setDocumentoLegal(null)}
         />
       )}
     </AuthLayout>

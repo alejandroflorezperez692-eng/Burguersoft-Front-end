@@ -7,19 +7,22 @@ import { useCart } from '../hooks/useCart';
 import PerfilModal from './PerfilModal';
 import CartPanel from './CartPanel';
 import AdminLoading from './AdminLoading';
-
-const enlaces = [
-  { to: '/', label: 'Inicio', end: true },
-  { to: '/nosotros', label: 'Nosotros', end: false },
-  { to: '/menu-publico', label: 'Menú', end: false },
-  { to: '/contactanos', label: 'Contáctanos', end: false },
-  { to: '/ayuda', label: 'Ayuda', end: false },
-];
+import { normalizarRol } from '../utils/roles';
 
 export default function PublicHeader() {
   const { isAuthenticated, user, logout } = useAuth();
   const { count, toggle } = useCart();
   const navigate = useNavigate();
+  const ayudaPath = isAuthenticated && normalizarRol(user?.role) === 'cliente'
+    ? '/ayuda-cliente'
+    : '/ayuda';
+  const enlaces = [
+    { to: '/', label: 'Inicio', end: true },
+    { to: '/nosotros', label: 'Nosotros', end: false },
+    { to: '/menu-publico', label: 'Menú', end: false },
+    { to: '/contactanos', label: 'Contáctanos', end: false },
+    { to: ayudaPath, label: 'Ayuda', end: false },
+  ];
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
   const [saliendo, setSaliendo] = useState(false);

@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { LifeBuoy } from 'lucide-react';
+import ModalLegal, { type DocumentoLegal } from '../../components/ModalLegal';
 import PublicHeader from '../../components/PublicHeader';
 import Footer from '../../components/Footer';
 import '../../styles/ayuda.css';
 
 export default function Ayuda() {
   const [acordeonAbierto, setAcordeonAbierto] = useState<string | null>(null);
+  const [documentoLegal, setDocumentoLegal] = useState<DocumentoLegal | null>(null);
 
   const alternarAcordeon = (id: string) => {
     setAcordeonAbierto((abierto) => (abierto === id ? null : id));
@@ -17,16 +20,20 @@ export default function Ayuda() {
 
       <main className="ayuda-page">
         <section className="ayuda-hero" aria-labelledby="ayuda-title">
-          <span className="ayuda-etiqueta">CENTRO DE AYUDA</span>
-          <h1 id="ayuda-title">Estamos aquí para ayudarte</h1>
-          <p>
-            Encuentra una guía sencilla para crear tu cuenta, iniciar sesión,
-            recuperar tu contraseña y conocer las opciones disponibles antes
-            de hacer un pedido.
-          </p>
+          <LifeBuoy className="ayuda-hero-icono" size={40} aria-hidden="true" />
+          <div className="ayuda-hero-contenido">
+            <span className="ayuda-etiqueta">CENTRO DE AYUDA</span>
+            <h1 id="ayuda-title">Estamos aquí para ayudarte</h1>
+            <p>
+              Encuentra una guía sencilla para crear tu cuenta, iniciar sesión,
+              recuperar tu contraseña y conocer las opciones disponibles antes
+              de hacer un pedido.
+            </p>
+          </div>
         </section>
 
-        <section className="ayuda-seccion" id="crear-cuenta">
+        <div className="ayuda-temas">
+          <section className="ayuda-seccion" id="crear-cuenta">
           <div className="ayuda-seccion-numero" aria-hidden="true">01</div>
           <div className={`ayuda-acordeon${acordeonAbierto === 'crear-cuenta' ? ' ayuda-acordeon-abierto' : ''}`}>
             <button
@@ -60,9 +67,9 @@ export default function Ayuda() {
               </div>
             )}
           </div>
-        </section>
+          </section>
 
-        <section className="ayuda-seccion" id="iniciar-sesion">
+          <section className="ayuda-seccion" id="iniciar-sesion">
           <div className="ayuda-seccion-numero" aria-hidden="true">02</div>
           <div className={`ayuda-acordeon${acordeonAbierto === 'iniciar-sesion' ? ' ayuda-acordeon-abierto' : ''}`}>
             <button
@@ -82,18 +89,18 @@ export default function Ayuda() {
                   la barra de navegación. Ingresa el correo y la contraseña que
                   registraste y selecciona <strong>Iniciar sesión</strong>.
                 </p>
-                <ul className="ayuda-lista">
+                <ol className="ayuda-lista">
                   <li>También puedes usar la opción <strong>Continuar con Google</strong> que aparece en esa página.</li>
                   <li>Si la contraseña no es correcta o no la recuerdas, utiliza el enlace <strong>¿Recuperar tu contraseña?</strong>.</li>
                   <li>Al iniciar sesión podrás continuar con las opciones de pedido disponibles en el menú.</li>
-                </ul>
+                </ol>
                 <Link className="ayuda-enlace" to="/login">Ir a iniciar sesión <span aria-hidden="true"></span></Link>
               </div>
             )}
           </div>
-        </section>
+          </section>
 
-        <section className="ayuda-seccion" id="recuperar-contrasena">
+          <section className="ayuda-seccion" id="recuperar-contrasena">
           <div className="ayuda-seccion-numero" aria-hidden="true">03</div>
           <div className={`ayuda-acordeon${acordeonAbierto === 'recuperar-contrasena' ? ' ayuda-acordeon-abierto' : ''}`}>
             <button
@@ -124,9 +131,9 @@ export default function Ayuda() {
               </div>
             )}
           </div>
-        </section>
+          </section>
 
-        <section className="ayuda-explorar" id="explorar">
+          <section className="ayuda-explorar" id="explorar">
           <div className={`ayuda-explorar-acordeon${acordeonAbierto === 'explorar' ? ' ayuda-acordeon-abierto' : ''}`}>
             <button
               type="button"
@@ -145,19 +152,30 @@ export default function Ayuda() {
                 <Link to="/nosotros">Nosotros <span>Conoce nuestra historia y ubicación.</span></Link>
                 <Link to="/menu-publico">Menú <span>Consulta los productos disponibles.</span></Link>
                 <Link to="/contactanos">Contáctanos <span>Encuentra nuestros canales de atención.</span></Link>
-                <Link to="/terminos">Términos y condiciones <span>Consulta las condiciones de uso.</span></Link>
-                <Link to="/privacidad">Política de privacidad <span>Conoce cómo se tratan tus datos.</span></Link>
+                <button type="button" onClick={() => setDocumentoLegal('terminos')} aria-haspopup="dialog">
+                  Términos y condiciones <span>Consulta las condiciones de uso.</span>
+                </button>
+                <button type="button" onClick={() => setDocumentoLegal('privacidad')} aria-haspopup="dialog">
+                  Política de privacidad <span>Conoce cómo se tratan tus datos.</span>
+                </button>
               </div>
             )}
           </div>
-        </section>
+          </section>
+        </div>
 
         <section className="ayuda-contacto">
           <p>¿Necesitas más ayuda?</p>
-          <Link to="/contactanos">Visita nuestra página de contacto <span aria-hidden="true"></span></Link>
+          <Link to="/contactanos">Visita nuestra página de contactanos <span aria-hidden="true"></span></Link>
         </section>
       </main>
 
+      {documentoLegal && (
+        <ModalLegal
+          documentoInicial={documentoLegal}
+          onClose={() => setDocumentoLegal(null)}
+        />
+      )}
       <Footer />
     </div>
   );
