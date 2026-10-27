@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import FacturaModal from './FacturaModal';
-import { IconoToast } from './Toast';
+import { useToast } from './Toast';
 
 const TIPOS_ENTREGA = ['Domicilio', 'Para recoger', 'En restaurante'] as const;
 const CUANDO_OPCIONES = ['Lo antes posible', 'Programar para más tarde'] as const;
@@ -89,7 +89,10 @@ export default function CartPanel() {
   const navigate = useNavigate();
 
   const [showFactura, setShowFactura] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; tipo: 'ok' | 'err' | 'aviso' } | null>(null);
+  const { showToast: showToastGlobal, confirmar } = useToast();
+  const showToast = (msg: string, tipo: 'ok' | 'err' | 'aviso' = 'ok') => {
+    showToastGlobal(msg, tipo === 'err', tipo === 'aviso');
+  };
   const [confirmado, setConfirmado] = useState(() => localStorage.getItem('burguersoft_confirmado') === '1');
   const [cuandoAbierto, setCuandoAbierto] = useState(false);
   const cuandoRef = useRef<HTMLDivElement>(null);
@@ -117,26 +120,15 @@ export default function CartPanel() {
   const subtotal = total / (1 + IVA_RATE);
   const impuestos = total - subtotal;
 
-  // Colores según la señal: ok=verde, err=rojo, aviso=amarillo
-  const COLOR_TOAST: Record<'ok' | 'err' | 'aviso', string> = {
-    ok: '#2e7d32',
-    err: '#e63946',
-    aviso: '#e6a817',
-  };
-
-  const showToast = (msg: string, tipo: 'ok' | 'err' | 'aviso' = 'ok') => {
-    setToast({ msg, tipo });
-    setTimeout(() => setToast(null), 3000);
-  };
 
   const cambiarConfirmado = (valor: boolean) => {
   setConfirmado(valor);
   localStorage.setItem('burguersoft_confirmado', valor ? '1' : '0');
 };
 
-  const handleVaciar = () => {
+  const handleVaciar = async () => {
     if (items.length === 0) { showToast('No hay productos en el carrito para vaciarlo.', 'aviso'); return; }
-    if (!confirm('¿Estás seguro de que deseas vaciar el carrito?')) return;
+    if (!(await confirmar('¿Estás seguro de que deseas vaciar el carrito?'))) return;
     vaciar();
     showToast('Tu carrito ha sido vaciado.');
   };
@@ -308,18 +300,6 @@ export default function CartPanel() {
           </button>
         </div>
       </div>
-
-      {toast && (
-        <div style={{
-          position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', alignItems: 'center', gap: 10,
-          background: '#2f2a1f', color: '#fff', border: `2.5px solid ${COLOR_TOAST[toast.tipo]}`, padding: '12px 20px', borderRadius: 10,
-          fontSize: 13, fontWeight: 600, zIndex: 99999, boxShadow: '0 8px 20px rgba(0,0,0,.25)'
-        }}>
-          <IconoToast tipo={toast.tipo === 'aviso' ? 'aviso' : toast.tipo === 'err' ? 'error' : 'exito'} />
-          <span>{toast.msg}</span>
-        </div>
-      )}
 
       <FacturaModal isOpen={showFactura} onClose={() => setShowFactura(false)} />
     </>

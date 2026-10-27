@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from './Toast';
 import apiClient from '../api/client';
 import {
   formatearTelefono,
@@ -15,12 +16,12 @@ type Tab = 'datos' | 'pwd' | 'info';
 
 export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { user, updateUser } = useAuth();
+  const { showToast } = useToast();
   // Si el usuario ya editó algo, la respuesta tardía de /me no debe borrarlo.
   const dirtyRef = useRef(false);
   const abiertoRef = useRef(false);
   const [tab, setTab] = useState<Tab>('datos');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+
 
   // datos del usuario - intentar cargar de /me
   const [nombre, setNombre] = useState('');
@@ -52,7 +53,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     if (abiertoRef.current) return;
     abiertoRef.current = true;
     dirtyRef.current = false;
-    setError(''); setSuccess(''); setTab('datos');
+    setTab('datos');
     // intentar split nombre
     const partes = (user?.name ?? '').split(' ');
     setNombre(partes[0] ?? '');
@@ -89,42 +90,40 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
   const handleGuardarDatos = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); setSuccess('');
+
     const err = validarDatos({ nombre, apellido, tdoc, ndoc, telefono });
-    if (err) { setError(err); return; }
+    if (err) { showToast(err, true); return; }
     const nombreCompleto = `${nombre.trim()} ${apellido.trim()}`.trim();
     try {
       await apiClient.put('/perfil', { nombre, apellido, Tdocumento: tdoc, Ndocumento: ndoc, telefono });
-      setSuccess('Datos actualizados correctamente.');
+      showToast('Datos actualizados correctamente.');
       // actualizar contexto + local para que no se revierta al reabrir
       updateUser({ name: nombreCompleto });
       localStorage.setItem('perfil_extra', JSON.stringify({ Tdocumento: tdoc, Ndocumento: ndoc, telefono }));
     } catch {
-      setSuccess('');
-      setError('No se pudieron actualizar los datos. Intenta de nuevo.');
+      showToast('No se pudieron actualizar los datos. Intenta de nuevo.', true);
     }
   };
 
 const handlePassword = async (e: React.FormEvent) => {
   e.preventDefault();
-  setError(''); setSuccess('');
-  if (!actual) { setError('La contraseña actual es obligatoria.'); return; }
+  if (!actual) { showToast('La contraseña actual es obligatoria.', true); return; }
   const errPwd = validarPassword(nueva, actual);
-  if (errPwd) { setError(errPwd); return; }
-  if (nueva !== confirmar) { setError('Las contraseñas no coinciden.'); return; }
+  if (errPwd) { showToast(errPwd, true); return; }
+  if (nueva !== confirmar) { showToast('Las contraseñas no coinciden.', true); return; }
   setEnviandoPwd(true);
   try {
     await apiClient.post('/perfil/password', { actual, nueva, confirmar });
-    setSuccess('Contraseña actualizada correctamente.');
+    showToast('Contraseña actualizada correctamente.');
     setActual(''); setNueva(''); setConfirmar('');
   } catch (err: any) {
     const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? '';
     if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
-      setError('La contraseña actual es incorrecta.');
+      showToast('La contraseña actual es incorrecta.', true);
     } else if (msg) {
-      setError(msg);
+      showToast(msg, true);
     } else {
-      setError('No se pudo actualizar la contraseña. Intenta de nuevo más tarde.');
+      showToast('No se pudo actualizar la contraseña. Intenta de nuevo más tarde.', true);
     }
   } finally {
     setEnviandoPwd(false);
@@ -155,13 +154,10 @@ const handlePassword = async (e: React.FormEvent) => {
         </div>
 
         <div className="mp-body">
-          {error && tab === 'datos' && <div className="mp-alert mp-alert-err">⚠ {error}</div>}
-          {success && tab === 'datos' && <div className="mp-alert mp-alert-ok">✓ {success}</div>}
-          {error && tab === 'pwd' && <div className="mp-alert mp-alert-err">⚠ {error}</div>}
-          {success && tab === 'pwd' && <div className="mp-alert mp-alert-ok">✓ {success}</div>}
+
 
           <div className="mp-tabs-container">
-            <button type="button" className={`mp-tab ${tab === 'datos' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('datos'); setError(''); setSuccess(''); }}>
+            <button type="button" className={`mp-tab ${tab === 'datos' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('datos'); }}>
               <span className="mp-tab-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
@@ -171,7 +167,7 @@ const handlePassword = async (e: React.FormEvent) => {
                 </svg>
               </span><span className="mp-tab-label">Mis datos</span>
             </button>
-            <button type="button" className={`mp-tab ${tab === 'pwd' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('pwd'); setError(''); setSuccess(''); }}>
+            <button type="button" className={`mp-tab ${tab === 'pwd' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('pwd'); }}>
               <span className="mp-tab-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="8" cy="14" r="4.5" />
@@ -180,7 +176,7 @@ const handlePassword = async (e: React.FormEvent) => {
                 </svg>
               </span><span className="mp-tab-label">Contraseña</span>
             </button>
-            <button type="button" className={`mp-tab ${tab === 'info' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('info'); setError(''); setSuccess(''); }}>
+            <button type="button" className={`mp-tab ${tab === 'info' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('info'); }}>
               <span className="mp-tab-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3Z" />
