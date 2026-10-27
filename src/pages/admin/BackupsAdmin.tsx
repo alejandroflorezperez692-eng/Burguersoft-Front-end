@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
+import { useToast } from '../../components/Toast';
 import logoElOriente from '../../assets/img/icono1-oscuro.png';
 
 // Logo de El Oriente incrustado en el PDF (se carga una sola vez y se cachea)
@@ -40,6 +41,7 @@ interface Tabla {
 }
 
 export default function BackupsAdmin() {
+  const { confirmar } = useToast();
   const [items, setItems] = useState<Backup[]>([]);
   const [tablas, setTablas] = useState<Tabla[]>([]);
   const [sel, setSel] = useState<string[]>([]);
@@ -465,13 +467,13 @@ export default function BackupsAdmin() {
     });
   };
 
-  const del = (id: number) => {
-    if (!confirm('¿Eliminar este registro de backup?')) return;
+  const del = async (id: number) => {
+    if (!(await confirmar('¿Eliminar este registro de backup?'))) return;
     apiClient.delete(`/backups/${id}`).then(() => load());
   };
 
-  const restaurar = (id: number, resumen: string) => {
-    const ok = confirm(
+  const restaurar = async (id: number, resumen: string) => {
+    const ok = await confirmar(
       `¿Restaurar esta copia de seguridad?\n\n` +
       `Copia: ${resumen}\n\n` +
       `ATENCIÓN: Se reemplazarán los datos actuales de las tablas incluidas ` +

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import apiClient from '../../api/client';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import '../../styles/nu-admin.css';
 
@@ -58,7 +58,7 @@ export default function CierreInventarioAdmin() {
   const [guardando, setGuardando] = useState(false);
   const [detalle, setDetalle] = useState<DetalleCierre | null>(null);
   const [cargandoDetalle, setCargandoDetalle] = useState<number | null>(null);
-  const { toast, showToast } = useToast();
+  const { showToast, confirmar } = useToast();
 
   const LIMITE_CIERRES = 10;
   const [cierresVisibles, setCierresVisibles] = useState(LIMITE_CIERRES);
@@ -162,7 +162,7 @@ export default function CierreInventarioAdmin() {
     }
     const sinContar = filas.length - contados.length;
     const aviso = sinContar > 0 ? ` Las ${sinContar} que no contaste quedan como están.` : '';
-    if (!confirm(`¿Guardar el cierre de ${contados.length} materias primas?${aviso}`)) return;
+    if (!(await confirmar(`¿Guardar el cierre de ${contados.length} materias primas?${aviso}`))) return;
     setGuardando(true);
     try {
       await apiClient.post('/inventario/cierres', {
@@ -389,8 +389,6 @@ export default function CierreInventarioAdmin() {
           </div>
         </div>
       )}
-
-      <ToastMessage toast={toast} />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import apiClient from '../api/client';
 import '../styles/public.css';
 import '../styles/checkout.css';
 import PublicHeader from '../components/PublicHeader';
+import { useToast } from '../components/Toast';
 import Footer from '../components/Footer';
 import logoNequi from '../assets/img/nequi.png';
 import logoDaviplata from '../assets/img/daviplata.png';
@@ -327,6 +328,8 @@ export default function Checkout() {
   const { items, total, vaciar, tipoEntrega, cuando, fechaProgramada, horaProgramada } = useCart();
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const { showToast: showToastGlobal } = useToast();
+  const alertar = (msg: any) => showToastGlobal(String(msg), true);
 
   // El AuthContext guarda "name" como nombre completo (nombre + apellido juntos),
   // así que lo separamos para llenar los dos campos del formulario.
@@ -367,7 +370,7 @@ export default function Checkout() {
 
   const usarUbicacionActual = () => {
     if (!navigator.geolocation) {
-      alert('Tu navegador no soporta geolocalización. Ingresa la dirección manualmente.');
+      alertar('Tu navegador no soporta geolocalización. Ingresa la dirección manualmente.');
       return;
     }
     setBuscandoUbicacion(true);
@@ -406,11 +409,11 @@ export default function Checkout() {
       (err) => {
         setBuscandoUbicacion(false);
         if (err.code === err.PERMISSION_DENIED) {
-          alert('No pudimos acceder a tu ubicación: denegaste el permiso del navegador. Habilítalo e inténtalo de nuevo.');
+          alertar('No pudimos acceder a tu ubicación: denegaste el permiso del navegador. Habilítalo e inténtalo de nuevo.');
         } else if (err.code === err.TIMEOUT) {
-          alert('La solicitud de ubicación tardó demasiado. Inténtalo de nuevo.');
+          alertar('La solicitud de ubicación tardó demasiado. Inténtalo de nuevo.');
         } else {
-          alert('No pudimos determinar tu ubicación. Revisa el GPS del dispositivo e inténtalo de nuevo.');
+          alertar('No pudimos determinar tu ubicación. Revisa el GPS del dispositivo e inténtalo de nuevo.');
         }
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
@@ -552,13 +555,13 @@ export default function Checkout() {
 
   const pagarAhora = async () => {
     if (!isAuthenticated) {
-      alert('Debes iniciar sesión para realizar el pago.');
+      alertar('Debes iniciar sesión para realizar el pago.');
       navigate('/login');
       return;
     }
     const error = validar();
     if (error) {
-      alert(error);
+      alertar(error);
       return;
     }
 
@@ -604,7 +607,7 @@ export default function Checkout() {
       }
     } catch (err) {
       ventanaWsp?.close();
-      alert(mensajeErrorPago(err));
+      alertar(mensajeErrorPago(err));
     } finally {
       setEnviando(false);
     }
