@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
 
 interface FilaCierre {
   id: number;
   nombre: string;
+  tipo?: string | null;
   unidad_medida?: string | null;
   stock_inicial: number;
   compras: number;
@@ -60,9 +62,12 @@ export default function CierreInventarioAdmin() {
   const [cargandoDetalle, setCargandoDetalle] = useState<number | null>(null);
   const { toast, showToast } = useToast();
 
-  const LIMITE_CIERRES = 10;
-  const [cierresVisibles, setCierresVisibles] = useState(LIMITE_CIERRES);
-  const cierres = historial.slice(0, cierresVisibles);
+  // Paginación: la tabla de conteo y el historial de cierres, de 10 en 10
+  const [paginaConteo, setPaginaConteo] = useState(1);
+  const [paginaCierres, setPaginaCierres] = useState(1);
+  const conteoPag = paginar(filas, paginaConteo);
+  const cierresPag = paginar(historial, paginaCierres);
+  const cierres = cierresPag.visibles;
 
   // Evita pedir los mismos datos dos veces a la vez (StrictMode, recargas en caliente, doble clic)
   const cargandoRef = useRef(false);
@@ -209,18 +214,20 @@ export default function CierreInventarioAdmin() {
               <thead>
                 <tr>
                   <th>Materia prima</th>
+                  <th>Tipo</th>
                   <th>En sistema</th>
                   <th>Conteo real</th>
                   <th>Usado hoy</th>
                 </tr>
               </thead>
               <tbody>
-                {filas.map((f) => {
+                {conteoPag.visibles.map((f) => {
                   const us = usado(f);
                   const u = f.unidad_medida ?? '';
                   return (
                     <tr key={f.id}>
                       <td style={{ fontWeight: 600 }}>{f.nombre}</td>
+                      <td>{f.tipo || '—'}</td>
                       <td>
                         <div style={{ fontWeight: 700 }}>{fmt(n(f.stock_esperado))} {u}</div>
                         {n(f.compras) > 0 && (
@@ -251,11 +258,12 @@ export default function CierreInventarioAdmin() {
                   );
                 })}
                 {filas.length === 0 && (
-                  <tr><td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No hay materia prima</td></tr>
+                  <tr><td colSpan={5} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No hay materia prima</td></tr>
                 )}
               </tbody>
             </table>
           </div>
+          <Paginacion total={filas.length} pagina={conteoPag.paginaActual} onCambiar={setPaginaConteo} />
 
           <div className="form-group" style={{ marginTop: 16 }}>
             <label>Observación (opcional)</label>
@@ -326,20 +334,7 @@ export default function CierreInventarioAdmin() {
             </table>
           </div>
 
-          {(historial.length > LIMITE_CIERRES || cierresVisibles > LIMITE_CIERRES) && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 16 }}>
-              {historial.length > cierresVisibles && (
-                <button type="button" className="btn-primary" style={{ padding: '9px 22px' }} onClick={() => setCierresVisibles((v) => v + LIMITE_CIERRES)}>
-                  Mostrar más ({historial.length - cierresVisibles} de {historial.length})
-                </button>
-              )}
-              {cierresVisibles > LIMITE_CIERRES && (
-                <button type="button" className="btn-primary" style={{ padding: '9px 22px' }} onClick={() => setCierresVisibles(LIMITE_CIERRES)}>
-                  Mostrar menos
-                </button>
-              )}
-            </div>
-          )}
+          <Paginacion total={historial.length} pagina={cierresPag.paginaActual} onCambiar={setPaginaCierres} etiqueta="cierres" />
         </>
       )}
       {detalle && (

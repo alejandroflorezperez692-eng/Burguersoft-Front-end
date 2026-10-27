@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import ComprasResumen from '../../components/ComprasResumen';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import ToastMessage, { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 
@@ -17,18 +18,23 @@ interface DetalleCompra {
   marca?: { nombre: string };
 }
 
+type EstadoCompra = 'Borrador' | 'En revisión' | 'Finalizada';
+
 interface Compra {
   id: number;
   fecha: string;
   metodo_pago: string;
+  numero_factura?: string | null;
+  tipo_factura?: string | null;
   valor_total: number;
+  estado: EstadoCompra;
   detalles: DetalleCompra[];
-  /** El servidor indica si todavía están dentro de las 5 horas para eliminarla. */
-  puede_eliminarse?: boolean;
-  eliminable_hasta?: string | null;
 }
 
-  interface MateriaPrima { id: number; nombre: string; valor: number; tipo?: string | null; unidad_medida?: string | null; }
+const badgeEstado = (e: string) =>
+  e === 'Finalizada' ? 'badge-success' : e === 'En revisión' ? 'badge-info' : 'badge-warning';
+
+  interface MateriaPrima { id: number; nombre: string; valor: number; tipo?: string | null; unidad_medida?: string | null; estado?: string | null; }
 interface Marca { id: number; nombre: string; }
 
 interface Linea {
@@ -62,6 +68,7 @@ interface RespuestaIA {
 }
 
 const METODOS = ['Efectivo', 'Nequi', 'Daviplata'];
+const TIPOS_FACTURA = ['Factura electrónica', 'Factura de venta', 'Tiquete POS', 'Cuenta de cobro', 'Remisión'];
 const UNIDADES = ['Kg', 'Gramos', 'Libras', 'Litros', 'Mililitros', 'Unidades', 'Paquetes', 'Cajas', 'Bolsas', 'Botellas', 'Latas'];
 const soloDigitos = (v: string): string => v.replace(/\D/g, '');
 const miles = (v: string): string => v.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -205,6 +212,15 @@ const chipNumero: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
+/** Rótulo pequeño en mayúsculas para las columnas de la factura. */
+const etiquetaColumna: CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: 0.8,
+  color: 'var(--text-400)',
+};
+
 const comprimirImagen = async (archivo: File): Promise<File> => {
   if (!archivo.type.startsWith('image/')) return archivo;
   try {
@@ -227,6 +243,8 @@ export default function ComprasAdmin() {
   const [q, setQ] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('');
+  const [numeroFactura, setNumeroFactura] = useState('');
+  const [tipoFactura, setTipoFactura] = useState('');
   const { toast, showToast } = useToast();
   const [lineas, setLineas] = useState<Linea[]>([
     { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' },
@@ -234,6 +252,10 @@ export default function ComprasAdmin() {
   const [modalDetalle, setModalDetalle] = useState<Compra | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [eliminarCompra, setEliminarCompra] = useState<Compra | null>(null);
+  // Flujo en pantalla, sin guardar nada: formulario -> revisión -> alerta -> guardar
+  const [revisando, setRevisando] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+  const [guardando, setGuardando] = useState(false);
   const [loading, setLoading] = useState(true);
   const cargado = useRef(false);
 
@@ -274,13 +296,15 @@ export default function ComprasAdmin() {
     return () => window.removeEventListener('keydown', onKey);
   }, [modalDetalle]);
 
-  useEffect(() => { setDiasVisibles(5); }, [q]);
+  useEffect(() => { setPagina(1); }, [q]);
 
   const filtered = items.filter((c) =>
     String(c.id).includes(q) || c.metodo_pago.toLowerCase().includes(q.toLowerCase())
   );
 
-  const [diasVisibles, setDiasVisibles] = useState(5);
+  // Paginación por días (5 días por página) para que el total de cada día siempre esté completo
+  const DIAS_POR_PAGINA = 5;
+  const [pagina, setPagina] = useState(1);
 
   const grupos = Object.entries(
     [...filtered]
@@ -291,7 +315,7 @@ export default function ComprasAdmin() {
         return acc;
       }, {})
   );
-  const gruposVisibles = grupos.slice(0, diasVisibles);
+  const { visibles: gruposVisibles, paginaActual } = paginar(grupos, pagina, DIAS_POR_PAGINA);
 
   const addLinea = () => {
     setLineas([...lineas, { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
@@ -324,23 +348,27 @@ export default function ComprasAdmin() {
 };
 
   const total = lineas.reduce((a, l) => a + (Number(l.precio_unitario) || 0), 0);
-  const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); setEditId(null); };
+  const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); setEditId(null); setRevisando(false); setConfirmando(false); };
 
   /** Abre el formulario en blanco para registrar una compra nueva. */
   const abrirNuevo = () => {
     if (showForm) { cerrarForm(); return; }
     setEditId(null);
     setMetodoPago('');
+    setNumeroFactura('');
+    setTipoFactura('');
     setFechaIA('');
     setAviso(null);
     setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
     setShowForm(true);
   };
 
-  /** Carga una compra existente en el formulario para modificarla (solo dentro de las 5 horas). */
+  /** Carga una compra (borrador o en revisión) en el formulario para modificarla. */
   const abrirEditar = (c: Compra) => {
     setEditId(c.id);
     setMetodoPago(c.metodo_pago);
+    setNumeroFactura(c.numero_factura ?? '');
+    setTipoFactura(c.tipo_factura ?? '');
     setFechaIA(c.fecha.slice(0, 10));
     setLineas((c.detalles ?? []).map((d) => ({
       materia_prima_id: d.materia_prima_id,
@@ -455,22 +483,39 @@ const escanear = async (archivo: File) => {
   }
 };
 
-const save = () => {
-  if (!metodoPago) { showToast('Selecciona el método de pago', true); return; }
+/** Valida el formulario. Si falta algo avisa con un toast y devuelve false. */
+const validar = (): boolean => {
+  if (!metodoPago) { showToast('Selecciona el método de pago', true); return false; }
   for (let i = 0; i < lineas.length; i++) {
     const l = lineas[i];
     const n = `Insumo ${i + 1}`;
-    if (l.materia_prima_id === null && !l.nombre_nuevo.trim()) { showToast(`${n}: escribe el nombre del insumo nuevo`, true); return; }
-    if (!(Number(l.cantidad) > 0)) { showToast(`${n}: escribe la cantidad`, true); return; }
-    if (l.materia_prima_id === null && !l.unidad_medida.trim()) { showToast(`${n}: selecciona la unidad de medida`, true); return; }
-    if (!(Number(l.precio_unitario) > 0)) { showToast(`${n}: escribe el precio total`, true); return; }
-    if (!l.marca_id) { showToast(`${n}: selecciona la marca`, true); return; }
+    if (l.materia_prima_id === null && !l.nombre_nuevo.trim()) { showToast(`${n}: escribe el nombre del insumo nuevo`, true); return false; }
+    if (!(Number(l.cantidad) > 0)) { showToast(`${n}: escribe la cantidad`, true); return false; }
+    if (l.materia_prima_id === null && !l.unidad_medida.trim()) { showToast(`${n}: selecciona la unidad de medida`, true); return false; }
+    if (!(Number(l.precio_unitario) > 0)) { showToast(`${n}: escribe el precio total`, true); return false; }
+    if (!l.marca_id) { showToast(`${n}: selecciona el proveedor`, true); return false; }
   }
+  return true;
+};
+
+/** Paso 1: "Registrar" NO guarda nada; solo abre la pantalla de revisión. */
+const irARevision = () => {
+  if (validar()) setRevisando(true);
+};
+
+/** Paso 2: después de la alerta de confirmación es cuando por fin se guarda la compra. */
+const registrar = () => {
+  if (guardando) return;
+  setConfirmando(false);
+  setGuardando(true);
 
   const hoy = new Date();
   const payload = {
     fecha: fechaIA || `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`,
     metodo_pago: metodoPago,
+    numero_factura: numeroFactura.trim() || null,
+    tipo_factura: tipoFactura || null,
+    estado: 'Finalizada',
     items: lineas.map((l) => ({
       materia_prima_id: l.materia_prima_id,
       cantidad: Number(l.cantidad),
@@ -485,34 +530,35 @@ const save = () => {
     ? apiClient.put(`/compras/${editId}`, payload)
     : apiClient.post('/compras', payload);
   peticion.then(() => {
-    showToast(editId ? 'Compra modificada: el stock se recalculó' : 'Compra registrada: el stock se sumó a Materia Prima');
+    showToast('Compra registrada: el stock se sumó a Materia Prima');
+    setPagina(1);
+    setRevisando(false);
     setShowForm(false);
     setAviso(null);
     setFechaIA('');
     setEditId(null);
     setMetodoPago('');
+    setNumeroFactura('');
+    setTipoFactura('');
     setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
     load();
   }).catch((e) => {
+    // Si falla, vuelve al formulario con todo lo que había escrito
+    setRevisando(false);
     const d = e?.response?.data;
     showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || (editId ? 'No se pudo modificar la compra' : 'No se pudo registrar la compra'), true);
-  });
+  }).finally(() => setGuardando(false));
 };
 
-  const HORAS_PARA_ELIMINAR = 5;
-  const MSG_FUERA_DE_PLAZO = `Esta compra ya no se puede eliminar: pasaron más de ${HORAS_PARA_ELIMINAR} horas desde que se registró.`;
-
-  const del = (c: Compra) => {
-    if (!c.puede_eliminarse) { showToast(MSG_FUERA_DE_PLAZO, true); return; }
-    setEliminarCompra(c);
-  };
+  /** Se puede eliminar mientras no esté finalizada (no movió stock). */
+  const del = (c: Compra) => setEliminarCompra(c);
 
   const confirmarEliminarCompra = () => {
     const c = eliminarCompra;
     if (!c) return;
     setEliminarCompra(null);
     apiClient.delete(`/compras/${c.id}`)
-      .then(() => { showToast('Compra eliminada y cantidad revertida de Materia Prima'); load(); })
+      .then(() => { showToast('Compra eliminada'); load(); })
       .catch((e) => {
         showToast(e?.response?.data?.message || 'No se pudo eliminar la compra', true);
         load();
@@ -524,14 +570,6 @@ const save = () => {
     background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '28px 32px',
     width: 'min(820px, 94vw)', maxHeight: '90vh', overflowY: 'auto',
     boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
-  };
-
-  /** Texto del botón Eliminar: hasta cuándo se puede, o por qué está bloqueado. */
-  const ayudaEliminar = (c: Compra): string => {
-    if (!c.puede_eliminarse) return MSG_FUERA_DE_PLAZO;
-    if (!c.eliminable_hasta) return 'Eliminar compra';
-    const hasta = new Date(c.eliminable_hasta).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-    return `Se puede eliminar hasta las ${hasta}`;
   };
 
   return (
@@ -558,7 +596,7 @@ const save = () => {
             Dictar compra
           </button>
           <button className="btn-primary" onClick={abrirNuevo}>
-            {showForm ? 'Cancelar' : '+ Nueva compra'}
+            + Nueva compra
           </button>
           <input
             ref={inputFactura}
@@ -606,11 +644,11 @@ const save = () => {
         </div>
       )}
 
-      <ComprasResumen items={items} />
+      <ComprasResumen items={items.filter((c) => c.estado === 'Finalizada')} />
 
       {showForm && (
-        <div className={editId ? 'mn-modal-overlay' : undefined} onClick={editId ? cerrarForm : undefined}>
-        <div style={editId ? estiloModalCompra : { background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }} onClick={(e) => e.stopPropagation()}>
+        <div className="mn-modal-overlay">
+        <div style={estiloModalCompra} onClick={(e) => e.stopPropagation()}>
           <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>{editId ? `Modificar compra N.º ${editId}` : 'Registrar Compra'}</h3>
           {aviso && (
             <div
@@ -641,6 +679,24 @@ const save = () => {
             </select>
           </div>
 
+          <div className="form-group">
+            <label>Número de factura <span style={{ opacity: 0.6, fontWeight: 500 }}>(opcional)</span></label>
+            <input
+              placeholder="Ej: FV-12345"
+              maxLength={50}
+              value={numeroFactura}
+              onChange={(e) => setNumeroFactura(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Tipo de factura <span style={{ opacity: 0.6, fontWeight: 500 }}>(opcional)</span></label>
+            <select value={tipoFactura} onChange={(e) => setTipoFactura(e.target.value)}>
+              <option value="">Seleccionar...</option>
+              {TIPOS_FACTURA.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
           {lineas.map((l, i) => (
            <div
               key={i}
@@ -660,7 +716,7 @@ const save = () => {
                 <label>Insumo (elige o crea uno nuevo) <span className="mn-req">*</span></label>
                 <select value={l.materia_prima_id ?? '__nuevo__'} onChange={(e) => updateLinea(i, 'materia_prima_id', e.target.value === '__nuevo__' ? null : Number(e.target.value))}>
                   <option value="__nuevo__">+ Nuevo insumo</option>
-                  {materias.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+                  {materias.filter((m) => m.estado !== 'Inactivo' || m.id === l.materia_prima_id).map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
               </div>
 
@@ -721,7 +777,7 @@ const save = () => {
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Marca <span className="mn-req">*</span></label>
+                <label>Proveedor <span className="mn-req">*</span></label>
                 <select value={l.marca_id} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
                   <option value={0}>Seleccionar...</option>
                   {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
@@ -739,7 +795,7 @@ const save = () => {
           </div>
           <div className="modal-actions" style={{ marginTop: 16 }}>
             <button className="btn-cancel" onClick={cerrarForm}>Cancelar</button>
-            <button className="btn-save" onClick={save}>{editId ? 'Guardar cambios' : 'Registrar Compra'}</button>
+            <button className="btn-save" onClick={irARevision}>Registrar</button>
           </div>
         </div>
         </div>
@@ -766,6 +822,7 @@ const save = () => {
           <th>Método de pago</th>
           <th>Insumos</th>
           <th>Total</th>
+          <th>Estado</th>
           <th>Acciones</th>
         </tr>
       </thead>
@@ -773,13 +830,13 @@ const save = () => {
         {gruposVisibles.map(([clave, lista]) => (
           <Fragment key={clave}>
             <tr>
-              <td colSpan={5} style={{ background: 'var(--surface-2)', padding: '12px 16px' }}>
+              <td colSpan={6} style={{ background: 'var(--surface-2)', padding: '12px 16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-900)' }}>{etiquetaFecha(clave)}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-400)' }}>
                     {lista.length} {lista.length === 1 ? 'compra' : 'compras'} ·{' '}
                     <span style={{ color: 'var(--brand)', fontWeight: 800 }}>
-                      ${lista.reduce((a, c) => a + Number(c.valor_total), 0).toLocaleString('es-CO')}
+                      ${lista.filter((c) => c.estado === 'Finalizada').reduce((a, c) => a + Number(c.valor_total), 0).toLocaleString('es-CO')}
                     </span>
                   </span>
                 </div>
@@ -791,29 +848,16 @@ const save = () => {
                 <td><span className="badge badge-info">{c.metodo_pago}</span></td>
                 <td>{(c.detalles ?? []).length}</td>
                 <td style={{ fontWeight: 700 }}>${Number(c.valor_total).toLocaleString('es-CO')}</td>
+                <td><span className={`badge ${badgeEstado(c.estado)}`}>{c.estado}</span></td>
                 <td>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)}>Ver detalle</button>
-                    <button
-                      type="button"
-                      className="mn-btn-edit"
-                      disabled={!c.puede_eliminarse}
-                      title={c.puede_eliminarse ? 'Modificar compra' : 'Ya pasaron más de 5 horas: no se puede modificar'}
-                      style={{ flex: 'none', padding: '7px 14px', ...(c.puede_eliminarse ? {} : { opacity: 0.4, cursor: 'not-allowed' }) }}
-                      onClick={() => abrirEditar(c)}
-                    >
-                      Modificar
-                    </button>
-                    <button
-                      type="button"
-                      className="mn-btn-del"
-                      disabled={!c.puede_eliminarse}
-                      title={ayudaEliminar(c)}
-                      style={{ flex: 'none', padding: '7px 14px', ...(c.puede_eliminarse ? {} : { opacity: 0.4, cursor: 'not-allowed' }) }}
-                      onClick={() => del(c)}
-                    >
-                      Eliminar
-                    </button>
+                    {c.estado !== 'Finalizada' && (
+                      <>
+                        <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => abrirEditar(c)}>Modificar</button>
+                        <button type="button" className="mn-btn-del" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => del(c)}>Eliminar</button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -821,26 +865,13 @@ const save = () => {
           </Fragment>
         ))}
         {grupos.length === 0 && (
-          <tr><td colSpan={5} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron compras</td></tr>
+          <tr><td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron compras</td></tr>
         )}
       </tbody>
     </table>
   </div>
 
-    {(grupos.length > diasVisibles || diasVisibles > 5) && (
-    <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 16 }}>
-      {grupos.length > diasVisibles && (
-        <button className="btn-primary" onClick={() => setDiasVisibles(diasVisibles + 5)}>
-          Mostrar más ({grupos.length - diasVisibles} de {grupos.length})
-        </button>
-      )}
-      {diasVisibles > 5 && (
-        <button className="btn-primary" onClick={() => setDiasVisibles(5)}>
-          Mostrar menos
-        </button>
-      )}
-    </div>
-  )}
+    <Paginacion total={grupos.length} pagina={paginaActual} porPagina={DIAS_POR_PAGINA} etiqueta="días" onCambiar={setPagina} />
 </>
       )}
 
@@ -863,7 +894,11 @@ const save = () => {
                   <div style={{ fontFamily: 'var(--font-sans)', fontSize: 22, fontWeight: 800, color: 'var(--text-900)', margin: '6px 0 10px' }}>
                     {fechaLarga(modalDetalle.fecha)}
                   </div>
-                  <span className="badge badge-info">{modalDetalle.metodo_pago}</span>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span className="badge badge-info">{modalDetalle.metodo_pago}</span>
+                    {modalDetalle.tipo_factura && <span className="badge badge-warning">{modalDetalle.tipo_factura}</span>}
+                    {modalDetalle.numero_factura && <span style={chipNumero}>Factura {modalDetalle.numero_factura}</span>}
+                  </div>
                 </div>
               </div>
 
@@ -872,7 +907,7 @@ const save = () => {
                   <div style={{ minWidth: 540 }}>
                     <div style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '10px 18px', background: 'var(--surface-2)' }}>
                       <span style={etiquetaCol}>Insumo</span>
-                      <span style={etiquetaCol}>Marca</span>
+                      <span style={etiquetaCol}>Proveedor</span>
                       <span style={etiquetaCol}>Cant.</span>
                       <span style={etiquetaCol}>Precio unit.</span>
                       <span style={{ ...etiquetaCol, textAlign: 'right' }}>Subtotal</span>
@@ -946,10 +981,123 @@ const save = () => {
       {eliminarCompra && (
         <div className="mn-modal-overlay" onClick={() => setEliminarCompra(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
-            <p>¿Eliminar la compra N.º {eliminarCompra.id}? Se descontará de Materia Prima lo que sumó. Esta acción no se puede deshacer.</p>
+            <p>¿Eliminar esta compra? Todavía no se ha registrado en Materia Prima. Esta acción no se puede deshacer.</p>
             <div className="mn-modal-actions">
               <button type="button" className="mn-btn-cancel" onClick={() => setEliminarCompra(null)}>Cancelar</button>
               <button type="button" className="mn-btn-confirm" onClick={confirmarEliminarCompra}>Sí, eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {revisando && (() => {
+        const columnas = '1.5fr 1.2fr 1fr 1fr 1fr';
+        const filas = lineas.map((l) => {
+          const m = materias.find((x) => x.id === l.materia_prima_id);
+          const cantidad = Number(l.cantidad) || 0;
+          const subtotal = Number(l.precio_unitario) || 0;
+          return {
+            nombre: m?.nombre ?? l.nombre_nuevo.trim(),
+            nuevo: l.materia_prima_id === null,
+            marca: marcas.find((x) => x.id === l.marca_id)?.nombre ?? 'N/A',
+            unidad: m?.unidad_medida ?? l.unidad_medida,
+            cantidad,
+            unitario: cantidad > 0 ? subtotal / cantidad : 0,
+            subtotal,
+          };
+        });
+        const hoy = new Date();
+        const fechaFactura = fechaIA || `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+        return (
+          <div className="mn-modal-overlay" onClick={() => setRevisando(false)}>
+            <div
+              style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '28px 32px', width: 'min(760px, 94vw)', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)' }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-label="Revisar factura de compra"
+            >
+              <div style={{ marginBottom: 20 }}>
+                <div style={etiquetaColumna}>Revisa la factura{editId ? ` · Compra N.º ${editId}` : ''}</div>
+                <div style={{ fontFamily: 'var(--font-sans)', fontSize: 22, fontWeight: 800, color: 'var(--text-900)', margin: '6px 0 10px' }}>
+                  {fechaLarga(fechaFactura)}
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span className="badge badge-info">{metodoPago}</span>
+                  {tipoFactura && <span className="badge badge-warning">{tipoFactura}</span>}
+                  {numeroFactura.trim() && <span style={chipNumero}>Factura {numeroFactura.trim()}</span>}
+                </div>
+              </div>
+
+              {aviso?.alerta && (
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 16px', marginBottom: 16, borderRadius: 12, border: '1px solid var(--danger)', background: 'rgba(200, 56, 42, 0.08)', fontSize: 13, fontWeight: 600, color: 'var(--text-900)', lineHeight: 1.5 }}>
+                  <span>✨</span>
+                  <div>{aviso.texto}</div>
+                </div>
+              )}
+
+              <div style={{ border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', background: 'var(--surface)' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <div style={{ minWidth: 540 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '10px 18px', background: 'var(--surface-2)' }}>
+                      <span style={etiquetaColumna}>Insumo</span>
+                      <span style={etiquetaColumna}>Proveedor</span>
+                      <span style={etiquetaColumna}>Cant.</span>
+                      <span style={etiquetaColumna}>Precio unit.</span>
+                      <span style={{ ...etiquetaColumna, textAlign: 'right' }}>Subtotal</span>
+                    </div>
+                    {filas.map((f, i) => (
+                      <div
+                        key={i}
+                        style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '13px 18px', borderTop: '1px solid var(--border)', alignItems: 'center', fontSize: 14, color: 'var(--text-900)' }}
+                      >
+                        <span style={{ fontWeight: 600 }}>
+                          {f.nombre}
+                          {f.nuevo && <span className="badge badge-warning" style={{ marginLeft: 8 }}>Nuevo</span>}
+                        </span>
+                        <span style={{ color: 'var(--text-400)' }}>{f.marca}</span>
+                        <span style={{ whiteSpace: 'nowrap' }}>
+                          {f.cantidad.toLocaleString('es-CO')}{f.unidad ? ` ${f.unidad}` : ''}
+                        </span>
+                        <span>{pesos(f.unitario)}</span>
+                        <span style={{ fontWeight: 700, textAlign: 'right' }}>{pesos(f.subtotal)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, margin: '20px 4px 0' }}>
+                <span style={{ fontSize: 13, color: 'var(--text-400)' }}>
+                  {filas.length} {filas.length === 1 ? 'insumo' : 'insumos'}
+                </span>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={etiquetaColumna}>Total</div>
+                  <div style={{ fontFamily: 'var(--font-sans)', fontSize: 26, fontWeight: 800, color: 'var(--text-900)', lineHeight: 1.2 }}>
+                    {pesos(total)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-actions" style={{ marginTop: 22 }}>
+                <button type="button" className="btn-cancel" disabled={guardando} onClick={() => setRevisando(false)}>Volver a editar</button>
+                <button type="button" className="btn-save" disabled={guardando} onClick={() => setConfirmando(true)}>
+                  {guardando ? 'Registrando...' : 'Confirmar compra'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {confirmando && (
+        <div className="mn-modal-overlay" onClick={() => setConfirmando(false)}>
+          <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
+            <p>
+              ¿Quieres registrar esta compra? Se sumará a Materia Prima y ya no se podrá modificar ni eliminar.
+            </p>
+            <div className="mn-modal-actions">
+              <button type="button" className="mn-btn-cancel" onClick={() => setConfirmando(false)}>Seguir revisando</button>
+              <button type="button" className="mn-btn-confirm" disabled={guardando} onClick={registrar}>Sí, registrar compra</button>
             </div>
           </div>
         </div>

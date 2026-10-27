@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
 import { useAuth } from '../../hooks/useAuth';
@@ -60,6 +61,7 @@ export default function VentasAdmin() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   const [q, setQ] = useState('');
+  const [pagina, setPagina] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [tipoEntrega, setTipoEntrega] = useState('Domicilio');
@@ -131,6 +133,8 @@ export default function VentasAdmin() {
     String(v?.id ?? '').includes(q ?? '') ||
     nombreCliente(v).toLowerCase().includes((q ?? '').toLowerCase())
   );
+
+  const { visibles, paginaActual } = paginar(filtered, pagina);
 
   const hoy = new Date().toISOString().slice(0, 10);
   const ventasHoy = stats ? stats.ventas_hoy : (items ?? []).filter((v) => (v?.fecha ?? '').slice(0, 10) === hoy).length;
@@ -470,7 +474,7 @@ export default function VentasAdmin() {
       )}
 
       <div className="search-bar">
-        <input placeholder="Buscar venta..." value={q} onChange={(e) => setQ(e.target.value)} />
+        <input placeholder="Buscar venta..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
       </div>
 
       <div className="tabla-responsive">
@@ -487,7 +491,7 @@ export default function VentasAdmin() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((v) => (
+            {visibles.map((v) => (
               <tr key={v?.id}>
                 <td>{v?.id}</td>
                 <td style={{ fontWeight: 600 }}>{nombreCliente(v) || '—'}</td>
@@ -534,6 +538,8 @@ export default function VentasAdmin() {
           </tbody>
         </table>
       </div>
+
+      <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
     </div>
   );
 }

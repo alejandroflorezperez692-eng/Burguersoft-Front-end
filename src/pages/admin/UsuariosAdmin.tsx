@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import ToastMessage, { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
 
 interface Usuario {
@@ -40,23 +41,6 @@ const nombreValido = (v: string) => {
   if (/(\p{L})\1{2,}/iu.test(t)) return false;   // "aaa", "xxx"
   if (!/[aeiouáéíóúüy]/i.test(t)) return false;  // "xyz", "bcd"
   return true;
-};
-
-/* ---------- Paginación ---------- */
-
-const POR_PAGINA = 10;
-
-// [1, '…', 4, 5, 6, '…', 12]
-const numerosPagina = (actual: number, total: number): (number | '…')[] => {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const out: (number | '…')[] = [1];
-  const ini = Math.max(2, actual - 1);
-  const fin = Math.min(total - 1, actual + 1);
-  if (ini > 2) out.push('…');
-  for (let i = ini; i <= fin; i++) out.push(i);
-  if (fin < total - 1) out.push('…');
-  out.push(total);
-  return out;
 };
 
 function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string; estado: string }) {
@@ -110,13 +94,8 @@ export default function UsuariosAdmin() {
     )
     .sort((a, b) => a.id - b.id);
 
-  // Paginación: de 10 en 10
-  const totalPaginas = Math.max(1, Math.ceil(filtered.length / POR_PAGINA));
-  const paginaActual = Math.min(pagina, totalPaginas); // si borras el último de una página, retrocede sola
-  const inicio = (paginaActual - 1) * POR_PAGINA;
-  const visibles = filtered.slice(inicio, inicio + POR_PAGINA);
-
-  const irAPagina = (n: number) => setPagina(Math.min(Math.max(1, n), totalPaginas));
+  // Paginación: de 10 en 10 (si borras el último de una página, retrocede sola)
+  const { visibles, paginaActual } = paginar(filtered, pagina);
 
   const total = items.length;
   const admins = items.filter((u) => u.rol?.nombre === 'Administrador').length;
@@ -294,51 +273,7 @@ export default function UsuariosAdmin() {
           </table>
         </div>
 
-        {filtered.length > 0 && (
-          <div className="us-pag">
-            <span className="us-pag-info">
-              Mostrando {inicio + 1}–{Math.min(inicio + POR_PAGINA, filtered.length)} de {filtered.length}
-            </span>
-
-            {totalPaginas > 1 && (
-              <nav className="us-pag-nav" aria-label="Paginación de usuarios">
-                <button
-                  type="button"
-                  className="us-pag-btn"
-                  onClick={() => irAPagina(paginaActual - 1)}
-                  disabled={paginaActual === 1}
-                >
-                  ‹ Anterior
-                </button>
-
-                {numerosPagina(paginaActual, totalPaginas).map((n, i) =>
-                  n === '…' ? (
-                    <span key={`e${i}`} className="us-pag-dots">…</span>
-                  ) : (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`us-pag-btn us-pag-num${n === paginaActual ? ' activa' : ''}`}
-                      onClick={() => irAPagina(n)}
-                      aria-current={n === paginaActual ? 'page' : undefined}
-                    >
-                      {n}
-                    </button>
-                  )
-                )}
-
-                <button
-                  type="button"
-                  className="us-pag-btn"
-                  onClick={() => irAPagina(paginaActual + 1)}
-                  disabled={paginaActual === totalPaginas}
-                >
-                  Siguiente ›
-                </button>
-              </nav>
-            )}
-          </div>
-        )}
+        <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
         </>
       )}
 
