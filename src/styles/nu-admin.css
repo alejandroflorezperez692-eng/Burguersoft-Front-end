@@ -849,3 +849,31 @@ body.dark-mode .mn-ing-row input {
 @media (max-width: 640px) {
   .us-pag { justify-content: center; }
 }
+
+/* ===== Filtros de Materia Prima (reutilizan .mn-field) ===== */
+.mn-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.mn-filtros .mn-field { flex: 1 1 180px; max-width: 260px; }
+
+/* Filtro con un valor elegido */
+.mn-field select.activo {
+  border-color: var(--brand);
+  background-color: var(--brand-glow);
+  font-weight: 700;
+}
+
+.mn-filtros .mn-btn-cancel {
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--r-md);
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .mn-filtros .mn-field { flex: 1 1 calc(50% - 7px); max-width: none; }
+}

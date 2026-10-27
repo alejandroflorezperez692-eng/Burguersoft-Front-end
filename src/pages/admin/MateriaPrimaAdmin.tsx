@@ -26,6 +26,7 @@ const UNIDADES = ['Kg', 'Gramos', 'Libras', 'Litros', 'Mililitros', 'Unidades', 
 const num = (v: unknown): number => Number(v ?? 0) || 0;
 
 type EstadoStock = 'disponible' | 'bajo' | 'agotado';
+type Orden = 'nombre' | 'cantidad_asc' | 'cantidad_desc' | 'total_desc';
 
 const estadoKey = (stock: unknown): EstadoStock => {
   const s = num(stock);
@@ -95,6 +96,10 @@ export default function MateriaPrimaAdmin() {
   const [visiblesCount, setVisiblesCount] = useState(LIMITE);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoStock>('todos');
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroMarca, setFiltroMarca] = useState('');
+  const [filtroUnidad, setFiltroUnidad] = useState('');
+  const [orden, setOrden] = useState<Orden>('nombre');
   const { toast, showToast } = useToast();
 
   const toArray = <T,>(v: unknown): T[] =>
@@ -130,15 +135,46 @@ export default function MateriaPrimaAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  useEffect(() => { setVisiblesCount(LIMITE); }, [q, filtroEstado]);
+  useEffect(() => { setVisiblesCount(LIMITE); },
+    [q, filtroEstado, filtroTipo, filtroMarca, filtroUnidad, orden]);
 
   const marcaNombre = (id: unknown): string =>
     (marcas ?? []).find((x) => x?.id === id)?.nombre ?? '';
 
-  const filtered = (items ?? []).filter((m) =>
-    (m?.nombre ?? '').toLowerCase().includes((q ?? '').toLowerCase()) &&
-    (filtroEstado === 'todos' || estadoKey(m?.cantidad) === filtroEstado)
-  );
+  // Opciones de los filtros, sacadas de los datos existentes
+  const tipos = Array.from(new Set((items ?? []).map((m) => (m?.tipo ?? '').trim()).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, 'es'));
+  const unidades = Array.from(new Set((items ?? []).map((m) => (m?.unidad_medida ?? '').trim()).filter(Boolean)))
+    .sort((a, b) => a.localeCompare(b, 'es'));
+
+  const filtered = (items ?? [])
+    .filter((m) =>
+      (m?.nombre ?? '').toLowerCase().includes((q ?? '').toLowerCase()) &&
+      (filtroEstado === 'todos' || estadoKey(m?.cantidad) === filtroEstado) &&
+      (!filtroTipo || (m?.tipo ?? '').trim() === filtroTipo) &&
+      (!filtroMarca || m?.marca_id === Number(filtroMarca)) &&
+      (!filtroUnidad || (m?.unidad_medida ?? '').trim() === filtroUnidad)
+    )
+    .sort((a, b) => {
+      switch (orden) {
+        case 'cantidad_asc': return num(a.cantidad) - num(b.cantidad);
+        case 'cantidad_desc': return num(b.cantidad) - num(a.cantidad);
+        case 'total_desc': return num(b.valor) * num(b.cantidad) - num(a.valor) * num(a.cantidad);
+        default: return (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es');
+      }
+    });
+
+  const hayFiltros =
+    q !== '' || filtroEstado !== 'todos' || !!filtroTipo || !!filtroMarca || !!filtroUnidad || orden !== 'nombre';
+
+  const limpiarFiltros = () => {
+    setQ('');
+    setFiltroEstado('todos');
+    setFiltroTipo('');
+    setFiltroMarca('');
+    setFiltroUnidad('');
+    setOrden('nombre');
+  };
 
   const visibles = filtered.slice(0, visiblesCount);
 
@@ -269,13 +305,55 @@ export default function MateriaPrimaAdmin() {
         </div>
       )}
 
-      <div className="mn-search-wrap" style={{ marginBottom: 24 }}>
+      <div className="mn-search-wrap" style={{ marginBottom: 14 }}>
         <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
           stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
         <input className="mn-search" type="text" placeholder="Buscar insumo..." value={q} onChange={(e) => setQ(e.target.value)} />
+      </div>
+
+      <div className="mn-filtros">
+        <div className="mn-field">
+          <label>Tipo</label>
+          <select className={filtroTipo ? 'activo' : ''} value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
+            <option value="">Todos</option>
+            {tipos.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </div>
+
+        <div className="mn-field">
+          <label>Marca</label>
+          <select className={filtroMarca ? 'activo' : ''} value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
+            <option value="">Todas</option>
+            {(marcas ?? []).map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+          </select>
+        </div>
+
+        <div className="mn-field">
+          <label>Unidad</label>
+          <select className={filtroUnidad ? 'activo' : ''} value={filtroUnidad} onChange={(e) => setFiltroUnidad(e.target.value)}>
+            <option value="">Todas</option>
+            {unidades.map((u) => <option key={u} value={u}>{u}</option>)}
+          </select>
+        </div>
+
+        <div className="mn-field">
+          <label>Ordenar por</label>
+          <select className={orden !== 'nombre' ? 'activo' : ''} value={orden} onChange={(e) => setOrden(e.target.value as Orden)}>
+            <option value="nombre">Nombre (A-Z)</option>
+            <option value="cantidad_asc">Menor cantidad</option>
+            <option value="cantidad_desc">Mayor cantidad</option>
+            <option value="total_desc">Mayor precio total</option>
+          </select>
+        </div>
+
+        {hayFiltros && (
+          <button type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>
+            Limpiar filtros
+          </button>
+        )}
       </div>
 
       {loading ? (

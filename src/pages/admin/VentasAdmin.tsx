@@ -53,6 +53,17 @@ const ESTADOS = ['En barra', 'En cocina', 'En camino', 'Listo para recoger', 'En
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
+// Minúsculas y sin tildes, para búsquedas tolerantes
+const normalizar = (s: unknown) =>
+  String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+// Fecha local en formato YYYY-MM-DD
+const fechaLocal = (fecha?: string | null) =>
+  fecha ? new Date(fecha).toLocaleDateString('en-CA') : '';
+
 export default function VentasAdmin() {
   const { user } = useAuth();
   const esAdmin = normalizarRol(user?.role) === 'admin';
@@ -60,6 +71,11 @@ export default function VentasAdmin() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   const [q, setQ] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroMetodo, setFiltroMetodo] = useState('');
+  const [filtroEntrega, setFiltroEntrega] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [tipoEntrega, setTipoEntrega] = useState('Domicilio');
@@ -127,13 +143,51 @@ export default function VentasAdmin() {
   const nombreCliente = (v: Venta) =>
     v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
-  const filtered = (items ?? []).filter((v) =>
-    String(v?.id ?? '').includes(q ?? '') ||
-    nombreCliente(v).toLowerCase().includes((q ?? '').toLowerCase())
+  const textoBusqueda = normalizar(q).trim();
+
+  const filtered = (items ?? []).filter((v) => {
+    // Texto: id, cliente, productos y combos
+    if (textoBusqueda) {
+      const haystack = normalizar(
+        [
+          v?.id,
+          nombreCliente(v),
+          ...(v?.detalles ?? []).map((d) => d?.producto?.nombre),
+          ...(v?.promociones ?? []).map((p) => p?.nombre),
+        ].join(' ')
+      );
+      if (!haystack.includes(textoBusqueda)) return false;
+    }
+
+    if (filtroEstado && v?.estado !== filtroEstado) return false;
+    if (filtroMetodo && v?.metodo_pago !== filtroMetodo) return false;
+    if (filtroEntrega && v?.tipo_entrega !== filtroEntrega) return false;
+
+    // Fechas (YYYY-MM-DD, comparables como texto)
+    const fechaVenta = fechaLocal(v?.fecha);
+    if (fechaDesde && fechaVenta < fechaDesde) return false;
+    if (fechaHasta && fechaVenta > fechaHasta) return false;
+
+    return true;
+  });
+
+  const hayFiltros = Boolean(
+    q || filtroEstado || filtroMetodo || filtroEntrega || fechaDesde || fechaHasta
   );
 
-  const hoy = new Date().toISOString().slice(0, 10);
-  const ventasHoy = stats ? stats.ventas_hoy : (items ?? []).filter((v) => (v?.fecha ?? '').slice(0, 10) === hoy).length;
+  const limpiarFiltros = () => {
+    setQ('');
+    setFiltroEstado('');
+    setFiltroMetodo('');
+    setFiltroEntrega('');
+    setFechaDesde('');
+    setFechaHasta('');
+  };
+
+  const totalFiltrado = filtered.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+
+  const hoy = new Date().toLocaleDateString('en-CA');
+  const ventasHoy = stats ? stats.ventas_hoy : (items ?? []).filter((v) => fechaLocal(v?.fecha) === hoy).length;
   const ingresosHoy = stats ? stats.ingresos_hoy : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
   const totalVentas = stats ? stats.total_ventas : items.length;
   const ingresosTotal = stats ? stats.ingresos_totales : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
@@ -469,8 +523,69 @@ export default function VentasAdmin() {
         </div>
       )}
 
-      <div className="search-bar">
-        <input placeholder="Buscar venta..." value={q} onChange={(e) => setQ(e.target.value)} />
+      <div className="search-bar" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <input
+          placeholder="Buscar por #, cliente, producto o combo..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Estado</label>
+            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+              <option value="">Todos</option>
+              {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Método de pago</label>
+            <select value={filtroMetodo} onChange={(e) => setFiltroMetodo(e.target.value)}>
+              <option value="">Todos</option>
+              {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Entrega</label>
+            <select value={filtroEntrega} onChange={(e) => setFiltroEntrega(e.target.value)}>
+              <option value="">Todas</option>
+              {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Desde</label>
+            <input
+              type="date"
+              value={fechaDesde}
+              max={fechaHasta || undefined}
+              onChange={(e) => setFechaDesde(e.target.value)}
+            />
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Hasta</label>
+            <input
+              type="date"
+              value={fechaHasta}
+              min={fechaDesde || undefined}
+              onChange={(e) => setFechaHasta(e.target.value)}
+            />
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ padding: '8px 18px', fontSize: 13 }}>
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+
+        <p style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
+          {filtered.length} de {items.length} ventas
+          {hayFiltros && ` · Total filtrado: $${Math.round(totalFiltrado).toLocaleString('es-CO')}`}
+        </p>
       </div>
 
       <div className="tabla-responsive">

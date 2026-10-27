@@ -24,7 +24,16 @@ const CATEGORIAS = [
   'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
 ];
 
+const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Por agotarse', 'Agotado'];
+
 const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '' };
+
+// Minúsculas y sin tildes, para búsquedas tolerantes
+const normalizar = (s: unknown) =>
+  String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
 const calcularEstado = (cantidad: number | string | null | undefined): Estado => {
   const n = parseInt(String(cantidad ?? ''), 10) || 0;
@@ -32,6 +41,8 @@ const calcularEstado = (cantidad: number | string | null | undefined): Estado =>
   if (n <= 5) return 'Por agotarse';
   return 'Disponible';
 };
+
+const estadoDe = (p: Producto): Estado => p.estado ?? calcularEstado(p.cantidad);
 
 const estadoClase = (e: Estado) => `mn-estado-${e.replace(/ /g, '_')}`;
 
@@ -64,6 +75,10 @@ export default function MenuAdmin() {
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [buscar, setBuscar] = useState('');
+  const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [precioMin, setPrecioMin] = useState('');
+  const [precioMax, setPrecioMax] = useState('');
   const [eliminar, setEliminar] = useState<Producto | null>(null);
   const [mostrarForm, setMostrarForm] = useState(false);
 
@@ -103,12 +118,46 @@ export default function MenuAdmin() {
     return () => URL.revokeObjectURL(url);
   }, [archivo]);
 
-  /* ---------- Catálogo agrupado ---------- */
+  /* ---------- Filtros ---------- */
+  const hayFiltros = Boolean(buscar || filtroCategoria || filtroEstado || precioMin || precioMax);
+
+  const limpiarFiltros = () => {
+    setBuscar('');
+    setFiltroCategoria('');
+    setFiltroEstado('');
+    setPrecioMin('');
+    setPrecioMax('');
+  };
+
+  /* ---------- Catálogo agrupado y filtrado ---------- */
   const grupos = useMemo(() => {
-    const fil = buscar.toLowerCase().trim();
-    const visibles = productos.filter(
-      (p) => !fil || p.nombre.toLowerCase().includes(fil) || (p.categoria ?? '').toLowerCase().includes(fil),
-    );
+    const fil = normalizar(buscar).trim();
+    const min = precioMin ? Number(precioMin) : null;
+    const max = precioMax ? Number(precioMax) : null;
+
+    const visibles = productos.filter((p) => {
+      if (fil) {
+        const haystack = normalizar(`${p.nombre} ${p.descripcion ?? ''} ${p.categoria ?? ''}`);
+        if (!haystack.includes(fil)) return false;
+      }
+
+      if (filtroCategoria) {
+        if (filtroCategoria === 'Otras') {
+          if (CATEGORIAS.includes(p.categoria)) return false;
+        } else if (p.categoria !== filtroCategoria) {
+          return false;
+        }
+      }
+
+      if (filtroEstado && estadoDe(p) !== filtroEstado) return false;
+
+      const valor = Number(p.valor) || 0;
+      if (min !== null && valor < min) return false;
+      if (max !== null && valor > max) return false;
+
+      return true;
+    });
+
     const res: [string, Producto[]][] = [];
     CATEGORIAS.forEach((cat) => {
       const lista = visibles.filter((p) => p.categoria === cat);
@@ -117,7 +166,9 @@ export default function MenuAdmin() {
     const otras = visibles.filter((p) => !CATEGORIAS.includes(p.categoria));
     if (otras.length) res.push(['Otras', otras]);
     return res;
-  }, [productos, buscar]);
+  }, [productos, buscar, filtroCategoria, filtroEstado, precioMin, precioMax]);
+
+  const totalVisibles = grupos.reduce((acc, [, lista]) => acc + lista.length, 0);
 
   /* ---------- Formulario ---------- */
   const setCampo = (campo: keyof typeof emptyForm) =>
@@ -343,23 +394,82 @@ export default function MenuAdmin() {
         </div>
       )}
 
-      <div className="mn-toolbar">
+      <div className="mn-toolbar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
         <div className="mn-search-wrap">
           <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input className="mn-search" type="text" placeholder="Buscar por nombre o categoría..."
+          <input className="mn-search" type="text" placeholder="Buscar por nombre, descripción o categoría..."
             value={buscar} onChange={(e) => setBuscar(e.target.value)} />
         </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-categoria">Categoría</label>
+            <select id="mn-f-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+              <option value="">Todas</option>
+              {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+              <option value="Otras">Otras</option>
+            </select>
+          </div>
+
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-estado">Estado</label>
+            <select id="mn-f-estado" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+              <option value="">Todos</option>
+              {ESTADOS_FILTRO.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-pmin">Precio mínimo</label>
+            <input
+              id="mn-f-pmin"
+              type="text"
+              inputMode="numeric"
+              placeholder="$ 0"
+              style={{ width: 120 }}
+              value={precioMin ? Number(precioMin).toLocaleString('es-CO') : ''}
+              onChange={(e) => setPrecioMin(e.target.value.replace(/\D/g, '').slice(0, 9))}
+            />
+          </div>
+
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-pmax">Precio máximo</label>
+            <input
+              id="mn-f-pmax"
+              type="text"
+              inputMode="numeric"
+              placeholder="$ 0"
+              style={{ width: 120 }}
+              value={precioMax ? Number(precioMax).toLocaleString('es-CO') : ''}
+              onChange={(e) => setPrecioMax(e.target.value.replace(/\D/g, '').slice(0, 9))}
+            />
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+
+        {!loading && (
+          <p style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
+            {totalVisibles} de {productos.length} productos
+          </p>
+        )}
       </div>
 
       {loading ? (
         <AdminLoading texto="Cargando menú" subtexto="Preparando tus productos" />
       ) : grupos.length === 0 ? (
         <div className="mn-empty">
-          No se encontraron productos{buscar ? <> para "<strong>{buscar}</strong>"</> : ''}.
+          No se encontraron productos
+          {buscar ? <> para "<strong>{buscar}</strong>"</> : ''}
+          {hayFiltros ? ' con los filtros seleccionados' : ''}.
         </div>
       ) : (
         <div className="mn-container">
@@ -371,7 +481,7 @@ export default function MenuAdmin() {
               </div>
               <div className="mn-grid">
                 {lista.map((p) => {
-                  const est = p.estado ?? calcularEstado(p.cantidad);
+                  const est = estadoDe(p);
                   return (
                     <article key={p.id} className={`mn-card${est === 'Agotado' ? ' agotado' : ''}`}>
                       <div className="mn-card-imgwrap"><CardImg img={p.img} nombre={p.nombre} /></div>

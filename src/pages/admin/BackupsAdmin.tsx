@@ -4,7 +4,6 @@ import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import logoElOriente from '../../assets/img/icono1-oscuro.png';
 
-// Logo de El Oriente incrustado en el PDF (se carga una sola vez y se cachea)
 let logoDataUrl: string | null = null;
 
 const cargarLogo = async (): Promise<string | null> => {
@@ -43,17 +42,43 @@ export default function BackupsAdmin() {
   const [items, setItems] = useState<Backup[]>([]);
   const [tablas, setTablas] = useState<Tabla[]>([]);
   const [sel, setSel] = useState<string[]>([]);
-  const [buscar, setBuscar] = useState<string>('');
-
-  const filteredItems = items.filter((item) =>
-    (item.nombre_tabla + ' ' + item.nombre + ' ' + item.fecha)
-      .toLowerCase()
-      .includes(buscar.toLowerCase())
-  );
+  const [filtroTabla, setFiltroTabla] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroFecha, setFiltroFecha] = useState('');
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [restoring, setRestoring] = useState<number | null>(null);
   const [msg, setMsg] = useState<{ texto: string; error?: boolean } | null>(null);
+
+  const hayFiltros = filtroTabla !== '' || filtroTipo !== '' || filtroFecha !== '';
+
+  const limpiarFiltros = () => {
+    setFiltroTabla('');
+    setFiltroTipo('');
+    setFiltroFecha('');
+  };
+
+  const dentroDeRango = (fecha: string, dias: number) => {
+    const f = new Date(fecha).getTime();
+    if (isNaN(f)) return false;
+    const limite = new Date();
+    limite.setHours(0, 0, 0, 0);
+    limite.setDate(limite.getDate() - (dias - 1));
+    return f >= limite.getTime();
+  };
+
+  const filteredItems = items.filter((b) => {
+    const detalle = b.nombre_tabla ?? b.nombre ?? '';
+    const esTodas = detalle === 'TODAS';
+    if (filtroTipo === 'completa' && !esTodas) return false;
+    if (filtroTipo === 'parcial' && esTodas) return false;
+    if (filtroTabla && !esTodas) {
+      const lista = detalle.split(',').map((t) => t.trim());
+      if (!lista.includes(filtroTabla)) return false;
+    }
+    if (filtroFecha && !dentroDeRango(b.fecha, Number(filtroFecha))) return false;
+    return true;
+  });
 
   const toArray = <T,>(v: unknown): T[] =>
     Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
@@ -65,11 +90,10 @@ export default function BackupsAdmin() {
     ]).then(([r1, r2]) => {
       const backups = toArray<Backup>(r1?.data);
       const tablas = toArray<Tabla>(r2?.data);
-      
+
       setItems(backups);
       setTablas(tablas);
-      
-     
+
       setSel(prev => (prev.length === 0 ? tablas.map((x) => x.tabla) : prev));
       setLoading(false);
       return backups;
@@ -88,7 +112,6 @@ export default function BackupsAdmin() {
     setSel((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
   };
 
-  
   const gruposDeTablas = useMemo(() => {
     const mapa = new Map<string, Tabla[]>();
     tablas.forEach((t) => {
@@ -110,16 +133,14 @@ export default function BackupsAdmin() {
     const M = 15;
     const CW = W - M * 2;
 
-    // Paleta de El Oriente (naranja -> cafe)
-    const NARANJA_T = 176; // #B05C0A  texto de titulos (mas contraste)
-    const NARANJA_C = 208; // #D08A22  naranja claro
-    const CAFE = 42;       // #2A1405  cafe oscuro
-    const CAFE_F = 26;     // #1A0A02  cafe casi negro
+    const NARANJA_T = 176;
+    const NARANJA_C = 208;
+    const CAFE = 42;
+    const CAFE_F = 26;
     const GRIS = 120;
 
     let y = M;
 
-    // Dibuja un degradado horizontal imitando la cabecera del sitio
     const degradado = (
       x: number, y0: number, w: number, h: number,
       desde: [number, number, number], hasta: [number, number, number]
@@ -160,11 +181,9 @@ export default function BackupsAdmin() {
       y += 8;
     };
 
-    // ============ BARRA SUPERIOR CON DEGRADADO (igual que el header del sitio) ============
     degradado(0, 0, W, 3.5, [NARANJA_C, 138, 34], [CAFE_F, 10, 2]);
     y = 12;
 
-    // ============ LOGO DE EL ORIENTE + NOMBRE DE MARCA ============
     const logo = await cargarLogo();
     const altoLogo = 17;
     const anchoLogo = altoLogo * (428 / 401);
@@ -172,7 +191,6 @@ export default function BackupsAdmin() {
     if (logo) {
       doc.addImage(logo, 'PNG', M, y - 1, anchoLogo, altoLogo);
     } else {
-      // Respaldo si la imagen no carga
       doc.setFillColor(CAFE, 20, 5);
       doc.circle(M + 7, y + 6, 7, 'F');
       doc.setTextColor(255, 255, 255);
@@ -181,7 +199,6 @@ export default function BackupsAdmin() {
       doc.text('B', M + 7, y + 9.8, { align: 'center' });
     }
 
-    // Separador vertical
     const sepX = M + (logo ? anchoLogo + 5 : 18);
     doc.setDrawColor(NARANJA_C, 138, 34);
     doc.setLineWidth(0.6);
@@ -257,7 +274,6 @@ export default function BackupsAdmin() {
     doc.setFont('helvetica', 'normal');
     y += 6;
 
-    
     seccion('TABLAS INCLUIDAS EN EL RESPALDO');
 
     const colN = M;
@@ -336,7 +352,6 @@ export default function BackupsAdmin() {
     doc.setTextColor(0, 0, 0);
     y += 8;
 
-    
     seccion('RESUMEN ESTADÍSTICO');
 
     const stats: [string, string][] = [
@@ -395,7 +410,6 @@ export default function BackupsAdmin() {
     doc.line(M + CW - 60, y, M + CW, y);
     doc.text('Sello de la empresa', M + CW - 60, y + 4.5);
 
-    
     const totalPaginas = doc.getNumberOfPages();
     for (let i = 1; i <= totalPaginas; i++) {
       doc.setPage(i);
@@ -419,22 +433,19 @@ export default function BackupsAdmin() {
     setGenerating(true);
     setMsg(null);
     apiClient.post('/backups', { tablas: sel }).then((r) => {
-      
       const data = r.data || {};
-      
+
       if (data.success === true) {
-      
         const registros: Backup[] = Array.isArray(data.registros) ? data.registros : [];
         const total = Number(data.total) || registros.length || sel.length;
         const nombreArchivo = data.archivo ?? undefined;
-        
+
         setMsg({
           texto: `Copia generada: ${total} tabla${total === 1 ? '' : 's'} en ${nombreArchivo ?? 'un solo archivo'}.`,
           error: false,
         });
         setGenerating(false);
-        
-        
+
         load().then((existentes) => {
           const yaExisten = new Set(existentes.map((b) => b.id));
           const faltantes = registros.filter((b) => b && b.id != null && !yaExisten.has(b.id));
@@ -442,7 +453,7 @@ export default function BackupsAdmin() {
             setItems((prev) => [...faltantes, ...prev]);
           }
         });
-        
+
         generarPDF(total, sel, {
           archivo: nombreArchivo,
           carpeta: data.carpeta,
@@ -452,13 +463,11 @@ export default function BackupsAdmin() {
           console.error('Error generando el PDF del respaldo:', e);
         });
       } else {
-       
         setMsg({ texto: data.message || 'Error generando backup', error: true });
         setGenerating(false);
         console.error('Error backend backup:', data);
       }
     }).catch((error) => {
-      // Error de red o inesperado
       setMsg({ texto: 'Error de conexión al generar backup', error: true });
       setGenerating(false);
       console.error('Error crítico en post /backups:', error);
@@ -513,14 +522,6 @@ export default function BackupsAdmin() {
         <div>
           <h1>Copias de Seguridad</h1>
           <p className="subtitulo">Respaldo y restauración de la base de datos</p>
-        </div>
-        <div className="mn-search-wrap">
-          <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input className="mn-search" type="text" placeholder="Buscar copia..." value={buscar} onChange={(e) => setBuscar(e.target.value)} />
         </div>
       </div>
 
@@ -626,6 +627,43 @@ export default function BackupsAdmin() {
         </div>
       </div>
 
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 24 }}>
+        <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
+          <label>Tabla incluida</label>
+          <select value={filtroTabla} onChange={(e) => setFiltroTabla(e.target.value)}>
+            <option value="">Todas las tablas</option>
+            {tablas.map((t) => (
+              <option key={t.tabla} value={t.tabla}>{t.etiqueta}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+          <label>Tipo de copia</label>
+          <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
+            <option value="">Todos los tipos</option>
+            <option value="completa">Completa (todas)</option>
+            <option value="parcial">Parcial</option>
+          </select>
+        </div>
+
+        <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+          <label>Fecha</label>
+          <select value={filtroFecha} onChange={(e) => setFiltroFecha(e.target.value)}>
+            <option value="">Cualquier fecha</option>
+            <option value="1">Hoy</option>
+            <option value="7">Últimos 7 días</option>
+            <option value="30">Últimos 30 días</option>
+          </select>
+        </div>
+
+        {hayFiltros && (
+          <button type="button" className="btn-cancel" onClick={limpiarFiltros}>
+            Limpiar filtros
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <AdminLoading texto="Cargando copias" subtexto="Revisando tus respaldos" />
       ) : (
@@ -678,7 +716,7 @@ export default function BackupsAdmin() {
               );
             })}
             {(filteredItems ?? []).length === 0 && (
-              <tr><td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>{(items ?? []).length === 0 ? 'No hay registros de copias de seguridad' : 'No hay copias que coincidan con tu búsqueda'}</td></tr>
+              <tr><td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>{(items ?? []).length === 0 ? 'No hay registros de copias de seguridad' : 'No hay copias que coincidan con los filtros'}</td></tr>
             )}
           </tbody>
         </table>

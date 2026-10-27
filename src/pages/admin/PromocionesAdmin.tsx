@@ -53,7 +53,6 @@ const fmt = (n: number) => '$' + Math.round(n).toLocaleString('es-CO');
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: T[] })?.data ?? []);
 
-// Solo acepta URLs de imagen utilizables (absolutas, data/blob o /storage).
 const imgValida = (img: string | null | undefined): boolean =>
   !!img && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(img);
 
@@ -62,7 +61,6 @@ const aISO = (d: Date) =>
 
 const hoyLocal = () => aISO(new Date());
 
-// Máximo de días hacia adelante que se permite para las fechas de la promoción
 const MAX_DIAS_ADELANTE = 365;
 const fechaMasDias = (dias: number) => {
   const d = new Date();
@@ -104,7 +102,9 @@ export default function PromocionesAdmin() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
-  const [buscar, setBuscar] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroProducto, setFiltroProducto] = useState('');
+  const [filtroAhorro, setFiltroAhorro] = useState('');
   const [buscarProd, setBuscarProd] = useState('');
   const [eliminar, setEliminar] = useState<Promocion | null>(null);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -123,7 +123,14 @@ export default function PromocionesAdmin() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast, showToast } = useToast();
 
-  /* ---------- Carga de datos ---------- */
+  const hayFiltros = filtroEstado !== '' || filtroProducto !== '' || filtroAhorro !== '';
+
+  const limpiarFiltros = () => {
+    setFiltroEstado('');
+    setFiltroProducto('');
+    setFiltroAhorro('');
+  };
+
   const cargar = useCallback(async () => {
     try {
       const [r1, r2] = await Promise.all([
@@ -145,7 +152,6 @@ export default function PromocionesAdmin() {
     cargar();
   }, [cargar]);
 
-  // Vista previa de la imagen elegida (y limpieza del object URL)
   useEffect(() => {
     if (!archivo) return;
     const url = URL.createObjectURL(archivo);
@@ -153,7 +159,6 @@ export default function PromocionesAdmin() {
     return () => URL.revokeObjectURL(url);
   }, [archivo]);
 
-  /* ---------- Cálculos del combo ---------- */
   const mapaProd = useMemo(() => new Map(productos.map((p) => [p.id, p])), [productos]);
 
   const prodsSel = useMemo(
@@ -161,20 +166,18 @@ export default function PromocionesAdmin() {
     [seleccion, mapaProd],
   );
 
-  // Suma de lo que costaría comprar cada producto por separado
   const sumaNormal = useMemo(() => prodsSel.reduce((s, p) => s + num(p.valor), 0), [prodsSel]);
   const pct = Math.min(90, Math.max(0, num(descuento)));
   const precioSugerido = Math.round(sumaNormal * (1 - pct / 100));
   const precioForm = num(form.precio);
   const ahorroForm = sumaNormal - precioForm;
 
-  /* ---------- Validación de fechas ---------- */
   const hoy = hoyLocal();
   const maxFecha = fechaMasDias(MAX_DIAS_ADELANTE);
 
   const errorFechas = useMemo(() => {
     const revisar = (v: string, original: string, nombre: string) => {
-      if (!v || v === original) return ''; // al editar se permite conservar la fecha ya guardada
+      if (!v || v === original) return '';
       if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return `${nombre} no es válida`;
       if (v < hoy) return `${nombre} no puede ser anterior a hoy`;
       if (v > maxFecha) return `${nombre} no puede pasar del ${fechaLegible(maxFecha)}`;
@@ -194,32 +197,33 @@ export default function PromocionesAdmin() {
     return t.length > 255 ? t.slice(0, 254) + '…' : t;
   }, [prodsSel]);
 
-  // Precio automático mientras el usuario no lo escriba a mano
   useEffect(() => {
     if (precioManual) return;
     setForm((f) => ({ ...f, precio: prodsSel.length ? String(precioSugerido) : '' }));
   }, [precioManual, precioSugerido, prodsSel.length]);
 
-  // Descripción automática mientras el usuario no la escriba a mano
   useEffect(() => {
     if (descManual) return;
     setForm((f) => ({ ...f, descripcion: descripcionAuto }));
   }, [descManual, descripcionAuto]);
 
-  /* ---------- Listado agrupado por estado ---------- */
   const grupos = useMemo(() => {
-    const fil = buscar.toLowerCase().trim();
-    const visibles = promos.filter(
-      (p) =>
-        !fil ||
-        p.nombre.toLowerCase().includes(fil) ||
-        (p.productos ?? []).some((x) => x.nombre.toLowerCase().includes(fil)),
-    );
+    const visibles = promos.filter((p) => {
+      if (filtroEstado && estadoPromo(p) !== filtroEstado) return false;
+      if (filtroProducto && !(p.productos ?? []).some((x) => String(x.id) === filtroProducto)) return false;
+      if (filtroAhorro) {
+        const normal = (p.productos ?? []).reduce((s, x) => s + num(x.valor), 0);
+        const conAhorro = normal - num(p.precio) > 0;
+        if (filtroAhorro === 'con' && !conAhorro) return false;
+        if (filtroAhorro === 'sin' && conAhorro) return false;
+      }
+      return true;
+    });
     const orden: EstadoPromo[] = ['Activa', 'Programada', 'Inactiva', 'Finalizada'];
     return orden
       .map((e) => [e, visibles.filter((p) => estadoPromo(p) === e)] as [EstadoPromo, Promocion[]])
       .filter(([, lista]) => lista.length > 0);
-  }, [promos, buscar]);
+  }, [promos, filtroEstado, filtroProducto, filtroAhorro]);
 
   const activas = useMemo(() => promos.filter((p) => estadoPromo(p) === 'Activa').length, [promos]);
 
@@ -230,7 +234,6 @@ export default function PromocionesAdmin() {
     );
   }, [productos, buscarProd]);
 
-  /* ---------- Formulario ---------- */
   const setCampo = (campo: keyof typeof emptyForm) =>
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [campo]: e.target.value }));
@@ -289,8 +292,8 @@ export default function PromocionesAdmin() {
     setFechasOrig({ inicio: p.fecha_inicio?.slice(0, 10) ?? '', fin: p.fecha_fin?.slice(0, 10) ?? '' });
     setSeleccion((p.productos ?? []).map((x) => x.id));
     setDescuento('0');
-    setPrecioManual(true); // conserva el precio guardado
-    setDescManual(true);   // conserva la descripción guardada
+    setPrecioManual(true);
+    setDescManual(true);
     setBuscarProd('');
     setArchivo(null);
     setPreview(imgValida(p.imagen) ? p.imagen : null);
@@ -299,7 +302,6 @@ export default function PromocionesAdmin() {
     setMostrarForm(false);
   };
 
-  /* ---------- Guardar ---------- */
   const guardar = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
@@ -335,7 +337,6 @@ export default function PromocionesAdmin() {
     }
   };
 
-  /* ---------- Eliminar ---------- */
   const confirmarEliminar = async () => {
     if (!eliminar) return;
     const p = eliminar;
@@ -350,7 +351,6 @@ export default function PromocionesAdmin() {
     }
   };
 
-  /* ---------- Formulario (panel para nueva, modal para editar) ---------- */
   const panelFormulario = (
     <div className="mn-form-panel" style={editId !== null ? { marginBottom: 0, border: 0, boxShadow: 'none' } : undefined}>
       <div className="mn-form-header">
@@ -361,7 +361,6 @@ export default function PromocionesAdmin() {
         <div className="mn-form-body">
           <div className="mn-form-grid">
 
-            {/* Columna izquierda: datos */}
             <div className="mn-form-left">
               <div className="mn-field">
                 <label htmlFor="pm-nombre">Nombre <span className="mn-req">*</span></label>
@@ -369,7 +368,6 @@ export default function PromocionesAdmin() {
                   value={form.nombre} onChange={setCampo('nombre')} />
               </div>
 
-              {/* Selector de productos */}
               <div className="mn-field">
                 <label>
                   Productos del combo <span className="mn-req">*</span>
@@ -396,7 +394,6 @@ export default function PromocionesAdmin() {
                 </div>
               </div>
 
-              {/* Precio calculado */}
               <div className="mn-row-3">
                 <div className="mn-field">
                   <label>Precio normal</label>
@@ -476,7 +473,6 @@ export default function PromocionesAdmin() {
               </div>
             </div>
 
-            {/* Columna derecha: imagen */}
             <div className="mn-form-right">
               <div className="mn-field">
                 <label>Imagen de la promoción</label>
@@ -523,7 +519,6 @@ export default function PromocionesAdmin() {
     </div>
   );
 
-  /* ---------- Render ---------- */
   return (
     <div className="page-inner mn-page">
       <div className="page-header">
@@ -554,14 +549,42 @@ export default function PromocionesAdmin() {
       )}
 
       <div className="mn-toolbar">
-        <div className="mn-search-wrap">
-          <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input className="mn-search" type="text" placeholder="Buscar por nombre de promoción o producto..."
-            value={buscar} onChange={(e) => setBuscar(e.target.value)} />
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+            <label>Estado</label>
+            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+              <option value="">Todos los estados</option>
+              <option value="Activa">Activa</option>
+              <option value="Programada">Aún no disponible</option>
+              <option value="Inactiva">Inactiva</option>
+              <option value="Finalizada">Finalizada</option>
+            </select>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
+            <label>Producto incluido</label>
+            <select value={filtroProducto} onChange={(e) => setFiltroProducto(e.target.value)}>
+              <option value="">Todos los productos</option>
+              {productos.map((p) => (
+                <option key={p.id} value={String(p.id)}>{p.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+            <label>Descuento</label>
+            <select value={filtroAhorro} onChange={(e) => setFiltroAhorro(e.target.value)}>
+              <option value="">Todas</option>
+              <option value="con">Con ahorro</option>
+              <option value="sin">Sin ahorro</option>
+            </select>
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="btn-cancel" onClick={limpiarFiltros}>
+              Limpiar filtros
+            </button>
+          )}
         </div>
       </div>
 
@@ -569,7 +592,7 @@ export default function PromocionesAdmin() {
         <AdminLoading texto="Cargando promociones" subtexto="Armando tus combos" />
       ) : grupos.length === 0 ? (
         <div className="mn-empty">
-          No se encontraron promociones{buscar ? <> para "<strong>{buscar}</strong>"</> : ''}.
+          No se encontraron promociones{hayFiltros ? ' con los filtros seleccionados' : ''}.
         </div>
       ) : (
         <div className="mn-container">

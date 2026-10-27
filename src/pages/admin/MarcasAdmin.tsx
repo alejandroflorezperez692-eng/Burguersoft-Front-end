@@ -23,7 +23,9 @@ const empty: Omit<Marca, 'id'> = {
 
 export default function MarcasAdmin() {
   const [items, setItems] = useState<Marca[]>([]);
-  const [q, setQ] = useState('');
+  const [filtroMarca, setFiltroMarca] = useState('');
+const [filtroInicial, setFiltroInicial] = useState('');
+const [filtroLogo, setFiltroLogo] = useState('');
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<number | null>(null);
@@ -54,9 +56,27 @@ export default function MarcasAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  const filtered = items.filter((m) =>
-    [m.nombre, m.correo, m.telefono].some((v) => v?.toLowerCase().includes(q.toLowerCase()))
-  );
+  const hayFiltros = filtroMarca !== '' || filtroInicial !== '' || filtroLogo !== '';
+
+const limpiarFiltros = () => {
+  setFiltroMarca('');
+  setFiltroInicial('');
+  setFiltroLogo('');
+};
+
+const inicialDe = (m: Marca) => (m.nombre ?? '').trim().charAt(0).toUpperCase();
+
+const iniciales = Array.from(new Set(items.map(inicialDe).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
+
+const marcasOrdenadas = [...items].sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'));
+
+const filtered = items.filter((m) => {
+  if (filtroMarca && String(m.id) !== filtroMarca) return false;
+  if (filtroInicial && inicialDe(m) !== filtroInicial) return false;
+  if (filtroLogo === 'con' && !m.img) return false;
+  if (filtroLogo === 'sin' && m.img) return false;
+  return true;
+});
 
   const openNew = () => { setForm(empty); setEditId(null); setIntentado(false); setModal(true); };
 
@@ -142,13 +162,42 @@ export default function MarcasAdmin() {
         <button className="btn-primary" onClick={openNew}>+ Nueva marca</button>
       </div>
 
-      <div className="search-bar">
-        <input
-          placeholder="Buscar por nombre, correo o teléfono..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
+      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 24 }}>
+  <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
+    <label>Marca</label>
+    <select value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
+      <option value="">Todas las marcas</option>
+      {marcasOrdenadas.map((m) => (
+        <option key={m.id} value={String(m.id)}>{m.nombre}</option>
+      ))}
+    </select>
+  </div>
+
+  <div className="form-group" style={{ marginBottom: 0, minWidth: 160 }}>
+    <label>Inicial</label>
+    <select value={filtroInicial} onChange={(e) => setFiltroInicial(e.target.value)}>
+      <option value="">Todas</option>
+      {iniciales.map((l) => (
+        <option key={l} value={l}>{l}</option>
+      ))}
+    </select>
+  </div>
+
+  <div className="form-group" style={{ marginBottom: 0, minWidth: 170 }}>
+    <label>Logo</label>
+    <select value={filtroLogo} onChange={(e) => setFiltroLogo(e.target.value)}>
+      <option value="">Todos</option>
+      <option value="con">Con logo</option>
+      <option value="sin">Sin logo</option>
+    </select>
+  </div>
+
+  {hayFiltros && (
+    <button type="button" className="btn-cancel" onClick={limpiarFiltros}>
+      Limpiar filtros
+    </button>
+  )}
+</div>
 
       <div className="meta-bar">
         <span>{filtered.length} marca{filtered.length !== 1 ? 's' : ''}</span>
