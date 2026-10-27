@@ -410,7 +410,7 @@ export default function ComprasAdmin() {
       if (data.fecha) partes.push(`Fecha: ${data.fecha.split('-').reverse().join('/')}.`);
       if (data.observaciones) partes.push(data.observaciones);
       setAviso({ texto: partes.join(' '), alerta: !!data.observaciones });
-      showToast('Listo: revisa los datos y registra');
+      showToast('Listo: revisa los datos y registra', false, true);
     } catch (e) {
       const err = e as { response?: { data?: { message?: string } } };
       showToast(err?.response?.data?.message || 'No se pudo interpretar la compra', true);
@@ -474,7 +474,7 @@ const escanear = async (archivo: File) => {
     }
     if (data.observaciones) partes.push(data.observaciones);
     setAviso({ texto: partes.join(' '), alerta: data.cuadra === false || !!data.observaciones });
-    showToast('Factura leída por Burgi: revisa los datos y registra');
+    showToast('Factura leída por Burgi: revisa los datos y registra', false, true);
   } catch (e) {
     const err = e as { response?: { data?: { message?: string } } };
     showToast(err?.response?.data?.message || 'No se pudo leer la factura', true);

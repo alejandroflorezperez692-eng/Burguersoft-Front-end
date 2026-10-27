@@ -137,7 +137,7 @@ export default function CierreInventarioAdmin() {
     }).join('');
 
     const w = window.open('', '_blank');
-    if (!w) { showToast('Permite las ventanas emergentes para descargar el PDF', true); return; }
+    if (!w) { showToast('Permite las ventanas emergentes para descargar el PDF', false, true); return; }
     w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8">
       <title>Cierre de inventario N.º ${d.id}</title>
       <style>
