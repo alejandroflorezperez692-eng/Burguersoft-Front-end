@@ -543,12 +543,12 @@ export default function BackupsAdmin() {
         </div>
       </div>
 
-      <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <div className="backups-tablas-panel" style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+        <div className="backups-tablas-header">
           <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--text-900)' }}>
             Tablas a respaldar ({sel.length}/{tablas.length})
           </h3>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="backups-tablas-acciones">
             <button className="btn-cancel" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setSel(tablas.map((x) => x.tabla))}>Todas</button>
             <button className="btn-cancel" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setSel([])}>Ninguna</button>
           </div>
@@ -560,20 +560,20 @@ export default function BackupsAdmin() {
                 const marcadas = items.filter((t) => sel.includes(t.tabla)).length;
                 return (
                   <div key={grupo}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                    <div className="backups-tablas-grupo">
                       <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--text-400)' }}>
                         {grupo}
                       </span>
-                      <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                      <span className="backups-tablas-separador" style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                       <button
-                        className="btn-cancel"
+                        className="btn-cancel backups-tablas-grupo-btn"
                         style={{ padding: '2px 8px', fontSize: 11 }}
                         onClick={() => setSel((prev) => [...new Set([...prev, ...items.map((t) => t.tabla)])])}
                       >
                         Todas
                       </button>
                       <button
-                        className="btn-cancel"
+                        className="btn-cancel backups-tablas-grupo-btn"
                         style={{ padding: '2px 8px', fontSize: 11 }}
                         onClick={() => {
                           const delGrupo = new Set(items.map((t) => t.tabla));

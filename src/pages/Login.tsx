@@ -118,9 +118,8 @@ export default function Login() {
       )}
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
-
         <form onSubmit={handleSubmit} noValidate>
-          <h2>CORREO*</h2>
+          <h2>CORREO<span className="required-marker">*</span></h2>
           <input
             type="email"
             id="email"
@@ -131,7 +130,7 @@ export default function Login() {
             required
           />
 
-          <h2>CONTRASEÑA*</h2>
+          <h2>CONTRASEÑA<span className="required-marker">*</span></h2>
           <div className="campo-password">
             <input
               type={mostrarPassword ? 'text' : 'password'}

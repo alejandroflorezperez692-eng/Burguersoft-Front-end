@@ -103,6 +103,12 @@ export default function RecuperarContrasena() {
             <p className="descripcion descripcion-recuperacion">
               Ingresa tu correo electrónico registrado para recibir el código de recuperación.
             </p>
+
+            <div className="campo">
+              <label htmlFor="rec-email">
+                Correo electrónico<span className="required-marker">*</span>
+              </label>
+      
             <input
               id="rec-email"
               type="email"

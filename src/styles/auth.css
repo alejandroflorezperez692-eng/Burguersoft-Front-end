@@ -645,7 +645,7 @@ body.dark-mode .btn-secundario:active {
   box-sizing: border-box;
   padding: 17px 42px 17px 20px;
   border-radius: var(--radio);
-  border: 1.5px solid var(--color-primario);
+  border: 1.5px solid #E8821A;
   font-size: 15px;
   font-family: var(--font-cuerpo);
   background: #ffffff !important;
@@ -678,7 +678,7 @@ body.dark-mode .btn-secundario:active {
 
 .custom-select-trigger:focus,
 .custom-select-trigger.open {
-  border-color: var(--color-primario);
+  border-color: #E8821A;
   box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.14);
 }
 
@@ -1348,6 +1348,17 @@ body.dark-mode .custom-select-trigger {
   color: #fff !important;
   border: 1.5px solid #E8821A !important;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+body:not(.dark-mode) #registroForm .custom-select-trigger {
+  font-family: var(--font-cuerpo);
+  font-size: 16px;
+}
+
+body:not(.dark-mode) #registroForm .custom-select-trigger.placeholder,
+body:not(.dark-mode) #registroForm .custom-select-trigger.placeholder span:first-child {
+  color: #9a8370;
+  font-weight: 400;
 }
 
 body.dark-mode .custom-select-trigger.placeholder {
@@ -2144,4 +2155,11 @@ body.dark-mode .legal-page h2 {
   .legal-page .legal-titulo {
     font-size: 21px;
   }
+}
+
+body:not(.dark-mode) #registroForm .campo .custom-select-trigger,
+body:not(.dark-mode) #registroForm .campo .custom-select-trigger.placeholder,
+body:not(.dark-mode) #registroForm .campo .custom-select-trigger:focus,
+body:not(.dark-mode) #registroForm .campo .custom-select-trigger.open {
+  border: 1.5px solid #E8821A !important;
 }
