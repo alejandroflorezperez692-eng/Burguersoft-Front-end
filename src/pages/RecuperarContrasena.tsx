@@ -119,6 +119,7 @@ export default function RecuperarContrasena() {
               required
               disabled={bloqueado}
             />
+            </div>
 
           <button type="submit" className="btn-primario" disabled={loading || bloqueado}>
             {bloqueado ? `ESPERA ${bloqueo}s` : loading ? 'ENVIANDO…' : 'Enviar código de recuperación'}
