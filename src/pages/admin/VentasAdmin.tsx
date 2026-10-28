@@ -2,6 +2,9 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
+
+import { useToast } from '../../components/Toast';
+
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
 import { useAuth } from '../../hooks/useAuth';
@@ -57,6 +60,8 @@ const toArray = <T,>(v: unknown): T[] =>
 
 export default function VentasAdmin() {
   const { user } = useAuth();
+  const { showToast } = useToast();
+  const alertar = (m: any) => showToast(String(m), true);
   const esAdmin = normalizarRol(user?.role) === 'admin';
   const [items, setItems] = useState<Venta[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -160,7 +165,7 @@ export default function VentasAdmin() {
       cerrarFormulario();
       setVersion((v) => v + 1);
       load();
-    }).catch(() => alert('No se pudo registrar la venta. Revisa el stock y los datos.'));
+    }).catch(() => alertar('No se pudo registrar la venta. Revisa el stock y los datos.'));
   };
 
   const cerrarFormulario = () => {
@@ -240,7 +245,7 @@ export default function VentasAdmin() {
   const updateEstado = (id: number, estado: string) => {
     apiClient.patch(`/ventas/${id}/estado`, { estado })
       .then(() => { setVersion((v) => v + 1); load(); })
-      .catch(() => alert('No se pudo cambiar el estado.'));
+      .catch(() => alertar('No se pudo cambiar el estado.'));
   };
 
   const verFactura = async (id: number) => {
@@ -259,7 +264,7 @@ export default function VentasAdmin() {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch {
       ventana?.close();
-      alert('No se pudo abrir la factura.');
+      alertar('No se pudo abrir la factura.');
     }
   };
 

@@ -3,6 +3,8 @@ import { jsPDF } from 'jspdf';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
+import { useToast } from '../../components/Toast';
+
 import logoElOriente from '../../assets/img/icono1-oscuro.png';
 
 // Logo de El Oriente incrustado en el PDF (se carga una sola vez y se cachea)
@@ -41,6 +43,7 @@ interface Tabla {
 }
 
 export default function BackupsAdmin() {
+  const { showToast, confirmar } = useToast();
   const [items, setItems] = useState<Backup[]>([]);
   const [tablas, setTablas] = useState<Tabla[]>([]);
   const [sel, setSel] = useState<string[]>([]);
@@ -56,7 +59,7 @@ export default function BackupsAdmin() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [restoring, setRestoring] = useState<number | null>(null);
-  const [msg, setMsg] = useState<{ texto: string; error?: boolean } | null>(null);
+
 
   const toArray = <T,>(v: unknown): T[] =>
     Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
@@ -416,11 +419,11 @@ export default function BackupsAdmin() {
 
   const generar = () => {
     if (sel.length === 0) {
-      setMsg({ texto: 'Selecciona al menos una tabla.', error: true });
+      showToast('Selecciona al menos una tabla.', true);
       return;
     }
     setGenerating(true);
-    setMsg(null);
+
     apiClient.post('/backups', { tablas: sel }).then((r) => {
       
       const data = r.data || {};
@@ -431,10 +434,7 @@ export default function BackupsAdmin() {
         const total = Number(data.total) || registros.length || sel.length;
         const nombreArchivo = data.archivo ?? undefined;
         
-        setMsg({
-          texto: `Copia generada: ${total} tabla${total === 1 ? '' : 's'} en ${nombreArchivo ?? 'un solo archivo'}.`,
-          error: false,
-        });
+        showToast(`Copia generada: ${total} tabla${total === 1 ? '' : 's'} en ${nombreArchivo ?? 'un solo archivo'}.`);
         setGenerating(false);
         
         
@@ -456,35 +456,36 @@ export default function BackupsAdmin() {
         });
       } else {
        
-        setMsg({ texto: data.message || 'Error generando backup', error: true });
+        showToast(data.message || 'Error generando backup', true);
         setGenerating(false);
         console.error('Error backend backup:', data);
       }
     }).catch((error) => {
       // Error de red o inesperado
-      setMsg({ texto: 'Error de conexión al generar backup', error: true });
+      showToast('Error de conexión al generar backup', true);
       setGenerating(false);
       console.error('Error crítico en post /backups:', error);
     });
   };
 
-  const del = (id: number) => {
-    if (!confirm('¿Eliminar este registro de backup?')) return;
+  const del = async (id: number) => {
+    if (!(await confirmar('¿Eliminar este registro de backup? Esta acción no se puede deshacer.', 'Sí, eliminar'))) return;
     apiClient.delete(`/backups/${id}`).then(() => load());
   };
 
-  const restaurar = (id: number, resumen: string) => {
-    const ok = confirm(
+  const restaurar = async (id: number, resumen: string) => {
+    const ok = await confirmar(
       `¿Restaurar esta copia de seguridad?\n\n` +
       `Copia: ${resumen}\n\n` +
       `ATENCIÓN: Se reemplazarán los datos actuales de las tablas incluidas ` +
       `en la copia por los datos guardados. Esta acción no se puede deshacer.\n\n` +
-      `¿Deseas continuar?`
+      `¿Deseas continuar?`,
+      'Sí, restaurar'
     );
     if (!ok) return;
 
     setRestoring(id);
-    setMsg(null);
+
 
     apiClient.post(`/backups/${id}/restaurar`).then((r) => {
       const data = r.data || {};
@@ -492,19 +493,16 @@ export default function BackupsAdmin() {
       if (data.success === true) {
         const n = data.tablas_restauradas?.length ?? 0;
         const filas = data.total_filas ?? 0;
-        setMsg({
-          texto: `Copia restaurada: ${n} tabla(s) y ${filas} registro(s) recuperados.`,
-          error: false,
-        });
+        showToast(`Copia restaurada: ${n} tabla(s) y ${filas} registro(s) recuperados.`);
       } else {
-        setMsg({ texto: data.message || 'Error restaurando la copia', error: true });
+        showToast(data.message || 'Error restaurando la copia', true);
         console.error('Error restaurando backup:', data);
       }
       setRestoring(null);
       load();
     }).catch((error) => {
       const texto = error?.response?.data?.message || 'Error de conexión al restaurar la copia';
-      setMsg({ texto, error: true });
+      showToast(texto, true);
       setRestoring(null);
       console.error('Error crítico restaurando backup:', error);
     });
@@ -549,12 +547,12 @@ export default function BackupsAdmin() {
         </div>
       </div>
 
-      <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+      <div className="backups-tablas-panel" style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+        <div className="backups-tablas-header">
           <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--text-900)' }}>
             Tablas a respaldar ({sel.length}/{tablas.length})
           </h3>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="backups-tablas-acciones">
             <button className="btn-cancel" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setSel(tablas.map((x) => x.tabla))}>Todas</button>
             <button className="btn-cancel" style={{ padding: '6px 12px', fontSize: 12 }} onClick={() => setSel([])}>Ninguna</button>
           </div>
@@ -566,20 +564,20 @@ export default function BackupsAdmin() {
                 const marcadas = items.filter((t) => sel.includes(t.tabla)).length;
                 return (
                   <div key={grupo}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                    <div className="backups-tablas-grupo">
                       <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--text-400)' }}>
                         {grupo}
                       </span>
-                      <span style={{ flex: 1, height: 1, background: 'var(--border)' }} />
+                      <span className="backups-tablas-separador" style={{ flex: 1, height: 1, background: 'var(--border)' }} />
                       <button
-                        className="btn-cancel"
+                        className="btn-cancel backups-tablas-grupo-btn"
                         style={{ padding: '2px 8px', fontSize: 11 }}
                         onClick={() => setSel((prev) => [...new Set([...prev, ...items.map((t) => t.tabla)])])}
                       >
                         Todas
                       </button>
                       <button
-                        className="btn-cancel"
+                        className="btn-cancel backups-tablas-grupo-btn"
                         style={{ padding: '2px 8px', fontSize: 11 }}
                         onClick={() => {
                           const delGrupo = new Set(items.map((t) => t.tabla));
@@ -619,9 +617,7 @@ export default function BackupsAdmin() {
             <span style={{ color: 'var(--text-400)', fontSize: 12, padding: 6 }}>Cargando tablas...</span>
           )}
         </div>
-        {msg && (
-          <p style={{ fontSize: 13, fontWeight: 600, marginTop: 12, color: msg.error ? '#c0392b' : 'var(--text-900)' }}>{msg.texto}</p>
-        )}
+
         <div className="modal-actions" style={{ marginTop: 12 }}>
           <button className="btn-save" onClick={generar} disabled={generating}>
             {generating ? 'Generando...' : `Generar copia (${sel.length})`}

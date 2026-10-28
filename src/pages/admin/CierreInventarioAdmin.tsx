@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import apiClient from '../../api/client';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
@@ -61,7 +61,7 @@ export default function CierreInventarioAdmin() {
   const [guardando, setGuardando] = useState(false);
   const [detalle, setDetalle] = useState<DetalleCierre | null>(null);
   const [cargandoDetalle, setCargandoDetalle] = useState<number | null>(null);
-  const { toast, showToast } = useToast();
+  const { showToast, confirmar } = useToast();
 
   // Paginación: la tabla de conteo y el historial de cierres, de 10 en 10
   const [paginaConteo, setPaginaConteo] = useState(1);
@@ -168,7 +168,7 @@ export default function CierreInventarioAdmin() {
     }
     const sinContar = filas.length - contados.length;
     const aviso = sinContar > 0 ? ` Las ${sinContar} que no contaste quedan como están.` : '';
-    if (!confirm(`¿Guardar el cierre de ${contados.length} materias primas?${aviso}`)) return;
+    if (!(await confirmar(`¿Guardar el cierre de ${contados.length} materias primas?${aviso}`, 'Sí, guardar'))) return;
     setGuardando(true);
     try {
       await apiClient.post('/inventario/cierres', {
@@ -303,7 +303,7 @@ export default function CierreInventarioAdmin() {
                 <col style={{ width: '16%' }} />
               </colgroup>
               <thead>
-                <tr><th>N.º</th><th>Fecha y hora</th><th>Responsable</th><th>Materias primas</th><th>Con diferencia</th><th>Observación</th><th>Detalle</th></tr>
+                <tr><th>#</th><th>Fecha y hora</th><th>Responsable</th><th>Materias primas</th><th>Con diferencia</th><th>Observación</th><th>Detalle</th></tr>
               </thead>
               <tbody>
                 {cierres.map((h) => (
@@ -389,8 +389,6 @@ export default function CierreInventarioAdmin() {
           </div>
         </div>
       )}
-
-      <ToastMessage toast={toast} />
     </div>
   );
 }

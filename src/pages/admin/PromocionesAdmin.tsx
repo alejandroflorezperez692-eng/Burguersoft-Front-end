@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent, CSSProperties } from 'react';
 import apiClient from '../../api/client';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
@@ -138,7 +138,7 @@ export default function PromocionesAdmin() {
   const [fechasOrig, setFechasOrig] = useState({ inicio: '', fin: '' });
 
   const fileRef = useRef<HTMLInputElement>(null);
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
 
   /* ---------- Carga de datos ---------- */
   const cargar = useCallback(async () => {
@@ -743,8 +743,6 @@ export default function PromocionesAdmin() {
           </div>
         </div>
       )}
-
-      <ToastMessage toast={toast} />
     </div>
   );
 }

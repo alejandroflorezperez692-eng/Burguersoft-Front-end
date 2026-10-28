@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
 import marcaFallback from '../../assets/img/marca-comercial.png';
 import AdminLoading from '../../components/AdminLoading';
-import { IconoToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 
@@ -50,6 +50,7 @@ export default function MarcasAdmin() {
     window.clearTimeout(toastTimer.current);
     toastTimer.current = window.setTimeout(() => setToast(null), 3200);
   };
+  const { showToast, confirmar } = useToast();
 
   const load = async () => {
     setLoading(true);
@@ -137,12 +138,16 @@ export default function MarcasAdmin() {
 
   const pedirEliminar = (id: number) => {
     const m = items.find((x) => x.id === id);
+
     if (m) setConfirmDel(m);
   };
 
   const del = async () => {
     if (!confirmDel) return;
     setEliminando(true);
+
+    if (!(await confirmar(`¿Eliminar la marca "${m?.nombre ?? id}"? Esta acción no se puede deshacer.`, 'Sí, eliminar'))) return;
+
     try {
       await apiClient.delete(`/marcas/${confirmDel.id}`);
       showToast('Proveedor eliminado');
@@ -413,12 +418,6 @@ export default function MarcasAdmin() {
         </div>
       )}
 
-      {toast && (
-        <div className={`toast-marca${toast.error ? ' toast-error' : ''}`}>
-          <IconoToast tipo={toast.error ? 'error' : 'exito'} />
-          <span>{toast.msg}</span>
-        </div>
-      )}
     </div>
   );
 }

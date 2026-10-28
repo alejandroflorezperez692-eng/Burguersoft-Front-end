@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
+import { useToast } from '../components/Toast';
 import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import { useAuth } from '../hooks/useAuth';
@@ -239,6 +240,7 @@ function asignarSecuenciales(pedidos: PedidoUI[]): PedidoUI[] {
 
 export default function MisPedidos() {
   const { isAuthenticated, user } = useAuth();
+  const { confirmar } = useToast();
   const [pedidos, setPedidos] = useState<PedidoUI[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelandoId, setCancelandoId] = useState<number | null>(null);
@@ -326,7 +328,7 @@ export default function MisPedidos() {
       setError('Este pedido ya no se puede cancelar. Contáctanos por WhatsApp.');
       return;
     }
-    if (!window.confirm(`¿Seguro que deseas cancelar el pedido #${pedido.numero_secuencial}?`)) return;
+    if (!(await confirmar(`¿Seguro que deseas cancelar el pedido #${pedido.numero_secuencial}?`, 'Sí, cancelar'))) return;
     setCancelandoId(pedido.id);
     setError(null);
     try {

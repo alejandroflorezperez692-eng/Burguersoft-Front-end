@@ -3,17 +3,19 @@ import { isAxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
+import { useToast } from '../components/Toast';
 import iconoBloqueo from '../assets/img/bloquear.png';
 
 export default function RestablecerContrasena() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const correo = sessionStorage.getItem('correo_recuperacion') ?? '';
   const codigo = sessionStorage.getItem('codigo_verificado') ?? '';
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [show1, setShow1] = useState(false);
   const [show2, setShow2] = useState(false);
-  const [error, setError] = useState('');
+
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -32,13 +34,12 @@ export default function RestablecerContrasena() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError('');
     if (cumplidos < 4) {
-      setError('Por favor, cumple con todos los requisitos de seguridad.');
+      showToast('Por favor, cumple con todos los requisitos de seguridad.', true);
       return;
     }
     if (password !== confirm) {
-      setError('Las contraseñas no coinciden.');
+      showToast('Las contraseñas no coinciden.', true);
       return;
     }
     setLoading(true);
@@ -57,9 +58,9 @@ export default function RestablecerContrasena() {
     } catch (err) {
       if (isAxiosError(err)) {
         const data = err.response?.data as { message?: string } | undefined;
-        setError(data?.message ?? 'No se pudo cambiar la contraseña.');
+        showToast(data?.message ?? 'No se pudo cambiar la contraseña.', true);
       } else {
-        setError('No se pudo cambiar la contraseña.');
+        showToast('No se pudo cambiar la contraseña.', true);
       }
     } finally {
       setLoading(false);
@@ -75,7 +76,7 @@ export default function RestablecerContrasena() {
         </div>
         <p className="descripcion">Ingresa y confirma tu nueva contraseña.</p>
         <form onSubmit={handleSubmit} noValidate>
-          <h2>NUEVA CONTRASEÑA*</h2>
+          <h2>NUEVA CONTRASEÑA<span className="required-marker">*</span></h2>
           <div className="campo-password">
             <input
               type={show1 ? 'text' : 'password'}
@@ -109,7 +110,7 @@ export default function RestablecerContrasena() {
             ))}
           </ul>
 
-          <h2 style={{ marginTop: 18 }}>CONFIRMAR CONTRASEÑA*</h2>
+          <h2 style={{ marginTop: 18 }}>CONFIRMAR CONTRASEÑA<span className="required-marker">*</span></h2>
           <div className="campo-password">
             <input
               type={show2 ? 'text' : 'password'}
@@ -137,11 +138,7 @@ export default function RestablecerContrasena() {
             </p>
           )}
 
-          {error && (
-            <p className="auth-error" role="alert">
-              {error}
-            </p>
-          )}
+
           <button type="submit" className="btn-primario" disabled={loading}>
             {loading ? 'GUARDANDO…' : 'Cambiar contraseña'}
           </button>

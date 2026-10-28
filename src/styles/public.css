@@ -445,8 +445,12 @@
   position: absolute;
   bottom: 28px;
   left: 50%;
+  right: auto;
   transform: translateX(-50%);
   display: flex;
+  width: max-content;
+  margin: 0;
+  justify-content: center;
   gap: 10px;
   z-index: 10;
 }

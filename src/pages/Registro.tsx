@@ -3,7 +3,9 @@ import { isAxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import ModalVerificarCorreo from '../components/ModalVerificarCorreo';
+import ModalLegal, { type DocumentoLegal } from '../components/ModalLegal';
 import { useAuth } from '../hooks/useAuth';
+import { useToast } from '../components/Toast';
 
 function getErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
@@ -61,13 +63,13 @@ export default function Registro() {
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [documentoLegal, setDocumentoLegal] = useState<DocumentoLegal | null>(null);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
-  const [errorTerminos, setErrorTerminos] = useState<string | null>(null);
 
   const { register } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -110,38 +112,38 @@ export default function Registro() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
+
 
     if (!nombre.trim() || nombre.trim().length < 2) {
-      setError('Ingrese un nombre válido (solo letras, mínimo 2 caracteres).');
+      showToast('Ingrese un nombre válido (solo letras, mínimo 2 caracteres).', true);
       return;
     }
     if (!apellido.trim() || apellido.trim().length < 2) {
-      setError('Ingrese un apellido válido (solo letras, mínimo 2 caracteres).');
+      showToast('Ingrese un apellido válido (solo letras, mínimo 2 caracteres).', true);
       return;
     }
     if (!tipoDocumento) {
-      setError('Seleccione el tipo de documento.');
+      showToast('Seleccione el tipo de documento.', true);
       return;
     }
     if (!/^[0-9]{6,12}$/.test(numeroDocumento)) {
-      setError('El número de documento debe tener entre 6 y 12 dígitos (solo números).');
+      showToast('El número de documento debe tener entre 6 y 12 dígitos (solo números).', true);
       return;
     }
     if (!cumpleRequisitos) {
-      setError('La contraseña no cumple los requisitos de seguridad.');
+      showToast('La contraseña no cumple los requisitos de seguridad.', true);
       return;
     }
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
+      showToast('Las contraseñas no coinciden.', true);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
-      setError('Ingrese un correo electrónico válido.');
+      showToast('Ingrese un correo electrónico válido.', true);
       return;
     }
     if (!aceptaTerminos) {
-      setErrorTerminos('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.');
+      showToast('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.', true);
       return;
     }
 
@@ -153,7 +155,7 @@ export default function Registro() {
   const handleCodigoVerificado = async () => {
     setModalAbierto(false);
     setLoading(true);
-    setError(null);
+
 
     try {
       await register(
@@ -166,7 +168,7 @@ export default function Registro() {
       );
       navigate('/login', { replace: true });
     } catch (err) {
-      setError(getErrorMessage(err));
+      showToast(getErrorMessage(err), true);
     } finally {
       setLoading(false);
     }
@@ -187,7 +189,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="nombre">Nombre*</label>
+              <label htmlFor="nombre">Nombre<span className="required-marker">*</span></label>
               <input
                 type="text"
                 id="nombre"
@@ -208,7 +210,7 @@ export default function Registro() {
               />
             </div>
             <div className="campo">
-              <label htmlFor="apellido">Apellido*</label>
+              <label htmlFor="apellido">Apellido<span className="required-marker">*</span></label>
               <input
                 type="text"
                 id="apellido"
@@ -232,7 +234,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="tipoDocumento">Tipo de documento*</label>
+              <label htmlFor="tipoDocumento">Tipo de documento<span className="required-marker">*</span></label>
               <div className="custom-select" ref={tipoRef}>
                 <button
                   type="button"
@@ -267,7 +269,7 @@ export default function Registro() {
               </div>
             </div>
             <div className="campo">
-              <label htmlFor="numeroDocumento">Número de documento*</label>
+              <label htmlFor="numeroDocumento">Número de documento<span className="required-marker">*</span></label>
               <input
                 type="text"
                 id="numeroDocumento"
@@ -293,7 +295,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="correo">Correo*</label>
+              <label htmlFor="correo">Correo<span className="required-marker">*</span></label>
               <input
                 type="email"
                 id="correo"
@@ -307,7 +309,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="password">Contraseña*</label>
+              <label htmlFor="password">Contraseña<span className="required-marker">*</span></label>
               <div className="campo-password">
                 <input
                   type={mostrarPassword ? 'text' : 'password'}
@@ -356,7 +358,7 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="confirmPassword">Confirmar Contraseña*</label>
+              <label htmlFor="confirmPassword">Confirmar Contraseña<span className="required-marker">*</span></label>
               <div className="campo-password">
                 <input
                   type={mostrarConfirmPassword ? 'text' : 'password'}
@@ -381,29 +383,21 @@ export default function Registro() {
             </div>
           </div>
 
-          {error && (
-            <p className="auth-error" role="alert" style={{ marginTop: '20px' }}>
-              {error}
-            </p>
-          )}
+
 
           <div style={{ marginTop: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <input
               type="checkbox"
               id="aceptaTerminos"
               checked={aceptaTerminos}
-              onChange={(e) => { setAceptaTerminos(e.target.checked); if (e.target.checked) setErrorTerminos(null); }}
+              onChange={(e) => { setAceptaTerminos(e.target.checked); }}
               style={{ marginTop: 4 }}
             />
             <label htmlFor="aceptaTerminos" style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--text-700)' }}>
-              He leído y acepto los <Link to="/terminos" className="auth-legal-link" onClick={(e) => e.stopPropagation()}>Términos y Condiciones</Link> y autorizo el tratamiento de mis datos personales conforme a la <Link to="/privacidad" className="auth-legal-link" onClick={(e) => e.stopPropagation()}>Política de Privacidad</Link>.
+              He leído y acepto los <Link to="/terminos" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('terminos'); }}>Términos y Condiciones</Link> y autorizo el tratamiento de mis datos personales conforme a la <Link to="/privacidad" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('privacidad'); }}>Política de Privacidad</Link>.
             </label>
           </div>
-          {errorTerminos && (
-            <p className="auth-error" role="alert" style={{ marginTop: '8px' }}>
-              {errorTerminos}
-            </p>
-          )}
+
 
           <button type="submit" className="boton-registro" disabled={loading}>
             {loading ? 'REGISTRANDO…' : 'Registrarse'}
@@ -421,6 +415,12 @@ export default function Registro() {
           correo={correo}
           onClose={() => setModalAbierto(false)}
           onVerified={handleCodigoVerificado}
+        />
+      )}
+      {documentoLegal && (
+        <ModalLegal
+          documentoInicial={documentoLegal}
+          onClose={() => setDocumentoLegal(null)}
         />
       )}
     </AuthLayout>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../components/Toast';
 import apiClient from '../../api/client';
 import HistorialModal from '../../components/HistorialModal';
 import { normalizarRol } from '../../utils/roles';
@@ -11,7 +12,7 @@ import {
   validarPassword,
 } from '../../utils/perfil';
 
-type Msg = { tipo: 'ok' | 'err'; texto: string } | null;
+
 
 type UsuarioMe = {
   nombre?: string;
@@ -25,6 +26,7 @@ type UsuarioMe = {
 
 export default function ConfiguracionAdmin() {
   const { user, updateUser } = useAuth();
+  const { showToast } = useToast();
 
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
@@ -35,7 +37,7 @@ export default function ConfiguracionAdmin() {
   const [cargando, setCargando] = useState(true);
   const [verHistorial, setVerHistorial] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [msgDatos, setMsgDatos] = useState<Msg>(null);
+
 
   const [actual, setActual] = useState('');
   const [nueva, setNueva] = useState('');
@@ -44,7 +46,7 @@ export default function ConfiguracionAdmin() {
   const [mostrarNueva, setMostrarNueva] = useState(false);
   const [mostrarConf, setMostrarConf] = useState(false);
   const [actualizandoPwd, setActualizandoPwd] = useState(false);
-  const [msgPwd, setMsgPwd] = useState<Msg>(null);
+
 
   useEffect(() => {
     let cancelado = false;
@@ -91,22 +93,22 @@ export default function ConfiguracionAdmin() {
 
   const handleInfo = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMsgDatos(null);
+
     const err = validarDatos({ nombre, apellido, tdoc, ndoc, telefono });
     if (err) {
-      setMsgDatos({ tipo: 'err', texto: err });
+      showToast(err, true);
       return;
     }
     setGuardando(true);
     try {
       await apiClient.put('/perfil', { nombre, apellido, Tdocumento: tdoc, Ndocumento: ndoc, telefono });
-      setMsgDatos({ tipo: 'ok', texto: 'Datos actualizados correctamente.' });
+      showToast('Datos actualizados correctamente.');
       const nombreCompleto = `${nombre.trim()} ${apellido.trim()}`.trim();
       updateUser({ name: nombreCompleto });
       localStorage.setItem('perfil_extra', JSON.stringify({ Tdocumento: tdoc, Ndocumento: ndoc, telefono }));
     } catch (error: unknown) {
       const data = (error as { response?: { data?: { message?: string } } })?.response?.data;
-      setMsgDatos({ tipo: 'err', texto: data?.message ?? 'No se pudieron guardar los cambios. Intenta de nuevo.' });
+      showToast(data?.message ?? 'No se pudieron guardar los cambios. Intenta de nuevo.', true);
     } finally {
       setGuardando(false);
     }
@@ -114,24 +116,24 @@ export default function ConfiguracionAdmin() {
 
   const handlePass = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMsgPwd(null);
+
     if (!actual) {
-      setMsgPwd({ tipo: 'err', texto: 'La contraseña actual es obligatoria.' });
+      showToast('La contraseña actual es obligatoria.', true);
       return;
     }
     const errPwd = validarPassword(nueva, actual);
     if (errPwd) {
-      setMsgPwd({ tipo: 'err', texto: errPwd });
+      showToast(errPwd, true);
       return;
     }
     if (nueva !== confirmar) {
-      setMsgPwd({ tipo: 'err', texto: 'Las contraseñas no coinciden.' });
+      showToast('Las contraseñas no coinciden.', true);
       return;
     }
     setActualizandoPwd(true);
     try {
       await apiClient.post('/perfil/password', { actual, nueva, confirmar });
-      setMsgPwd({ tipo: 'ok', texto: 'Contraseña actualizada correctamente.' });
+      showToast('Contraseña actualizada correctamente.');
       setActual('');
       setNueva('');
       setConfirmar('');
@@ -139,11 +141,11 @@ export default function ConfiguracionAdmin() {
       const data = (error as { response?: { data?: { message?: string } } })?.response?.data;
       const msg = data?.message ?? '';
       if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
-        setMsgPwd({ tipo: 'err', texto: 'La contraseña actual es incorrecta.' });
+        showToast('La contraseña actual es incorrecta.', true);
       } else if (msg) {
-        setMsgPwd({ tipo: 'err', texto: msg });
+        showToast(msg, true);
       } else {
-        setMsgPwd({ tipo: 'err', texto: 'No se pudo actualizar la contraseña. Intenta de nuevo más tarde.' });
+        showToast('No se pudo actualizar la contraseña. Intenta de nuevo más tarde.', true);
       }
     } finally {
       setActualizandoPwd(false);
@@ -286,11 +288,7 @@ export default function ConfiguracionAdmin() {
               </div>
             </div>
 
-            {msgDatos && (
-              <div className={`cfg-msg ${msgDatos.tipo === 'ok' ? 'cfg-msg-ok' : 'cfg-msg-err'}`} role="alert">
-                {msgDatos.texto}
-              </div>
-            )}
+
 
             <div className="modal-actions">
               <button className="btn-save" type="submit" disabled={guardando || cargando}>
@@ -392,11 +390,7 @@ export default function ConfiguracionAdmin() {
               {confirmar && confirmar === nueva && nueva && <span className="cfg-hint cfg-hint-ok">✓ Coinciden</span>}
             </div>
 
-            {msgPwd && (
-              <div className={`cfg-msg ${msgPwd.tipo === 'ok' ? 'cfg-msg-ok' : 'cfg-msg-err'}`} role="alert">
-                {msgPwd.texto}
-              </div>
-            )}
+
 
             <div className="modal-actions">
               <button className="btn-save" type="submit" disabled={actualizandoPwd}>

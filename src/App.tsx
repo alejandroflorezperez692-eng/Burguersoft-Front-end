@@ -32,12 +32,14 @@ import { ConAsistenteCliente } from './components/AsistenteCliente';
 import CierreInventarioAdmin from './pages/admin/CierreInventarioAdmin';
 import TerminosPrivacidad from './pages/TerminosPrivacidad';
 import Ayuda from './pages/admin/Ayuda';
+import AyudaCliente from './pages/AyudaCliente';
 import { ACCESO } from './utils/roles';
+import { ToastProvider } from './components/Toast';
 
 
 function App() {
   return (
-    <>
+    <ToastProvider>
       <DemoAccess />
       <Routes>
       <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
@@ -70,6 +72,9 @@ function App() {
       <Route path="/social-callback" element={<SocialCallback />} />
       <Route path="/ayuda" element={<Ayuda />} />
 
+      <Route element={<ProtectedRoute roles={['cliente']} redirect="/" />}>
+        <Route path="/ayuda-cliente" element={<AyudaCliente />} />
+      </Route>
 
       {/* Panel interno: admin, cajero y cocinero comparten el mismo layout */}
       <Route element={<ProtectedRoute roles={ACCESO.personal} redirect="/" />}>
@@ -108,7 +113,7 @@ function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Accesibilidad />
-    </>
+    </ToastProvider>
   );
 }
 

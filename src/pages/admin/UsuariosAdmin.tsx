@@ -1,6 +1,6 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+﻿import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
@@ -19,32 +19,32 @@ interface Usuario {
 const badgeClass = (e: string) =>
   e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
 
-/* ---------- Validación de nombres ---------- */
+/* ---------- ValidaciÃ³n de nombres ---------- */
 
-// Solo letras (con tildes y ñ), espacios, guion y apóstrofe: "María José", "De la Cruz", "O'Brien"
-const NOMBRE_REGEX = /^\p{L}+(?:[ '’-]\p{L}+)*$/u;
+// Solo letras (con tildes y Ã±), espacios, guion y apÃ³strofe: "MarÃ­a JosÃ©", "De la Cruz", "O'Brien"
+const NOMBRE_REGEX = /^\p{L}+(?:[ 'â€™-]\p{L}+)*$/u;
 
 const limpiarEspacios = (v: string) => v.trim().replace(/\s+/g, ' ');
 
-// Mientras escribe, quita números y símbolos
-const soloLetras = (v: string) => v.replace(/[^\p{L}\s'’-]/gu, '');
+// Mientras escribe, quita nÃºmeros y sÃ­mbolos
+const soloLetras = (v: string) => v.replace(/[^\p{L}\s'â€™-]/gu, '');
 
 // "alejandro FLOREZ" -> "Alejandro Florez"
 const formatearNombre = (v: string) =>
   limpiarEspacios(v)
     .toLowerCase()
-    .replace(/(^|[\s'’-])(\p{L})/gu, (_, sep, letra) => sep + letra.toUpperCase());
+    .replace(/(^|[\s'â€™-])(\p{L})/gu, (_, sep, letra) => sep + letra.toUpperCase());
 
 const nombreValido = (v: string) => {
   const t = limpiarEspacios(v);
   if (t.length < 2 || t.length > 50) return false;
   if (!NOMBRE_REGEX.test(t)) return false;       // solo letras
   if (/(\p{L})\1{2,}/iu.test(t)) return false;   // "aaa", "xxx"
-  if (!/[aeiouáéíóúüy]/i.test(t)) return false;  // "xyz", "bcd"
+  if (!/[aeiouÃ¡Ã©Ã­Ã³ÃºÃ¼y]/i.test(t)) return false;  // "xyz", "bcd"
   return true;
 };
 
-function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string; estado: string }) {
+ }: { nombre: string; apellido: string; estado: string }) {
   return (
     <span style={{
       width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
@@ -73,7 +73,7 @@ export default function UsuariosAdmin() {
   const [loading, setLoading] = useState(true);
   const [intentado, setIntentado] = useState(false);
   const [pagina, setPagina] = useState(1);
-  const { toast, showToast } = useToast();
+  const { showToast, confirmar } = useToast();
 
   const load = async () => {
     setLoading(true);
@@ -98,7 +98,8 @@ export default function UsuariosAdmin() {
   // Paginación: de 10 en 10 (si borras el último de una página, retrocede sola)
   const { visibles, paginaActual } = paginar(filtered, pagina);
 
-  /* ---------- Edición ---------- */
+
+  /* ---------- EdiciÃ³n ---------- */
 
   const openEdit = (u: Usuario) => {
     setSel(u);
@@ -114,10 +115,10 @@ export default function UsuariosAdmin() {
   };
 
   const requisitos = [
-    { id: 'largo',     texto: 'Mínimo 8 caracteres',                 cumple: password.length >= 8 },
-    { id: 'mayuscula', texto: 'Al menos una mayúscula',              cumple: /[A-Z]/.test(password) },
-    { id: 'numero',    texto: 'Al menos un número',                  cumple: /\d/.test(password) },
-    { id: 'simbolo',   texto: 'Al menos un símbolo (@, #, $, etc.)', cumple: /[^A-Za-z0-9\s]/.test(password) },
+    { id: 'largo',     texto: 'MÃ­nimo 8 caracteres',                 cumple: password.length >= 8 },
+    { id: 'mayuscula', texto: 'Al menos una mayÃºscula',              cumple: /[A-Z]/.test(password) },
+    { id: 'numero',    texto: 'Al menos un nÃºmero',                  cumple: /\d/.test(password) },
+    { id: 'simbolo',   texto: 'Al menos un sÃ­mbolo (@, #, $, etc.)', cumple: /[^A-Za-z0-9\s]/.test(password) },
   ];
 
   const requisitosCumplidos = requisitos.filter((r) => r.cumple).length;
@@ -143,10 +144,10 @@ export default function UsuariosAdmin() {
   const guardar = async () => {
     if (!sel) return;
     setIntentado(true);
-    if (errores.nombre) { showToast('Escribe un nombre real: solo letras, sin números ni símbolos', true); return; }
-    if (errores.apellido) { showToast('Escribe un apellido real: solo letras, sin números ni símbolos', true); return; }
-    if (errores.correo) { showToast('Escribe un correo válido', true); return; }
-    if (errores.password) { showToast('La contraseña debe tener 8+ caracteres, mayúscula, número y símbolo', true); return; }
+    if (errores.nombre) { showToast('Escribe un nombre real: solo letras, sin nÃºmeros ni sÃ­mbolos', true); return; }
+    if (errores.apellido) { showToast('Escribe un apellido real: solo letras, sin nÃºmeros ni sÃ­mbolos', true); return; }
+    if (errores.correo) { showToast('Escribe un correo vÃ¡lido', true); return; }
+    if (errores.password) { showToast('La contraseÃ±a debe tener 8+ caracteres, mayÃºscula, nÃºmero y sÃ­mbolo', true); return; }
     if (errores.rol) { showToast('Selecciona un rol', true); return; }
     if (errores.estado) { showToast('Selecciona un estado', true); return; }
 
@@ -157,7 +158,7 @@ export default function UsuariosAdmin() {
       rol,
       estado,
     };
-    if (password) payload.password = password; // solo si escribió una nueva
+    if (password) payload.password = password; // solo si escribiÃ³ una nueva
 
     try {
       await apiClient.put(`/usuarios/${sel.id}`, payload);
@@ -177,7 +178,7 @@ export default function UsuariosAdmin() {
   const del = async (id: number) => {
     const u = items.find((x) => x.id === id);
     const nombreCompleto = u ? `${u.nombre} ${u.apellido ?? ''}` : 'este usuario';
-    if (!confirm(`¿Eliminar a "${nombreCompleto}"?`)) return;
+    if (!(await confirmar(`¿Eliminar a "${nombreCompleto}"? Esta acción no se puede deshacer.`, 'Sí, eliminar'))) return;
     try {
       await apiClient.delete(`/usuarios/${id}`);
       showToast('Usuario eliminado');
@@ -195,7 +196,7 @@ export default function UsuariosAdmin() {
     <div className="page-inner">
       <div className="page-header">
         <div>
-          <h1>Gestión de Usuarios</h1>
+          <h1>GestiÃ³n de Usuarios</h1>
           <p className="subtitulo">Administra los usuarios del sistema</p>
         </div>
       </div>
@@ -206,7 +207,7 @@ export default function UsuariosAdmin() {
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
+        <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o telÃ©fono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
       </div>
 
       <div className="meta-bar">
@@ -221,10 +222,10 @@ export default function UsuariosAdmin() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>#</th>
                 <th>Usuario</th>
                 <th>Correo</th>
-                <th>Teléfono</th>
+                <th>TelÃ©fono</th>
                 <th>Estado</th>
                 <th>Rol</th>
                 <th className="th-acciones">Acciones</th>
@@ -241,9 +242,9 @@ export default function UsuariosAdmin() {
                     </div>
                   </td>
                   <td>{u.correo}</td>
-                  <td>{u.telefono || '—'}</td>
+                  <td>{u.telefono || 'â€”'}</td>
                   <td><span className={`badge ${badgeClass(u.estado)}`}>{u.estado}</span></td>
-                  <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
+                  <td><span className="badge badge-info">{u.rol?.nombre ?? 'â€”'}</span></td>
                   <td className="td-acciones">
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                       <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar">Editar</button>
@@ -260,6 +261,7 @@ export default function UsuariosAdmin() {
         </div>
 
         <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
+
         </>
       )}
 
@@ -307,7 +309,7 @@ export default function UsuariosAdmin() {
 
             <div className="form-group" style={{ marginBottom: 14 }}>
               <label>
-                Nueva contraseña{' '}
+                Nueva contraseÃ±a{' '}
                 <span style={{ color: 'var(--text-400)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>
                   (opcional)
                 </span>
@@ -320,14 +322,14 @@ export default function UsuariosAdmin() {
                   value={password}
                   maxLength={64}
                   autoComplete="new-password"
-                  placeholder="Dejar vacío para no cambiarla"
+                  placeholder="Dejar vacÃ­o para no cambiarla"
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
                   onClick={() => setVerPass((v) => !v)}
-                  aria-label={verPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                  title={verPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-label={verPass ? 'Ocultar contraseÃ±a' : 'Mostrar contraseÃ±a'}
+                  title={verPass ? 'Ocultar contraseÃ±a' : 'Mostrar contraseÃ±a'}
                   style={{
                     position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer', padding: 0,
@@ -343,7 +345,7 @@ export default function UsuariosAdmin() {
               <div
                 className={`barra-contrasena ${claseBarra}`}
                 role="progressbar"
-                aria-label="Requisitos de la contraseña"
+                aria-label="Requisitos de la contraseÃ±a"
                 aria-valuemin={0}
                 aria-valuemax={requisitos.length}
                 aria-valuenow={requisitosCumplidos}
@@ -354,7 +356,7 @@ export default function UsuariosAdmin() {
               <ul className="requisitos" style={{ marginTop: 10 }}>
                 {requisitos.map((r) => (
                   <li key={r.id} className={`requisito${r.cumple ? ' cumple' : ''}`}>
-                    <span aria-hidden="true">{r.cumple ? '✅' : '❌'}</span>
+                    <span aria-hidden="true">{r.cumple ? 'âœ…' : 'âŒ'}</span>
                     {r.texto}
                   </li>
                 ))}
@@ -390,8 +392,6 @@ export default function UsuariosAdmin() {
           </div>
         </div>
       )}
-
-      <ToastMessage toast={toast} />
     </div>
   );
 }

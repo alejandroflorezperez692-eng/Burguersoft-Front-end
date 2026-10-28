@@ -79,6 +79,7 @@ export default function Inicio() {
 
       {rol !== 'Cliente' && <AlertasIA />}
 
+
       <div className={`toast-bienvenida${toastVisible ? ' mostrar' : ''}`}>
         ¡Bienvenido a BurguerSoft, Administrador!
       </div>

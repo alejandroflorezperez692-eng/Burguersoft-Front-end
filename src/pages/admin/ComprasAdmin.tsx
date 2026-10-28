@@ -3,8 +3,10 @@ import type { CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import ComprasResumen from '../../components/ComprasResumen';
 import AdminLoading from '../../components/AdminLoading';
+
 import Paginacion, { paginar } from '../../components/Paginacion';
 import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 
@@ -251,6 +253,9 @@ export default function ComprasAdmin() {
   const [numeroFactura, setNumeroFactura] = useState('');
   const [tipoFactura, setTipoFactura] = useState('');
   const { toast, showToast } = useToast();
+
+  const { showToast } = useToast();
+
   const [lineas, setLineas] = useState<Linea[]>([
     { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' },
   ]);
@@ -1259,6 +1264,7 @@ useEscape([
         </div>
       )}
        <ToastMessage toast={toast} />
+
     </div>
   
   );

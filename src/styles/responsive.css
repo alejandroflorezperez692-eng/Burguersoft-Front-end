@@ -1,0 +1,472 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .admin-body,
+  .public-body,
+  .auth-shell {
+    min-width: 0;
+  }
+
+  .page-inner,
+  .dashboard-wrap,
+  .mn-page,
+  .cfg-page,
+  .ayuda-admin-page {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .admin-body .data-table {
+    min-width: max-content;
+  }
+
+  .tabla-responsive,
+  .table-responsive {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 768px) {
+  html,
+  body,
+  #root {
+    width: 100%;
+    min-width: 0;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .admin-body,
+  .public-body,
+  .auth-shell {
+    width: 100%;
+    overflow-x: clip;
+  }
+
+  .admin-body .header-nav {
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-width: 0;
+    justify-content: space-between;
+    padding: 0 12px;
+  }
+
+  .admin-body .topbar-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+  }
+
+  .admin-body .sidebar {
+    width: min(280px, 86vw);
+    max-width: 86vw;
+  }
+
+  .admin-body .main-content {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .admin-body .stat-grid,
+  .admin-body .stat-grid.stat-grid-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-body .page-inner,
+  .admin-body .dashboard-wrap {
+    width: 100%;
+    min-width: 0;
+    padding-right: clamp(12px, 3vw, 22px);
+    padding-left: clamp(12px, 3vw, 22px);
+  }
+
+  .admin-body .page-header {
+    min-width: 0;
+    gap: 12px;
+  }
+
+  .admin-body .page-header > *,
+  .admin-body .page-header .btn-primary {
+    max-width: 100%;
+  }
+
+  .admin-body .page-header .btn-primary {
+    align-self: stretch;
+  }
+
+  .admin-body .data-table {
+    display: table;
+    width: max-content;
+    max-width: none;
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .admin-body .data-table th,
+  .admin-body .data-table td {
+    overflow-wrap: anywhere;
+  }
+
+  .admin-body .tabla-responsive,
+  .admin-body .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-body .form-group,
+  .admin-body .form-group input,
+  .admin-body .form-group select,
+  .admin-body .form-group textarea,
+  .admin-body .mn-field,
+  .admin-body .mn-field input,
+  .admin-body .mn-field select,
+  .admin-body .mn-field textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .admin-body .modal-box,
+  .admin-body .detalle-box {
+    width: min(100% - 24px, 640px);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .admin-body .mn-row-main,
+  .admin-body .mn-row-secondary,
+  .admin-body .mn-row-3,
+  .admin-body .mn-form-grid,
+  .admin-body .grid-2col,
+  .admin-body .grid-perfil,
+  .admin-body .grid-lineas,
+  .admin-body .grid-registro {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-body header {
+    min-width: 0;
+  }
+
+  .public-body .header-left,
+  .public-body .header-right {
+    min-width: 0;
+  }
+
+  .public-body .header-center {
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .public-body .header-center::-webkit-scrollbar {
+    display: none;
+  }
+
+  .public-body .header-center a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .public-body .checkout-page {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .public-body .checkout-main,
+  .public-body .checkout-card,
+  .public-body .checkout-resumen {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .public-body .legal-modal,
+  .public-body .modal-legal {
+    width: calc(100vw - 24px);
+    max-width: 640px;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+  }
+
+  .auth-shell .auth-center {
+    width: 100%;
+    min-width: 0;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .auth-shell #registroForm,
+  .auth-shell #registroForm .contenedor-registro,
+  .auth-shell .card {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .auth-shell #registroForm .contenedor-registro {
+    margin-top: 76px;
+  }
+}
+
+@media (max-width: 540px) {
+  .admin-body .page-inner,
+  .admin-body .dashboard-wrap {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .admin-body .grid-promociones,
+  .admin-body .grid-2,
+  .admin-body .grid-3,
+  .admin-body .grid-4,
+  .admin-body .mn-row-main,
+  .admin-body .mn-row-secondary,
+  .admin-body .mn-row-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-body .stat-grid,
+  .admin-body .stat-grid.stat-grid-4 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .admin-body .stat-grid > .stat-card {
+    min-width: 0;
+    min-height: 132px;
+    padding: 16px 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-body .stat-card .stat-label,
+  .admin-body .stat-card .stat-sub {
+    max-width: 100%;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-body .stat-card .stat-val {
+    max-width: 100%;
+    font-size: clamp(20px, 7vw, 26px);
+    overflow-wrap: anywhere;
+  }
+
+  .admin-body .stat-grid > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .admin-body .modal-box,
+  .admin-body .detalle-box {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    max-height: calc(100dvh - 20px);
+    margin: 10px;
+    padding: 18px 14px;
+  }
+
+  .admin-body .modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .admin-body .modal-actions > button {
+    width: 100%;
+  }
+
+  .public-body .checkout-page {
+    gap: 14px;
+    margin: 18px auto;
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .public-body .checkout-card {
+    padding: 16px 14px;
+  }
+
+  .public-body .checkout-grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .public-body .cart-actions-grid,
+  .public-body .mp-tabs-container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .auth-shell .auth-center {
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+
+  .auth-shell #registroForm .contenedor-registro > *:not(.encabezado) {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .auth-shell #registroForm .fila {
+    gap: 4px;
+  }
+}
+
+@media (max-width: 360px) {
+  .admin-body .stat-grid,
+  .admin-body .stat-grid.stat-grid-4 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-body .stat-grid > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .public-body header {
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+
+  .public-body .nom-local {
+    font-size: 17px;
+  }
+
+  .public-body .header-center a {
+    padding-right: 8px;
+    padding-left: 8px;
+    font-size: 11px;
+  }
+
+  .admin-body .page-header h1 {
+    font-size: 19px;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 768px) {
+  .acc-fab {
+    right: 26px;
+    bottom: 16px;
+    width: 44px;
+    height: 44px;
+  }
+
+  .acc-fab img {
+    width: 20px;
+    height: 20px;
+  }
+
+  .auth-shell .auth-center,
+  .auth-shell .auth-center:has(#registroForm) {
+    justify-content: flex-start;
+    padding: 100px 12px 28px;
+  }
+
+  .auth-shell .auth-center > .header-bar,
+  .auth-shell .auth-center > .card {
+    width: 100%;
+    max-width: 460px;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .auth-shell .auth-center > .header-bar {
+    padding: 20px 14px 16px;
+    border-radius: 14px 14px 0 0;
+    font-size: clamp(16px, 4vw, 20px);
+  }
+
+  .auth-shell .auth-center > .card {
+    padding: 24px 20px 28px;
+    border-radius: 0 0 14px 14px;
+  }
+
+  .auth-shell .card h2 {
+    font-size: 12px;
+    letter-spacing: 1px;
+  }
+
+  .auth-shell .otp-slots {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: clamp(4px, 2vw, 8px);
+    width: 100%;
+    max-width: 324px;
+  }
+
+  .auth-shell .otp-slot {
+    width: 100%;
+    min-width: 0;
+    height: clamp(44px, 14vw, 54px);
+    padding: 0;
+    font-size: clamp(18px, 5vw, 20px);
+  }
+
+  .auth-shell .input {
+    font-size: 16px;
+  }
+
+  .auth-shell .auth-center > #registroForm {
+    width: 100%;
+    max-width: 760px;
+    margin: 0;
+  }
+
+  .auth-shell #registroForm .contenedor-registro {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .auth-shell .public-body.auth-site-footer {
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+    padding-top: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-shell .auth-center,
+  .auth-shell .auth-center:has(#registroForm) {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .auth-shell .auth-center > .card {
+    padding: 22px 18px 26px;
+  }
+
+  .auth-shell #registroForm .contenedor-registro > *:not(.encabezado) {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}
