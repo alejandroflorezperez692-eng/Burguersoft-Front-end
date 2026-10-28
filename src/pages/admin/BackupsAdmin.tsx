@@ -632,7 +632,7 @@ export default function BackupsAdmin() {
                           Restaurar
                         </button>
                         <button
-                          className="btn-accion"
+                          className="btn-icon btn-icon-edit btn-accion"
                           onClick={() => abrirModalDescarga(b)}
                           disabled={ocupado}
                           title="Descargar esta copia a tu PC"
