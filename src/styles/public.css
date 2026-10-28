@@ -1911,6 +1911,19 @@ body.dark-mode .public-body .nosotros-carousel img:hover {
   box-shadow: 4px 4px 14px 14px rgba(232, 130, 26, 0.5);
 }
 
+.public-body .promo-precio-old {
+  margin-left: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #8a7a6a;
+  text-decoration: line-through;
+  white-space: nowrap;
+}
+
+body.dark-mode .promo-precio-old {
+  color: #b9a998;
+}
+
 @keyframes nosotros-fade {
   from {
     opacity: 0;

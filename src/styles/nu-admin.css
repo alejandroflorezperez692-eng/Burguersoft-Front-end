@@ -1705,3 +1705,52 @@ body.dark-mode .mn-ing-row input {
 .data-table tr.fila-inactiva td:not(:last-child) {
   opacity: 0.55;
 }
+/* ---------- Toggle de vista + tabla ---------- */
+.mn-toolbar { display: flex; align-items: center; gap: 12px; }
+.mn-toolbar .mn-search-wrap { flex: 1; }
+
+.mn-view-toggle {
+  display: inline-flex;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.mn-view-toggle button {
+  display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 40px;
+  border: none; background: transparent;
+  color: var(--text-900); cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.mn-view-toggle button + button { border-left: 1.5px solid var(--border); }
+.mn-view-toggle button.active { background: rgba(47, 138, 240, 0.15); color: var(--info); }
+
+.mn-table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+.mn-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.mn-table th {
+  text-align: left; padding: 14px 16px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--text-400); border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.mn-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.mn-table tbody tr:last-child td { border-bottom: none; }
+.mn-table tbody tr:hover { background: var(--surface-3); }
+.mn-table tr.agotado { opacity: .6; }
+
+.mn-table-prod { display: flex; align-items: center; gap: 12px; min-width: 180px; }
+.mn-table-img { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
+.mn-table-img .mn-card-img,
+.mn-table-img .mn-card-noimg { height: 100%; font-size: 18px; }
+
+.mn-table-desc { color: var(--text-400); max-width: 280px; }
+.mn-table-price { font-weight: 800; color: var(--brand); white-space: nowrap; }
+.mn-table-actions { display: flex; gap: 8px; }
+.mn-table-actions .mn-btn-edit,
+.mn-table-actions .mn-btn-del { flex: none; padding: 7px 14px; }

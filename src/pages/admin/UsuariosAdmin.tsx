@@ -4,6 +4,7 @@ import ToastMessage, { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
 
 interface Usuario {
   id: number;
@@ -97,10 +98,6 @@ export default function UsuariosAdmin() {
   // Paginación: de 10 en 10 (si borras el último de una página, retrocede sola)
   const { visibles, paginaActual } = paginar(filtered, pagina);
 
-  const total = items.length;
-  const admins = items.filter((u) => u.rol?.nombre === 'Administrador').length;
-  const activos = items.filter((u) => String(u.estado).toLowerCase() === 'activo').length;
-
   /* ---------- Edición ---------- */
 
   const openEdit = (u: Usuario) => {
@@ -190,27 +187,16 @@ export default function UsuariosAdmin() {
     }
   };
 
+  useEscape([
+    [modal && !!sel, () => setModal(false)],
+  ]);
+
   return (
     <div className="page-inner">
       <div className="page-header">
         <div>
           <h1>Gestión de Usuarios</h1>
           <p className="subtitulo">Administra los usuarios del sistema</p>
-        </div>
-      </div>
-
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span className="stat-label">Total usuarios</span>
-          <span className="stat-val">{total}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Administradores</span>
-          <span className="stat-val">{admins}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Activos</span>
-          <span className="stat-val">{activos}</span>
         </div>
       </div>
 

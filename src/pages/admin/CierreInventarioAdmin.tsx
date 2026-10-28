@@ -4,6 +4,7 @@ import ToastMessage, { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
 
 interface FilaCierre {
   id: number;
@@ -184,6 +185,10 @@ export default function CierreInventarioAdmin() {
       setGuardando(false);
     }
   };
+
+  useEscape([
+    [!!detalle, () => setDetalle(null)],
+  ]);
 
   return (
     <div className="page-inner">

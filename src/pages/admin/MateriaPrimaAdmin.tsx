@@ -5,6 +5,7 @@ import ToastMessage, { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
 
 interface MateriaPrima {
   id: number;
@@ -94,7 +95,6 @@ export default function MateriaPrimaAdmin() {
   const [loading, setLoading] = useState(true);
   const [pagina, setPagina] = useState(1);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
-  const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoStock>('todos');
   const { toast, showToast } = useToast();
 
   const toArray = <T,>(v: unknown): T[] =>
@@ -130,24 +130,16 @@ export default function MateriaPrimaAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  useEffect(() => { setPagina(1); }, [q, filtroEstado]);
+  useEffect(() => { setPagina(1); }, [q]);
 
   const marcaNombre = (id: unknown): string =>
     (marcas ?? []).find((x) => x?.id === id)?.nombre ?? '';
 
   const filtered = (items ?? []).filter((m) =>
-    (m?.nombre ?? '').toLowerCase().includes((q ?? '').toLowerCase()) &&
-    (filtroEstado === 'todos' || estadoKey(m?.cantidad) === filtroEstado)
+    (m?.nombre ?? '').toLowerCase().includes((q ?? '').toLowerCase())
   );
 
   const { visibles, paginaActual } = paginar(filtered, pagina);
-
-  const total = (items ?? []).length;
-  // Mismos criterios que el badge de la tabla (estadoKey)
-  const disponibles = (items ?? []).filter((m) => estadoKey(m?.cantidad) === 'disponible').length;
-  const bajos = (items ?? []).filter((m) => estadoKey(m?.cantidad) === 'bajo').length;
-  const agotados = (items ?? []).filter((m) => estadoKey(m?.cantidad) === 'agotado').length;
-  const mostrar = (n: number) => (errorCarga ? '—' : n);
 
   const openEdit = (m: MateriaPrima) => {
     setForm({
@@ -178,7 +170,7 @@ export default function MateriaPrimaAdmin() {
     if (!editId) return;
     setIntentado(true);
     if (errores.nombre) { showToast('El nombre es obligatorio', true); return; }
-    if (errores.marca) { showToast('Selecciona una marca', true); return; }
+    if (errores.marca) { showToast('Selecciona un proveedor', true); return; }
     if (errores.cantidad) { showToast('Escribe la cantidad', true); return; }
 
     const cambioCantidad = Number(form.cantidad) !== cantidadOriginal;
@@ -223,6 +215,11 @@ export default function MateriaPrimaAdmin() {
     }
   };
 
+  useEscape([
+    [!!desactivar, () => setDesactivar(null)],
+    [modal, () => setModal(false)],
+  ]);
+
   return (
     <div className="page-inner">
       <div className="page-header">
@@ -230,33 +227,6 @@ export default function MateriaPrimaAdmin() {
           <h1>Materia Prima</h1>
           <p className="subtitulo">Existencias actuales de tus insumos</p>
         </div>
-      </div>
-
-      <div className="stat-grid stat-grid-4">
-        <button type="button"
-          className={`stat-card stat-click ${filtroEstado === 'todos' ? 'activa' : ''}`}
-          onClick={() => setFiltroEstado('todos')}>
-          <span className="stat-label">Total insumos</span>
-          <span className="stat-val">{mostrar(total)}</span>
-        </button>
-        <button type="button"
-          className={`stat-card stat-click stat-ok ${filtroEstado === 'disponible' ? 'activa' : ''}`}
-          onClick={() => setFiltroEstado('disponible')}>
-          <span className="stat-label">Disponibles</span>
-          <span className="stat-val">{mostrar(disponibles)}</span>
-        </button>
-        <button type="button"
-          className={`stat-card stat-click stat-warn ${filtroEstado === 'bajo' ? 'activa' : ''}`}
-          onClick={() => setFiltroEstado('bajo')}>
-          <span className="stat-label">Bajo</span>
-          <span className="stat-val">{mostrar(bajos)}</span>
-        </button>
-        <button type="button"
-          className={`stat-card stat-click stat-danger ${filtroEstado === 'agotado' ? 'activa' : ''}`}
-          onClick={() => setFiltroEstado('agotado')}>
-          <span className="stat-label">Agotados</span>
-          <span className="stat-val">{mostrar(agotados)}</span>
-        </button>
       </div>
 
       {errorCarga && (
@@ -307,7 +277,7 @@ export default function MateriaPrimaAdmin() {
                 <th style={{ textAlign: 'right' }}>Precio total</th>
                 <th>Stock</th>
                 <th>Estado</th>
-                <th>Marca</th>
+                <th>Proveedor</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -424,7 +394,7 @@ export default function MateriaPrimaAdmin() {
                 </div>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Marca <span className="mn-req">*</span></label>
+                <label>Proveedor <span className="mn-req">*</span></label>
                 <select
                   style={bordeError(errores.marca)}
                   value={form.marca_id}

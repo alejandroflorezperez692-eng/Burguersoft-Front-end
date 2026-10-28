@@ -6,6 +6,7 @@ import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import ToastMessage, { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
 
 interface DetalleCompra {
   id: number;
@@ -73,11 +74,12 @@ const UNIDADES = ['Kg', 'Gramos', 'Libras', 'Litros', 'Mililitros', 'Unidades', 
 const soloDigitos = (v: string): string => v.replace(/\D/g, '');
 const miles = (v: string): string => v.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
-function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...' }: {
+function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...', error = false }: {
   value: string;
   onChange: (v: string) => void;
   opciones: string[];
   placeholder?: string;
+  error?: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -101,7 +103,7 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
           justifyContent: 'space-between',
           alignItems: 'center',
           padding: '11px 14px',
-          border: `1.5px solid ${abierto ? 'var(--brand)' : 'var(--border)'}`,
+          border: `1.5px solid ${abierto ? 'var(--brand)' : error ? 'var(--danger)' : 'var(--border)'}`,
           borderRadius: 'var(--r-sm)',
           background: 'var(--surface-2)',
           color: value ? 'var(--text-900)' : 'var(--text-400)',
@@ -236,6 +238,9 @@ const comprimirImagen = async (archivo: File): Promise<File> => {
     return archivo;
   }
 };
+
+const CLAVE_BORRADOR = 'compra_borrador_local';
+
 export default function ComprasAdmin() {
   const [items, setItems] = useState<Compra[]>([]);
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
@@ -256,6 +261,12 @@ export default function ComprasAdmin() {
   const [revisando, setRevisando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [intentado, setIntentado] = useState(false);
+  const [hayBorradorLocal, setHayBorradorLocal] = useState(() => {
+    try { return !!localStorage.getItem(CLAVE_BORRADOR); } catch { return false; }
+  });
+  const sinRed = useRef(false); // true si se cayó el internet mientras se guardaba
+  const guardarBorradorRef = useRef<() => void>(() => {});
   const [loading, setLoading] = useState(true);
   const cargado = useRef(false);
 
@@ -297,6 +308,25 @@ export default function ComprasAdmin() {
   }, [modalDetalle]);
 
   useEffect(() => { setPagina(1); }, [q]);
+
+  // Copia automática en este equipo mientras escribes
+  useEffect(() => {
+    if (!showForm || editId) return;
+    const vacio = !metodoPago && !numeroFactura && !tipoFactura &&
+      lineas.every((l) => !l.materia_prima_id && !l.nombre_nuevo && !l.cantidad && !l.precio_unitario && !l.marca_id);
+    if (vacio) return;
+    try {
+      localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ metodoPago, numeroFactura, tipoFactura, fechaIA, lineas }));
+      setHayBorradorLocal(true);
+    } catch { /* sin almacenamiento disponible */ }
+  }, [showForm, editId, metodoPago, numeroFactura, tipoFactura, fechaIA, lineas]);
+
+  // Cuando vuelve el internet, envía la compra como Borrador
+  useEffect(() => {
+    const alVolver = () => { if (sinRed.current) guardarBorradorRef.current(); };
+    window.addEventListener('online', alVolver);
+    return () => window.removeEventListener('online', alVolver);
+  }, []);
 
   const filtered = items.filter((c) =>
     String(c.id).includes(q) || c.metodo_pago.toLowerCase().includes(q.toLowerCase())
@@ -348,11 +378,12 @@ export default function ComprasAdmin() {
 };
 
   const total = lineas.reduce((a, l) => a + (Number(l.precio_unitario) || 0), 0);
-  const cerrarForm = () => { setShowForm(false); setAviso(null); setFechaIA(''); setEditId(null); setRevisando(false); setConfirmando(false); };
+  const cerrarForm = () => { setIntentado(false); setShowForm(false); setAviso(null); setFechaIA(''); setEditId(null); setRevisando(false); setConfirmando(false); };
 
   /** Abre el formulario en blanco para registrar una compra nueva. */
   const abrirNuevo = () => {
     if (showForm) { cerrarForm(); return; }
+    setIntentado(false);
     setEditId(null);
     setMetodoPago('');
     setNumeroFactura('');
@@ -365,6 +396,7 @@ export default function ComprasAdmin() {
 
   /** Carga una compra (borrador o en revisión) en el formulario para modificarla. */
   const abrirEditar = (c: Compra) => {
+    setIntentado(false);
     setEditId(c.id);
     setMetodoPago(c.metodo_pago);
     setNumeroFactura(c.numero_factura ?? '');
@@ -483,6 +515,19 @@ const escanear = async (archivo: File) => {
   }
 };
 
+const rojo = (malo: boolean): CSSProperties | undefined =>
+  intentado && malo
+    ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
+    : undefined;
+
+const errLinea = (l: Linea) => ({
+  nombre: l.materia_prima_id === null && !l.nombre_nuevo.trim(),
+  cantidad: !(Number(l.cantidad) > 0),
+  unidad: l.materia_prima_id === null && !l.unidad_medida.trim(),
+  precio: !(Number(l.precio_unitario) > 0),
+  marca: !l.marca_id,
+});
+
 /** Valida el formulario. Si falta algo avisa con un toast y devuelve false. */
 const validar = (): boolean => {
   if (!metodoPago) { showToast('Selecciona el método de pago', true); return false; }
@@ -500,8 +545,90 @@ const validar = (): boolean => {
 
 /** Paso 1: "Registrar" NO guarda nada; solo abre la pantalla de revisión. */
 const irARevision = () => {
+  setIntentado(true);
   if (validar()) setRevisando(true);
 };
+
+const borrarLocal = () => {
+  try { localStorage.removeItem(CLAVE_BORRADOR); } catch { /* nada */ }
+  setHayBorradorLocal(false);
+};
+
+/** Recupera lo que estabas escribiendo y no terminaste. */
+const continuarBorradorLocal = () => {
+  try {
+    const d = JSON.parse(localStorage.getItem(CLAVE_BORRADOR) || 'null');
+    if (!d) { borrarLocal(); return; }
+    setEditId(null);
+    setIntentado(false);
+    setMetodoPago(d.metodoPago ?? '');
+    setNumeroFactura(d.numeroFactura ?? '');
+    setTipoFactura(d.tipoFactura ?? '');
+    setFechaIA(d.fechaIA ?? '');
+    setLineas(Array.isArray(d.lineas) && d.lineas.length
+      ? d.lineas
+      : [{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+    setShowForm(true);
+  } catch {
+    borrarLocal();
+  }
+};
+
+/** Guarda la compra en el servidor con estado "Borrador" (no mueve stock). */
+const guardarBorrador = () => {
+  if (guardando) return;
+  setIntentado(true);
+  if (!validar()) return;
+  setGuardando(true);
+
+  const hoy = new Date();
+  const payload = {
+    fecha: fechaIA || `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`,
+    metodo_pago: metodoPago,
+    numero_factura: numeroFactura.trim() || null,
+    tipo_factura: tipoFactura || null,
+    estado: 'Borrador',
+    items: lineas.map((l) => ({
+      materia_prima_id: l.materia_prima_id,
+      cantidad: Number(l.cantidad),
+      precio_total: Number(l.precio_unitario),
+      marca_id: l.marca_id,
+      nombre_nuevo: l.materia_prima_id ? undefined : l.nombre_nuevo.trim(),
+      tipo: l.materia_prima_id ? undefined : (l.tipo.trim() || undefined),
+      unidad_medida: l.materia_prima_id ? undefined : l.unidad_medida.trim(),
+    })),
+  };
+  const peticion = editId
+    ? apiClient.put(`/compras/${editId}`, payload)
+    : apiClient.post('/compras', payload);
+  peticion.then(() => {
+    showToast('Compra guardada como borrador');
+    sinRed.current = false;
+    borrarLocal();
+    setPagina(1);
+    setRevisando(false);
+    setConfirmando(false);
+    setIntentado(false);
+    setShowForm(false);
+    setAviso(null);
+    setFechaIA('');
+    setEditId(null);
+    setMetodoPago('');
+    setNumeroFactura('');
+    setTipoFactura('');
+    setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+    load();
+  }).catch((e) => {
+    if (!e?.response) {
+      sinRed.current = true;
+      showToast('Sin conexión: tu compra quedó guardada en este equipo y se enviará como borrador cuando vuelva el internet', true);
+      return;
+    }
+    const d = e.response.data;
+    showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || 'No se pudo guardar el borrador', true);
+  }).finally(() => setGuardando(false));
+};
+guardarBorradorRef.current = guardarBorrador;
 
 /** Paso 2: después de la alerta de confirmación es cuando por fin se guarda la compra. */
 const registrar = () => {
@@ -531,8 +658,11 @@ const registrar = () => {
     : apiClient.post('/compras', payload);
   peticion.then(() => {
     showToast('Compra registrada: el stock se sumó a Materia Prima');
+    sinRed.current = false;
+    borrarLocal();
     setPagina(1);
     setRevisando(false);
+    setIntentado(false);
     setShowForm(false);
     setAviso(null);
     setFechaIA('');
@@ -545,6 +675,11 @@ const registrar = () => {
   }).catch((e) => {
     // Si falla, vuelve al formulario con todo lo que había escrito
     setRevisando(false);
+    if (!e?.response) {
+      sinRed.current = true;
+      showToast('Sin conexión: tu compra quedó guardada en este equipo y se enviará como borrador cuando vuelva el internet', true);
+      return;
+    }
     const d = e?.response?.data;
     showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || (editId ? 'No se pudo modificar la compra' : 'No se pudo registrar la compra'), true);
   }).finally(() => setGuardando(false));
@@ -565,12 +700,20 @@ const registrar = () => {
       });
   };
 
-  /** Estilo del formulario cuando se abre como modal (Modificar). */
-  const estiloModalCompra: CSSProperties = {
-    background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: '28px 32px',
-    width: 'min(820px, 94vw)', maxHeight: '90vh', overflowY: 'auto',
-    boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
-  };
+ const estiloModalCompra: CSSProperties = {
+  background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 0,
+  width: 'min(820px, 94vw)', maxHeight: '90vh', overflow: 'hidden',
+  display: 'flex', flexDirection: 'column',
+  boxShadow: 'var(--shadow-lg)', border: 'none',
+};
+
+useEscape([
+  [confirmando, () => setConfirmando(false)],
+  [revisando, () => setRevisando(false)],
+  [!!eliminarCompra, () => setEliminarCompra(null)],
+  [mostrarDictado, () => { vozRef.current?.stop(); setMostrarDictado(false); }],
+  [showForm, cerrarForm],
+]);
 
   return (
     <div className="page-inner">
@@ -644,12 +787,23 @@ const registrar = () => {
         </div>
       )}
 
+      {!showForm && hayBorradorLocal && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 16px', marginBottom: 16, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface-2)', fontSize: 13, fontWeight: 600, color: 'var(--text-900)' }}>
+          <span style={{ flex: 1 }}>Tienes una compra sin terminar guardada en este equipo.</span>
+          <button className="btn-primary" onClick={continuarBorradorLocal}>Continuar</button>
+          <button className="btn-cancel" onClick={borrarLocal}>Descartar</button>
+        </div>
+      )}
+
       <ComprasResumen items={items.filter((c) => c.estado === 'Finalizada')} />
 
       {showForm && (
         <div className="mn-modal-overlay">
         <div style={estiloModalCompra} onClick={(e) => e.stopPropagation()}>
-          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>{editId ? `Modificar compra N.º ${editId}` : 'Registrar Compra'}</h3>
+          <div style={{ background: 'var(--text-900)', padding: '18px 28px', flexShrink: 0 }}>
+            <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--surface)' }}>{editId ? `Modificar compra N.º ${editId}` : 'Registrar Compra'}</h3>
+          </div>
+          <div style={{ padding: '24px 32px 28px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {aviso && (
             <div
               style={{
@@ -673,7 +827,7 @@ const registrar = () => {
           )}
           <div className="form-group">
            <label>Método de pago <span className="mn-req">*</span></label>
-            <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
+            <select value={metodoPago} style={rojo(!metodoPago)} onChange={(e) => setMetodoPago(e.target.value)}>
               <option value="">Seleccionar...</option>
               {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
@@ -723,7 +877,7 @@ const registrar = () => {
               {l.materia_prima_id === null && (
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label>Nombre del insumo<span className="mn-req">*</span></label>
-                  <input value={l.nombre_nuevo} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
+                  <input value={l.nombre_nuevo} style={rojo(errLinea(l).nombre)} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
                 </div>
               )}
 
@@ -751,13 +905,13 @@ const registrar = () => {
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Cantidad <span className="mn-req">*</span></label>
-                <input type="number" value={l.cantidad} onChange={(e) => updateLinea(i, 'cantidad', e.target.value)} />
+                <input type="number" value={l.cantidad} style={rojo(errLinea(l).cantidad)} onChange={(e) => updateLinea(i, 'cantidad', e.target.value)} />
               </div>
 
               {l.materia_prima_id === null && (
                 <div className="form-group" style={{ marginBottom: 0 }}>
                   <label>Unidad <span className="mn-req">*</span></label>
-                  <Desplegable value={l.unidad_medida} onChange={(v) => updateLinea(i, 'unidad_medida', v)} opciones={UNIDADES} />
+                  <Desplegable value={l.unidad_medida} error={intentado && errLinea(l).unidad} onChange={(v) => updateLinea(i, 'unidad_medida', v)} opciones={UNIDADES} />
                 </div>
               )}
 
@@ -773,12 +927,12 @@ const registrar = () => {
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Precio total <span className="mn-req">*</span></label>
-                <input type="text" inputMode="numeric" placeholder="$ 0" value={miles(l.precio_unitario)} onChange={(e) => updateLinea(i, 'precio_unitario', soloDigitos(e.target.value))} />
+                <input type="text" inputMode="numeric" placeholder="$ 0" style={rojo(errLinea(l).precio)} value={miles(l.precio_unitario)} onChange={(e) => updateLinea(i, 'precio_unitario', soloDigitos(e.target.value))} />
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Proveedor <span className="mn-req">*</span></label>
-                <select value={l.marca_id} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
+                <select value={l.marca_id} style={rojo(errLinea(l).marca)} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
                   <option value={0}>Seleccionar...</option>
                   {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
@@ -795,7 +949,9 @@ const registrar = () => {
           </div>
           <div className="modal-actions" style={{ marginTop: 16 }}>
             <button className="btn-cancel" onClick={cerrarForm}>Cancelar</button>
+            <button className="btn-cancel" onClick={guardarBorrador} disabled={guardando}>Guardar borrador</button>
             <button className="btn-save" onClick={irARevision}>Registrar</button>
+          </div>
           </div>
         </div>
         </div>
