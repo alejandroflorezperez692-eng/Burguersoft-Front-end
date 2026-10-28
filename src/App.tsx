@@ -22,6 +22,7 @@ import MateriaPrimaAdmin from './pages/admin/MateriaPrimaAdmin';
 import ComprasAdmin from './pages/admin/ComprasAdmin';
 import PromocionesAdmin from './pages/admin/PromocionesAdmin';
 import VentasAdmin from './pages/admin/VentasAdmin';
+import ReportesAdmin from './pages/admin/ReportesAdmin';
 import BackupsAdmin from './pages/admin/BackupsAdmin';
 import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
 import AyudaAdmin from './pages/admin/AyudaAdmin';
@@ -101,10 +102,12 @@ function App() {
           </Route>
 
           {/* Solo admin */}
+                    {/* Solo admin */}
           <Route element={<ProtectedRoute roles={ACCESO.soloAdmin} />}>
             <Route path="/copias-de-seguridad" element={<BackupsAdmin />} />
             <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />
             <Route path="/usuarios" element={<UsuariosAdmin />} />
+            <Route path="/reportes" element={<ReportesAdmin />} />
           </Route>
 
         </Route>

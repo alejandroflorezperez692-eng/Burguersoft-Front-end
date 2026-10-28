@@ -6,7 +6,6 @@ import AdminLoading from '../../components/AdminLoading';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 
-
 type Estado = 'Disponible' | 'Agotado' | 'Por agotarse';
 
 interface Producto {
@@ -20,13 +19,21 @@ interface Producto {
   estado: Estado;
 }
 
-
 const CATEGORIAS = [
   'Hamburguesa', 'Perros Caliente', 'Salchipapa', 'Fritos',
   'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
 ];
 
+const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Por agotarse', 'Agotado'];
+
 const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '' };
+
+// Minúsculas y sin tildes, para búsquedas tolerantes
+const normalizar = (s: unknown) =>
+  String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 
 const calcularEstado = (cantidad: number | string | null | undefined): Estado => {
   const n = parseInt(String(cantidad ?? ''), 10) || 0;
@@ -40,7 +47,6 @@ const estadoVisible = (p: Producto): Estado => {
 };
 
 const estadoClase = (e: Estado) => `mn-estado-${e.replace(/ /g, '_')}`;
-
 
 const mensajeError = (err: unknown, porDefecto: string): string => {
   const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
@@ -78,6 +84,13 @@ export default function MenuAdmin() {
   const [guardando, setGuardando] = useState(false);
   const [intentado, setIntentado] = useState(false);
   const [buscar, setBuscar] = useState('');
+  
+  // --- Filtros (Carlos) ---
+  const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [precioMin, setPrecioMin] = useState('');
+  const [precioMax, setPrecioMax] = useState('');
+
   const [eliminar, setEliminar] = useState<Producto | null>(null);
   const [mostrarForm, setMostrarForm] = useState(false);
 
@@ -90,7 +103,6 @@ export default function MenuAdmin() {
   const panelRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
- 
 
   /* ---------- Carga de datos ---------- */
   const cargarProductos = useCallback(async () => {
@@ -106,8 +118,8 @@ export default function MenuAdmin() {
   }, []);
 
   useEffect(() => {
-  cargarProductos();
-}, [cargarProductos]);
+    cargarProductos();
+  }, [cargarProductos]);
 
   useEffect(() => {
     try {
@@ -125,12 +137,47 @@ export default function MenuAdmin() {
     return () => URL.revokeObjectURL(url);
   }, [archivo]);
 
-  /* ---------- Catálogo agrupado ---------- */
+  /* ---------- Filtros ---------- */
+  const hayFiltros = Boolean(buscar || filtroCategoria || filtroEstado || precioMin || precioMax);
+
+  const limpiarFiltros = () => {
+    setBuscar('');
+    setFiltroCategoria('');
+    setFiltroEstado('');
+    setPrecioMin('');
+    setPrecioMax('');
+  };
+
+  /* ---------- Catálogo agrupado y filtrado ---------- */
   const grupos = useMemo(() => {
-    const fil = buscar.toLowerCase().trim();
-    const visibles = productos.filter(
-      (p) => !fil || p.nombre.toLowerCase().includes(fil) || (p.categoria ?? '').toLowerCase().includes(fil),
-    );
+    const fil = normalizar(buscar).trim();
+    const min = precioMin ? Number(precioMin) : null;
+    const max = precioMax ? Number(precioMax) : null;
+
+    const visibles = productos.filter((p) => {
+      if (fil) {
+        const haystack = normalizar(`${p.nombre} ${p.descripcion ?? ''} ${p.categoria ?? ''}`);
+        if (!haystack.includes(fil)) return false;
+      }
+
+      if (filtroCategoria) {
+        if (filtroCategoria === 'Otras') {
+          if (CATEGORIAS.includes(p.categoria)) return false;
+        } else if (p.categoria !== filtroCategoria) {
+          return false;
+        }
+      }
+
+      // Usamos estadoVisible(p) para que 'Por agotarse' cuente como Disponible en el filtro
+      if (filtroEstado && estadoVisible(p) !== filtroEstado) return false;
+
+      const valor = Number(p.valor) || 0;
+      if (min !== null && valor < min) return false;
+      if (max !== null && valor > max) return false;
+
+      return true;
+    });
+
     const res: [string, Producto[]][] = [];
     CATEGORIAS.forEach((cat) => {
       const lista = visibles.filter((p) => p.categoria === cat);
@@ -139,7 +186,9 @@ export default function MenuAdmin() {
     const otras = visibles.filter((p) => !CATEGORIAS.includes(p.categoria));
     if (otras.length) res.push(['Otras', otras]);
     return res;
-  }, [productos, buscar]);
+  }, [productos, buscar, filtroCategoria, filtroEstado, precioMin, precioMax]);
+
+  const totalVisibles = grupos.reduce((acc, [, lista]) => acc + lista.length, 0);
 
   /* ---------- Formulario ---------- */
   const setCampo = (campo: keyof typeof emptyForm) =>
@@ -161,7 +210,7 @@ export default function MenuAdmin() {
     setPreview(null);
     setImgActual(false);
     if (fileRef.current) fileRef.current.value = '';
-    setMostrarForm(false); 
+    setMostrarForm(false);
   };
 
   const prepararEdicion = (p: Producto) => {
@@ -250,109 +299,109 @@ export default function MenuAdmin() {
 
   /* ---------- Formulario (panel para nuevo, modal para editar) ---------- */
   const panelFormulario = (
-        <div className="mn-form-panel" ref={panelRef} style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
-          <div className="mn-form-header">
-            <h3>{editId ? 'Editar producto' : 'Nuevo producto'}</h3>
-          </div>
+    <div className="mn-form-panel" ref={panelRef} style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
+      <div className="mn-form-header">
+        <h3>{editId ? 'Editar producto' : 'Nuevo producto'}</h3>
+      </div>
 
-          <form onSubmit={guardar} noValidate>
-          <div className="mn-form-body">
-            <div className="mn-form-grid">
+      <form onSubmit={guardar} noValidate>
+        <div className="mn-form-body">
+          <div className="mn-form-grid">
 
-              {/* Columna izquierda: datos */}
-              <div className="mn-form-left">
+            {/* Columna izquierda: datos */}
+            <div className="mn-form-left">
+              <div className="mn-field">
+                <label htmlFor="mn-nombre">Nombre <span className="mn-req">*</span></label>
+                <input id="mn-nombre" style={rojo(errores.nombre)} type="text" maxLength={40} placeholder="Ej: Hamburguesa Especial"
+                  value={form.nombre} onChange={setCampo('nombre')} />
+              </div>
+
+              <div className="mn-row-3">
                 <div className="mn-field">
-                  <label htmlFor="mn-nombre">Nombre <span className="mn-req">*</span></label>
-                  <input id="mn-nombre" style={rojo(errores.nombre)} type="text" maxLength={40} placeholder="Ej: Hamburguesa Especial"
-                    value={form.nombre} onChange={setCampo('nombre')} />
+                  <label htmlFor="mn-precio">Precio <span className="mn-req">*</span></label>
+                  <input id="mn-precio" style={rojo(errores.valor)} type="text" inputMode="numeric" placeholder="$ 0"
+                    value={form.valor ? Number(form.valor).toLocaleString('es-CO') : ''}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, valor: e.target.value.replace(/\D/g, '').slice(0, 9) }))
+                    } />
                 </div>
-
-                <div className="mn-row-3">
-                  <div className="mn-field">
-                    <label htmlFor="mn-precio">Precio <span className="mn-req">*</span></label>
-                    <input id="mn-precio" style={rojo(errores.valor)} type="text" inputMode="numeric" placeholder="$ 0"
-                      value={form.valor ? Number(form.valor).toLocaleString('es-CO') : ''}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, valor: e.target.value.replace(/\D/g, '').slice(0, 9) }))
-                      } />
-                  </div>
-                  <div className="mn-field">
-                    <label htmlFor="mn-categoria">Categoría <span className="mn-req">*</span></label>
-                    <select id="mn-categoria" style={rojo(errores.categoria)} value={form.categoria} onChange={setCampo('categoria')}>
-                      <option value="">Selecciona...</option>
-                      {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div className="mn-field">
-                    <label htmlFor="mn-estado">Estado <span className="mn-req">*</span></label>
-                    <select
-                      id="mn-estado"
-                      style={rojo(errores.estado)}
-                      className={form.estado ? `est-${form.estado}` : ''}
-                      value={form.estado}
-                      onChange={setCampo('estado')}
-                    >
-                      <option value="">Selecciona...</option>
-                      <option value="Disponible">Disponible</option>
-                      <option value="Agotado">Agotado</option>
-                    </select>
-                  </div>
-                </div>
-
                 <div className="mn-field">
-                  <label htmlFor="mn-desc">Descripción <span className="mn-req">*</span></label>
-                  <textarea id="mn-desc" style={rojo(errores.descripcion)} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
-                    value={form.descripcion} onChange={setCampo('descripcion')} />
-                  <span className="mn-counter">{form.descripcion.length}/255</span>
+                  <label htmlFor="mn-categoria">Categoría <span className="mn-req">*</span></label>
+                  <select id="mn-categoria" style={rojo(errores.categoria)} value={form.categoria} onChange={setCampo('categoria')}>
+                    <option value="">Selecciona...</option>
+                    {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="mn-field">
+                  <label htmlFor="mn-estado">Estado <span className="mn-req">*</span></label>
+                  <select
+                    id="mn-estado"
+                    style={rojo(errores.estado)}
+                    className={form.estado ? `est-${form.estado}` : ''}
+                    value={form.estado}
+                    onChange={setCampo('estado')}
+                  >
+                    <option value="">Selecciona...</option>
+                    <option value="Disponible">Disponible</option>
+                    <option value="Agotado">Agotado</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Columna derecha: imagen */}
-              <div className="mn-form-right">
-                <div className="mn-field">
-                  <label>Imagen del producto {!editId && <span className="mn-req">*</span>}</label>
-                  <div className={`mn-upload${preview ? ' has-img' : ''}`} style={rojo(errores.imagen)} onClick={() => fileRef.current?.click()}>
-                    {preview ? (
-                      <img className="mn-upload-img" src={preview} alt="Vista previa" />
-                    ) : (
-                      <div className="mn-upload-empty">
-                        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor"
-                          strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <rect x="3" y="3" width="18" height="18" rx="3" />
-                          <circle cx="8.5" cy="8.5" r="1.5" />
-                          <path d="M21 15l-5-5L5 21" />
-                        </svg>
-                        <strong>Haz clic para subir una imagen</strong>
-                        <small>PNG, JPG o WEBP · máx. 4 MB</small>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mn-upload-bar">
-                    <span className="mn-upload-name">
-                      {archivo ? archivo.name : imgActual ? 'Imagen actual' : 'Ningún archivo seleccionado'}
-                    </span>
-                    <button type="button" className="mn-btn-pick" onClick={() => fileRef.current?.click()}>
-                      {preview ? 'Cambiar' : 'Seleccionar'}
-                    </button>
-                  </div>
-                  <input ref={fileRef} className="mn-file-input" type="file" accept="image/*" onChange={elegirArchivo} />
-                </div>
+              <div className="mn-field">
+                <label htmlFor="mn-desc">Descripción <span className="mn-req">*</span></label>
+                <textarea id="mn-desc" style={rojo(errores.descripcion)} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
+                  value={form.descripcion} onChange={setCampo('descripcion')} />
+                <span className="mn-counter">{form.descripcion.length}/255</span>
               </div>
-
             </div>
-          </div>
 
-          <div className="mn-form-footer">
-            <button type="submit" className="mn-btn-submit" disabled={guardando}>
-              {guardando ? 'Guardando…' : editId ? 'Guardar cambios' : 'Guardar Producto'}
-            </button>
-            <button type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
+            {/* Columna derecha: imagen */}
+            <div className="mn-form-right">
+              <div className="mn-field">
+                <label>Imagen del producto {!editId && <span className="mn-req">*</span>}</label>
+                <div className={`mn-upload${preview ? ' has-img' : ''}`} style={rojo(errores.imagen)} onClick={() => fileRef.current?.click()}>
+                  {preview ? (
+                    <img className="mn-upload-img" src={preview} alt="Vista previa" />
+                  ) : (
+                    <div className="mn-upload-empty">
+                      <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor"
+                        strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="3" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                      </svg>
+                      <strong>Haz clic para subir una imagen</strong>
+                      <small>PNG, JPG o WEBP · máx. 4 MB</small>
+                    </div>
+                  )}
+                </div>
+                <div className="mn-upload-bar">
+                  <span className="mn-upload-name">
+                    {archivo ? archivo.name : imgActual ? 'Imagen actual' : 'Ningún archivo seleccionado'}
+                  </span>
+                  <button type="button" className="mn-btn-pick" onClick={() => fileRef.current?.click()}>
+                    {preview ? 'Cambiar' : 'Seleccionar'}
+                  </button>
+                </div>
+                <input ref={fileRef} className="mn-file-input" type="file" accept="image/*" onChange={elegirArchivo} />
+              </div>
+            </div>
+
           </div>
-        </form>
         </div>
+
+        <div className="mn-form-footer">
+          <button type="submit" className="mn-btn-submit" disabled={guardando}>
+            {guardando ? 'Guardando…' : editId ? 'Guardar cambios' : 'Guardar Producto'}
+          </button>
+          <button type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
+        </div>
+      </form>
+    </div>
   );
 
-   useEscape([
+  useEscape([
     [!!eliminar, () => setEliminar(null)],
     [mostrarForm || editId !== null, limpiarFormulario],
   ]);
@@ -385,41 +434,105 @@ export default function MenuAdmin() {
         </div>
       )}
 
-      <div className="mn-toolbar">
-        <div className="mn-search-wrap">
-          <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input className="mn-search" type="text" placeholder="Buscar por nombre o categoría..."
-            value={buscar} onChange={(e) => setBuscar(e.target.value)} />
+      <div className="mn-toolbar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
+        
+        {/* Fila 1: Búsqueda y Vista */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
+            <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input className="mn-search" type="text" placeholder="Buscar por nombre, descripción o categoría..."
+              value={buscar} onChange={(e) => setBuscar(e.target.value)} />
+          </div>
+
+          <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
+            <button type="button" className={vista === 'lista' ? 'active' : ''}
+              onClick={() => setVista('lista')} title="Vista de lista" aria-pressed={vista === 'lista'}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+              </svg>
+            </button>
+            <button type="button" className={vista === 'tarjetas' ? 'active' : ''}
+              onClick={() => setVista('tarjetas')} title="Vista de tarjetas" aria-pressed={vista === 'tarjetas'}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
+                <rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
-          <button type="button" className={vista === 'lista' ? 'active' : ''}
-            onClick={() => setVista('lista')} title="Vista de lista" aria-pressed={vista === 'lista'}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
-            </svg>
-          </button>
-          <button type="button" className={vista === 'tarjetas' ? 'active' : ''}
-            onClick={() => setVista('tarjetas')} title="Vista de tarjetas" aria-pressed={vista === 'tarjetas'}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
-              <rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" />
-            </svg>
-          </button>
+        {/* Fila 2: Filtros (Carlos) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-categoria">Categoría</label>
+            <select id="mn-f-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+              <option value="">Todas</option>
+              {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+              <option value="Otras">Otras</option>
+            </select>
+          </div>
+
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-estado">Estado</label>
+            <select id="mn-f-estado" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+              <option value="">Todos</option>
+              {ESTADOS_FILTRO.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-pmin">Precio mínimo</label>
+            <input
+              id="mn-f-pmin"
+              type="text"
+              inputMode="numeric"
+              placeholder="$ 0"
+              style={{ width: 120 }}
+              value={precioMin ? Number(precioMin).toLocaleString('es-CO') : ''}
+              onChange={(e) => setPrecioMin(e.target.value.replace(/\D/g, '').slice(0, 9))}
+            />
+          </div>
+
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-pmax">Precio máximo</label>
+            <input
+              id="mn-f-pmax"
+              type="text"
+              inputMode="numeric"
+              placeholder="$ 0"
+              style={{ width: 120 }}
+              value={precioMax ? Number(precioMax).toLocaleString('es-CO') : ''}
+              onChange={(e) => setPrecioMax(e.target.value.replace(/\D/g, '').slice(0, 9))}
+            />
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>
+              Limpiar filtros
+            </button>
+          )}
         </div>
+
+        {!loading && (
+          <p style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
+            {totalVisibles} de {productos.length} productos
+          </p>
+        )}
       </div>
 
       {loading ? (
         <AdminLoading texto="Cargando menú" subtexto="Preparando tus productos" />
       ) : grupos.length === 0 ? (
         <div className="mn-empty">
-          No se encontraron productos{buscar ? <> para "<strong>{buscar}</strong>"</> : ''}.
+          No se encontraron productos
+          {buscar ? <> para "<strong>{buscar}</strong>"</> : ''}
+          {hayFiltros ? ' con los filtros seleccionados' : ''}.
         </div>
       ) : vista === 'lista' ? (
         <div className="mn-table-wrap">

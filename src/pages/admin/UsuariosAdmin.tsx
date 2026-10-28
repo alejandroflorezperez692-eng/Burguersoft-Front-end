@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
@@ -19,17 +19,12 @@ interface Usuario {
 const badgeClass = (e: string) =>
   e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
 
-/* ---------- Validación de nombres ---------- */
-
-// Solo letras (con tildes y ñ), espacios, guion y apóstrofe: "María José", "De la Cruz", "O'Brien"
 const NOMBRE_REGEX = /^\p{L}+(?:[ '’-]\p{L}+)*$/u;
 
 const limpiarEspacios = (v: string) => v.trim().replace(/\s+/g, ' ');
 
-// Mientras escribe, quita números y símbolos
 const soloLetras = (v: string) => v.replace(/[^\p{L}\s'’-]/gu, '');
 
-// "alejandro FLOREZ" -> "Alejandro Florez"
 const formatearNombre = (v: string) =>
   limpiarEspacios(v)
     .toLowerCase()
@@ -38,9 +33,9 @@ const formatearNombre = (v: string) =>
 const nombreValido = (v: string) => {
   const t = limpiarEspacios(v);
   if (t.length < 2 || t.length > 50) return false;
-  if (!NOMBRE_REGEX.test(t)) return false;       // solo letras
-  if (/(\p{L})\1{2,}/iu.test(t)) return false;   // "aaa", "xxx"
-  if (!/[aeiouáéíóúüy]/i.test(t)) return false;  // "xyz", "bcd"
+  if (!NOMBRE_REGEX.test(t)) return false;
+  if (/(\p{L})\1{2,}/iu.test(t)) return false;
+  if (!/[aeiouáéíóúüy]/i.test(t)) return false;
   return true;
 };
 
@@ -60,7 +55,6 @@ function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string
 
 export default function UsuariosAdmin() {
   const [items, setItems] = useState<Usuario[]>([]);
-  const [q, setQ] = useState('');
   const [modal, setModal] = useState(false);
   const [sel, setSel] = useState<Usuario | null>(null);
   const [rol, setRol] = useState('');
@@ -73,7 +67,22 @@ export default function UsuariosAdmin() {
   const [loading, setLoading] = useState(true);
   const [intentado, setIntentado] = useState(false);
   const [pagina, setPagina] = useState(1);
+  
+  // --- Estados de Filtros ---
+  const [q, setQ] = useState('');
+  const [filtroRol, setFiltroRol] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  
   const { showToast, confirmar } = useToast();
+
+  const hayFiltros = q !== '' || filtroRol !== '' || filtroEstado !== '';
+
+  const limpiarFiltros = () => {
+    setQ('');
+    setFiltroRol('');
+    setFiltroEstado('');
+    setPagina(1);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -89,17 +98,23 @@ export default function UsuariosAdmin() {
 
   useEffect(() => { load(); }, []);
 
+  // --- Lógica de Filtrado Combinada ---
   const filtered = items
-    .filter((u) =>
-      `${u.nombre} ${u.apellido} ${u.correo} ${u.telefono ?? ''}`.toLowerCase().includes(q.toLowerCase())
-    )
+    .filter((u) => {
+      if (!q) return true;
+      const t = q.toLowerCase();
+      return (
+        `${u.nombre} ${u.apellido}`.toLowerCase().includes(t) ||
+        u.correo.toLowerCase().includes(t) ||
+        (u.telefono && u.telefono.includes(t))
+      );
+    })
+    .filter((u) => !filtroRol || u.rol?.nombre === filtroRol)
+    .filter((u) => !filtroEstado || u.estado === filtroEstado)
     .sort((a, b) => a.id - b.id);
 
-  // Paginación: de 10 en 10 (si borras el último de una página, retrocede sola)
+  // Paginación: de 10 en 10
   const { visibles, paginaActual } = paginar(filtered, pagina);
-
-
-  /* ---------- Edición ---------- */
 
   const openEdit = (u: Usuario) => {
     setSel(u);
@@ -132,7 +147,6 @@ export default function UsuariosAdmin() {
     nombre: !nombreValido(nombre),
     apellido: !nombreValido(apellido),
     correo: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim()),
-    // opcional, pero si escribe algo debe cumplir todos los requisitos
     password: password !== '' && requisitosCumplidos < requisitos.length,
     rol: !rol,
     estado: !estado,
@@ -158,7 +172,7 @@ export default function UsuariosAdmin() {
       rol,
       estado,
     };
-    if (password) payload.password = password; // solo si escribió una nueva
+    if (password) payload.password = password;
 
     try {
       await apiClient.put(`/usuarios/${sel.id}`, payload);
@@ -201,13 +215,56 @@ export default function UsuariosAdmin() {
         </div>
       </div>
 
-      <div className="mn-search-wrap" style={{ marginBottom: 24 }}>
-        <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
+      {/* Barra de herramientas con Búsqueda + Filtros */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+        
+        {/* Fila 1: Búsqueda y vista */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
+            <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
+          </div>
+        </div>
+
+        {/* Fila 2: Filtros (Carlos) */}
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+            <label>Rol</label>
+            <select
+              value={filtroRol}
+              onChange={(e) => { setFiltroRol(e.target.value); setPagina(1); }}
+            >
+              <option value="">Todos los roles</option>
+              <option value="Administrador">Administrador</option>
+              <option value="Cajero">Cajero</option>
+              <option value="Cocinero">Cocinero</option>
+              <option value="Cliente">Cliente</option>
+            </select>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+            <label>Estado</label>
+            <select
+              value={filtroEstado}
+              onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}
+            >
+              <option value="">Todos los estados</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+              <option value="Suspendido">Suspendido</option>
+            </select>
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>
+              Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="meta-bar">

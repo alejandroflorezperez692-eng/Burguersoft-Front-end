@@ -25,7 +25,15 @@ const empty: Omit<Marca, 'id'> = {
 
 export default function MarcasAdmin() {
   const [items, setItems] = useState<Marca[]>([]);
+  
+  // Filtro de búsqueda de texto (Develop)
   const [q, setQ] = useState('');
+  
+  // Filtros avanzados (Carlos)
+  const [filtroMarca, setFiltroMarca] = useState('');
+  const [filtroInicial, setFiltroInicial] = useState('');
+  const [filtroLogo, setFiltroLogo] = useState('');
+
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<number | null>(null);
@@ -66,9 +74,34 @@ export default function MarcasAdmin() {
     }
   }, [vista]);
 
-  const filtered = items.filter((m) =>
-    [m.nombre, m.correo, m.telefono].some((v) => v?.toLowerCase().includes(q.toLowerCase()))
-  );
+  // --- Lógica de Filtros Combinada ---
+  const inicialDe = (m: Marca) => (m.nombre ?? '').trim().charAt(0).toUpperCase();
+  const iniciales = Array.from(new Set(items.map(inicialDe).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
+  const marcasOrdenadas = [...items].sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'));
+
+  const hayFiltros = q !== '' || filtroMarca !== '' || filtroInicial !== '' || filtroLogo !== '';
+
+  const limpiarFiltros = () => {
+    setQ('');
+    setFiltroMarca('');
+    setFiltroInicial('');
+    setFiltroLogo('');
+  };
+
+  const filtered = items.filter((m) => {
+    // 1. Filtro de texto general
+    if (q) {
+      const coincideTexto = [m.nombre, m.correo, m.telefono].some((v) => v?.toLowerCase().includes(q.toLowerCase()));
+      if (!coincideTexto) return false;
+    }
+    // 2. Filtros avanzados
+    if (filtroMarca && String(m.id) !== filtroMarca) return false;
+    if (filtroInicial && inicialDe(m) !== filtroInicial) return false;
+    if (filtroLogo === 'con' && !m.img) return false;
+    if (filtroLogo === 'sin' && m.img) return false;
+    
+    return true;
+  });
 
   const openNew = () => { setForm(empty); setEditId(null); setIntentado(false); setModal(true); };
 
@@ -85,7 +118,6 @@ export default function MarcasAdmin() {
     setModal(true);
     closeDetail();
   };
-
 
   const soloNitNum = (v: string) => v.split('-')[0].replace(/[^0-9]/g, '');
   const limpiarNit = (v: string) => {
@@ -130,7 +162,6 @@ export default function MarcasAdmin() {
 
   const pedirEliminar = (id: number) => {
     const m = items.find((x) => x.id === id);
-
     if (m) setConfirmDel(m);
   };
 
@@ -176,38 +207,81 @@ export default function MarcasAdmin() {
         <button className="btn-primary" onClick={openNew}>+ Nuevo proveedor</button>
       </div>
 
-      <div className="mn-toolbar">
-        <div className="mn-search-wrap">
-          <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <input
-            className="mn-search"
-            type="text"
-            placeholder="Buscar por nombre, correo o teléfono..."
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-          />
+      {/* Barra de herramientas superior (Develop) + Filtros (Carlos) */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+        
+        {/* Fila 1: Búsqueda y Vista */}
+        <div className="mn-toolbar" style={{ marginBottom: 0 }}>
+          <div className="mn-search-wrap">
+            <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input
+              className="mn-search"
+              type="text"
+              placeholder="Buscar por nombre, correo o teléfono..."
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+          </div>
+
+          <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
+            <button type="button" className={vista === 'lista' ? 'active' : ''}
+              onClick={() => setVista('lista')} title="Vista de lista" aria-pressed={vista === 'lista'}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+              </svg>
+            </button>
+            <button type="button" className={vista === 'tarjetas' ? 'active' : ''}
+              onClick={() => setVista('tarjetas')} title="Vista de tarjetas" aria-pressed={vista === 'tarjetas'}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
+                <rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
-          <button type="button" className={vista === 'lista' ? 'active' : ''}
-            onClick={() => setVista('lista')} title="Vista de lista" aria-pressed={vista === 'lista'}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
-            </svg>
-          </button>
-          <button type="button" className={vista === 'tarjetas' ? 'active' : ''}
-            onClick={() => setVista('tarjetas')} title="Vista de tarjetas" aria-pressed={vista === 'tarjetas'}>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
-              <rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" />
-            </svg>
-          </button>
+        {/* Fila 2: Filtros de Carlos */}
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
+            <label>Marca</label>
+            <select value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
+              <option value="">Todas las marcas</option>
+              {marcasOrdenadas.map((m) => (
+                <option key={m.id} value={String(m.id)}>{m.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 160 }}>
+            <label>Inicial</label>
+            <select value={filtroInicial} onChange={(e) => setFiltroInicial(e.target.value)}>
+              <option value="">Todas</option>
+              {iniciales.map((l) => (
+                <option key={l} value={l}>{l}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 170 }}>
+            <label>Logo</label>
+            <select value={filtroLogo} onChange={(e) => setFiltroLogo(e.target.value)}>
+              <option value="">Todos</option>
+              <option value="con">Con logo</option>
+              <option value="sin">Sin logo</option>
+            </select>
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>
+              Limpiar filtros
+            </button>
+          )}
         </div>
       </div>
 

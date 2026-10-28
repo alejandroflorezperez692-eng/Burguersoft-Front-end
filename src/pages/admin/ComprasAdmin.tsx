@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import ComprasResumen from '../../components/ComprasResumen';
@@ -36,7 +36,14 @@ interface Compra {
 const badgeEstado = (e: string) =>
   e === 'Finalizada' ? 'badge-success' : e === 'En revisión' ? 'badge-info' : 'badge-warning';
 
-  interface MateriaPrima { id: number; nombre: string; valor: number; tipo?: string | null; unidad_medida?: string | null; estado?: string | null; }
+interface MateriaPrima { 
+  id: number; 
+  nombre: string; 
+  valor: number; 
+  tipo?: string | null; 
+  unidad_medida?: string | null; 
+  estado?: string | null; 
+}
 interface Marca { id: number; nombre: string; }
 
 interface Linea {
@@ -69,11 +76,32 @@ interface RespuestaIA {
   observaciones: string | null;
 }
 
+interface EventoVoz {
+  resultIndex: number;
+  results: ArrayLike<{ isFinal: boolean; 0: { transcript: string } }>;
+}
+
+interface Reconocimiento {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((ev: EventoVoz) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+}
+
 const METODOS = ['Efectivo', 'Nequi', 'Daviplata'];
 const TIPOS_FACTURA = ['Factura electrónica', 'Factura de venta', 'Tiquete POS', 'Cuenta de cobro', 'Remisión'];
 const UNIDADES = ['Kg', 'Gramos', 'Libras', 'Litros', 'Mililitros', 'Unidades', 'Paquetes', 'Cajas', 'Bolsas', 'Botellas', 'Latas'];
 const soloDigitos = (v: string): string => v.replace(/\D/g, '');
 const miles = (v: string): string => v.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+const estiloFiltro: CSSProperties = { padding: '8px 12px', minWidth: 0 };
+const estiloEtiqueta: CSSProperties = {
+  display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: 'var(--text-400)',
+};
 
 function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...', error = false }: {
   value: string;
@@ -192,7 +220,6 @@ const etiquetaFecha = (clave: string): string => {
   return texto;
 };
 
-/** "Jueves, 15 de octubre de 2026" a partir de "2026-10-15" (sin desfases de zona horaria). */
 const fechaLarga = (fecha: string): string => {
   const [y, m, d] = String(fecha).slice(0, 10).split('-').map(Number);
   const larga = new Date(y, m - 1, d).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -201,7 +228,6 @@ const fechaLarga = (fecha: string): string => {
 
 const pesos = (n: number | string): string => `$${Math.round(Number(n)).toLocaleString('es-CO')}`;
 
-/** Número de compra discreto (en vez de "#17" en negrita). */
 const chipNumero: CSSProperties = {
   display: 'inline-block',
   padding: '3px 10px',
@@ -215,7 +241,6 @@ const chipNumero: CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-/** Rótulo pequeño en mayúsculas para las columnas de la factura. */
 const etiquetaColumna: CSSProperties = {
   fontSize: 11,
   fontWeight: 700,
@@ -246,7 +271,19 @@ export default function ComprasAdmin() {
   const [items, setItems] = useState<Compra[]>([]);
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
+  
+  // --- ESTADOS DE FILTROS (Mantenidos de la rama Carlos) ---
   const [q, setQ] = useState('');
+  const [fDesde, setFDesde] = useState('');
+  const [fHasta, setFHasta] = useState('');
+  const [fMetodo, setFMetodo] = useState('');
+  const [fInsumo, setFInsumo] = useState('');
+  const [fMarca, setFMarca] = useState('');
+
+  // --- ESTADOS DE PAGINACIÓN (Mantenidos de la rama Develop) ---
+  const DIAS_POR_PAGINA = 5;
+  const [pagina, setPagina] = useState(1);
+
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('');
   const [numeroFactura, setNumeroFactura] = useState('');
@@ -259,7 +296,7 @@ export default function ComprasAdmin() {
   const [modalDetalle, setModalDetalle] = useState<Compra | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [eliminarCompra, setEliminarCompra] = useState<Compra | null>(null);
-  // Flujo en pantalla, sin guardar nada: formulario -> revisión -> alerta -> guardar
+  
   const [revisando, setRevisando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -267,7 +304,7 @@ export default function ComprasAdmin() {
   const [hayBorradorLocal, setHayBorradorLocal] = useState(() => {
     try { return !!localStorage.getItem(CLAVE_BORRADOR); } catch { return false; }
   });
-  const sinRed = useRef(false); // true si se cayó el internet mientras se guardaba
+  const sinRed = useRef(false); 
   const guardarBorradorRef = useRef<() => void>(() => {});
   const [loading, setLoading] = useState(true);
   const cargado = useRef(false);
@@ -296,12 +333,11 @@ export default function ComprasAdmin() {
   };
 
   useEffect(() => {
-  if (cargado.current) return;
-  cargado.current = true;
-  load();
-}, []);
+    if (cargado.current) return;
+    cargado.current = true;
+    load();
+  }, []);
 
-  // Cierra el detalle con la tecla Escape
   useEffect(() => {
     if (!modalDetalle) return;
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setModalDetalle(null); };
@@ -309,9 +345,21 @@ export default function ComprasAdmin() {
     return () => window.removeEventListener('keydown', onKey);
   }, [modalDetalle]);
 
-  useEffect(() => { setPagina(1); }, [q]);
+  // Si cambia cualquier filtro, reiniciamos a la página 1
+  useEffect(() => { setPagina(1); }, [q, fDesde, fHasta, fMetodo, fInsumo, fMarca]);
 
-  // Copia automática en este equipo mientras escribes
+  const hayFiltros = q !== '' || fDesde !== '' || fHasta !== '' || fMetodo !== '' || fInsumo !== '' || fMarca !== '';
+
+  const limpiarFiltros = () => {
+    setQ('');
+    setFDesde('');
+    setFHasta('');
+    setFMetodo('');
+    setFInsumo('');
+    setFMarca('');
+  };
+
+  // Copia automática en este equipo mientras escribes (Develop)
   useEffect(() => {
     if (!showForm || editId) return;
     const vacio = !metodoPago && !numeroFactura && !tipoFactura &&
@@ -323,20 +371,36 @@ export default function ComprasAdmin() {
     } catch { /* sin almacenamiento disponible */ }
   }, [showForm, editId, metodoPago, numeroFactura, tipoFactura, fechaIA, lineas]);
 
-  // Cuando vuelve el internet, envía la compra como Borrador
   useEffect(() => {
     const alVolver = () => { if (sinRed.current) guardarBorradorRef.current(); };
     window.addEventListener('online', alVolver);
     return () => window.removeEventListener('online', alVolver);
   }, []);
 
-  const filtered = items.filter((c) =>
-    String(c.id).includes(q) || c.metodo_pago.toLowerCase().includes(q.toLowerCase())
+  const materiasOrdenadas = useMemo(
+    () => [...materias].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
+    [materias],
   );
 
-  // Paginación por días (5 días por página) para que el total de cada día siempre esté completo
-  const DIAS_POR_PAGINA = 5;
-  const [pagina, setPagina] = useState(1);
+  const marcasOrdenadas = useMemo(
+    () => [...marcas].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')),
+    [marcas],
+  );
+
+  // --- LÓGICA DE FILTRADO (Mantenida de la rama Carlos) ---
+  const filtered = useMemo(() => {
+    const texto = q.toLowerCase();
+    return items.filter((c) => {
+      if (texto && !(String(c.id).includes(q) || c.metodo_pago.toLowerCase().includes(texto))) return false;
+      const dia = c.fecha.slice(0, 10);
+      if (fDesde && dia < fDesde) return false;
+      if (fHasta && dia > fHasta) return false;
+      if (fMetodo && c.metodo_pago !== fMetodo) return false;
+      if (fInsumo && !(c.detalles ?? []).some((d) => d.materia_prima_id === Number(fInsumo))) return false;
+      if (fMarca && !(c.detalles ?? []).some((d) => d.marca_id === Number(fMarca))) return false;
+      return true;
+    });
+  }, [items, q, fDesde, fHasta, fMetodo, fInsumo, fMarca]);
 
   const grupos = Object.entries(
     [...filtered]
@@ -347,6 +411,7 @@ export default function ComprasAdmin() {
         return acc;
       }, {})
   );
+  
   const { visibles: gruposVisibles, paginaActual } = paginar(grupos, pagina, DIAS_POR_PAGINA);
 
   const addLinea = () => {
@@ -358,31 +423,28 @@ export default function ComprasAdmin() {
   };
 
   const updateLinea = (i: number, field: keyof Linea, value: string | number | null) => {
-  const copy = [...lineas];
-  const antes = copy[i];
-  const nueva = { ...antes, [field]: value };
+    const copy = [...lineas];
+    const antes = copy[i];
+    const nueva = { ...antes, [field]: value };
 
-  // Autocompleta el precio total con el último precio guardado del insumo
-  if (field === 'materia_prima_id' || field === 'cantidad') {
-    const autoDe = (l: Linea): string => {
-      const m = materias.find((x) => x.id === l.materia_prima_id);
-      const c = Number(l.cantidad);
-      return m && c > 0 ? String(Math.round(Number(m.valor) * c)) : '';
-    };
-    // Solo se sobreescribe si está vacío o si era el precio automático anterior
-    if (antes.precio_unitario === '' || antes.precio_unitario === autoDe(antes)) {
-      nueva.precio_unitario = autoDe(nueva);
+    if (field === 'materia_prima_id' || field === 'cantidad') {
+      const autoDe = (l: Linea): string => {
+        const m = materias.find((x) => x.id === l.materia_prima_id);
+        const c = Number(l.cantidad);
+        return m && c > 0 ? String(Math.round(Number(m.valor) * c)) : '';
+      };
+      if (antes.precio_unitario === '' || antes.precio_unitario === autoDe(antes)) {
+        nueva.precio_unitario = autoDe(nueva);
+      }
     }
-  }
 
-  copy[i] = nueva;
-  setLineas(copy);
-};
+    copy[i] = nueva;
+    setLineas(copy);
+  };
 
   const total = lineas.reduce((a, l) => a + (Number(l.precio_unitario) || 0), 0);
   const cerrarForm = () => { setIntentado(false); setShowForm(false); setAviso(null); setFechaIA(''); setEditId(null); setRevisando(false); setConfirmando(false); };
 
-  /** Abre el formulario en blanco para registrar una compra nueva. */
   const abrirNuevo = () => {
     if (showForm) { cerrarForm(); return; }
     setIntentado(false);
@@ -396,7 +458,6 @@ export default function ComprasAdmin() {
     setShowForm(true);
   };
 
-  /** Carga una compra (borrador o en revisión) en el formulario para modificarla. */
   const abrirEditar = (c: Compra) => {
     setIntentado(false);
     setEditId(c.id);
@@ -453,16 +514,20 @@ export default function ComprasAdmin() {
     }
   };
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
-  // Dictado por voz del navegador (Chrome o Edge; necesita https o localhost)
-  const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+  const ventana = window as unknown as {
+    SpeechRecognition?: new () => Reconocimiento;
+    webkitSpeechRecognition?: new () => Reconocimiento;
+  };
+  const SpeechRec = ventana.SpeechRecognition || ventana.webkitSpeechRecognition;
+
   const alternarMicrofono = () => {
     if (escuchando) { vozRef.current?.stop(); return; }
+    if (!SpeechRec) return;
     const rec = new SpeechRec();
     rec.lang = 'es-CO';
     rec.continuous = true;
     rec.interimResults = false;
-    rec.onresult = (ev: any) => {
+    rec.onresult = (ev) => {
       let t = '';
       for (let i = ev.resultIndex; i < ev.results.length; i++) {
         if (ev.results[i].isFinal) t += ev.results[i][0].transcript + ' ';
@@ -475,219 +540,211 @@ export default function ComprasAdmin() {
     rec.start();
     setEscuchando(true);
   };
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
-const escanear = async (archivo: File) => {
-  setEscaneando(true);
-  try {
-    const listo = await comprimirImagen(archivo);
-    const fd = new FormData();
-    fd.append('archivo', listo);
-    const { data } = await apiClient.post<RespuestaIA>('/compras/escanear', fd, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 120000,
-    });
+  const escanear = async (archivo: File) => {
+    setEscaneando(true);
+    try {
+      const listo = await comprimirImagen(archivo);
+      const fd = new FormData();
+      fd.append('archivo', listo);
+      const { data } = await apiClient.post<RespuestaIA>('/compras/escanear', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 120000,
+      });
 
-    setLineas(data.items.map((it) => ({
-      materia_prima_id: it.materia_prima_id,
-      cantidad: it.cantidad ? String(it.cantidad) : '',
-      precio_unitario: it.precio_total ? String(Math.round(it.precio_total)) : '',
-      marca_id: data.marca_id ?? 0,
-      nombre_nuevo: it.materia_prima_id ? '' : (it.nombre_nuevo ?? ''),
-      tipo: '',
-      unidad_medida: it.materia_prima_id ? '' : (it.unidad_medida ?? ''),
-    })));
-    setMetodoPago(data.metodo_pago ?? '');
-    setFechaIA(data.fecha ?? '');
-    setShowForm(true);
+      setLineas(data.items.map((it) => ({
+        materia_prima_id: it.materia_prima_id,
+        cantidad: it.cantidad ? String(it.cantidad) : '',
+        precio_unitario: it.precio_total ? String(Math.round(it.precio_total)) : '',
+        marca_id: data.marca_id ?? 0,
+        nombre_nuevo: it.materia_prima_id ? '' : (it.nombre_nuevo ?? ''),
+        tipo: '',
+        unidad_medida: it.materia_prima_id ? '' : (it.unidad_medida ?? ''),
+      })));
+      setMetodoPago(data.metodo_pago ?? '');
+      setFechaIA(data.fecha ?? '');
+      setShowForm(true);
 
-    const partes = ['Factura leída por Burgi. Revisa cada dato antes de registrar.'];
-    if (data.fecha) partes.push(`Fecha de la factura: ${data.fecha.split('-').reverse().join('/')}.`);
-    if (data.cuadra === false && data.total_factura) {
-      partes.push(`El total de la factura ($${data.total_factura.toLocaleString('es-CO')}) no coincide con la suma de los insumos ($${data.suma_items.toLocaleString('es-CO')}): puede ser IVA, un descuento o una línea mal leída.`);
+      const partes = ['Factura leída por Burgi. Revisa cada dato antes de registrar.'];
+      if (data.fecha) partes.push(`Fecha de la factura: ${data.fecha.split('-').reverse().join('/')}.`);
+      if (data.cuadra === false && data.total_factura) {
+        partes.push(`El total de la factura ($${data.total_factura.toLocaleString('es-CO')}) no coincide con la suma de los insumos ($${data.suma_items.toLocaleString('es-CO')}): puede ser IVA, un descuento o una línea mal leída.`);
+      }
+      if (data.observaciones) partes.push(data.observaciones);
+      setAviso({ texto: partes.join(' '), alerta: data.cuadra === false || !!data.observaciones });
+      showToast('Factura leída por Burgi: revisa los datos y registra', false, true);
+    } catch (e) {
+      const err = e as { response?: { data?: { message?: string } } };
+      showToast(err?.response?.data?.message || 'No se pudo leer la factura', true);
+    } finally {
+      setEscaneando(false);
     }
-    if (data.observaciones) partes.push(data.observaciones);
-    setAviso({ texto: partes.join(' '), alerta: data.cuadra === false || !!data.observaciones });
-    showToast('Factura leída por Burgi: revisa los datos y registra', false, true);
-  } catch (e) {
-    const err = e as { response?: { data?: { message?: string } } };
-    showToast(err?.response?.data?.message || 'No se pudo leer la factura', true);
-  } finally {
-    setEscaneando(false);
-  }
-};
-
-const rojo = (malo: boolean): CSSProperties | undefined =>
-  intentado && malo
-    ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
-    : undefined;
-
-const errLinea = (l: Linea) => ({
-  nombre: l.materia_prima_id === null && !l.nombre_nuevo.trim(),
-  cantidad: !(Number(l.cantidad) > 0),
-  unidad: l.materia_prima_id === null && !l.unidad_medida.trim(),
-  precio: !(Number(l.precio_unitario) > 0),
-  marca: !l.marca_id,
-});
-
-/** Valida el formulario. Si falta algo avisa con un toast y devuelve false. */
-const validar = (): boolean => {
-  if (!metodoPago) { showToast('Selecciona el método de pago', true); return false; }
-  for (let i = 0; i < lineas.length; i++) {
-    const l = lineas[i];
-    const n = `Insumo ${i + 1}`;
-    if (l.materia_prima_id === null && !l.nombre_nuevo.trim()) { showToast(`${n}: escribe el nombre del insumo nuevo`, true); return false; }
-    if (!(Number(l.cantidad) > 0)) { showToast(`${n}: escribe la cantidad`, true); return false; }
-    if (l.materia_prima_id === null && !l.unidad_medida.trim()) { showToast(`${n}: selecciona la unidad de medida`, true); return false; }
-    if (!(Number(l.precio_unitario) > 0)) { showToast(`${n}: escribe el precio total`, true); return false; }
-    if (!l.marca_id) { showToast(`${n}: selecciona el proveedor`, true); return false; }
-  }
-  return true;
-};
-
-/** Paso 1: "Registrar" NO guarda nada; solo abre la pantalla de revisión. */
-const irARevision = () => {
-  setIntentado(true);
-  if (validar()) setRevisando(true);
-};
-
-const borrarLocal = () => {
-  try { localStorage.removeItem(CLAVE_BORRADOR); } catch { /* nada */ }
-  setHayBorradorLocal(false);
-};
-
-/** Recupera lo que estabas escribiendo y no terminaste. */
-const continuarBorradorLocal = () => {
-  try {
-    const d = JSON.parse(localStorage.getItem(CLAVE_BORRADOR) || 'null');
-    if (!d) { borrarLocal(); return; }
-    setEditId(null);
-    setIntentado(false);
-    setMetodoPago(d.metodoPago ?? '');
-    setNumeroFactura(d.numeroFactura ?? '');
-    setTipoFactura(d.tipoFactura ?? '');
-    setFechaIA(d.fechaIA ?? '');
-    setLineas(Array.isArray(d.lineas) && d.lineas.length
-      ? d.lineas
-      : [{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
-    setShowForm(true);
-  } catch {
-    borrarLocal();
-  }
-};
-
-/** Guarda la compra en el servidor con estado "Borrador" (no mueve stock). */
-const guardarBorrador = () => {
-  if (guardando) return;
-  setIntentado(true);
-  if (!validar()) return;
-  setGuardando(true);
-
-  const hoy = new Date();
-  const payload = {
-    fecha: fechaIA || `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`,
-    metodo_pago: metodoPago,
-    numero_factura: numeroFactura.trim() || null,
-    tipo_factura: tipoFactura || null,
-    estado: 'Borrador',
-    items: lineas.map((l) => ({
-      materia_prima_id: l.materia_prima_id,
-      cantidad: Number(l.cantidad),
-      precio_total: Number(l.precio_unitario),
-      marca_id: l.marca_id,
-      nombre_nuevo: l.materia_prima_id ? undefined : l.nombre_nuevo.trim(),
-      tipo: l.materia_prima_id ? undefined : (l.tipo.trim() || undefined),
-      unidad_medida: l.materia_prima_id ? undefined : l.unidad_medida.trim(),
-    })),
   };
-  const peticion = editId
-    ? apiClient.put(`/compras/${editId}`, payload)
-    : apiClient.post('/compras', payload);
-  peticion.then(() => {
-    showToast('Compra guardada como borrador');
-    sinRed.current = false;
-    borrarLocal();
-    setPagina(1);
-    setRevisando(false);
+
+  const rojo = (malo: boolean): CSSProperties | undefined =>
+    intentado && malo
+      ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
+      : undefined;
+
+  const errLinea = (l: Linea) => ({
+    nombre: l.materia_prima_id === null && !l.nombre_nuevo.trim(),
+    cantidad: !(Number(l.cantidad) > 0),
+    unidad: l.materia_prima_id === null && !l.unidad_medida.trim(),
+    precio: !(Number(l.precio_unitario) > 0),
+    marca: !l.marca_id,
+  });
+
+  const validar = (): boolean => {
+    if (!metodoPago) { showToast('Selecciona el método de pago', true); return false; }
+    for (let i = 0; i < lineas.length; i++) {
+      const l = lineas[i];
+      const n = `Insumo ${i + 1}`;
+      if (l.materia_prima_id === null && !l.nombre_nuevo.trim()) { showToast(`${n}: escribe el nombre del insumo nuevo`, true); return false; }
+      if (!(Number(l.cantidad) > 0)) { showToast(`${n}: escribe la cantidad`, true); return false; }
+      if (l.materia_prima_id === null && !l.unidad_medida.trim()) { showToast(`${n}: selecciona la unidad de medida`, true); return false; }
+      if (!(Number(l.precio_unitario) > 0)) { showToast(`${n}: escribe el precio total`, true); return false; }
+      if (!l.marca_id) { showToast(`${n}: selecciona el proveedor`, true); return false; }
+    }
+    return true;
+  };
+
+  const irARevision = () => {
+    setIntentado(true);
+    if (validar()) setRevisando(true);
+  };
+
+  const borrarLocal = () => {
+    try { localStorage.removeItem(CLAVE_BORRADOR); } catch { /* nada */ }
+    setHayBorradorLocal(false);
+  };
+
+  const continuarBorradorLocal = () => {
+    try {
+      const d = JSON.parse(localStorage.getItem(CLAVE_BORRADOR) || 'null');
+      if (!d) { borrarLocal(); return; }
+      setEditId(null);
+      setIntentado(false);
+      setMetodoPago(d.metodoPago ?? '');
+      setNumeroFactura(d.numeroFactura ?? '');
+      setTipoFactura(d.tipoFactura ?? '');
+      setFechaIA(d.fechaIA ?? '');
+      setLineas(Array.isArray(d.lineas) && d.lineas.length
+        ? d.lineas
+        : [{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+      setShowForm(true);
+    } catch {
+      borrarLocal();
+    }
+  };
+
+  const guardarBorrador = () => {
+    if (guardando) return;
+    setIntentado(true);
+    if (!validar()) return;
+    setGuardando(true);
+
+    const hoy = new Date();
+    const payload = {
+      fecha: fechaIA || `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`,
+      metodo_pago: metodoPago,
+      numero_factura: numeroFactura.trim() || null,
+      tipo_factura: tipoFactura || null,
+      estado: 'Borrador',
+      items: lineas.map((l) => ({
+        materia_prima_id: l.materia_prima_id,
+        cantidad: Number(l.cantidad),
+        precio_total: Number(l.precio_unitario),
+        marca_id: l.marca_id,
+        nombre_nuevo: l.materia_prima_id ? undefined : l.nombre_nuevo.trim(),
+        tipo: l.materia_prima_id ? undefined : (l.tipo.trim() || undefined),
+        unidad_medida: l.materia_prima_id ? undefined : l.unidad_medida.trim(),
+      })),
+    };
+    const peticion = editId
+      ? apiClient.put(`/compras/${editId}`, payload)
+      : apiClient.post('/compras', payload);
+    peticion.then(() => {
+      showToast('Compra guardada como borrador');
+      sinRed.current = false;
+      borrarLocal();
+      setPagina(1);
+      setRevisando(false);
+      setConfirmando(false);
+      setIntentado(false);
+      setShowForm(false);
+      setAviso(null);
+      setFechaIA('');
+      setEditId(null);
+      setMetodoPago('');
+      setNumeroFactura('');
+      setTipoFactura('');
+      setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+      load();
+    }).catch((e) => {
+      if (!e?.response) {
+        sinRed.current = true;
+        showToast('Sin conexión: tu compra quedó guardada en este equipo y se enviará como borrador cuando vuelva el internet', true);
+        return;
+      }
+      const d = e.response.data;
+      showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || 'No se pudo guardar el borrador', true);
+    }).finally(() => setGuardando(false));
+  };
+  guardarBorradorRef.current = guardarBorrador;
+
+  const registrar = () => {
+    if (guardando) return;
     setConfirmando(false);
-    setIntentado(false);
-    setShowForm(false);
-    setAviso(null);
-    setFechaIA('');
-    setEditId(null);
-    setMetodoPago('');
-    setNumeroFactura('');
-    setTipoFactura('');
-    setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
-    load();
-  }).catch((e) => {
-    if (!e?.response) {
-      sinRed.current = true;
-      showToast('Sin conexión: tu compra quedó guardada en este equipo y se enviará como borrador cuando vuelva el internet', true);
-      return;
-    }
-    const d = e.response.data;
-    showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || 'No se pudo guardar el borrador', true);
-  }).finally(() => setGuardando(false));
-};
-guardarBorradorRef.current = guardarBorrador;
+    setGuardando(true);
 
-/** Paso 2: después de la alerta de confirmación es cuando por fin se guarda la compra. */
-const registrar = () => {
-  if (guardando) return;
-  setConfirmando(false);
-  setGuardando(true);
-
-  const hoy = new Date();
-  const payload = {
-    fecha: fechaIA || `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`,
-    metodo_pago: metodoPago,
-    numero_factura: numeroFactura.trim() || null,
-    tipo_factura: tipoFactura || null,
-    estado: 'Finalizada',
-    items: lineas.map((l) => ({
-      materia_prima_id: l.materia_prima_id,
-      cantidad: Number(l.cantidad),
-      precio_total: Number(l.precio_unitario),
-      marca_id: l.marca_id,
-      nombre_nuevo: l.materia_prima_id ? undefined : l.nombre_nuevo.trim(),
-      tipo: l.materia_prima_id ? undefined : (l.tipo.trim() || undefined),
-      unidad_medida: l.materia_prima_id ? undefined : l.unidad_medida.trim(),
-    })),
+    const hoy = new Date();
+    const payload = {
+      fecha: fechaIA || `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`,
+      metodo_pago: metodoPago,
+      numero_factura: numeroFactura.trim() || null,
+      tipo_factura: tipoFactura || null,
+      estado: 'Finalizada',
+      items: lineas.map((l) => ({
+        materia_prima_id: l.materia_prima_id,
+        cantidad: Number(l.cantidad),
+        precio_total: Number(l.precio_unitario),
+        marca_id: l.marca_id,
+        nombre_nuevo: l.materia_prima_id ? undefined : l.nombre_nuevo.trim(),
+        tipo: l.materia_prima_id ? undefined : (l.tipo.trim() || undefined),
+        unidad_medida: l.materia_prima_id ? undefined : l.unidad_medida.trim(),
+      })),
+    };
+    const peticion = editId
+      ? apiClient.put(`/compras/${editId}`, payload)
+      : apiClient.post('/compras', payload);
+    peticion.then(() => {
+      showToast('Compra registrada: el stock se sumó a Materia Prima');
+      sinRed.current = false;
+      borrarLocal();
+      setPagina(1);
+      setRevisando(false);
+      setIntentado(false);
+      setShowForm(false);
+      setAviso(null);
+      setFechaIA('');
+      setEditId(null);
+      setMetodoPago('');
+      setNumeroFactura('');
+      setTipoFactura('');
+      setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+      load();
+    }).catch((e) => {
+      setRevisando(false);
+      if (!e?.response) {
+        sinRed.current = true;
+        showToast('Sin conexión: tu compra quedó guardada en este equipo y se enviará como borrador cuando vuelva el internet', true);
+        return;
+      }
+      const d = e?.response?.data;
+      showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || (editId ? 'No se pudo modificar la compra' : 'No se pudo registrar la compra'), true);
+    }).finally(() => setGuardando(false));
   };
-  const peticion = editId
-    ? apiClient.put(`/compras/${editId}`, payload)
-    : apiClient.post('/compras', payload);
-  peticion.then(() => {
-    showToast('Compra registrada: el stock se sumó a Materia Prima');
-    sinRed.current = false;
-    borrarLocal();
-    setPagina(1);
-    setRevisando(false);
-    setIntentado(false);
-    setShowForm(false);
-    setAviso(null);
-    setFechaIA('');
-    setEditId(null);
-    setMetodoPago('');
-    setNumeroFactura('');
-    setTipoFactura('');
-    setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
-    load();
-  }).catch((e) => {
-    // Si falla, vuelve al formulario con todo lo que había escrito
-    setRevisando(false);
-    if (!e?.response) {
-      sinRed.current = true;
-      showToast('Sin conexión: tu compra quedó guardada en este equipo y se enviará como borrador cuando vuelva el internet', true);
-      return;
-    }
-    const d = e?.response?.data;
-    showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || (editId ? 'No se pudo modificar la compra' : 'No se pudo registrar la compra'), true);
-  }).finally(() => setGuardando(false));
-};
 
-  /** Se puede eliminar mientras no esté finalizada (no movió stock). */
   const del = (c: Compra) => setEliminarCompra(c);
 
   const confirmarEliminarCompra = () => {
@@ -702,27 +759,29 @@ const registrar = () => {
       });
   };
 
- const estiloModalCompra: CSSProperties = {
-  background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 0,
-  width: 'min(820px, 94vw)', maxHeight: '90vh', overflow: 'hidden',
-  display: 'flex', flexDirection: 'column',
-  boxShadow: 'var(--shadow-lg)', border: 'none',
-};
+  const estiloModalCompra: CSSProperties = {
+    background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 0,
+    width: 'min(820px, 94vw)', maxHeight: '90vh', overflow: 'hidden',
+    display: 'flex', flexDirection: 'column',
+    boxShadow: 'var(--shadow-lg)', border: 'none',
+  };
 
-useEscape([
-  [confirmando, () => setConfirmando(false)],
-  [revisando, () => setRevisando(false)],
-  [!!eliminarCompra, () => setEliminarCompra(null)],
-  [mostrarDictado, () => { vozRef.current?.stop(); setMostrarDictado(false); }],
-  [showForm, cerrarForm],
-]);
+  useEscape([
+    [confirmando, () => setConfirmando(false)],
+    [revisando, () => setRevisando(false)],
+    [!!eliminarCompra, () => setEliminarCompra(null)],
+    [mostrarDictado, () => { vozRef.current?.stop(); setMostrarDictado(false); }],
+    [showForm, cerrarForm],
+  ]);
 
   return (
     <div className="page-inner">
       <div className="page-header">
         <div>
           <h1>Gestión de Compras</h1>
-          <p className="subtitulo">{items.length} compras registradas</p>
+          <p className="subtitulo">
+            {hayFiltros ? `${filtered.length} de ${items.length} compras` : `${items.length} compras registradas`}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button
@@ -757,7 +816,7 @@ useEscape([
         </div>
       </div>
 
-            {mostrarDictado && (
+      {mostrarDictado && (
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 24, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
           <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 6, color: 'var(--text-900)' }}>Cuéntame qué compraste</h3>
           <p style={{ fontSize: 13, color: 'var(--text-400)', marginBottom: 12 }}>
@@ -877,21 +936,20 @@ useEscape([
               </div>
 
               {l.materia_prima_id === null && (
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Nombre del insumo<span className="mn-req">*</span></label>
-                  <input value={l.nombre_nuevo} style={rojo(errLinea(l).nombre)} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
-                </div>
-              )}
-
-              {l.materia_prima_id === null && (
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Tipo (opcional)</label>
-                  <input
-                    placeholder="Ej: Carnes, Salsas..."
-                    value={l.tipo}
-                    onChange={(e) => updateLinea(i, 'tipo', e.target.value)}
-                  />
-                </div>
+                <>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Nombre del insumo<span className="mn-req">*</span></label>
+                    <input value={l.nombre_nuevo} style={rojo(errLinea(l).nombre)} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Tipo (opcional)</label>
+                    <input
+                      placeholder="Ej: Carnes, Salsas..."
+                      value={l.tipo}
+                      onChange={(e) => updateLinea(i, 'tipo', e.target.value)}
+                    />
+                  </div>
+                </>
               )}
 
               {editId && l.materia_prima_id !== null && (
@@ -903,7 +961,6 @@ useEscape([
                   />
                 </div>
               )}
-
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Cantidad <span className="mn-req">*</span></label>
@@ -939,6 +996,7 @@ useEscape([
                   {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
               </div>
+              
               {lineas.length > 1 && (
                 <button className="btn-icon btn-icon-del" onClick={() => removeLinea(i)} style={{ position: 'absolute', top: 6, right: 8 }}>✕</button>
               )}
@@ -959,7 +1017,7 @@ useEscape([
         </div>
       )}
 
-      <div className="mn-search-wrap" style={{ marginBottom: 24 }}>
+      <div className="mn-search-wrap" style={{ marginBottom: 14 }}>
         <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
           stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7" />
@@ -968,69 +1026,124 @@ useEscape([
         <input className="mn-search" type="text" placeholder="Buscar compra..." value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
+      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
+        <label style={estiloEtiqueta}>
+          Desde
+          <input type="date" style={estiloFiltro} value={fDesde} max={fHasta || undefined} onChange={(e) => setFDesde(e.target.value)} />
+        </label>
+        <label style={estiloEtiqueta}>
+          Hasta
+          <input type="date" style={estiloFiltro} value={fHasta} min={fDesde || undefined} onChange={(e) => setFHasta(e.target.value)} />
+        </label>
+        <label style={estiloEtiqueta}>
+          Método de pago
+          <select style={estiloFiltro} value={fMetodo} onChange={(e) => setFMetodo(e.target.value)}>
+            <option value="">Todos</option>
+            {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </label>
+        <label style={estiloEtiqueta}>
+          Insumo
+          <select style={estiloFiltro} value={fInsumo} onChange={(e) => setFInsumo(e.target.value)}>
+            <option value="">Todos</option>
+            {materiasOrdenadas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+          </select>
+        </label>
+        <label style={estiloEtiqueta}>
+          Marca
+          <select style={estiloFiltro} value={fMarca} onChange={(e) => setFMarca(e.target.value)}>
+            <option value="">Todas</option>
+            {marcasOrdenadas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+          </select>
+        </label>
+        {hayFiltros && (
+          <button type="button" className="btn-cancel" style={{ padding: '9px 18px' }} onClick={limpiarFiltros}>
+            Limpiar filtros
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <AdminLoading texto="Cargando compras" subtexto="Reuniendo tus abastecimientos" />
       ) : (
         <>
-  <div className="tabla-responsive">
-    <table className="data-table">
-      <thead>
-        <tr>
-          <th>Compra</th>
-          <th>Método de pago</th>
-          <th>Insumos</th>
-          <th>Total</th>
-          <th>Estado</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {gruposVisibles.map(([clave, lista]) => (
-          <Fragment key={clave}>
-            <tr>
-              <td colSpan={6} style={{ background: 'var(--surface-2)', padding: '12px 16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-900)' }}>{etiquetaFecha(clave)}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-400)' }}>
-                    {lista.length} {lista.length === 1 ? 'compra' : 'compras'} ·{' '}
-                    <span style={{ color: 'var(--brand)', fontWeight: 800 }}>
-                      ${lista.filter((c) => c.estado === 'Finalizada').reduce((a, c) => a + Number(c.valor_total), 0).toLocaleString('es-CO')}
-                    </span>
-                  </span>
-                </div>
-              </td>
-            </tr>
-            {lista.map((c) => (
-              <tr key={c.id}>
-                <td><span style={chipNumero}>N.º {c.id}</span></td>
-                <td><span className="badge badge-info">{c.metodo_pago}</span></td>
-                <td>{(c.detalles ?? []).length}</td>
-                <td style={{ fontWeight: 700 }}>${Number(c.valor_total).toLocaleString('es-CO')}</td>
-                <td><span className={`badge ${badgeEstado(c.estado)}`}>{c.estado}</span></td>
-                <td>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)}>Ver detalle</button>
-                    {c.estado !== 'Finalizada' && (
-                      <>
-                        <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => abrirEditar(c)}>Modificar</button>
-                        <button type="button" className="mn-btn-del" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => del(c)}>Eliminar</button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </Fragment>
-        ))}
-        {grupos.length === 0 && (
-          <tr><td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron compras</td></tr>
-        )}
-      </tbody>
-    </table>
-  </div>
+          <div className="tabla-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Compra</th>
+                  <th>Método de pago</th>
+                  <th>Insumos</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gruposVisibles.map(([clave, lista]) => (
+                  <Fragment key={clave}>
+                    <tr>
+                      <td colSpan={6} style={{ background: 'var(--surface-2)', padding: '12px 16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-900)' }}>{etiquetaFecha(clave)}</span>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-400)' }}>
+                            {lista.length} {lista.length === 1 ? 'compra' : 'compras'} ·{' '}
+                            <span style={{ color: 'var(--brand)', fontWeight: 800 }}>
+                              ${lista.filter((c) => c.estado === 'Finalizada').reduce((a, c) => a + Number(c.valor_total), 0).toLocaleString('es-CO')}
+                            </span>
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                    {lista.map((c) => (
+                      <tr key={c.id}>
+                        <td><span style={chipNumero}>N.º {c.id}</span></td>
+                        <td><span className="badge badge-info">{c.metodo_pago}</span></td>
+                        <td>{(c.detalles ?? []).length}</td>
+                        <td style={{ fontWeight: 700 }}>${Number(c.valor_total).toLocaleString('es-CO')}</td>
+                        <td><span className={`badge ${badgeEstado(c.estado)}`}>{c.estado}</span></td>
+                        <td>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)}>Ver detalle</button>
+                            {c.estado !== 'Finalizada' && (
+                              <>
+                                <button
+                                  type="button"
+                                  className="mn-btn-edit"
+                                  style={{ flex: 'none', padding: '7px 14px' }}
+                                  onClick={() => abrirEditar(c)}
+                                >
+                                  Modificar
+                                </button>
+                                <button
+                                  type="button"
+                                  className="mn-btn-del"
+                                  style={{ flex: 'none', padding: '7px 14px' }}
+                                  onClick={() => del(c)}
+                                >
+                                  Eliminar
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                ))}
+                {grupos.length === 0 && (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
+                      {items.length === 0 ? 'Aún no hay compras' : 'No se encontraron compras con esos filtros'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
 
-    <Paginacion total={grupos.length} pagina={paginaActual} porPagina={DIAS_POR_PAGINA} etiqueta="días" onCambiar={setPagina} />
-</>
+          <Paginacion total={grupos.length} pagina={paginaActual} porPagina={DIAS_POR_PAGINA} etiqueta="días" onCambiar={setPagina} />
+        </>
       )}
 
       {modalDetalle && (() => {
@@ -1114,6 +1227,7 @@ useEscape([
           </div>
         );
       })()}
+      
       {escaneando && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(22, 8, 0, 0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <style>{`@keyframes iaScan{0%,100%{top:6%}50%{top:90%}}@keyframes iaDots{0%,100%{opacity:.25}50%{opacity:1}}`}</style>
@@ -1136,6 +1250,7 @@ useEscape([
           </div>
         </div>
       )}
+      
       {eliminarCompra && (
         <div className="mn-modal-overlay" onClick={() => setEliminarCompra(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
@@ -1260,9 +1375,8 @@ useEscape([
           </div>
         </div>
       )}
-       <ToastMessage toast={toast} />
-
+      
+      <ToastMessage toast={toast} />
     </div>
-  
   );
 }

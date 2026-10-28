@@ -5,8 +5,6 @@ import Paginacion, { paginar } from '../../components/Paginacion';
 
 import { useToast } from '../../components/Toast';
 
-import VentasGraficas from '../../components/VentasGraficas';
-import type { EstadisticasVentas } from '../../types/Ventas';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
@@ -58,16 +56,38 @@ const ESTADOS = ['En barra', 'En cocina', 'En camino', 'Listo para recoger', 'En
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
+// Minúsculas y sin tildes, para búsquedas tolerantes
+const normalizar = (s: unknown) =>
+  String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+// Fecha local en formato YYYY-MM-DD
+const fechaLocal = (fecha?: string | null) =>
+  fecha ? new Date(fecha).toLocaleDateString('en-CA') : '';
+
 export default function VentasAdmin() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const alertar = (m: any) => showToast(String(m), true);
   const esAdmin = normalizarRol(user?.role) === 'admin';
+  
   const [items, setItems] = useState<Venta[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
+  
+  // --- Filtros (Carlos) ---
   const [q, setQ] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [filtroMetodo, setFiltroMetodo] = useState('');
+  const [filtroEntrega, setFiltroEntrega] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
+
+  // --- Paginación (Develop) ---
   const [pagina, setPagina] = useState(1);
+
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [tipoEntrega, setTipoEntrega] = useState('Domicilio');
@@ -81,10 +101,6 @@ export default function VentasAdmin() {
   const [combos, setCombos] = useState<{ promocion_id: number; cantidad: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
-  const [dias, setDias] = useState(7);
-  const [stats, setStats] = useState<EstadisticasVentas | null>(null);
-  const [cargandoStats, setCargandoStats] = useState(esAdmin);
-  const [errorStats, setErrorStats] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -108,42 +124,61 @@ export default function VentasAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  useEffect(() => {
-    if (!esAdmin) return; // las estadísticas son solo del administrador
-    let activo = true;
-    setCargandoStats(true);
-
-    apiClient.get<EstadisticasVentas>('/ventas/estadisticas', { params: { dias } })
-      .then(({ data }) => {
-        if (!activo) return;
-        setStats(data);
-        setErrorStats(false);
-      })
-      .catch(() => {
-        if (activo) setErrorStats(true);
-      })
-      .finally(() => {
-        if (activo) setCargandoStats(false);
-      });
-
-    return () => { activo = false; };
-  }, [dias, version, esAdmin]);
-
   const nombreCliente = (v: Venta) =>
     v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
-  const filtered = (items ?? []).filter((v) =>
-    String(v?.id ?? '').includes(q ?? '') ||
-    nombreCliente(v).toLowerCase().includes((q ?? '').toLowerCase())
+  const textoBusqueda = normalizar(q).trim();
+
+  // --- Lógica de Filtrado (Carlos) ---
+  const filtered = (items ?? []).filter((v) => {
+    if (textoBusqueda) {
+      const haystack = normalizar(
+        [
+          v?.id,
+          nombreCliente(v),
+          ...(v?.detalles ?? []).map((d) => d?.producto?.nombre),
+          ...(v?.promociones ?? []).map((p) => p?.nombre),
+        ].join(' ')
+      );
+      if (!haystack.includes(textoBusqueda)) return false;
+    }
+
+    if (filtroEstado && v?.estado !== filtroEstado) return false;
+    if (filtroMetodo && v?.metodo_pago !== filtroMetodo) return false;
+    if (filtroEntrega && v?.tipo_entrega !== filtroEntrega) return false;
+
+    const fechaVenta = fechaLocal(v?.fecha);
+    if (fechaDesde && fechaVenta < fechaDesde) return false;
+    if (fechaHasta && fechaVenta > fechaHasta) return false;
+
+    return true;
+  });
+
+  const hayFiltros = Boolean(
+    q || filtroEstado || filtroMetodo || filtroEntrega || fechaDesde || fechaHasta
   );
 
+  const limpiarFiltros = () => {
+    setQ('');
+    setFiltroEstado('');
+    setFiltroMetodo('');
+    setFiltroEntrega('');
+    setFechaDesde('');
+    setFechaHasta('');
+    setPagina(1);
+  };
+
+  const totalFiltrado = filtered.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+
+  // --- Paginación (Develop) ---
   const { visibles, paginaActual } = paginar(filtered, pagina);
 
-  const hoy = new Date().toISOString().slice(0, 10);
-  const ventasHoy = stats ? stats.ventas_hoy : (items ?? []).filter((v) => (v?.fecha ?? '').slice(0, 10) === hoy).length;
-  const ingresosHoy = stats ? stats.ingresos_hoy : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
-  const totalVentas = stats ? stats.total_ventas : items.length;
-  const ingresosTotal = stats ? stats.ingresos_totales : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+  // --- Cálculos locales de las tarjetas (sin depender del backend de estadísticas) ---
+  const hoy = new Date().toLocaleDateString('en-CA');
+  const ventasHoy = (items ?? []).filter((v) => fechaLocal(v?.fecha) === hoy).length;
+  const ingresosHoy = (items ?? []).filter((v) => fechaLocal(v?.fecha) === hoy).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+  const totalVentas = items.length;
+  const ingresosTotal = (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
   const sinNada = carrito.length === 0 && combos.length === 0;
   const rojoProducto: CSSProperties | undefined =
@@ -310,16 +345,6 @@ export default function VentasAdmin() {
           </>
         )}
       </div>
-
-      {esAdmin && (
-        <VentasGraficas
-          datos={stats}
-          cargando={cargandoStats}
-          error={errorStats}
-          dias={dias}
-          onCambiarDias={setDias}
-        />
-      )}
 
       {showForm && (
         <div className="modal-overlay open" onClick={cerrarFormulario}>
@@ -491,8 +516,80 @@ export default function VentasAdmin() {
         </div>
       )}
 
-      <div className="search-bar">
-        <input placeholder="Buscar venta..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
+      <div className="search-bar" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        
+        {/* Fila 1: Búsqueda */}
+        <div className="mn-search-wrap" style={{ marginBottom: 0 }}>
+          <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            className="mn-search"
+            placeholder="Buscar por #, cliente, producto o combo..."
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPagina(1); }}
+          />
+        </div>
+
+        {/* Fila 2: Filtros (Carlos) */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Estado</label>
+            <select value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}>
+              <option value="">Todos</option>
+              {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Método de pago</label>
+            <select value={filtroMetodo} onChange={(e) => { setFiltroMetodo(e.target.value); setPagina(1); }}>
+              <option value="">Todos</option>
+              {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Entrega</label>
+            <select value={filtroEntrega} onChange={(e) => { setFiltroEntrega(e.target.value); setPagina(1); }}>
+              <option value="">Todas</option>
+              {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Desde</label>
+            <input
+              type="date"
+              value={fechaDesde}
+              max={fechaHasta || undefined}
+              onChange={(e) => { setFechaDesde(e.target.value); setPagina(1); }}
+            />
+          </div>
+
+          <div className="form-group" style={{ margin: 0 }}>
+            <label>Hasta</label>
+            <input
+              type="date"
+              value={fechaHasta}
+              min={fechaDesde || undefined}
+              onChange={(e) => { setFechaHasta(e.target.value); setPagina(1); }}
+            />
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ padding: '8px 18px', fontSize: 13, height: 42 }}>
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+
+        <p style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
+          {filtered.length} de {items.length} ventas
+          {hayFiltros && ` · Total filtrado: $${Math.round(totalFiltrado).toLocaleString('es-CO')}`}
+        </p>
       </div>
 
       <div className="tabla-responsive">

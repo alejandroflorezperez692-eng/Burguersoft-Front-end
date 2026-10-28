@@ -235,6 +235,7 @@ export default function BackupsAdmin() {
       apiClient.get('/backups').catch(() => null),
       apiClient.get('/backups/tablas').catch(() => null),
     ]).then(([r1, r2]) => {
+
       const { items: backups } = extraerBackups(r1?.data);
       const listaTablas = extraerArreglo<Tabla>(r2?.data);
       setItems(backups);
@@ -327,6 +328,7 @@ export default function BackupsAdmin() {
       } else {
         showToast(`Copia de seguridad generada${numRegistros}. Ya está guardada en el servidor.`);
       }
+
       setModalGen(false);
       setPassGen('');
       load();
@@ -335,6 +337,7 @@ export default function BackupsAdmin() {
       console.error('Error generando backup:', e);
     } finally {
       setGenerando(false);
+
     }
   };
 
@@ -582,6 +585,7 @@ export default function BackupsAdmin() {
           <h1>Copias de Seguridad</h1>
           <p className="subtitulo">Respaldo cifrado y restauración de la base de datos</p>
         </div>
+
         <div className="mn-search-wrap">
           <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -916,6 +920,7 @@ export default function BackupsAdmin() {
         </div>
       )}
 
+
       {/* ===================== Modal: copias en Drive ===================== */}
       {modalDrive && (
         <div className="modal-overlay open" onClick={() => setModalDrive(false)}>
@@ -939,6 +944,7 @@ export default function BackupsAdmin() {
               </div>
             ) : (
               <p className="bk-desc">No hay copias almacenadas en Google Drive todavía.</p>
+
             )}
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModalDrive(false)}>Cerrar</button>
