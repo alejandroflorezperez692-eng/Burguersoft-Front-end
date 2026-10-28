@@ -4,6 +4,7 @@ import { isAxiosError } from 'axios';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
+import { useToast } from '../components/Toast';
 import iconoBloqueo from '../assets/img/bloquear.png';
 
 function getErrorMessage(error: unknown): string {
@@ -23,11 +24,11 @@ function segundosRestantesBloqueo(): number {
 
 export default function RecuperarContrasena() {
   const [correo, setCorreo] = useState(() => sessionStorage.getItem('correo_recuperacion') ?? '');
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bloqueo, setBloqueo] = useState(() => segundosRestantesBloqueo());
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const castigado = searchParams.get('castigo') === '1';
 
   useEffect(() => {
@@ -51,11 +52,10 @@ export default function RecuperarContrasena() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
     if (bloqueado) return;
     const emailLimpio = correo.trim().toLowerCase();
     if (!emailLimpio) {
-      setError('Por favor ingresa un correo válido.');
+      showToast('Por favor ingresa un correo válido.', true);
       return;
     }
     setLoading(true);
@@ -71,7 +71,7 @@ export default function RecuperarContrasena() {
         sessionStorage.setItem('bloqueo_correo_hasta', String(Date.now() + seg * 1000));
         setBloqueo(seg);
       }
-      setError(getErrorMessage(err));
+      showToast(getErrorMessage(err), true);
     } finally {
       setLoading(false);
     }
@@ -103,26 +103,23 @@ export default function RecuperarContrasena() {
             <p className="descripcion descripcion-recuperacion">
               Ingresa tu correo electrónico registrado para recibir el código de recuperación.
             </p>
+
             <div className="campo">
               <label htmlFor="rec-email">
                 Correo electrónico<span className="required-marker">*</span>
               </label>
-              <input
-                id="rec-email"
-                type="email"
-                className="input"
-                placeholder="Digite tu correo electrónico"
-                value={correo}
-                onChange={(e) => setCorreo(e.target.value)}
-                required
-                disabled={bloqueado}
-              />
-            </div>
-            {error && !bloqueado && (
-              <p className="auth-error" role="alert">
-                {error}
-              </p>
-            )}
+      
+            <input
+              id="rec-email"
+              type="email"
+              className="input"
+              placeholder="Correo electrónico (obligatorio)"
+              value={correo}
+              onChange={(e) => setCorreo(e.target.value)}
+              required
+              disabled={bloqueado}
+            />
+
           <button type="submit" className="btn-primario" disabled={loading || bloqueado}>
             {bloqueado ? `ESPERA ${bloqueo}s` : loading ? 'ENVIANDO…' : 'Enviar código de recuperación'}
           </button>

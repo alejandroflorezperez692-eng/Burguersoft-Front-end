@@ -34,11 +34,12 @@ import TerminosPrivacidad from './pages/TerminosPrivacidad';
 import Ayuda from './pages/admin/Ayuda';
 import AyudaCliente from './pages/AyudaCliente';
 import { ACCESO } from './utils/roles';
+import { ToastProvider } from './components/Toast';
 
 
 function App() {
   return (
-    <>
+    <ToastProvider>
       <DemoAccess />
       <Routes>
       <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
@@ -112,7 +113,7 @@ function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Accesibilidad />
-    </>
+    </ToastProvider>
   );
 }
 

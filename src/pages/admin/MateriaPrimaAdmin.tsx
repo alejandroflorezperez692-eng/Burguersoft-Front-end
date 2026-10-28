@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type React from 'react';
 import apiClient from '../../api/client';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import '../../styles/nu-admin.css';
 
@@ -95,7 +95,7 @@ export default function MateriaPrimaAdmin() {
   const [visiblesCount, setVisiblesCount] = useState(LIMITE);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoStock>('todos');
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
 
   const toArray = <T,>(v: unknown): T[] =>
     Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
@@ -462,8 +462,6 @@ export default function MateriaPrimaAdmin() {
           </div>
         </div>
       )}
-
-      <ToastMessage toast={toast} />
     </div>
   );
 }

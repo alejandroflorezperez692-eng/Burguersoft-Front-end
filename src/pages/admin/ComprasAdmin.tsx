@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import ComprasResumen from '../../components/ComprasResumen';
 import AdminLoading from '../../components/AdminLoading';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 
 interface DetalleCompra {
@@ -227,7 +227,7 @@ export default function ComprasAdmin() {
   const [q, setQ] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('');
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
   const [lineas, setLineas] = useState<Linea[]>([
     { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' },
   ]);
@@ -954,7 +954,6 @@ const save = () => {
           </div>
         </div>
       )}
-       <ToastMessage toast={toast} />
     </div>
   
   );

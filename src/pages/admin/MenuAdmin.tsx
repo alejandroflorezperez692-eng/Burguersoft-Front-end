@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import apiClient from '../../api/client';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import '../../styles/nu-admin.css';
 
@@ -75,7 +75,7 @@ export default function MenuAdmin() {
 
   const panelRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
  
 
   /* ---------- Carga de datos ---------- */
@@ -407,8 +407,6 @@ export default function MenuAdmin() {
           </div>
         </div>
       )}
-
-      <ToastMessage toast={toast} />
     </div>
   );
 }

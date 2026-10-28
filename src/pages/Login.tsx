@@ -4,7 +4,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
-import { IconoToast } from '../components/Toast';
+import { IconoToast, useToast } from '../components/Toast';
 import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
 
@@ -17,6 +17,20 @@ function getErrorMessage(error: unknown): string {
     const data = error.response.data;
     if (typeof data === 'string') {
       return `Error del servidor (${error.response.status}).`;
+    }
+    // Si el backend manda el detalle por campo, se muestran TODOS los errores indicando qué campo falla.
+    const errores = (data as { errors?: Record<string, unknown> })?.errors;
+    if (errores && typeof errores === 'object') {
+      const etiquetas: Record<string, string> = { correo: 'correo electrónico', email: 'correo electrónico', contrasena: 'contraseña', password: 'contraseña' };
+      const lista: string[] = [];
+      Object.entries(errores).forEach(([campo, val]) => {
+        const texto = Array.isArray(val) ? String(val[0] ?? '') : String(val ?? '');
+        if (!texto) return;
+        const etiqueta = etiquetas[campo] ?? campo;
+        lista.push(/obligatori|required/i.test(texto) ? `El campo ${etiqueta} es obligatorio.` : texto);
+      });
+      const unicos = Array.from(new Set(lista));
+      if (unicos.length > 0) return unicos.join(' ');
     }
     const msg = (data as Record<string, unknown>)?.message ?? (data as Record<string, unknown>)?.error;
     if (typeof msg === 'string') return msg;
@@ -32,13 +46,15 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
 
   const { login, isAuthenticated, user } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
+
 
   // Aviso flotante (estilo toast) en el login: contraseña cambiada o sesión cerrada
   const MENSAJE_AVISO: Record<string, string> = {
@@ -60,7 +76,6 @@ export default function Login() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
     setLoading(true);
 
     try {
@@ -69,7 +84,7 @@ export default function Login() {
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
-      setError(getErrorMessage(err));
+      showToast(getErrorMessage(err), true);
     } finally {
       setLoading(false);
     }
@@ -137,11 +152,7 @@ export default function Login() {
             </button>
           </div>
 
-          {error && (
-            <p className="auth-error" role="alert">
-              {error}
-            </p>
-          )}
+
 
           <button type="submit" className="btn-primario" disabled={loading}>
             {loading ? 'INGRESANDO…' : 'INICIAR SESIÓN'}
