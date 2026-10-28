@@ -31,15 +31,10 @@ const BACKUPS_CSS = `
 .bk-drive{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px 26px;box-shadow:var(--shadow-sm)}
 .bk-drive h3{margin:0 0 4px;font-size:15px;font-weight:700;color:var(--text-900)}
 .bk-drive p{margin:0;font-size:12.5px;color:var(--text-600);line-height:1.5;max-width:560px}
+.bk-check{display:flex;gap:10px;align-items:flex-start;margin:16px 0 0;font-size:13px;font-weight:600;color:var(--text-900);cursor:pointer}
+.bk-check input{margin-top:3px;accent-color:var(--brand)}
+.bk-check small{display:block;font-weight:400;font-size:12px;color:var(--text-600);margin-top:2px;line-height:1.45}
 `;
-
-/* ------------------------------------------------------------------ */
-/* Google Drive                                                        */
-/* Se deja oculto hasta que se habilite el alcance drive.file y se     */
-/* registre /api/backups/drive/callback en la consola de Google.        */
-/* Para encenderlo basta con cambiar esta línea a true.                 */
-/* ------------------------------------------------------------------ */
-const MOSTRAR_DRIVE = false;
 
 /* ------------------------------------------------------------------ */
 /* Tipos de las respuestas del API                                      */
@@ -77,6 +72,7 @@ interface RespuestaGeneracion {
   tamano_bytes?: number;
   total_registros?: number;
   id?: number;
+  drive?: { success?: boolean; message?: string } | null;
 }
 
 interface RespuestaRestauracion {
@@ -91,6 +87,12 @@ interface ArchivoDrive {
   name?: string;
   nombre?: string;
   size?: number | string;
+  createdTime?: string;
+}
+
+interface EstadoDrive {
+  configurada: boolean;
+  conectada: boolean;
 }
 
 type ModoRestauracion = 'replace' | 'merge';
@@ -182,7 +184,6 @@ const asegurarExtension = (base: string, ext: '.sql.enc' | '.sql'): string => {
 export default function BackupsAdmin() {
   const { showToast, confirmar } = useToast();
   const [items, setItems] = useState<Backup[]>([]);
-  const [totalServidor, setTotalServidor] = useState<number | undefined>(undefined);
   const [tablas, setTablas] = useState<Tabla[]>([]);
   const [buscar, setBuscar] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -211,6 +212,11 @@ export default function BackupsAdmin() {
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
   const [subiendoDrive, setSubiendoDrive] = useState<number | null>(null);
 
+  // Estado de la conexión con Google Drive
+  const [drive, setDrive] = useState<EstadoDrive>({ configurada: false, conectada: false });
+  const [subirAlGenerar, setSubirAlGenerar] = useState(false);
+  const [desconectando, setDesconectando] = useState(false);
+
   // Listado de copias en Google Drive
   const [modalDrive, setModalDrive] = useState(false);
   const [driveArchivos, setDriveArchivos] = useState<ArchivoDrive[]>([]);
@@ -227,10 +233,9 @@ export default function BackupsAdmin() {
       apiClient.get('/backups').catch(() => null),
       apiClient.get('/backups/tablas').catch(() => null),
     ]).then(([r1, r2]) => {
-      const { items: backups, total } = extraerBackups(r1?.data);
+      const { items: backups } = extraerBackups(r1?.data);
       const listaTablas = extraerArreglo<Tabla>(r2?.data);
       setItems(backups);
-      setTotalServidor(total);
       setTablas(listaTablas);
       setLoading(false);
     }).catch((e) => {
@@ -241,7 +246,23 @@ export default function BackupsAdmin() {
     });
   };
 
-  useEffect(() => { load(); }, []);
+  const cargarEstadoDrive = async () => {
+    try {
+      const r = await apiClient.get<Partial<EstadoDrive>>('/backups/drive/estado');
+      setDrive({ configurada: Boolean(r.data?.configurada), conectada: Boolean(r.data?.conectada) });
+    } catch {
+      setDrive({ configurada: false, conectada: false });
+    }
+  };
+
+  useEffect(() => {
+    load();
+    cargarEstadoDrive();
+    // Al volver de la pestaña de Google, se actualiza el estado de la conexión
+    const alVolver = () => { cargarEstadoDrive(); };
+    window.addEventListener('focus', alVolver);
+    return () => window.removeEventListener('focus', alVolver);
+  }, []);
 
   const esBackupCompleto = (b: Backup): boolean => {
     const detalle = (b.nombre_tabla ?? '').trim();
@@ -271,6 +292,7 @@ export default function BackupsAdmin() {
   const abrirModalGen = () => {
     setPassGen('');
     setVerPassGen(false);
+    setSubirAlGenerar(false);
     setModalGen(true);
   };
 
@@ -282,7 +304,10 @@ export default function BackupsAdmin() {
     setGenerando(true);
     try {
       // Siempre se respalda la base de datos completa
-      const r = await apiClient.post<RespuestaGeneracion>('/backups', { password: passGen });
+      const r = await apiClient.post<RespuestaGeneracion>('/backups', {
+        password: passGen,
+        subir_drive: drive.conectada && subirAlGenerar,
+      });
       const data = r.data ?? {};
 
       if (data.success === false) {
@@ -297,7 +322,13 @@ export default function BackupsAdmin() {
           : Number(data.total_registros) || 0;
 
       const numRegistros = registrosTotales > 0 ? ` · ${registrosTotales.toLocaleString('es-MX')} registros` : '';
-      showToast(`Copia de seguridad generada${numRegistros}. Ya está guardada en el servidor.`);
+      if (data.drive?.success === false) {
+        showToast(`Copia generada y guardada en el servidor, pero no se pudo subir a Drive: ${data.drive.message ?? 'error desconocido'}`, true);
+      } else if (data.drive?.success) {
+        showToast(`Copia de seguridad generada${numRegistros}. Guardada en el servidor y en Google Drive.`);
+      } else {
+        showToast(`Copia de seguridad generada${numRegistros}. Ya está guardada en el servidor.`);
+      }
       setModalGen(false);
       setPassGen('');
       load();
@@ -427,30 +458,46 @@ export default function BackupsAdmin() {
       const r = await apiClient.get<{ url?: string }>('/backups/drive/auth');
       const url = r.data?.url;
       if (!url) {
-        showToast('Google Drive aún no está configurado en el servidor. Pide al administrador que configure las credenciales.', false, true);
+        showToast('No se pudo obtener el enlace de autorización de Google.', true);
         return;
       }
       window.open(url, '_blank', 'noopener,noreferrer');
       showToast('Se abrió la autorización de Google Drive en una pestaña nueva.', false, true);
     } catch (e) {
+      showToast(await mensajeDeError(e), true);
       console.error('Error conectando con Google Drive:', e);
-      showToast('Google Drive aún no está configurado en el servidor o no se pudo iniciar la conexión.', true);
+    }
+  };
+
+  const desconectarDrive = async () => {
+    const ok = await confirmar(
+      '¿Desconectar Google Drive? Las copias que ya están en Drive se conservan, pero no podrás subir ni descargar desde aquí hasta volver a conectar.',
+      'Sí, desconectar',
+      true
+    );
+    if (!ok) return;
+    setDesconectando(true);
+    try {
+      const r = await apiClient.post<{ message?: string }>('/backups/drive/desconectar');
+      showToast(r.data?.message ?? 'Google Drive desconectado.');
+      await cargarEstadoDrive();
+    } catch (e) {
+      showToast(await mensajeDeError(e), true);
+    } finally {
+      setDesconectando(false);
     }
   };
 
   const verCopiasDrive = async () => {
     setCargandoDrive(true);
     try {
-      const r = await apiClient.get<unknown>('/backups/drive/listar');
-      const archivos = extraerArreglo<ArchivoDrive>(r.data);
-      setDriveArchivos(archivos);
+      const r = await apiClient.get<{ archivos?: ArchivoDrive[] }>('/backups/drive/listar');
+      setDriveArchivos(Array.isArray(r.data?.archivos) ? r.data.archivos : []);
       setModalDrive(true);
-      if (archivos.length === 0) {
-        showToast('No hay copias almacenadas en Google Drive todavía.', false, true);
-      }
     } catch (e) {
+      showToast(await mensajeDeError(e), true);
       console.error('Error listando copias de Drive:', e);
-      showToast('Google Drive aún no está configurado en el servidor.', true);
+      cargarEstadoDrive();
     } finally {
       setCargandoDrive(false);
     }
@@ -459,12 +506,13 @@ export default function BackupsAdmin() {
   const subirDrive = async (b: Backup) => {
     setSubiendoDrive(b.id);
     try {
-      const r = await apiClient.get<{ success?: boolean; message?: string }>(`/backups/${b.id}/drive/subir`);
+      const r = await apiClient.post<{ success?: boolean; message?: string }>(`/backups/${b.id}/drive/subir`);
       showToast(r.data?.message ?? 'Copia subida a Google Drive correctamente.');
       load();
     } catch (e) {
       showToast(await mensajeDeError(e), true);
       console.error('Error subiendo backup a Drive:', e);
+      cargarEstadoDrive();
     } finally {
       setSubiendoDrive(null);
     }
@@ -491,7 +539,9 @@ export default function BackupsAdmin() {
   /* ---------------------------------------------------------------- */
   const del = async (b: Backup) => {
     const ok = await confirmar(
-      '¿Eliminar esta copia de seguridad? El archivo cifrado también se borrará del servidor. Esta acción no se puede deshacer.',
+      b.subido_drive
+        ? '¿Eliminar esta copia de seguridad? El archivo cifrado se borrará del servidor. La copia que está en Google Drive no se elimina. Esta acción no se puede deshacer.'
+        : '¿Eliminar esta copia de seguridad? El archivo cifrado también se borrará del servidor. Esta acción no se puede deshacer.',
       'Sí, eliminar',
       true
     );
@@ -538,9 +588,6 @@ export default function BackupsAdmin() {
     </div>
   );
 
-  const totalCopias = totalServidor ?? items.length;
-  const subidasDrive = items.filter((b) => Boolean(b.subido_drive)).length;
-
   return (
     <div className="page-inner">
       <style>{BACKUPS_CSS}</style>
@@ -558,22 +605,6 @@ export default function BackupsAdmin() {
           </svg>
           <input className="mn-search" type="text" placeholder="Buscar copia..." value={buscar} onChange={(e) => setBuscar(e.target.value)} />
         </div>
-      </div>
-
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span className="stat-label">Total de copias</span>
-          <span className="stat-val">{totalCopias}</span>
-          <span className="stat-sub">Resguardadas en el servidor</span>
-        </div>
-        {/* Tarjeta de Google Drive: se enciende con MOSTRAR_DRIVE */}
-        {MOSTRAR_DRIVE && (
-          <div className="stat-card">
-            <span className="stat-label">Subidas a Drive</span>
-            <span className="stat-val">{subidasDrive}</span>
-            <span className="stat-sub">Google Drive</span>
-          </div>
-        )}
       </div>
 
       <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
@@ -606,6 +637,7 @@ export default function BackupsAdmin() {
                 <th>Fecha y hora</th>
                 <th>Tamaño</th>
                 <th>Registros</th>
+                {drive.configurada && <th>Drive</th>}
                 <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
@@ -621,6 +653,13 @@ export default function BackupsAdmin() {
                     <td>{b.fecha ? new Date(b.fecha).toLocaleString() : '—'}</td>
                     <td>{formatBytes(b.tamano_bytes)}</td>
                     <td>{b.total_registros != null ? Number(b.total_registros).toLocaleString('es-MX') : '—'}</td>
+                    {drive.configurada && (
+                      <td>
+                        <span className={`bk-badge ${enDrive ? 'bk-badge-yes' : 'bk-badge-no'}`}>
+                          {enDrive ? 'En Drive' : 'Solo servidor'}
+                        </span>
+                      </td>
+                    )}
                     <td className="td-acciones">
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
                         <button
@@ -639,7 +678,7 @@ export default function BackupsAdmin() {
                         >
                           Descargar
                         </button>
-                        {MOSTRAR_DRIVE && (
+                        {drive.conectada && (
                           !enDrive ? (
                             <button
                               className="btn-accion"
@@ -656,7 +695,7 @@ export default function BackupsAdmin() {
                               disabled={ocupado || descargandoId === b.id}
                               title="Descargar esta copia desde Google Drive"
                             >
-                              De Drive
+                              {descargandoId === b.id ? 'Descargando…' : 'De Drive'}
                             </button>
                           )
                         )}
@@ -674,31 +713,45 @@ export default function BackupsAdmin() {
                 );
               })}
               {filteredItems.length === 0 && (
-                <tr><td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>{items.length === 0 ? 'No hay registros de copias de seguridad' : 'No hay copias que coincidan con tu búsqueda'}</td></tr>
+                <tr><td colSpan={drive.configurada ? 7 : 6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>{items.length === 0 ? 'No hay registros de copias de seguridad' : 'No hay copias que coincidan con tu búsqueda'}</td></tr>
               )}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* ===== Google Drive: se enciende con MOSTRAR_DRIVE ===== */}
-      {MOSTRAR_DRIVE && (
-        <div className="bk-drive" style={{ marginTop: 28 }}>
-          <div>
-            <h3>Google Drive</h3>
-            <p>
-              Conecta tu cuenta de Google para guardar tus copias cifradas en la nube y descargarlas desde cualquier dispositivo.
-              Si aún no está configurado en el servidor, el sistema te avisará.
-            </p>
-          </div>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-            <button className="btn-save" onClick={conectarDrive}>Conectar con Google Drive</button>
-            <button className="btn-cancel" onClick={verCopiasDrive} disabled={cargandoDrive}>
-              {cargandoDrive ? 'Cargando…' : 'Ver copias en Drive'}
-            </button>
-          </div>
+      {/* ===================== Google Drive ===================== */}
+      <div className="bk-drive" style={{ marginTop: 28 }}>
+        <div>
+          <h3>
+            Google Drive{' '}
+            {drive.conectada && <span className="bk-badge bk-badge-yes">Conectado</span>}
+          </h3>
+          <p>
+            {!drive.configurada
+              ? 'Google Drive no está habilitado en el servidor. Pide al administrador del sistema que configure las credenciales de Google.'
+              : drive.conectada
+                ? 'Tus copias cifradas pueden guardarse en tu Drive y descargarse desde cualquier dispositivo. Usa "A Drive" en cada copia, o márcalo al generar una nueva.'
+                : 'Conecta tu cuenta de Google para guardar tus copias cifradas en la nube. Burguersoft solo accede a los archivos que él mismo sube.'}
+          </p>
         </div>
-      )}
+        {drive.configurada && (
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {!drive.conectada ? (
+              <button className="btn-save" onClick={conectarDrive}>Conectar con Google Drive</button>
+            ) : (
+              <>
+                <button className="btn-cancel" onClick={verCopiasDrive} disabled={cargandoDrive}>
+                  {cargandoDrive ? 'Cargando…' : 'Ver copias en Drive'}
+                </button>
+                <button className="btn-cancel" onClick={desconectarDrive} disabled={desconectando}>
+                  {desconectando ? 'Desconectando…' : 'Desconectar'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* ===================== Modal: generar copia ===================== */}
       {modalGen && (
@@ -713,6 +766,20 @@ export default function BackupsAdmin() {
               <label>Contraseña de tu cuenta <span className="mn-req">*</span></label>
               {inputPassword(passGen, setPassGen, verPassGen, setVerPassGen, generar)}
             </div>
+            {drive.conectada && (
+              <label className="bk-check">
+                <input
+                  type="checkbox"
+                  checked={subirAlGenerar}
+                  onChange={(e) => setSubirAlGenerar(e.target.checked)}
+                  disabled={generando}
+                />
+                <span>
+                  Subir también a Google Drive
+                  <small>Se guarda una copia cifrada en tu Drive además del servidor.</small>
+                </span>
+              </label>
+            )}
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setModalGen(false)} disabled={generando}>Cancelar</button>
               <button className="btn-save" onClick={generar} disabled={generando}>
@@ -865,7 +932,12 @@ export default function BackupsAdmin() {
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={f.name ?? f.nombre}>
                       {f.name ?? f.nombre ?? `Archivo ${i + 1}`}
                     </span>
-                    <span>{f.size != null && f.size !== '' ? formatBytes(Number(f.size)) : ''}</span>
+                    <span>
+                      {[
+                        f.createdTime ? new Date(f.createdTime).toLocaleDateString('es-MX') : '',
+                        f.size != null && f.size !== '' ? formatBytes(Number(f.size)) : '',
+                      ].filter(Boolean).join(' · ')}
+                    </span>
                   </div>
                 ))}
               </div>
