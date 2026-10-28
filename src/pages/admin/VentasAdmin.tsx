@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
+
 import { useToast } from '../../components/Toast';
+
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import { useEscape } from '../../hooks/useEscape';
 
 interface DetalleVenta {
   id: number;
@@ -63,10 +67,12 @@ export default function VentasAdmin() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   const [q, setQ] = useState('');
+  const [pagina, setPagina] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [tipoEntrega, setTipoEntrega] = useState('Domicilio');
   const [clienteNombre, setClienteNombre] = useState('');
+  const [intentado, setIntentado] = useState(false);
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
   const [carrito, setCarrito] = useState<{ producto_id: number; cantidad: number }[]>([]);
@@ -123,10 +129,6 @@ export default function VentasAdmin() {
     return () => { activo = false; };
   }, [dias, version, esAdmin]);
 
-  if (loading) {
-    return <AdminLoading texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
-  }
-
   const nombreCliente = (v: Venta) =>
     v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
@@ -135,14 +137,23 @@ export default function VentasAdmin() {
     nombreCliente(v).toLowerCase().includes((q ?? '').toLowerCase())
   );
 
+  const { visibles, paginaActual } = paginar(filtered, pagina);
+
   const hoy = new Date().toISOString().slice(0, 10);
   const ventasHoy = stats ? stats.ventas_hoy : (items ?? []).filter((v) => (v?.fecha ?? '').slice(0, 10) === hoy).length;
   const ingresosHoy = stats ? stats.ingresos_hoy : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
   const totalVentas = stats ? stats.total_ventas : items.length;
   const ingresosTotal = stats ? stats.ingresos_totales : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
+  const sinNada = carrito.length === 0 && combos.length === 0;
+  const rojoProducto: CSSProperties | undefined =
+    intentado && sinNada
+      ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
+      : undefined;
+
   const save = () => {
-    if (carrito.length === 0 && combos.length === 0) return;
+    setIntentado(true);
+    if (sinNada) return;
     const body = {
       carrito,
       combos: combos.length ? combos : undefined,
@@ -158,6 +169,7 @@ export default function VentasAdmin() {
   };
 
   const cerrarFormulario = () => {
+    setIntentado(false);
     setShowForm(false);
     setCarrito([]);
     setCombos([]);
@@ -256,6 +268,14 @@ export default function VentasAdmin() {
     }
   };
 
+  useEscape([
+    [showForm, cerrarFormulario],
+  ]);
+
+  if (loading) {
+    return <AdminLoading texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
+  }
+
   return (
     <div className="page-inner">
       <div className="page-header">
@@ -302,12 +322,16 @@ export default function VentasAdmin() {
       )}
 
       {showForm && (
-        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>Registrar Venta</h3>
+        <div className="modal-overlay open" onClick={cerrarFormulario}>
+        <div className="modal-box" style={{ maxWidth: 780, width: '95%', padding: 0 }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ background: 'var(--text-900)', padding: '18px 28px' }}>
+            <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--surface)' }}>Registrar Venta</h3>
+          </div>
+          <div style={{ padding: 28 }}>
           <div className="grid-registro">
             <div className="form-group">
               <label>Producto</label>
-              <select value={productoId} onChange={(e) => setProductoId(Number(e.target.value))}>
+              <select value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
                 <option value={0}>Seleccionar...</option>
                 {(productos ?? []).map((p) => <option key={p?.id ?? p?.nombre} value={p?.id}>{p?.nombre ?? 'Sin nombre'} — ${Number(p?.valor || 0).toLocaleString('es-CO')}</option>)}
               </select>
@@ -460,20 +484,15 @@ export default function VentasAdmin() {
           ) : null}
           <div className="modal-actions" style={{ marginTop: 8 }}>
             <button className="btn-cancel" onClick={cerrarFormulario}>Cancelar</button>
-            <button
-              className="btn-save"
-              onClick={save}
-              disabled={carrito.length === 0 && combos.length === 0}
-              style={{ opacity: carrito.length || combos.length ? 1 : 0.5, cursor: carrito.length || combos.length ? 'pointer' : 'not-allowed' }}
-            >
-              Registrar
-            </button>
+            <button className="btn-save" onClick={save}>Registrar</button>
           </div>
+          </div>
+        </div>
         </div>
       )}
 
       <div className="search-bar">
-        <input placeholder="Buscar venta..." value={q} onChange={(e) => setQ(e.target.value)} />
+        <input placeholder="Buscar venta..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
       </div>
 
       <div className="tabla-responsive">
@@ -490,7 +509,7 @@ export default function VentasAdmin() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((v) => (
+            {visibles.map((v) => (
               <tr key={v?.id}>
                 <td>{v?.id}</td>
                 <td style={{ fontWeight: 600 }}>{nombreCliente(v) || '—'}</td>
@@ -537,6 +556,8 @@ export default function VentasAdmin() {
           </tbody>
         </table>
       </div>
+
+      <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
     </div>
   );
 }

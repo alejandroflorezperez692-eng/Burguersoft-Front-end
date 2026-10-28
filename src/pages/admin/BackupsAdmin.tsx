@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { jsPDF } from 'jspdf';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import { useToast } from '../../components/Toast';
+
 import logoElOriente from '../../assets/img/icono1-oscuro.png';
 
 // Logo de El Oriente incrustado en el PDF (se carga una sola vez y se cachea)
@@ -46,12 +48,14 @@ export default function BackupsAdmin() {
   const [tablas, setTablas] = useState<Tabla[]>([]);
   const [sel, setSel] = useState<string[]>([]);
   const [buscar, setBuscar] = useState<string>('');
+  const [pagina, setPagina] = useState(1);
 
   const filteredItems = items.filter((item) =>
     (item.nombre_tabla + ' ' + item.nombre + ' ' + item.fecha)
       .toLowerCase()
       .includes(buscar.toLowerCase())
   );
+  const { visibles: copiasVisibles, paginaActual } = paginar(filteredItems, pagina);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [restoring, setRestoring] = useState<number | null>(null);
@@ -517,7 +521,7 @@ export default function BackupsAdmin() {
             <circle cx="11" cy="11" r="7" />
             <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input className="mn-search" type="text" placeholder="Buscar copia..." value={buscar} onChange={(e) => setBuscar(e.target.value)} />
+          <input className="mn-search" type="text" placeholder="Buscar copia..." value={buscar} onChange={(e) => { setBuscar(e.target.value); setPagina(1); }} />
         </div>
       </div>
 
@@ -624,6 +628,7 @@ export default function BackupsAdmin() {
       {loading ? (
         <AdminLoading texto="Cargando copias" subtexto="Revisando tus respaldos" />
       ) : (
+        <>
         <div className="tabla-responsive">
         <table className="data-table">
           <thead>
@@ -635,7 +640,7 @@ export default function BackupsAdmin() {
             </tr>
           </thead>
           <tbody>
-            {(filteredItems ?? []).map((b) => {
+            {copiasVisibles.map((b) => {
               const detalle = b?.nombre_tabla ?? b?.nombre ?? '';
               const esTodas = detalle === 'TODAS';
               const lista = detalle ? detalle.split(',').map((t) => t.trim()).filter(Boolean) : [];
@@ -678,6 +683,8 @@ export default function BackupsAdmin() {
           </tbody>
         </table>
         </div>
+        <Paginacion total={filteredItems.length} pagina={paginaActual} onCambiar={setPagina} />
+        </>
       )}
     </div>
   );

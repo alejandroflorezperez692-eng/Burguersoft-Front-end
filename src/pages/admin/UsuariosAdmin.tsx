@@ -2,7 +2,9 @@
 import apiClient from '../../api/client';
 import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
 
 interface Usuario {
   id: number;
@@ -42,24 +44,7 @@ const nombreValido = (v: string) => {
   return true;
 };
 
-/* ---------- PaginaciÃ³n ---------- */
-
-const POR_PAGINA = 10;
-
-// [1, 'â€¦', 4, 5, 6, 'â€¦', 12]
-const numerosPagina = (actual: number, total: number): (number | 'â€¦')[] => {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const out: (number | 'â€¦')[] = [1];
-  const ini = Math.max(2, actual - 1);
-  const fin = Math.min(total - 1, actual + 1);
-  if (ini > 2) out.push('â€¦');
-  for (let i = ini; i <= fin; i++) out.push(i);
-  if (fin < total - 1) out.push('â€¦');
-  out.push(total);
-  return out;
-};
-
-function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string; estado: string }) {
+ }: { nombre: string; apellido: string; estado: string }) {
   return (
     <span style={{
       width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
@@ -110,17 +95,9 @@ export default function UsuariosAdmin() {
     )
     .sort((a, b) => a.id - b.id);
 
-  // PaginaciÃ³n: de 10 en 10
-  const totalPaginas = Math.max(1, Math.ceil(filtered.length / POR_PAGINA));
-  const paginaActual = Math.min(pagina, totalPaginas); // si borras el Ãºltimo de una pÃ¡gina, retrocede sola
-  const inicio = (paginaActual - 1) * POR_PAGINA;
-  const visibles = filtered.slice(inicio, inicio + POR_PAGINA);
+  // Paginación: de 10 en 10 (si borras el último de una página, retrocede sola)
+  const { visibles, paginaActual } = paginar(filtered, pagina);
 
-  const irAPagina = (n: number) => setPagina(Math.min(Math.max(1, n), totalPaginas));
-
-  const total = items.length;
-  const admins = items.filter((u) => u.rol?.nombre === 'Administrador').length;
-  const activos = items.filter((u) => String(u.estado).toLowerCase() === 'activo').length;
 
   /* ---------- EdiciÃ³n ---------- */
 
@@ -211,27 +188,16 @@ export default function UsuariosAdmin() {
     }
   };
 
+  useEscape([
+    [modal && !!sel, () => setModal(false)],
+  ]);
+
   return (
     <div className="page-inner">
       <div className="page-header">
         <div>
           <h1>GestiÃ³n de Usuarios</h1>
           <p className="subtitulo">Administra los usuarios del sistema</p>
-        </div>
-      </div>
-
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span className="stat-label">Total usuarios</span>
-          <span className="stat-val">{total}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Administradores</span>
-          <span className="stat-val">{admins}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Activos</span>
-          <span className="stat-val">{activos}</span>
         </div>
       </div>
 
@@ -294,51 +260,8 @@ export default function UsuariosAdmin() {
           </table>
         </div>
 
-        {filtered.length > 0 && (
-          <div className="us-pag">
-            <span className="us-pag-info">
-              Mostrando {inicio + 1}â€“{Math.min(inicio + POR_PAGINA, filtered.length)} de {filtered.length}
-            </span>
+        <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
 
-            {totalPaginas > 1 && (
-              <nav className="us-pag-nav" aria-label="PaginaciÃ³n de usuarios">
-                <button
-                  type="button"
-                  className="us-pag-btn"
-                  onClick={() => irAPagina(paginaActual - 1)}
-                  disabled={paginaActual === 1}
-                >
-                  â€¹ Anterior
-                </button>
-
-                {numerosPagina(paginaActual, totalPaginas).map((n, i) =>
-                  n === 'â€¦' ? (
-                    <span key={`e${i}`} className="us-pag-dots">â€¦</span>
-                  ) : (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`us-pag-btn us-pag-num${n === paginaActual ? ' activa' : ''}`}
-                      onClick={() => irAPagina(n)}
-                      aria-current={n === paginaActual ? 'page' : undefined}
-                    >
-                      {n}
-                    </button>
-                  )
-                )}
-
-                <button
-                  type="button"
-                  className="us-pag-btn"
-                  onClick={() => irAPagina(paginaActual + 1)}
-                  disabled={paginaActual === totalPaginas}
-                >
-                  Siguiente â€º
-                </button>
-              </nav>
-            )}
-          </div>
-        )}
         </>
       )}
 
