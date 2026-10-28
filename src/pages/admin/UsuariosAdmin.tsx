@@ -117,10 +117,6 @@ export default function UsuariosAdmin() {
 
   const irAPagina = (n: number) => setPagina(Math.min(Math.max(1, n), totalPaginas));
 
-  const total = items.length;
-  const admins = items.filter((u) => u.rol?.nombre === 'Administrador').length;
-  const activos = items.filter((u) => String(u.estado).toLowerCase() === 'activo').length;
-
   const openEdit = (u: Usuario) => {
     setSel(u);
     setNombre(u.nombre);
@@ -213,21 +209,6 @@ export default function UsuariosAdmin() {
         <div>
           <h1>Gestión de Usuarios</h1>
           <p className="subtitulo">Administra los usuarios del sistema</p>
-        </div>
-      </div>
-
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span className="stat-label">Total usuarios</span>
-          <span className="stat-val">{total}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Administradores</span>
-          <span className="stat-val">{admins}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Activos</span>
-          <span className="stat-val">{activos}</span>
         </div>
       </div>
 

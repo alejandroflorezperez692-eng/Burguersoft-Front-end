@@ -50,10 +50,7 @@ interface Compra {
 }
 
 /* ---------- Configuración ---------- */
-// Límite de tiempo: máximo de días que puede abarcar un reporte
 const MAX_DIAS = 90;
-
-// Estados de venta que no cuentan como ingreso
 const ESTADOS_NO_CONTABLES = ['Cancelado', 'Reembolsada'];
 
 const PRESETS = [
@@ -63,18 +60,24 @@ const PRESETS = [
   { label: `${MAX_DIAS} días`, dias: MAX_DIAS },
 ];
 
+type Vista = 'todo' | 'ventas' | 'productos' | 'compras';
+
+const VISTAS: { id: Vista; label: string }[] = [
+  { id: 'todo', label: 'Todo' },
+  { id: 'ventas', label: 'Ventas' },
+  { id: 'productos', label: 'Productos' },
+  { id: 'compras', label: 'Compras' },
+];
+
 /* ---------- Utilidades ---------- */
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
-// Fecha local en formato YYYY-MM-DD
 const aFechaISO = (d: Date) => d.toLocaleDateString('en-CA');
 
-// Para ventas (llegan con hora)
 const fechaLocal = (fecha?: string | null) =>
   fecha ? aFechaISO(new Date(fecha)) : '';
 
-// Para compras (llegan como fecha sin hora: no se debe convertir de zona horaria)
 const diaCompra = (fecha?: string | null) => String(fecha ?? '').slice(0, 10);
 
 const sumarDias = (iso: string, n: number) => {
@@ -83,14 +86,12 @@ const sumarDias = (iso: string, n: number) => {
   return aFechaISO(d);
 };
 
-// Días entre dos fechas, ambas incluidas
 const diasEntre = (desde: string, hasta: string) =>
   Math.round(
     (new Date(`${hasta}T00:00:00`).getTime() - new Date(`${desde}T00:00:00`).getTime()) / 86400000
   ) + 1;
 
 const moneda = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
-const monedaConSigno = (n: number) => `${n < 0 ? '-' : ''}${moneda(Math.abs(n))}`;
 const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
 const csvCelda = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -98,13 +99,17 @@ const csvCelda = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 const nombreCliente = (v: Venta) =>
   v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
+// Normaliza para buscar sin importar mayúsculas ni tildes
+const norm = (s: unknown) =>
+  String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
 /* ---------- Componentes auxiliares ---------- */
 interface FilaBarra {
   id?: string;
   nombre: string;
   principal: string;
   secundario?: string;
-  proporcion: number; // 0 a 1
+  proporcion: number;
 }
 
 function ListaBarras({ filas, vacio = 'Sin datos en este rango' }: { filas: FilaBarra[]; vacio?: string }) {
@@ -156,6 +161,69 @@ function Seccion({ titulo, sub }: { titulo: string; sub?: string }) {
       </h2>
       {sub && <p style={{ fontSize: 13, color: 'var(--text-400)', margin: '4px 0 0' }}>{sub}</p>}
     </div>
+  );
+}
+
+/* ---------- Productos más vendidos con buscador ---------- */
+interface ProductoVendido {
+  nombre: string;
+  cantidad: number;
+  total: number;
+}
+
+function PanelProductosVendidos({ productos }: { productos: ProductoVendido[] }) {
+  const [busqueda, setBusqueda] = useState('');
+  const q = norm(busqueda);
+
+  // Sin texto: top 10. Con texto: busca entre todos los productos del rango.
+  const filas = q
+    ? productos.filter((p) => norm(p.nombre).includes(q))
+    : productos.slice(0, 10);
+
+  const max = Math.max(1, ...productos.map((p) => p.cantidad));
+
+  return (
+    <Panel titulo="Productos más vendidos" scroll>
+      <div style={{ position: 'relative', marginBottom: 14 }}>
+        <input
+          type="text"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar producto..."
+          style={{ width: '100%', paddingRight: busqueda ? 34 : undefined }}
+        />
+        {busqueda && (
+          <button
+            type="button"
+            onClick={() => setBusqueda('')}
+            aria-label="Limpiar búsqueda"
+            style={{
+              position: 'absolute',
+              right: 8,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              fontSize: 16,
+              color: 'var(--text-400)',
+            }}
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      <ListaBarras
+        vacio={q ? `Ningún producto coincide con "${busqueda.trim()}"` : 'No hay productos vendidos en este rango'}
+        filas={filas.map((d) => ({
+          nombre: d.nombre,
+          principal: `${d.cantidad} uds`,
+          secundario: moneda(d.total),
+          proporcion: d.cantidad / max,
+        }))}
+      />
+    </Panel>
   );
 }
 
@@ -303,6 +371,9 @@ export default function ReportesAdmin() {
   const [errorCompras, setErrorCompras] = useState(false);
   const [desde, setDesde] = useState(() => sumarDias(aFechaISO(new Date()), -6));
   const [hasta, setHasta] = useState(() => aFechaISO(new Date()));
+  const [vista, setVista] = useState<Vista>('todo');
+
+  const ver = (v: Exclude<Vista, 'todo'>) => vista === 'todo' || vista === v;
 
   useEffect(() => {
     let activo = true;
@@ -394,10 +465,12 @@ export default function ReportesAdmin() {
         comboMap.set(nombre, (comboMap.get(nombre) ?? 0) + 1);
       });
     });
-    const topProductos = [...prodMap.entries()]
+
+    // Lista completa de productos (el panel con buscador muestra el top 10 o filtra)
+    const productos = [...prodMap.entries()]
       .map(([nombre, d]) => ({ nombre, ...d }))
-      .sort((a, b) => b.cantidad - a.cantidad)
-      .slice(0, 10);
+      .sort((a, b) => b.cantidad - a.cantidad);
+
     const topCombos = [...comboMap.entries()]
       .map(([nombre, cantidad]) => ({ nombre, cantidad }))
       .sort((a, b) => b.cantidad - a.cantidad)
@@ -418,11 +491,11 @@ export default function ReportesAdmin() {
 
     return {
       enRango, validas, ingresos, ticketPromedio, noContables,
-      porMetodo, porEntrega, porEstado, topProductos, topCombos, porDia,
+      porMetodo, porEntrega, porEstado, productos, topCombos, porDia,
     };
   }, [items, desde, hasta, rangoValido]);
 
-  /* ---------- Estadísticas de ventas para las gráficas (siguen el rango) ---------- */
+  /* ---------- Estadísticas de ventas para las gráficas ---------- */
   const statsRango = useMemo<EstadisticasVentas | null>(() => {
     if (!rangoValido) return null;
 
@@ -495,7 +568,6 @@ export default function ReportesAdmin() {
     const valorDe = (c: Compra) => Number(c?.valor_total) || 0;
     const total = enRango.reduce((a, c) => a + valorDe(c), 0);
 
-    // Periodo anterior de la misma duración
     const prevDesde = sumarDias(desde, -dias);
     const prevHasta = sumarDias(desde, -1);
     const totalPrevio = compras
@@ -557,8 +629,6 @@ export default function ReportesAdmin() {
       total,
       totalPrevio,
       barras,
-      promedio: enRango.length ? total / enRango.length : 0,
-      mayor: enRango.reduce((a, c) => Math.max(a, valorDe(c)), 0),
       porMetodo,
       topInsumos: topPor((d) => d?.materia_prima?.nombre),
       topMarcas: topPor((d) => d?.marca?.nombre),
@@ -580,7 +650,6 @@ export default function ReportesAdmin() {
       v.estado,
       Math.round(Number(v.valor_total) || 0),
     ]);
-    // BOM + separador ";" para que Excel abra bien las tildes y las columnas
     const csv = [encabezado, ...filas].map((f) => f.map(csvCelda).join(';')).join('\r\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -600,18 +669,24 @@ export default function ReportesAdmin() {
   const etiquetaDia = (iso: string) =>
     new Date(`${iso}T00:00:00`).toLocaleDateString('es-CO', { weekday: 'short', day: '2-digit', month: 'short' });
 
+  const etiquetaGrupo: CSSProperties = {
+    fontSize: 11,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    color: 'var(--text-400)',
+    marginBottom: 8,
+  };
+
   const maxDia = reporte ? Math.max(1, ...reporte.porDia.map((d) => d.total)) : 1;
   const maxMetodo = reporte ? Math.max(1, ...reporte.porMetodo.map((d) => d.total)) : 1;
   const maxEntrega = reporte ? Math.max(1, ...reporte.porEntrega.map((d) => d.total)) : 1;
   const maxEstado = reporte ? Math.max(1, ...reporte.porEstado.map((d) => d.cantidad)) : 1;
-  const maxProducto = reporte ? Math.max(1, ...reporte.topProductos.map((d) => d.cantidad)) : 1;
   const maxCombo = reporte ? Math.max(1, ...reporte.topCombos.map((d) => d.cantidad)) : 1;
 
   const maxMetodoCompra = reporteCompras ? Math.max(1, ...reporteCompras.porMetodo.map((d) => d.total)) : 1;
   const maxInsumoCompra = reporteCompras ? Math.max(1, ...reporteCompras.topInsumos.map((d) => d.valor)) : 1;
   const maxMarcaCompra = reporteCompras ? Math.max(1, ...reporteCompras.topMarcas.map((d) => d.valor)) : 1;
-
-  const balance = reporte && reporteCompras ? reporte.ingresos - reporteCompras.total : 0;
 
   return (
     <div className="page-inner">
@@ -631,23 +706,69 @@ export default function ReportesAdmin() {
         </button>
       </div>
 
-      {/* ---------- Selector de rango ---------- */}
+      {/* ---------- Filtros ---------- */}
       <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 22, marginBottom: 24, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-          {PRESETS.map((p) => (
-            <button
-              key={p.dias}
-              type="button"
-              className={presetActivo(p.dias) ? 'btn-primary' : 'btn-cancel'}
-              style={{ padding: '7px 16px', fontSize: 13, flex: 'none', width: 'auto' }}
-              onClick={() => aplicarPreset(p.dias)}
+        {/* Fila 1: período rápido + qué mostrar */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20 }}>
+          <div>
+            <div style={etiquetaGrupo}>Período</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {PRESETS.map((p) => (
+                <button
+                  key={p.dias}
+                  type="button"
+                  className={presetActivo(p.dias) ? 'btn-primary' : 'btn-cancel'}
+                  style={{ padding: '7px 16px', fontSize: 13, flex: 'none', width: 'auto' }}
+                  onClick={() => aplicarPreset(p.dias)}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div style={etiquetaGrupo}>Mostrar</div>
+            <div
+              role="group"
+              aria-label="Mostrar"
+              style={{
+                display: 'inline-flex',
+                border: '1px solid var(--border)',
+                borderRadius: 10,
+                overflow: 'hidden',
+                background: 'var(--surface)',
+              }}
             >
-              {p.label}
-            </button>
-          ))}
+              {VISTAS.map((v, i) => {
+                const activo = vista === v.id;
+                return (
+                  <button
+                    key={v.id}
+                    type="button"
+                    aria-pressed={activo}
+                    onClick={() => setVista(v.id)}
+                    style={{
+                      padding: '8px 18px',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      border: 'none',
+                      borderLeft: i === 0 ? 'none' : '1px solid var(--border)',
+                      background: activo ? 'var(--brand)' : 'transparent',
+                      color: activo ? '#fff' : 'var(--text-600)',
+                    }}
+                  >
+                    {v.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end' }}>
+        {/* Fila 2: rango personalizado */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end', marginTop: 20, paddingTop: 18, borderTop: '1px solid var(--border)' }}>
           <div className="form-group" style={{ margin: 0 }}>
             <label>Desde</label>
             <input
@@ -694,182 +815,164 @@ export default function ReportesAdmin() {
       {reporte && reporteCompras && (
         <>
           {/* ================= VENTAS ================= */}
-          <Seccion titulo="Ventas" sub="Resumen del rango de fechas seleccionado" />
+          {ver('ventas') && (
+            <>
+              <Seccion titulo="Ventas" sub="Resumen del rango de fechas seleccionado" />
 
-          <div className="stat-grid">
-            <div className="stat-card">
-              <span className="stat-label">Ventas</span>
-              <span className="stat-val">{reporte.validas.length}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Ingresos</span>
-              <span className="stat-val stat-val-dinero" title={moneda(reporte.ingresos)}>{moneda(reporte.ingresos)}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Ticket promedio</span>
-              <span className="stat-val stat-val-dinero" title={moneda(reporte.ticketPromedio)}>{moneda(reporte.ticketPromedio)}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Canceladas / reembolsadas</span>
-              <span className="stat-val">{reporte.noContables}</span>
-            </div>
-          </div>
+              <div className="stat-grid">
+                <div className="stat-card">
+                  <span className="stat-label">Ventas</span>
+                  <span className="stat-val">{reporte.validas.length}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">Ingresos</span>
+                  <span className="stat-val stat-val-dinero" title={moneda(reporte.ingresos)}>{moneda(reporte.ingresos)}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">Ticket promedio</span>
+                  <span className="stat-val stat-val-dinero" title={moneda(reporte.ticketPromedio)}>{moneda(reporte.ticketPromedio)}</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">Canceladas / reembolsadas</span>
+                  <span className="stat-val">{reporte.noContables}</span>
+                </div>
+              </div>
 
-          {/* Gráficas de ventas: ahora siguen el rango Desde / Hasta */}
-          <div style={{ marginTop: 24 }}>
-            <VentasGraficas
-              datos={statsRango}
-              cargando={false}
-              error={false}
-              dias={dias}
-              onCambiarDias={aplicarPreset}
-            />
-          </div>
-
-          {reporte.enRango.length === 0 ? (
-            <p style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
-              No hay ventas registradas en este rango.
-            </p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginTop: 24 }}>
-              <Panel titulo="Ventas por día" scroll>
-                <ListaBarras
-                  filas={reporte.porDia.map((d) => ({
-                    id: d.fecha,
-                    nombre: etiquetaDia(d.fecha),
-                    principal: moneda(d.total),
-                    secundario: `${d.cantidad} ${d.cantidad === 1 ? 'venta' : 'ventas'}`,
-                    proporcion: d.total / maxDia,
-                  }))}
+              <div style={{ marginTop: 24 }}>
+                <VentasGraficas
+                  datos={statsRango}
+                  cargando={false}
+                  error={false}
+                  dias={dias}
+                  onCambiarDias={aplicarPreset}
                 />
-              </Panel>
+              </div>
 
-              <Panel titulo="Por método de pago">
-                <ListaBarras
-                  filas={reporte.porMetodo.map((d) => ({
-                    nombre: d.nombre,
-                    principal: moneda(d.total),
-                    secundario: `${d.cantidad}`,
-                    proporcion: d.total / maxMetodo,
-                  }))}
-                />
-              </Panel>
+              {reporte.enRango.length === 0 ? (
+                <p style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
+                  No hay ventas registradas en este rango.
+                </p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginTop: 24 }}>
+                  <Panel titulo="Ventas por día" scroll>
+                    <ListaBarras
+                      filas={reporte.porDia.map((d) => ({
+                        id: d.fecha,
+                        nombre: etiquetaDia(d.fecha),
+                        principal: moneda(d.total),
+                        secundario: `${d.cantidad} ${d.cantidad === 1 ? 'venta' : 'ventas'}`,
+                        proporcion: d.total / maxDia,
+                      }))}
+                    />
+                  </Panel>
 
-              <Panel titulo="Por tipo de entrega">
-                <ListaBarras
-                  filas={reporte.porEntrega.map((d) => ({
-                    nombre: d.nombre,
-                    principal: moneda(d.total),
-                    secundario: `${d.cantidad}`,
-                    proporcion: d.total / maxEntrega,
-                  }))}
-                />
-              </Panel>
+                  <Panel titulo="Por método de pago">
+                    <ListaBarras
+                      filas={reporte.porMetodo.map((d) => ({
+                        nombre: d.nombre,
+                        principal: moneda(d.total),
+                        secundario: `${d.cantidad}`,
+                        proporcion: d.total / maxMetodo,
+                      }))}
+                    />
+                  </Panel>
 
-              <Panel titulo="Por estado">
-                <ListaBarras
-                  filas={reporte.porEstado.map((d) => ({
-                    nombre: d.nombre,
-                    principal: `${d.cantidad}`,
-                    proporcion: d.cantidad / maxEstado,
-                  }))}
-                />
-              </Panel>
+                  <Panel titulo="Por tipo de entrega">
+                    <ListaBarras
+                      filas={reporte.porEntrega.map((d) => ({
+                        nombre: d.nombre,
+                        principal: moneda(d.total),
+                        secundario: `${d.cantidad}`,
+                        proporcion: d.total / maxEntrega,
+                      }))}
+                    />
+                  </Panel>
 
-              <Panel titulo="Productos más vendidos">
-                <ListaBarras
-                  filas={reporte.topProductos.map((d) => ({
-                    nombre: d.nombre,
-                    principal: `${d.cantidad} uds`,
-                    secundario: moneda(d.total),
-                    proporcion: d.cantidad / maxProducto,
-                  }))}
-                />
-              </Panel>
+                  <Panel titulo="Por estado">
+                    <ListaBarras
+                      filas={reporte.porEstado.map((d) => ({
+                        nombre: d.nombre,
+                        principal: `${d.cantidad}`,
+                        proporcion: d.cantidad / maxEstado,
+                      }))}
+                    />
+                  </Panel>
 
-              <Panel titulo="Combos más vendidos">
-                <ListaBarras
-                  vacio="No se vendieron combos en este rango"
-                  filas={reporte.topCombos.map((d) => ({
-                    nombre: d.nombre,
-                    principal: `${d.cantidad} ${d.cantidad === 1 ? 'venta' : 'ventas'}`,
-                    proporcion: d.cantidad / maxCombo,
-                  }))}
-                />
-              </Panel>
-            </div>
+                  <Panel titulo="Combos más vendidos">
+                    <ListaBarras
+                      vacio="No se vendieron combos en este rango"
+                      filas={reporte.topCombos.map((d) => ({
+                        nombre: d.nombre,
+                        principal: `${d.cantidad} ${d.cantidad === 1 ? 'venta' : 'ventas'}`,
+                        proporcion: d.cantidad / maxCombo,
+                      }))}
+                    />
+                  </Panel>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ================= PRODUCTOS ================= */}
+          {ver('productos') && (
+            <>
+              <Seccion titulo="Productos" sub="Productos vendidos en el rango seleccionado" />
+              <PanelProductosVendidos productos={reporte.productos} />
+            </>
           )}
 
           {/* ================= COMPRAS ================= */}
-          <Seccion titulo="Compras" sub="Resumen del rango de fechas seleccionado" />
+          {ver('compras') && (
+            <>
+              <Seccion titulo="Compras" sub="Resumen del rango de fechas seleccionado" />
 
-          {/* Resumen de compras: ahora sigue el rango Desde / Hasta */}
-          <ResumenCompras
-            total={reporteCompras.total}
-            totalPrevio={reporteCompras.totalPrevio}
-            barras={reporteCompras.barras}
-            topMarca={reporteCompras.topMarcas[0] ?? null}
-            topInsumo={reporteCompras.topInsumos[0] ?? null}
-          />
-
-          <ResumenCompras
-            total={reporteCompras.total}
-            totalPrevio={reporteCompras.totalPrevio}
-            barras={reporteCompras.barras}
-            topMarca={reporteCompras.topMarcas[0] ?? null}
-            topInsumo={reporteCompras.topInsumos[0] ?? null}
-          />
-
-          <div style={{ marginBottom: 24 }}>
-            <Panel titulo="Productos más vendidos">
-              <ListaBarras
-                vacio="No hay productos vendidos en este rango"
-                filas={reporte.topProductos.map((d) => ({
-                  nombre: d.nombre,
-                  principal: `${d.cantidad} uds`,
-                  secundario: moneda(d.total),
-                  proporcion: d.cantidad / maxProducto,
-                }))}
+              <ResumenCompras
+                total={reporteCompras.total}
+                totalPrevio={reporteCompras.totalPrevio}
+                barras={reporteCompras.barras}
+                topMarca={reporteCompras.topMarcas[0] ?? null}
+                topInsumo={reporteCompras.topInsumos[0] ?? null}
               />
-            </Panel>
-          </div>
-          {reporteCompras.enRango.length === 0 ? (
-            <p style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
-              No hay compras registradas en este rango.
-            </p>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginTop: 24 }}>
-              <Panel titulo="Compras por método de pago">
-                <ListaBarras
-                  filas={reporteCompras.porMetodo.map((d) => ({
-                    nombre: d.nombre,
-                    principal: moneda(d.total),
-                    secundario: `${d.cantidad} ${d.cantidad === 1 ? 'compra' : 'compras'}`,
-                    proporcion: d.total / maxMetodoCompra,
-                  }))}
-                />
-              </Panel>
 
-              <Panel titulo="Insumos con más gasto">
-                <ListaBarras
-                  filas={reporteCompras.topInsumos.map((d) => ({
-                    nombre: d.nombre,
-                    principal: moneda(d.valor),
-                    proporcion: d.valor / maxInsumoCompra,
-                  }))}
-                />
-              </Panel>
+              {reporteCompras.enRango.length === 0 ? (
+                <p style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
+                  No hay compras registradas en este rango.
+                </p>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 20, marginTop: 24 }}>
+                  <Panel titulo="Compras por método de pago">
+                    <ListaBarras
+                      filas={reporteCompras.porMetodo.map((d) => ({
+                        nombre: d.nombre,
+                        principal: moneda(d.total),
+                        secundario: `${d.cantidad} ${d.cantidad === 1 ? 'compra' : 'compras'}`,
+                        proporcion: d.total / maxMetodoCompra,
+                      }))}
+                    />
+                  </Panel>
 
-              <Panel titulo="Proveedores (marcas) con más gasto">
-                <ListaBarras
-                  filas={reporteCompras.topMarcas.map((d) => ({
-                    nombre: d.nombre,
-                    principal: moneda(d.valor),
-                    proporcion: d.valor / maxMarcaCompra,
-                  }))}
-                />
-              </Panel>
-            </div>
+                  <Panel titulo="Insumos con más gasto">
+                    <ListaBarras
+                      filas={reporteCompras.topInsumos.map((d) => ({
+                        nombre: d.nombre,
+                        principal: moneda(d.valor),
+                        proporcion: d.valor / maxInsumoCompra,
+                      }))}
+                    />
+                  </Panel>
+
+                  <Panel titulo="Proveedores (marcas) con más gasto">
+                    <ListaBarras
+                      filas={reporteCompras.topMarcas.map((d) => ({
+                        nombre: d.nombre,
+                        principal: moneda(d.valor),
+                        proporcion: d.valor / maxMarcaCompra,
+                      }))}
+                    />
+                  </Panel>
+                </div>
+              )}
+            </>
           )}
         </>
       )}
