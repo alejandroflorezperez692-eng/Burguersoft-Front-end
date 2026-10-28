@@ -1,9 +1,10 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
+import { IconoToast, useToast } from '../components/Toast';
 import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
 
@@ -16,6 +17,20 @@ function getErrorMessage(error: unknown): string {
     const data = error.response.data;
     if (typeof data === 'string') {
       return `Error del servidor (${error.response.status}).`;
+    }
+    // Si el backend manda el detalle por campo, se muestran TODOS los errores indicando qué campo falla.
+    const errores = (data as { errors?: Record<string, unknown> })?.errors;
+    if (errores && typeof errores === 'object') {
+      const etiquetas: Record<string, string> = { correo: 'correo electrónico', email: 'correo electrónico', contrasena: 'contraseña', password: 'contraseña' };
+      const lista: string[] = [];
+      Object.entries(errores).forEach(([campo, val]) => {
+        const texto = Array.isArray(val) ? String(val[0] ?? '') : String(val ?? '');
+        if (!texto) return;
+        const etiqueta = etiquetas[campo] ?? campo;
+        lista.push(/obligatori|required/i.test(texto) ? `El campo ${etiqueta} es obligatorio.` : texto);
+      });
+      const unicos = Array.from(new Set(lista));
+      if (unicos.length > 0) return unicos.join(' ');
     }
     const msg = (data as Record<string, unknown>)?.message ?? (data as Record<string, unknown>)?.error;
     if (typeof msg === 'string') return msg;
@@ -31,14 +46,29 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
   const [loading, setLoading] = useState(false);
 
   const { login, isAuthenticated, user } = useAuth();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const passwordCambiada =
-    (location.state as { toast?: string } | null)?.toast === 'password_ok';
+  const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
+
+
+  // Aviso flotante (estilo toast) en el login: contraseña cambiada o sesión cerrada
+  const MENSAJE_AVISO: Record<string, string> = {
+    password_ok: 'Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
+    logout_ok: 'Has cerrado sesión correctamente.',
+  };
+  const [aviso, setAviso] = useState<string | null>(MENSAJE_AVISO[tipoToast] ?? null);
+  useEffect(() => {
+    if (!tipoToast) return;
+    setAviso(MENSAJE_AVISO[tipoToast] ?? null);
+    const t = setTimeout(() => setAviso(null), 6000);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tipoToast]);
 
   if (isAuthenticated) {
     return <Navigate to={rutaInicio(user?.role)} replace />;
@@ -46,7 +76,6 @@ export default function Login() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setError(null);
     setLoading(true);
 
     try {
@@ -55,7 +84,7 @@ export default function Login() {
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
-      setError(getErrorMessage(err));
+      showToast(getErrorMessage(err), true);
     } finally {
       setLoading(false);
     }
@@ -71,15 +100,26 @@ export default function Login() {
 
   return (
     <AuthLayout regresarA="/">
+      {aviso && (
+        <div
+          role="status"
+          style={{
+            position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: '#1e3b1e', color: '#7ddc82', border: '2.5px solid #2e7d32',
+            padding: '16px 26px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+            zIndex: 99999, maxWidth: '90%', textAlign: 'center',
+            boxShadow: '0 8px 20px rgba(0,0,0,.25)',
+          }}
+        >
+          <IconoToast tipo="exito" />
+          <span>{aviso}</span>
+        </div>
+      )}
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
-        {passwordCambiada && (
-          <p className="descripcion" role="status" style={{ color: '#1e8e3e', fontWeight: 700 }}>
-            Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.
-          </p>
-        )}
         <form onSubmit={handleSubmit} noValidate>
-          <h2>CORREO*</h2>
+          <h2>CORREO<span className="required-marker">*</span></h2>
           <input
             type="email"
             id="email"
@@ -90,7 +130,7 @@ export default function Login() {
             required
           />
 
-          <h2>CONTRASEÑA*</h2>
+          <h2>CONTRASEÑA<span className="required-marker">*</span></h2>
           <div className="campo-password">
             <input
               type={mostrarPassword ? 'text' : 'password'}
@@ -112,11 +152,7 @@ export default function Login() {
             </button>
           </div>
 
-          {error && (
-            <p className="auth-error" role="alert">
-              {error}
-            </p>
-          )}
+
 
           <button type="submit" className="btn-primario" disabled={loading}>
             {loading ? 'INGRESANDO…' : 'INICIAR SESIÓN'}

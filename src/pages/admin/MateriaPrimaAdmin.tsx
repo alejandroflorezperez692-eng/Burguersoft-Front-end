@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import type React from 'react';
 import apiClient from '../../api/client';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
 
 interface MateriaPrima {
   id: number;
@@ -75,8 +77,6 @@ const adornoBase: React.CSSProperties = {
   color: 'var(--text-400)', fontWeight: 600, fontSize: 14, pointerEvents: 'none',
 };
 
-const LIMITE = 10;
-
 const emptyForm = {
   nombre: '', tipo: '', valor: '', cantidad: '', unidad_medida: '', marca_id: 1,
 };
@@ -91,15 +91,19 @@ export default function MateriaPrimaAdmin() {
   const [cantidadOriginal, setCantidadOriginal] = useState(0);
   const [motivo, setMotivo] = useState('');
   const [intentado, setIntentado] = useState(false);
-  const [eliminar, setEliminar] = useState<MateriaPrima | null>(null);
+  const [cambiandoId, setCambiandoId] = useState<number | null>(null);
+  const [desactivar, setDesactivar] = useState<MateriaPrima | null>(null);
   const [loading, setLoading] = useState(true);
-  const [visiblesCount, setVisiblesCount] = useState(LIMITE);
+  const [pagina, setPagina] = useState(1);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
+
+  // --- Filtros de Carlos ---
   const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoStock>('todos');
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroMarca, setFiltroMarca] = useState('');
   const [filtroUnidad, setFiltroUnidad] = useState('');
   const [orden, setOrden] = useState<Orden>('nombre');
+
   const { toast, showToast } = useToast();
 
   const toArray = <T,>(v: unknown): T[] =>
@@ -135,8 +139,8 @@ export default function MateriaPrimaAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  useEffect(() => { setVisiblesCount(LIMITE); },
-    [q, filtroEstado, filtroTipo, filtroMarca, filtroUnidad, orden]);
+  // Si cambia cualquier filtro, volvemos a la página 1
+  useEffect(() => { setPagina(1); }, [q, filtroEstado, filtroTipo, filtroMarca, filtroUnidad, orden]);
 
   const marcaNombre = (id: unknown): string =>
     (marcas ?? []).find((x) => x?.id === id)?.nombre ?? '';
@@ -176,14 +180,7 @@ export default function MateriaPrimaAdmin() {
     setOrden('nombre');
   };
 
-  const visibles = filtered.slice(0, visiblesCount);
-
-  const total = (items ?? []).length;
-  // Mismos criterios que el badge de la tabla (estadoKey)
-  const disponibles = (items ?? []).filter((m) => estadoKey(m?.cantidad) === 'disponible').length;
-  const bajos = (items ?? []).filter((m) => estadoKey(m?.cantidad) === 'bajo').length;
-  const agotados = (items ?? []).filter((m) => estadoKey(m?.cantidad) === 'agotado').length;
-  const mostrar = (n: number) => (errorCarga ? '—' : n);
+  const { visibles, paginaActual } = paginar(filtered, pagina);
 
   const openEdit = (m: MateriaPrima) => {
     setForm({
@@ -214,7 +211,7 @@ export default function MateriaPrimaAdmin() {
     if (!editId) return;
     setIntentado(true);
     if (errores.nombre) { showToast('El nombre es obligatorio', true); return; }
-    if (errores.marca) { showToast('Selecciona una marca', true); return; }
+    if (errores.marca) { showToast('Selecciona un proveedor', true); return; }
     if (errores.cantidad) { showToast('Escribe la cantidad', true); return; }
 
     const cambioCantidad = Number(form.cantidad) !== cantidadOriginal;
@@ -239,19 +236,30 @@ export default function MateriaPrimaAdmin() {
     }
   };
 
-  const confirmarEliminar = async () => {
-    if (!eliminar) return;
-    const m = eliminar;
-    setEliminar(null);
+  const esInactivo = (m: MateriaPrima) => m?.estado === 'Inactivo';
+
+  /** Activa o desactiva el insumo (ya no se elimina: así se conserva todo el historial). */
+  const alternarEstado = async (m: MateriaPrima) => {
+    if (m?.id == null || cambiandoId !== null) return;
+    setDesactivar(null);
+    const nuevo = esInactivo(m) ? 'Activo' : 'Inactivo';
+    setCambiandoId(m.id);
     try {
-      await apiClient.delete(`/materias-primas/${m.id}`);
-      showToast('Materia prima eliminada');
-      load();
-    } catch (e) {
-      console.error('Error al eliminar materia prima:', e);
-      showToast(mensajeError(e, 'No se pudo eliminar'), true);
+      await apiClient.put(`/materias-primas/${m.id}`, { estado: nuevo });
+      setItems((prev) => prev.map((x) => (x.id === m.id ? { ...x, estado: nuevo } : x)));
+      showToast(nuevo === 'Activo' ? 'Materia prima activada' : 'Materia prima desactivada');
+    } catch (err) {
+      console.error('Error al cambiar el estado de la materia prima:', err);
+      showToast(mensajeError(err, 'No se pudo cambiar el estado'), true);
+    } finally {
+      setCambiandoId(null);
     }
   };
+
+  useEscape([
+    [!!desactivar, () => setDesactivar(null)],
+    [modal, () => setModal(false)],
+  ]);
 
   return (
     <div className="page-inner">
@@ -260,33 +268,6 @@ export default function MateriaPrimaAdmin() {
           <h1>Materia Prima</h1>
           <p className="subtitulo">Existencias actuales de tus insumos</p>
         </div>
-      </div>
-
-      <div className="stat-grid stat-grid-4">
-        <button type="button"
-          className={`stat-card stat-click ${filtroEstado === 'todos' ? 'activa' : ''}`}
-          onClick={() => setFiltroEstado('todos')}>
-          <span className="stat-label">Total insumos</span>
-          <span className="stat-val">{mostrar(total)}</span>
-        </button>
-        <button type="button"
-          className={`stat-card stat-click stat-ok ${filtroEstado === 'disponible' ? 'activa' : ''}`}
-          onClick={() => setFiltroEstado('disponible')}>
-          <span className="stat-label">Disponibles</span>
-          <span className="stat-val">{mostrar(disponibles)}</span>
-        </button>
-        <button type="button"
-          className={`stat-card stat-click stat-warn ${filtroEstado === 'bajo' ? 'activa' : ''}`}
-          onClick={() => setFiltroEstado('bajo')}>
-          <span className="stat-label">Bajo</span>
-          <span className="stat-val">{mostrar(bajos)}</span>
-        </button>
-        <button type="button"
-          className={`stat-card stat-click stat-danger ${filtroEstado === 'agotado' ? 'activa' : ''}`}
-          onClick={() => setFiltroEstado('agotado')}>
-          <span className="stat-label">Agotados</span>
-          <span className="stat-val">{mostrar(agotados)}</span>
-        </button>
       </div>
 
       {errorCarga && (
@@ -315,6 +296,16 @@ export default function MateriaPrimaAdmin() {
       </div>
 
       <div className="mn-filtros">
+        <div className="mn-field">
+          <label>Estado</label>
+          <select className={filtroEstado !== 'todos' ? 'activo' : ''} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value as 'todos' | EstadoStock)}>
+            <option value="todos">Todos</option>
+            <option value="disponible">Disponible</option>
+            <option value="bajo">Bajo</option>
+            <option value="agotado">Agotado</option>
+          </select>
+        </div>
+
         <div className="mn-field">
           <label>Tipo</label>
           <select className={filtroTipo ? 'activo' : ''} value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
@@ -360,15 +351,16 @@ export default function MateriaPrimaAdmin() {
         <AdminLoading texto="Cargando materia prima" subtexto="Revisando tu inventario" />
       ) : (
         <div className="tabla-responsive">
-          <table className="data-table" style={{ tableLayout: 'fixed', minWidth: 1080 }}>
+          <table className="data-table" style={{ tableLayout: 'fixed', minWidth: 1180 }}>
             <colgroup>
-              <col style={{ width: '18%' }} />
+              <col style={{ width: '16%' }} />
+              <col style={{ width: '10%' }} />
               <col style={{ width: '12%' }} />
               <col style={{ width: '12%' }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '22%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '20%' }} />
             </colgroup>
             <thead>
               <tr>
@@ -376,14 +368,15 @@ export default function MateriaPrimaAdmin() {
                 <th>Tipo</th>
                 <th>Cantidad</th>
                 <th style={{ textAlign: 'right' }}>Precio total</th>
+                <th>Stock</th>
                 <th>Estado</th>
-                <th>Marca</th>
+                <th>Proveedor</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {visibles.map((m) => (
-                <tr key={m?.id}>
+                <tr key={m?.id} className={esInactivo(m) ? 'fila-inactiva' : undefined}>
                   <td style={{ fontWeight: 600 }}>{m?.nombre ?? 'Sin nombre'}</td>
                   <td>{m?.tipo || '—'}</td>
                   <td style={{ fontWeight: 600 }}>
@@ -400,37 +393,37 @@ export default function MateriaPrimaAdmin() {
                       {textoEstado(m?.cantidad)}
                     </span>
                   </td>
+                  <td>
+                    <span className={`badge ${esInactivo(m) ? 'badge-danger' : 'badge-success'}`}>
+                      {esInactivo(m) ? 'Inactivo' : 'Activo'}
+                    </span>
+                  </td>
                   <td>{marcaNombre(m?.marca_id) || '—'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)}>Editar</button>
-                      <button type="button" className="mn-btn-del" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => m?.id != null && setEliminar(m)}>Eliminar</button>
+                      <button
+                        type="button"
+                        className={esInactivo(m) ? 'mn-btn-edit' : 'mn-btn-del'}
+                        style={{ flex: 'none', padding: '7px 18px' }}
+                        disabled={cambiandoId === m?.id}
+                        onClick={() => (esInactivo(m) ? alternarEstado(m) : setDesactivar(m))}
+                      >
+                        {esInactivo(m) ? 'Activar' : 'Desactivar'}
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>{errorCarga ? 'No se pudo cargar el inventario' : 'No se encontraron insumos'}</td></tr>
+                <tr><td colSpan={8} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>{errorCarga ? 'No se pudo cargar el inventario' : 'No se encontraron insumos'}</td></tr>
               )}
             </tbody>
           </table>
         </div>
       )}
 
-      {(filtered.length > LIMITE || visiblesCount > LIMITE) && (
-        <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 16 }}>
-          {filtered.length > visiblesCount && (
-            <button type="button" className="btn-primary" style={{ padding: '9px 22px' }} onClick={() => setVisiblesCount((v) => v + LIMITE)}>
-              Mostrar más ({filtered.length - visiblesCount} de {filtered.length})
-            </button>
-          )}
-          {visiblesCount > LIMITE && (
-            <button type="button" className="btn-primary" style={{ padding: '9px 22px' }} onClick={() => setVisiblesCount(LIMITE)}>
-              Mostrar menos
-            </button>
-          )}
-        </div>
-      )}
+      {!loading && <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />}
 
       {modal && (
         <div className="modal-overlay open" onClick={() => setModal(false)}>
@@ -494,7 +487,7 @@ export default function MateriaPrimaAdmin() {
                 </div>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Marca <span className="mn-req">*</span></label>
+                <label>Proveedor <span className="mn-req">*</span></label>
                 <select
                   style={bordeError(errores.marca)}
                   value={form.marca_id}
@@ -529,19 +522,19 @@ export default function MateriaPrimaAdmin() {
         </div>
       )}
 
-      {eliminar && (
-        <div className="mn-modal-overlay" onClick={() => setEliminar(null)}>
+      {desactivar && (
+        <div className="mn-modal-overlay" onClick={() => setDesactivar(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
-            <p>¿Eliminar la materia prima "{eliminar.nombre}"? Esta acción no se puede deshacer.</p>
+            <p>
+              ¿Desactivar la materia prima "{desactivar.nombre}"? Ya no se podrá elegir en nuevas compras, pero podrás activarla de nuevo cuando quieras.
+            </p>
             <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setEliminar(null)}>Cancelar</button>
-              <button type="button" className="mn-btn-confirm" onClick={confirmarEliminar}>Sí, eliminar</button>
+              <button type="button" className="mn-btn-cancel" onClick={() => setDesactivar(null)}>Cancelar</button>
+              <button type="button" className="mn-btn-confirm" onClick={() => alternarEstado(desactivar)}>Sí, desactivar</button>
             </div>
           </div>
         </div>
       )}
-
-      <ToastMessage toast={toast} />
     </div>
   );
 }

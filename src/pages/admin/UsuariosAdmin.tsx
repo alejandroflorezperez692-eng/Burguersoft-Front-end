@@ -1,8 +1,10 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
 
 interface Usuario {
   id: number;
@@ -37,20 +39,6 @@ const nombreValido = (v: string) => {
   return true;
 };
 
-const POR_PAGINA = 10;
-
-const numerosPagina = (actual: number, total: number): (number | '…')[] => {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const out: (number | '…')[] = [1];
-  const ini = Math.max(2, actual - 1);
-  const fin = Math.min(total - 1, actual + 1);
-  if (ini > 2) out.push('…');
-  for (let i = ini; i <= fin; i++) out.push(i);
-  if (fin < total - 1) out.push('…');
-  out.push(total);
-  return out;
-};
-
 function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string; estado: string }) {
   return (
     <span style={{
@@ -79,13 +67,18 @@ export default function UsuariosAdmin() {
   const [loading, setLoading] = useState(true);
   const [intentado, setIntentado] = useState(false);
   const [pagina, setPagina] = useState(1);
+  
+  // --- Estados de Filtros ---
+  const [q, setQ] = useState('');
   const [filtroRol, setFiltroRol] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
-  const { toast, showToast } = useToast();
+  
+  const { showToast, confirmar } = useToast();
 
-  const hayFiltros = filtroRol !== '' || filtroEstado !== '';
+  const hayFiltros = q !== '' || filtroRol !== '' || filtroEstado !== '';
 
   const limpiarFiltros = () => {
+    setQ('');
     setFiltroRol('');
     setFiltroEstado('');
     setPagina(1);
@@ -105,17 +98,23 @@ export default function UsuariosAdmin() {
 
   useEffect(() => { load(); }, []);
 
+  // --- Lógica de Filtrado Combinada ---
   const filtered = items
+    .filter((u) => {
+      if (!q) return true;
+      const t = q.toLowerCase();
+      return (
+        `${u.nombre} ${u.apellido}`.toLowerCase().includes(t) ||
+        u.correo.toLowerCase().includes(t) ||
+        (u.telefono && u.telefono.includes(t))
+      );
+    })
     .filter((u) => !filtroRol || u.rol?.nombre === filtroRol)
     .filter((u) => !filtroEstado || u.estado === filtroEstado)
     .sort((a, b) => a.id - b.id);
 
-  const totalPaginas = Math.max(1, Math.ceil(filtered.length / POR_PAGINA));
-  const paginaActual = Math.min(pagina, totalPaginas);
-  const inicio = (paginaActual - 1) * POR_PAGINA;
-  const visibles = filtered.slice(inicio, inicio + POR_PAGINA);
-
-  const irAPagina = (n: number) => setPagina(Math.min(Math.max(1, n), totalPaginas));
+  // Paginación: de 10 en 10
+  const { visibles, paginaActual } = paginar(filtered, pagina);
 
   const openEdit = (u: Usuario) => {
     setSel(u);
@@ -193,7 +192,7 @@ export default function UsuariosAdmin() {
   const del = async (id: number) => {
     const u = items.find((x) => x.id === id);
     const nombreCompleto = u ? `${u.nombre} ${u.apellido ?? ''}` : 'este usuario';
-    if (!confirm(`¿Eliminar a "${nombreCompleto}"?`)) return;
+    if (!(await confirmar(`¿Eliminar a "${nombreCompleto}"? Esta acción no se puede deshacer.`, 'Sí, eliminar'))) return;
     try {
       await apiClient.delete(`/usuarios/${id}`);
       showToast('Usuario eliminado');
@@ -202,6 +201,10 @@ export default function UsuariosAdmin() {
       showToast('No se pudo eliminar el usuario', true);
     }
   };
+
+  useEscape([
+    [modal && !!sel, () => setModal(false)],
+  ]);
 
   return (
     <div className="page-inner">
@@ -212,39 +215,56 @@ export default function UsuariosAdmin() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: 24 }}>
-        <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
-          <label>Rol</label>
-          <select
-            value={filtroRol}
-            onChange={(e) => { setFiltroRol(e.target.value); setPagina(1); }}
-          >
-            <option value="">Todos los roles</option>
-            <option value="Administrador">Administrador</option>
-            <option value="Cajero">Cajero</option>
-            <option value="Cocinero">Cocinero</option>
-            <option value="Cliente">Cliente</option>
-          </select>
+      {/* Barra de herramientas con Búsqueda + Filtros */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+        
+        {/* Fila 1: Búsqueda y vista */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
+            <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
+          </div>
         </div>
 
-        <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
-          <label>Estado</label>
-          <select
-            value={filtroEstado}
-            onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}
-          >
-            <option value="">Todos los estados</option>
-            <option value="Activo">Activo</option>
-            <option value="Inactivo">Inactivo</option>
-            <option value="Suspendido">Suspendido</option>
-          </select>
-        </div>
+        {/* Fila 2: Filtros (Carlos) */}
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+            <label>Rol</label>
+            <select
+              value={filtroRol}
+              onChange={(e) => { setFiltroRol(e.target.value); setPagina(1); }}
+            >
+              <option value="">Todos los roles</option>
+              <option value="Administrador">Administrador</option>
+              <option value="Cajero">Cajero</option>
+              <option value="Cocinero">Cocinero</option>
+              <option value="Cliente">Cliente</option>
+            </select>
+          </div>
 
-        {hayFiltros && (
-          <button type="button" className="btn-cancel" onClick={limpiarFiltros}>
-            Limpiar filtros
-          </button>
-        )}
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+            <label>Estado</label>
+            <select
+              value={filtroEstado}
+              onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}
+            >
+              <option value="">Todos los estados</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+              <option value="Suspendido">Suspendido</option>
+            </select>
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>
+              Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="meta-bar">
@@ -259,7 +279,7 @@ export default function UsuariosAdmin() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>ID</th>
+                <th>#</th>
                 <th>Usuario</th>
                 <th>Correo</th>
                 <th>Teléfono</th>
@@ -297,51 +317,8 @@ export default function UsuariosAdmin() {
           </table>
         </div>
 
-        {filtered.length > 0 && (
-          <div className="us-pag">
-            <span className="us-pag-info">
-              Mostrando {inicio + 1}–{Math.min(inicio + POR_PAGINA, filtered.length)} de {filtered.length}
-            </span>
+        <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
 
-            {totalPaginas > 1 && (
-              <nav className="us-pag-nav" aria-label="Paginación de usuarios">
-                <button
-                  type="button"
-                  className="us-pag-btn"
-                  onClick={() => irAPagina(paginaActual - 1)}
-                  disabled={paginaActual === 1}
-                >
-                  ‹ Anterior
-                </button>
-
-                {numerosPagina(paginaActual, totalPaginas).map((n, i) =>
-                  n === '…' ? (
-                    <span key={`e${i}`} className="us-pag-dots">…</span>
-                  ) : (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`us-pag-btn us-pag-num${n === paginaActual ? ' activa' : ''}`}
-                      onClick={() => irAPagina(n)}
-                      aria-current={n === paginaActual ? 'page' : undefined}
-                    >
-                      {n}
-                    </button>
-                  )
-                )}
-
-                <button
-                  type="button"
-                  className="us-pag-btn"
-                  onClick={() => irAPagina(paginaActual + 1)}
-                  disabled={paginaActual === totalPaginas}
-                >
-                  Siguiente ›
-                </button>
-              </nav>
-            )}
-          </div>
-        )}
         </>
       )}
 
@@ -435,7 +412,7 @@ export default function UsuariosAdmin() {
               </div>
               <ul className="requisitos" style={{ marginTop: 10 }}>
                 {requisitos.map((r) => (
-                  <li key={r.id} className={`requisito${r.cumple ? ' cumple' : ''}`}>
+                  <li key={r.id} className={`requisito${r.cumple ? '✅' : '❌'}`}>
                     <span aria-hidden="true">{r.cumple ? '✅' : '❌'}</span>
                     {r.texto}
                   </li>
@@ -472,8 +449,6 @@ export default function UsuariosAdmin() {
           </div>
         </div>
       )}
-
-      <ToastMessage toast={toast} />
     </div>
   );
 }

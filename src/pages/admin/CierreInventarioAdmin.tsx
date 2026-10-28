@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import apiClient from '../../api/client';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
 
 interface FilaCierre {
   id: number;
   nombre: string;
+  tipo?: string | null;
   unidad_medida?: string | null;
   stock_inicial: number;
   compras: number;
@@ -73,8 +76,9 @@ export default function CierreInventarioAdmin() {
   const [guardando, setGuardando] = useState(false);
   const [detalle, setDetalle] = useState<DetalleCierre | null>(null);
   const [cargandoDetalle, setCargandoDetalle] = useState<number | null>(null);
-  const { toast, showToast } = useToast();
+  const { showToast, confirmar } = useToast();
 
+  // --- Estados de filtros (de la rama 'carlos') ---
   const [busqueda, setBusqueda] = useState('');
   const [estadoConteo, setEstadoConteo] = useState<EstadoConteo>('todos');
 
@@ -83,8 +87,9 @@ export default function CierreInventarioAdmin() {
   const [fResponsable, setFResponsable] = useState('');
   const [fSoloDiferencias, setFSoloDiferencias] = useState(false);
 
-  const LIMITE_CIERRES = 10;
-  const [cierresVisibles, setCierresVisibles] = useState(LIMITE_CIERRES);
+  // --- Estados de paginación (de la rama 'develop') ---
+  const [paginaConteo, setPaginaConteo] = useState(1);
+  const [paginaCierres, setPaginaCierres] = useState(1);
 
   const cargandoRef = useRef(false);
 
@@ -112,7 +117,9 @@ export default function CierreInventarioAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  useEffect(() => { setCierresVisibles(LIMITE_CIERRES); }, [fDesde, fHasta, fResponsable, fSoloDiferencias]);
+  // Resetea la página a 1 cuando cambian los filtros
+  useEffect(() => { setPaginaConteo(1); }, [busqueda, estadoConteo]);
+  useEffect(() => { setPaginaCierres(1); }, [fDesde, fHasta, fResponsable, fSoloDiferencias]);
 
   const usado = (f: FilaCierre): number | null => {
     const c = conteos[f.id];
@@ -123,6 +130,7 @@ export default function CierreInventarioAdmin() {
 
   const contados = filas.filter(estaContada);
 
+  // 1. Filtramos las filas del conteo
   const filasVisibles = useMemo(() => {
     const q = normalizar(busqueda);
     return filas.filter((f) => {
@@ -134,6 +142,9 @@ export default function CierreInventarioAdmin() {
     });
   }, [filas, conteos, busqueda, estadoConteo]);
 
+  // 2. Paginamos las filas YA filtradas
+  const conteoPag = paginar(filasVisibles, paginaConteo);
+
   const hayFiltroConteo = busqueda.trim() !== '' || estadoConteo !== 'todos';
 
   const responsables = useMemo(
@@ -141,6 +152,7 @@ export default function CierreInventarioAdmin() {
     [historial],
   );
 
+  // 3. Filtramos el historial
   const historialFiltrado = useMemo(
     () =>
       historial.filter((h) => {
@@ -154,8 +166,11 @@ export default function CierreInventarioAdmin() {
     [historial, fDesde, fHasta, fResponsable, fSoloDiferencias],
   );
 
+  // 4. Paginamos el historial YA filtrado
+  const cierresPag = paginar(historialFiltrado, paginaCierres);
+  const cierres = cierresPag.visibles;
+
   const hayFiltroHistorial = fDesde !== '' || fHasta !== '' || fResponsable !== '' || fSoloDiferencias;
-  const cierres = historialFiltrado.slice(0, cierresVisibles);
 
   const limpiarFiltrosConteo = () => { setBusqueda(''); setEstadoConteo('todos'); };
   const limpiarFiltrosHistorial = () => { setFDesde(''); setFHasta(''); setFResponsable(''); setFSoloDiferencias(false); };
@@ -192,7 +207,7 @@ export default function CierreInventarioAdmin() {
     }).join('');
 
     const w = window.open('', '_blank');
-    if (!w) { showToast('Permite las ventanas emergentes para descargar el PDF', true); return; }
+    if (!w) { showToast('Permite las ventanas emergentes para descargar el PDF', false, true); return; }
     w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8">
       <title>Cierre de inventario N.º ${d.id}</title>
       <style>
@@ -222,7 +237,7 @@ export default function CierreInventarioAdmin() {
     }
     const sinContar = filas.length - contados.length;
     const aviso = sinContar > 0 ? ` Las ${sinContar} que no contaste quedan como están.` : '';
-    if (!confirm(`¿Guardar el cierre de ${contados.length} materias primas?${aviso}`)) return;
+    if (!(await confirmar(`¿Guardar el cierre de ${contados.length} materias primas?${aviso}`, 'Sí, guardar'))) return;
     setGuardando(true);
     try {
       await apiClient.post('/inventario/cierres', {
@@ -240,6 +255,10 @@ export default function CierreInventarioAdmin() {
       setGuardando(false);
     }
   };
+
+  useEscape([
+    [!!detalle, () => setDetalle(null)],
+  ]);
 
   return (
     <div className="page-inner">
@@ -301,18 +320,20 @@ export default function CierreInventarioAdmin() {
               <thead>
                 <tr>
                   <th>Materia prima</th>
+                  <th>Tipo</th>
                   <th>En sistema</th>
                   <th>Conteo real</th>
                   <th>Usado hoy</th>
                 </tr>
               </thead>
               <tbody>
-                {filasVisibles.map((f) => {
+                {conteoPag.visibles.map((f) => {
                   const us = usado(f);
                   const u = f.unidad_medida ?? '';
                   return (
                     <tr key={f.id}>
                       <td style={{ fontWeight: 600 }}>{f.nombre}</td>
+                      <td>{f.tipo || '—'}</td>
                       <td>
                         <div style={{ fontWeight: 700 }}>{fmt(n(f.stock_esperado))} {u}</div>
                         {n(f.compras) > 0 && (
@@ -344,7 +365,7 @@ export default function CierreInventarioAdmin() {
                 })}
                 {filasVisibles.length === 0 && (
                   <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
+                    <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
                       {filas.length === 0 ? 'No hay materia prima' : 'Ninguna materia prima coincide con los filtros'}
                     </td>
                   </tr>
@@ -352,6 +373,8 @@ export default function CierreInventarioAdmin() {
               </tbody>
             </table>
           </div>
+          
+          <Paginacion total={filasVisibles.length} pagina={conteoPag.paginaActual} onCambiar={setPaginaConteo} />
 
           <div className="form-group" style={{ marginTop: 16 }}>
             <label>Observación (opcional)</label>
@@ -416,7 +439,7 @@ export default function CierreInventarioAdmin() {
                 <col style={{ width: '16%' }} />
               </colgroup>
               <thead>
-                <tr><th>N.º</th><th>Fecha y hora</th><th>Responsable</th><th>Materias primas</th><th>Con diferencia</th><th>Observación</th><th>Detalle</th></tr>
+                <tr><th>#</th><th>Fecha y hora</th><th>Responsable</th><th>Materias primas</th><th>Con diferencia</th><th>Observación</th><th>Detalle</th></tr>
               </thead>
               <tbody>
                 {cierres.map((h) => (
@@ -456,20 +479,7 @@ export default function CierreInventarioAdmin() {
             </table>
           </div>
 
-          {(historialFiltrado.length > LIMITE_CIERRES || cierresVisibles > LIMITE_CIERRES) && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, marginTop: 16 }}>
-              {historialFiltrado.length > cierresVisibles && (
-                <button type="button" className="btn-primary" style={{ padding: '9px 22px' }} onClick={() => setCierresVisibles((v) => v + LIMITE_CIERRES)}>
-                  Mostrar más ({historialFiltrado.length - cierresVisibles} de {historialFiltrado.length})
-                </button>
-              )}
-              {cierresVisibles > LIMITE_CIERRES && (
-                <button type="button" className="btn-primary" style={{ padding: '9px 22px' }} onClick={() => setCierresVisibles(LIMITE_CIERRES)}>
-                  Mostrar menos
-                </button>
-              )}
-            </div>
-          )}
+          <Paginacion total={historialFiltrado.length} pagina={cierresPag.paginaActual} onCambiar={setPaginaCierres} etiqueta="cierres" />
         </>
       )}
       {detalle && (
@@ -519,8 +529,6 @@ export default function CierreInventarioAdmin() {
           </div>
         </div>
       )}
-
-      <ToastMessage toast={toast} />
     </div>
   );
 }

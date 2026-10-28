@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
-import VentasGraficas from '../../components/VentasGraficas';
-import type { EstadisticasVentas } from '../../types/Ventas';
+import Paginacion, { paginar } from '../../components/Paginacion';
+
+import { useToast } from '../../components/Toast';
+
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import { useEscape } from '../../hooks/useEscape';
 
 interface DetalleVenta {
   id: number;
@@ -66,20 +69,30 @@ const fechaLocal = (fecha?: string | null) =>
 
 export default function VentasAdmin() {
   const { user } = useAuth();
+  const { showToast } = useToast();
+  const alertar = (m: any) => showToast(String(m), true);
   const esAdmin = normalizarRol(user?.role) === 'admin';
+  
   const [items, setItems] = useState<Venta[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
+  
+  // --- Filtros (Carlos) ---
   const [q, setQ] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroMetodo, setFiltroMetodo] = useState('');
   const [filtroEntrega, setFiltroEntrega] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+
+  // --- Paginación (Develop) ---
+  const [pagina, setPagina] = useState(1);
+
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [tipoEntrega, setTipoEntrega] = useState('Domicilio');
   const [clienteNombre, setClienteNombre] = useState('');
+  const [intentado, setIntentado] = useState(false);
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
   const [carrito, setCarrito] = useState<{ producto_id: number; cantidad: number }[]>([]);
@@ -88,10 +101,6 @@ export default function VentasAdmin() {
   const [combos, setCombos] = useState<{ promocion_id: number; cantidad: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [version, setVersion] = useState(0);
-  const [dias, setDias] = useState(7);
-  const [stats, setStats] = useState<EstadisticasVentas | null>(null);
-  const [cargandoStats, setCargandoStats] = useState(esAdmin);
-  const [errorStats, setErrorStats] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -115,38 +124,13 @@ export default function VentasAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  useEffect(() => {
-    if (!esAdmin) return; // las estadísticas son solo del administrador
-    let activo = true;
-    setCargandoStats(true);
-
-    apiClient.get<EstadisticasVentas>('/ventas/estadisticas', { params: { dias } })
-      .then(({ data }) => {
-        if (!activo) return;
-        setStats(data);
-        setErrorStats(false);
-      })
-      .catch(() => {
-        if (activo) setErrorStats(true);
-      })
-      .finally(() => {
-        if (activo) setCargandoStats(false);
-      });
-
-    return () => { activo = false; };
-  }, [dias, version, esAdmin]);
-
-  if (loading) {
-    return <AdminLoading texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
-  }
-
   const nombreCliente = (v: Venta) =>
     v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
   const textoBusqueda = normalizar(q).trim();
 
+  // --- Lógica de Filtrado (Carlos) ---
   const filtered = (items ?? []).filter((v) => {
-    // Texto: id, cliente, productos y combos
     if (textoBusqueda) {
       const haystack = normalizar(
         [
@@ -163,7 +147,6 @@ export default function VentasAdmin() {
     if (filtroMetodo && v?.metodo_pago !== filtroMetodo) return false;
     if (filtroEntrega && v?.tipo_entrega !== filtroEntrega) return false;
 
-    // Fechas (YYYY-MM-DD, comparables como texto)
     const fechaVenta = fechaLocal(v?.fecha);
     if (fechaDesde && fechaVenta < fechaDesde) return false;
     if (fechaHasta && fechaVenta > fechaHasta) return false;
@@ -182,18 +165,30 @@ export default function VentasAdmin() {
     setFiltroEntrega('');
     setFechaDesde('');
     setFechaHasta('');
+    setPagina(1);
   };
 
   const totalFiltrado = filtered.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
+  // --- Paginación (Develop) ---
+  const { visibles, paginaActual } = paginar(filtered, pagina);
+
+  // --- Cálculos locales de las tarjetas (sin depender del backend de estadísticas) ---
   const hoy = new Date().toLocaleDateString('en-CA');
-  const ventasHoy = stats ? stats.ventas_hoy : (items ?? []).filter((v) => fechaLocal(v?.fecha) === hoy).length;
-  const ingresosHoy = stats ? stats.ingresos_hoy : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
-  const totalVentas = stats ? stats.total_ventas : items.length;
-  const ingresosTotal = stats ? stats.ingresos_totales : (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+  const ventasHoy = (items ?? []).filter((v) => fechaLocal(v?.fecha) === hoy).length;
+  const ingresosHoy = (items ?? []).filter((v) => fechaLocal(v?.fecha) === hoy).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+  const totalVentas = items.length;
+  const ingresosTotal = (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+
+  const sinNada = carrito.length === 0 && combos.length === 0;
+  const rojoProducto: CSSProperties | undefined =
+    intentado && sinNada
+      ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
+      : undefined;
 
   const save = () => {
-    if (carrito.length === 0 && combos.length === 0) return;
+    setIntentado(true);
+    if (sinNada) return;
     const body = {
       carrito,
       combos: combos.length ? combos : undefined,
@@ -205,10 +200,11 @@ export default function VentasAdmin() {
       cerrarFormulario();
       setVersion((v) => v + 1);
       load();
-    }).catch(() => alert('No se pudo registrar la venta. Revisa el stock y los datos.'));
+    }).catch(() => alertar('No se pudo registrar la venta. Revisa el stock y los datos.'));
   };
 
   const cerrarFormulario = () => {
+    setIntentado(false);
     setShowForm(false);
     setCarrito([]);
     setCombos([]);
@@ -284,7 +280,7 @@ export default function VentasAdmin() {
   const updateEstado = (id: number, estado: string) => {
     apiClient.patch(`/ventas/${id}/estado`, { estado })
       .then(() => { setVersion((v) => v + 1); load(); })
-      .catch(() => alert('No se pudo cambiar el estado.'));
+      .catch(() => alertar('No se pudo cambiar el estado.'));
   };
 
   const verFactura = async (id: number) => {
@@ -303,9 +299,17 @@ export default function VentasAdmin() {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch {
       ventana?.close();
-      alert('No se pudo abrir la factura.');
+      alertar('No se pudo abrir la factura.');
     }
   };
+
+  useEscape([
+    [showForm, cerrarFormulario],
+  ]);
+
+  if (loading) {
+    return <AdminLoading texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
+  }
 
   return (
     <div className="page-inner">
@@ -342,23 +346,17 @@ export default function VentasAdmin() {
         )}
       </div>
 
-      {esAdmin && (
-        <VentasGraficas
-          datos={stats}
-          cargando={cargandoStats}
-          error={errorStats}
-          dias={dias}
-          onCambiarDias={setDias}
-        />
-      )}
-
       {showForm && (
-        <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 28, marginBottom: 28, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-          <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text-900)' }}>Registrar Venta</h3>
+        <div className="modal-overlay open" onClick={cerrarFormulario}>
+        <div className="modal-box" style={{ maxWidth: 780, width: '95%', padding: 0 }} onClick={(e) => e.stopPropagation()}>
+          <div style={{ background: 'var(--text-900)', padding: '18px 28px' }}>
+            <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--surface)' }}>Registrar Venta</h3>
+          </div>
+          <div style={{ padding: 28 }}>
           <div className="grid-registro">
             <div className="form-group">
               <label>Producto</label>
-              <select value={productoId} onChange={(e) => setProductoId(Number(e.target.value))}>
+              <select value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
                 <option value={0}>Seleccionar...</option>
                 {(productos ?? []).map((p) => <option key={p?.id ?? p?.nombre} value={p?.id}>{p?.nombre ?? 'Sin nombre'} — ${Number(p?.valor || 0).toLocaleString('es-CO')}</option>)}
               </select>
@@ -511,29 +509,35 @@ export default function VentasAdmin() {
           ) : null}
           <div className="modal-actions" style={{ marginTop: 8 }}>
             <button className="btn-cancel" onClick={cerrarFormulario}>Cancelar</button>
-            <button
-              className="btn-save"
-              onClick={save}
-              disabled={carrito.length === 0 && combos.length === 0}
-              style={{ opacity: carrito.length || combos.length ? 1 : 0.5, cursor: carrito.length || combos.length ? 'pointer' : 'not-allowed' }}
-            >
-              Registrar
-            </button>
+            <button className="btn-save" onClick={save}>Registrar</button>
           </div>
+          </div>
+        </div>
         </div>
       )}
 
       <div className="search-bar" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <input
-          placeholder="Buscar por #, cliente, producto o combo..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+        
+        {/* Fila 1: Búsqueda */}
+        <div className="mn-search-wrap" style={{ marginBottom: 0 }}>
+          <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            className="mn-search"
+            placeholder="Buscar por #, cliente, producto o combo..."
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPagina(1); }}
+          />
+        </div>
 
+        {/* Fila 2: Filtros (Carlos) */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
           <div className="form-group" style={{ margin: 0 }}>
             <label>Estado</label>
-            <select value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+            <select value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}>
               <option value="">Todos</option>
               {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
             </select>
@@ -541,7 +545,7 @@ export default function VentasAdmin() {
 
           <div className="form-group" style={{ margin: 0 }}>
             <label>Método de pago</label>
-            <select value={filtroMetodo} onChange={(e) => setFiltroMetodo(e.target.value)}>
+            <select value={filtroMetodo} onChange={(e) => { setFiltroMetodo(e.target.value); setPagina(1); }}>
               <option value="">Todos</option>
               {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
@@ -549,7 +553,7 @@ export default function VentasAdmin() {
 
           <div className="form-group" style={{ margin: 0 }}>
             <label>Entrega</label>
-            <select value={filtroEntrega} onChange={(e) => setFiltroEntrega(e.target.value)}>
+            <select value={filtroEntrega} onChange={(e) => { setFiltroEntrega(e.target.value); setPagina(1); }}>
               <option value="">Todas</option>
               {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -561,7 +565,7 @@ export default function VentasAdmin() {
               type="date"
               value={fechaDesde}
               max={fechaHasta || undefined}
-              onChange={(e) => setFechaDesde(e.target.value)}
+              onChange={(e) => { setFechaDesde(e.target.value); setPagina(1); }}
             />
           </div>
 
@@ -571,12 +575,12 @@ export default function VentasAdmin() {
               type="date"
               value={fechaHasta}
               min={fechaDesde || undefined}
-              onChange={(e) => setFechaHasta(e.target.value)}
+              onChange={(e) => { setFechaHasta(e.target.value); setPagina(1); }}
             />
           </div>
 
           {hayFiltros && (
-            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ padding: '8px 18px', fontSize: 13 }}>
+            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ padding: '8px 18px', fontSize: 13, height: 42 }}>
               Limpiar filtros
             </button>
           )}
@@ -602,7 +606,7 @@ export default function VentasAdmin() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((v) => (
+            {visibles.map((v) => (
               <tr key={v?.id}>
                 <td>{v?.id}</td>
                 <td style={{ fontWeight: 600 }}>{nombreCliente(v) || '—'}</td>
@@ -649,6 +653,8 @@ export default function VentasAdmin() {
           </tbody>
         </table>
       </div>
+
+      <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
     </div>
   );
 }

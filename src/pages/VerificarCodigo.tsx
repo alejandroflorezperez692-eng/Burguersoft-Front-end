@@ -21,6 +21,8 @@ export default function VerificarCodigo() {
     return Number.isFinite(g) ? g : 0;
   });
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
+  // Guarda el último código que se envió automáticamente (evita dobles envíos)
+  const ultimoCodigoAuto = useRef('');
 
   const expulsarAlCorreo = () => {
     const hasta = Date.now() + 60 * 1000;
@@ -45,6 +47,8 @@ export default function VerificarCodigo() {
     // Limpia los slots y enfoca el primero para reintentar
     setTimeout(() => {
       setDigitos(['', '', '', '', '', '']);
+      // Permite volver a auto-verificar cuando se reingrese un código
+      ultimoCodigoAuto.current = '';
       inputsRef.current[0]?.focus();
     }, 450);
   };
@@ -99,8 +103,8 @@ export default function VerificarCodigo() {
     inputsRef.current[Math.min(pegado.length, 5)]?.focus();
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: FormEvent) => {
+    e?.preventDefault();
     if (exito || loading) return;
     setError('');
     const codigo = digitos.join('');
@@ -142,6 +146,18 @@ export default function VerificarCodigo() {
       setLoading(false);
     }
   };
+
+  // Verificación automática: apenas se complete el 6º dígito se verifica
+  // el código sin necesidad de presionar el botón.
+  const codigoCompleto = digitos.every(Boolean);
+  useEffect(() => {
+    if (!codigoCompleto || bloqueado || exito) return;
+    const codigo = digitos.join('');
+    if (ultimoCodigoAuto.current === codigo) return;
+    ultimoCodigoAuto.current = codigo;
+    void handleSubmit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [codigoCompleto]);
 
   return (
     <>
