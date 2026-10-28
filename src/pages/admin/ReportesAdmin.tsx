@@ -812,25 +812,27 @@ export default function ReportesAdmin() {
             topInsumo={reporteCompras.topInsumos[0] ?? null}
           />
 
-          <div className="stat-grid">
-            <div className="stat-card">
-              <span className="stat-label">Compras en el rango</span>
-              <span className="stat-val">{reporteCompras.enRango.length}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Promedio por compra</span>
-              <span className="stat-val stat-val-dinero" title={moneda(reporteCompras.promedio)}>{moneda(reporteCompras.promedio)}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Compra más grande</span>
-              <span className="stat-val stat-val-dinero" title={moneda(reporteCompras.mayor)}>{moneda(reporteCompras.mayor)}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Ingresos − compras</span>
-              <span className="stat-val stat-val-dinero" title={monedaConSigno(balance)}>{monedaConSigno(balance)}</span>
-            </div>
-          </div>
+          <ResumenCompras
+            total={reporteCompras.total}
+            totalPrevio={reporteCompras.totalPrevio}
+            barras={reporteCompras.barras}
+            topMarca={reporteCompras.topMarcas[0] ?? null}
+            topInsumo={reporteCompras.topInsumos[0] ?? null}
+          />
 
+          <div style={{ marginBottom: 24 }}>
+            <Panel titulo="Productos más vendidos">
+              <ListaBarras
+                vacio="No hay productos vendidos en este rango"
+                filas={reporte.topProductos.map((d) => ({
+                  nombre: d.nombre,
+                  principal: `${d.cantidad} uds`,
+                  secundario: moneda(d.total),
+                  proporcion: d.cantidad / maxProducto,
+                }))}
+              />
+            </Panel>
+          </div>
           {reporteCompras.enRango.length === 0 ? (
             <p style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
               No hay compras registradas en este rango.
