@@ -108,32 +108,32 @@ export default function RecuperarContrasena() {
               <label htmlFor="rec-email">
                 Correo electrónico<span className="required-marker">*</span>
               </label>
-      
-            <input
-              id="rec-email"
-              type="email"
-              className="input"
-              placeholder="Correo electrónico (obligatorio)"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-              required
-              disabled={bloqueado}
-            />
+              <input
+                id="rec-email"
+                type="email"
+                className="input"
+                placeholder="Correo electrónico (obligatorio)"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                required
+                disabled={bloqueado}
+              />
+            </div>
 
-          <button type="submit" className="btn-primario" disabled={loading || bloqueado}>
-            {bloqueado ? `ESPERA ${bloqueo}s` : loading ? 'ENVIANDO…' : 'Enviar código de recuperación'}
-          </button>
-          <p className="descripcion-recuperacion">¿No puedes cambiar la contraseña?</p>
-          <div className="separador-contenedor">
-            <div className="linea" />
-            <span className="circulo">Entonces...</span>
-            <div className="linea" />
-          </div>
-          <Link to="/registro" className="btn-secundario">
-            Crear cuenta nueva
-          </Link>
-        </form>
-      </div>
+            <button type="submit" className="btn-primario" disabled={loading || bloqueado}>
+              {bloqueado ? `ESPERA ${bloqueo}s` : loading ? 'ENVIANDO…' : 'Enviar código de recuperación'}
+            </button>
+            <p className="descripcion-recuperacion">¿No puedes cambiar la contraseña?</p>
+            <div className="separador-contenedor">
+              <div className="linea" />
+              <span className="circulo">Entonces...</span>
+              <div className="linea" />
+            </div>
+            <Link to="/registro" className="btn-secundario">
+              Crear cuenta nueva
+            </Link>
+          </form>
+        </div>
       </AuthLayout>
     </>
   );

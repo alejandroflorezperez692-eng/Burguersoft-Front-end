@@ -42,15 +42,7 @@ export default function MarcasAdmin() {
   const [closing, setClosing] = useState(false);
   const [confirmDel, setConfirmDel] = useState<Marca | null>(null);
   const [eliminando, setEliminando] = useState(false);
-  const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
-  const toastTimer = useRef<number | undefined>(undefined);
-
-  const showToast = (msg: string, error = false) => {
-    setToast({ msg, error });
-    window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(null), 3200);
-  };
-  const { showToast, confirmar } = useToast();
+  const { showToast } = useToast();
 
   const load = async () => {
     setLoading(true);
@@ -97,10 +89,10 @@ export default function MarcasAdmin() {
 
   const soloNitNum = (v: string) => v.split('-')[0].replace(/[^0-9]/g, '');
   const limpiarNit = (v: string) => {
-  const [base, dv] = v.replace(/[^\d-]/g, '').split('-');
-  const b = base.slice(0, 9);
-  return dv === undefined ? b : `${b}-${dv.slice(0, 1)}`;
-};
+    const [base, dv] = v.replace(/[^\d-]/g, '').split('-');
+    const b = base.slice(0, 9);
+    return dv === undefined ? b : `${b}-${dv.slice(0, 1)}`;
+  };
 
   const errores = {
     nombre: !form.nombre.trim(),
@@ -145,8 +137,6 @@ export default function MarcasAdmin() {
   const del = async () => {
     if (!confirmDel) return;
     setEliminando(true);
-
-    if (!(await confirmar(`¿Eliminar la marca "${m?.nombre ?? id}"? Esta acción no se puede deshacer.`, 'Sí, eliminar'))) return;
 
     try {
       await apiClient.delete(`/marcas/${confirmDel.id}`);
