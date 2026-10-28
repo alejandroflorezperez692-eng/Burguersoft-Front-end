@@ -136,7 +136,7 @@ export default function Inicio() {
           </div>
           <div className="historial-lista">
             {loading ? (
-              <AdminLoading texto="Cargando movimientos" subtexto="Revisando tu actividad reciente" />
+              <AdminLoading texto="Cargando movimientos" subtexto="Revisando tu actividad reciente" compact />
             ) : movs.length === 0 ? (
               <div className="historial-vacio">Aún no tienes movimientos registrados.</div>
             ) : (
