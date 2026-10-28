@@ -20,10 +20,15 @@ type Promocion = {
   estado?: string;
   fecha_inicio?: string | null;
   fecha_fin?: string | null;
+  productos?: { id: number; valor: number | string }[];
 };
 
 function formatCOP(valor: number): string {
   return `$${valor.toLocaleString('es-CO')}`;
+}
+
+function precioNormal(promo: Promocion): number {
+  return (promo.productos ?? []).reduce((s, x) => s + (Number(x.valor) || 0), 0);
 }
 
 function formatFecha(fecha?: string | null): string {
@@ -136,6 +141,9 @@ export default function Home() {
                     <div className="promo-footer-pub">
                       <div className="promo-precio-pub">
                         {formatCOP(Number(promo.precio))}
+                        {precioNormal(promo) > Number(promo.precio) && (
+                          <span className="promo-precio-old">{formatCOP(precioNormal(promo))}</span>
+                        )}
                       </div>
                       {isAuthenticated ? (
                         <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>

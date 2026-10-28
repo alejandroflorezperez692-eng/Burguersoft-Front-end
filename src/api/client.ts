@@ -8,8 +8,12 @@ const apiClient = axios.create({
   },
 });
 
-const traducirMensaje = (mensaje: string): string => {
-  if (!mensaje) return mensaje;
+const traducirMensaje = (mensajeOriginal: string): string => {
+  if (!mensajeOriginal) return mensajeOriginal;
+  // Laravel agrega "(and 1 more error)" / "(y 2 errores más)" al mensaje de validación: se quita.
+  const mensaje = mensajeOriginal
+    .replace(/\s*\((?:and\s+\d+\s+more\s+errors?|y\s+\d+\s+errores?\s+más)\)\.?/gi, '')
+    .trim();
   const m = mensaje.toLowerCase();
   if (m.includes('the correo field must be a valid email address')) return 'El campo correo debe ser una dirección de correo válida.';
   if (m.includes('correo field') && m.includes('valid email')) return 'El campo correo debe ser una dirección de correo válida.';

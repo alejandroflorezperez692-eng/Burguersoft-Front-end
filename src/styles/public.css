@@ -445,8 +445,12 @@
   position: absolute;
   bottom: 28px;
   left: 50%;
+  right: auto;
   transform: translateX(-50%);
   display: flex;
+  width: max-content;
+  margin: 0;
+  justify-content: center;
   gap: 10px;
   z-index: 10;
 }
@@ -1909,6 +1913,19 @@ body.dark-mode .public-body .nosotros-carousel img {
 body.dark-mode .public-body .nosotros-carousel img:hover {
   border-color: #ff9d2e;
   box-shadow: 4px 4px 14px 14px rgba(232, 130, 26, 0.5);
+}
+
+.public-body .promo-precio-old {
+  margin-left: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #8a7a6a;
+  text-decoration: line-through;
+  white-space: nowrap;
+}
+
+body.dark-mode .promo-precio-old {
+  color: #b9a998;
 }
 
 @keyframes nosotros-fade {

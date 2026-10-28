@@ -2,19 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
-import type { AxiosResponse } from 'axios';
-import apiClient from '../api/client';
-import AdminLoading from '../components/AdminLoading';
 import AlertasIA from '../components/AlertasIA';
-
-interface Movimiento {
-  id: number;
-  modulo: string;
-  descripcion: string;
-  fecha: string;
-  nombre?: string;
-  apellido?: string;
-}
 
 function formatReloj(fecha: Date): string {
   let horas = fecha.getHours();
@@ -46,50 +34,16 @@ function capitalizar(t: string): string {
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
 
-type RespuestaHistorial = Movimiento[] | { data?: Movimiento[] };
-let historialEnCurso: { clave: string; promesa: Promise<AxiosResponse<RespuestaHistorial>> } | null = null;
-
 export default function Inicio() {
   const { user } = useAuth();
   const [ahora, setAhora] = useState(() => new Date());
   const [toastVisible, setToastVisible] = useState(false);
-  const [movs, setMovs] = useState<Movimiento[]>([]);
-  const [loading, setLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
     const id = setInterval(() => setAhora(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
-
-  useEffect(() => {
-    let vivo = true;
-    setLoading(true);
-    // Si ya hay una petición en curso (StrictMode), se comparte en vez de repetirla
-    const clave = String(user?.id ?? '');
-    if (historialEnCurso?.clave !== clave) {
-      const promesa = apiClient
-        .get<RespuestaHistorial>('/reportes/historial', { params: user?.id ? { usuario_id: user.id } : {} })
-        .finally(() => {
-          if (historialEnCurso?.promesa === promesa) historialEnCurso = null;
-        });
-      historialEnCurso = { clave, promesa };
-    }
-    historialEnCurso!.promesa
-      .then(({ data }) => {
-        const lista: Movimiento[] = Array.isArray(data) ? data : data?.data ?? [];
-        if (vivo) setMovs(lista);
-      })
-      .catch(() => {
-        if (vivo) setMovs([]);
-      })
-      .finally(() => {
-        if (vivo) setLoading(false);
-      });
-    return () => {
-      vivo = false;
-    };
-  }, [user?.id]);
 
   useEffect(() => {
     if (location.state?.toast === 'login_ok') {
@@ -125,50 +79,6 @@ export default function Inicio() {
 
       {rol !== 'Cliente' && <AlertasIA />}
 
-      <div className="dashboard-row">
-        <div className="historial-section">
-          <div className="historial-header">
-            <h3>Tus Últimos Movimientos:</h3>
-          </div>
-          <div className="historial-columnas">
-            <div className="historial-col-apartado">Apartado</div>
-            <div className="historial-col-accion">Acción</div>
-          </div>
-          <div className="historial-lista">
-            {loading ? (
-              <AdminLoading texto="Cargando movimientos" subtexto="Revisando tu actividad reciente" />
-            ) : movs.length === 0 ? (
-              <div className="historial-vacio">Aún no tienes movimientos registrados.</div>
-            ) : (
-              movs.slice(0, 8).map((m) => (
-                <div
-                  key={m.id}
-                  style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '9px 6px', borderBottom: '1px solid var(--border)' }}
-                >
-                  <span
-                    className="badge badge-info"
-                    style={{ flexShrink: 0, minWidth: 88, textAlign: 'center' }}
-                  >
-                    {m.modulo ?? '—'}
-                  </span>
-                  <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--text-900)' }}>
-                    {m.descripcion ?? '—'}
-                  </span>
-                  <span style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-400)' }}>
-                    {m.fecha ? new Date(m.fecha).toLocaleString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="kpi-card">
-          <div className="kpi-label">Total de movimientos</div>
-          <div className="kpi-val">{movs.length}</div>
-          <div className="kpi-sub">Acciones registradas en tu cuenta</div>
-        </div>
-      </div>
 
       <div className={`toast-bienvenida${toastVisible ? ' mostrar' : ''}`}>
         ¡Bienvenido a BurguerSoft, Administrador!

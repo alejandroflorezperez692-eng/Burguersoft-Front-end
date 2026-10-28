@@ -18,6 +18,20 @@ function getErrorMessage(error: unknown): string {
     if (typeof data === 'string') {
       return `Error del servidor (${error.response.status}).`;
     }
+    // Si el backend manda el detalle por campo, se muestran TODOS los errores indicando qué campo falla.
+    const errores = (data as { errors?: Record<string, unknown> })?.errors;
+    if (errores && typeof errores === 'object') {
+      const etiquetas: Record<string, string> = { correo: 'correo electrónico', email: 'correo electrónico', contrasena: 'contraseña', password: 'contraseña' };
+      const lista: string[] = [];
+      Object.entries(errores).forEach(([campo, val]) => {
+        const texto = Array.isArray(val) ? String(val[0] ?? '') : String(val ?? '');
+        if (!texto) return;
+        const etiqueta = etiquetas[campo] ?? campo;
+        lista.push(/obligatori|required/i.test(texto) ? `El campo ${etiqueta} es obligatorio.` : texto);
+      });
+      const unicos = Array.from(new Set(lista));
+      if (unicos.length > 0) return unicos.join(' ');
+    }
     const msg = (data as Record<string, unknown>)?.message ?? (data as Record<string, unknown>)?.error;
     if (typeof msg === 'string') return msg;
     return `Error inesperado (${error.response.status}).`;
@@ -104,9 +118,8 @@ export default function Login() {
       )}
       <div className="header-bar">INICIAR SESIÓN</div>
       <div className="card">
-
         <form onSubmit={handleSubmit} noValidate>
-          <h2>CORREO*</h2>
+          <h2>CORREO<span className="required-marker">*</span></h2>
           <input
             type="email"
             id="email"
@@ -117,7 +130,7 @@ export default function Login() {
             required
           />
 
-          <h2>CONTRASEÑA*</h2>
+          <h2>CONTRASEÑA<span className="required-marker">*</span></h2>
           <div className="campo-password">
             <input
               type={mostrarPassword ? 'text' : 'password'}
