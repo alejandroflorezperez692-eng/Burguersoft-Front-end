@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import apiClient from '../../api/client';
+import HistorialModal from '../../components/HistorialModal';
+import { normalizarRol } from '../../utils/roles';
 import {
   maxLenDocumento,
   reglasPassword,
@@ -31,6 +33,7 @@ export default function ConfiguracionAdmin() {
   const [telefono, setTelefono] = useState('');
   const [correo, setCorreo] = useState(user?.email ?? '');
   const [cargando, setCargando] = useState(true);
+  const [verHistorial, setVerHistorial] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [msgDatos, setMsgDatos] = useState<Msg>(null);
 
@@ -161,6 +164,7 @@ export default function ConfiguracionAdmin() {
       </div>
 
       <div className="grid-perfil">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{
           background: 'var(--surface)', borderRadius: 'var(--r-lg)', border: '1px solid var(--border)',
           boxShadow: 'var(--shadow-sm)', padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
@@ -176,6 +180,17 @@ export default function ConfiguracionAdmin() {
           </h3>
           <p style={{ fontSize: 13, color: 'var(--text-400)', margin: 0 }}>{correo || user?.email || ''}</p>
           <span className="badge badge-info">Administrador</span>
+        </div>
+        {normalizarRol(user?.role) === 'admin' && (
+          <button
+            type="button"
+            className="btn-primary"
+            style={{ alignSelf: 'center', padding: '8px 20px', fontSize: 13 }}
+            onClick={() => setVerHistorial(true)}
+          >
+            Historial
+          </button>
+        )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -391,6 +406,8 @@ export default function ConfiguracionAdmin() {
           </form>
         </div>
       </div>
+
+      {verHistorial && <HistorialModal onClose={() => setVerHistorial(false)} />}
     </div>
   );
 }

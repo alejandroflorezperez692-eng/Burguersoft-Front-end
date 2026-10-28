@@ -32,6 +32,13 @@ export default function MarcasAdmin() {
   const [loading, setLoading] = useState(true);
   const [detalle, setDetalle] = useState<Marca | null>(null);
   const [intentado, setIntentado] = useState(false);
+  const [vista, setVista] = useState<'tarjetas' | 'lista'>(() => {
+    try {
+      return localStorage.getItem('marcasAdminVista') === 'lista' ? 'lista' : 'tarjetas';
+    } catch {
+      return 'tarjetas';
+    }
+  });
   const [closing, setClosing] = useState(false);
   const [confirmDel, setConfirmDel] = useState<Marca | null>(null);
   const [eliminando, setEliminando] = useState(false);
@@ -57,6 +64,14 @@ export default function MarcasAdmin() {
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('marcasAdminVista', vista);
+    } catch {
+      /* si el navegador bloquea localStorage, simplemente no se guarda */
+    }
+  }, [vista]);
 
   const filtered = items.filter((m) =>
     [m.nombre, m.correo, m.telefono].some((v) => v?.toLowerCase().includes(q.toLowerCase()))
@@ -166,12 +181,39 @@ export default function MarcasAdmin() {
         <button className="btn-primary" onClick={openNew}>+ Nuevo proveedor</button>
       </div>
 
-      <div className="search-bar">
-        <input
-          placeholder="Buscar por nombre, correo o teléfono..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+      <div className="mn-toolbar">
+        <div className="mn-search-wrap">
+          <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            className="mn-search"
+            type="text"
+            placeholder="Buscar por nombre, correo o teléfono..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+
+        <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
+          <button type="button" className={vista === 'lista' ? 'active' : ''}
+            onClick={() => setVista('lista')} title="Vista de lista" aria-pressed={vista === 'lista'}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+            </svg>
+          </button>
+          <button type="button" className={vista === 'tarjetas' ? 'active' : ''}
+            onClick={() => setVista('tarjetas')} title="Vista de tarjetas" aria-pressed={vista === 'tarjetas'}>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
+              <rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="meta-bar">
@@ -180,6 +222,52 @@ export default function MarcasAdmin() {
 
       {loading ? (
         <AdminLoading texto="Cargando proveedores" subtexto="Listando tus proveedores" />
+      ) : vista === 'lista' ? (
+        filtered.length === 0 ? (
+          <div className="empty-state">No se encontraron proveedores</div>
+        ) : (
+          <div className="mn-table-wrap">
+            <table className="mn-table">
+              <thead>
+                <tr>
+                  <th>Proveedor</th>
+                  <th>NIT</th>
+                  <th>Teléfono</th>
+                  <th>Correo</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((m) => (
+                  <tr key={m.id}>
+                    <td>
+                      <div className="mn-table-prod">
+                        <div className="mn-table-img">
+                          <img
+                            src={m.img || marcaFallback}
+                            alt={m.nombre}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                            onError={(e) => { (e.target as HTMLImageElement).src = marcaFallback; }}
+                          />
+                        </div>
+                        <strong>{m.nombre}</strong>
+                      </div>
+                    </td>
+                    <td>{m.nit || '—'}</td>
+                    <td>{m.telefono || '—'}</td>
+                    <td>{m.correo || '—'}</td>
+                    <td>
+                      <div className="mn-table-actions">
+                        <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)}>Editar</button>
+                        <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)}>Eliminar</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )
       ) : (
         <div className="marcas-grid">
           {filtered.map((m) => (
