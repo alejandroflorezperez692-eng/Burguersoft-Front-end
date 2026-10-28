@@ -173,13 +173,6 @@ export default function VentasAdmin() {
   // --- Paginación (Develop) ---
   const { visibles, paginaActual } = paginar(filtered, pagina);
 
-  // --- Cálculos locales de las tarjetas (sin depender del backend de estadísticas) ---
-  const hoy = new Date().toLocaleDateString('en-CA');
-  const ventasHoy = (items ?? []).filter((v) => fechaLocal(v?.fecha) === hoy).length;
-  const ingresosHoy = (items ?? []).filter((v) => fechaLocal(v?.fecha) === hoy).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
-  const totalVentas = items.length;
-  const ingresosTotal = (items ?? []).reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
-
   const sinNada = carrito.length === 0 && combos.length === 0;
   const rojoProducto: CSSProperties | undefined =
     intentado && sinNada
@@ -321,29 +314,6 @@ export default function VentasAdmin() {
         <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
           {showForm ? 'Cancelar' : '+ Nueva venta'}
         </button>
-      </div>
-
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span className="stat-label">Ventas hoy</span>
-          <span className="stat-val">{ventasHoy}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Ingresos hoy</span>
-          <span className="stat-val stat-val-dinero" title={`$${Math.round(ingresosHoy).toLocaleString('es-CO')}`}>${Math.round(ingresosHoy).toLocaleString('es-CO')}</span>
-        </div>
-        {esAdmin && (
-          <>
-            <div className="stat-card">
-              <span className="stat-label">Total ventas</span>
-              <span className="stat-val">{totalVentas}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Ingresos totales</span>
-              <span className="stat-val stat-val-dinero" title={`$${Math.round(ingresosTotal).toLocaleString('es-CO')}`}>${Math.round(ingresosTotal).toLocaleString('es-CO')}</span>
-            </div>
-          </>
-        )}
       </div>
 
       {showForm && (
@@ -530,6 +500,7 @@ export default function VentasAdmin() {
             placeholder="Buscar por #, cliente, producto o combo..."
             value={q}
             onChange={(e) => { setQ(e.target.value); setPagina(1); }}
+            style={{ paddingLeft: 42 }} // <-- Esto arregla la superposición con el icono
           />
         </div>
 
