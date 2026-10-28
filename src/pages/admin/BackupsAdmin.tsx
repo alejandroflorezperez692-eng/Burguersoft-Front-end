@@ -228,14 +228,13 @@ export default function BackupsAdmin() {
   );
 
   // Aplicamos la paginación a los items filtrados
-  const copiasVisibles = paginar(filteredItems, pagina);
+  const { visibles: copiasVisibles, paginaActual } = paginar(filteredItems, pagina);
 
   const load = () => {
     return Promise.all([
       apiClient.get('/backups').catch(() => null),
       apiClient.get('/backups/tablas').catch(() => null),
     ]).then(([r1, r2]) => {
-
       const { items: backups } = extraerBackups(r1?.data);
       const listaTablas = extraerArreglo<Tabla>(r2?.data);
       setItems(backups);
@@ -337,7 +336,6 @@ export default function BackupsAdmin() {
       console.error('Error generando backup:', e);
     } finally {
       setGenerando(false);
-
     }
   };
 
@@ -715,8 +713,8 @@ export default function BackupsAdmin() {
             </table>
           </div>
           
-          {/* Componente de paginación (de la rama develop) */}
-          <Paginacion total={filteredItems.length} pagina={pagina} onCambiar={setPagina} />
+          {/* Componente de paginación */}
+          <Paginacion total={filteredItems.length} pagina={paginaActual} onCambiar={setPagina} />
         </>
       )}
 
