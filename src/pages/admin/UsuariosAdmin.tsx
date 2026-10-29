@@ -438,25 +438,29 @@ export default function UsuariosAdmin() {
                 </button>
               </div>
 
-              <div
-                className={`barra-contrasena ${claseBarra}`}
-                role="progressbar"
-                aria-label="Requisitos de la contraseña"
-                aria-valuemin={0}
-                aria-valuemax={requisitos.length}
-                aria-valuenow={requisitosCumplidos}
-                style={{ marginTop: 10 }}
-              >
-                <span className="barra-contrasena-fill" style={{ width: `${porcentajeBarra}%` }} />
-              </div>
-              <ul className="requisitos" style={{ marginTop: 10 }}>
-                {requisitos.map((r) => (
-                  <li key={r.id} className={`requisito${r.cumple ? '✅' : '❌'}`}>
-                    <span aria-hidden="true">{r.cumple ? '✅' : '❌'}</span>
-                    {r.texto}
-                  </li>
-                ))}
-              </ul>
+              {password !== '' && (
+                <>
+                  <div
+                    className={`barra-contrasena ${claseBarra}`}
+                    role="progressbar"
+                    aria-label="Requisitos de la contraseña"
+                    aria-valuemin={0}
+                    aria-valuemax={requisitos.length}
+                    aria-valuenow={requisitosCumplidos}
+                    style={{ marginTop: 10 }}
+                  >
+                    <span className="barra-contrasena-fill" style={{ width: `${porcentajeBarra}%` }} />
+                  </div>
+                  <ul className="requisitos" style={{ marginTop: 10 }}>
+                    {requisitos.map((r) => (
+                      <li key={r.id} className={`requisito${r.cumple ? ' cumple' : ''}`}>
+                        <span aria-hidden="true">{r.cumple ? '✅' : '❌'}</span>
+                        {r.texto}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
