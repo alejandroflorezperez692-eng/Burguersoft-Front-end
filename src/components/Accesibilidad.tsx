@@ -3,6 +3,20 @@ import iconoAcc from '../assets/img/accesibilidad.png';
 
 const SELECTOR_TEXTO =
   'p, h1, h2, h3, h4, h5, h6, span, a, li, button, label, b, i, strong, td, th, div, select, input, textarea';
+const FUENTES = {
+  serif: 'Georgia, serif',
+  sans: 'Arial, sans-serif',
+};
+const FACTOR_MINIMO = 0.8;
+const FACTOR_MAXIMO = 1.5;
+
+function leerFactorGuardado(): number {
+  const guardado = Number.parseFloat(localStorage.getItem('acc_factor') ?? '');
+  if (!Number.isFinite(guardado)) return 1;
+  return Math.min(FACTOR_MAXIMO, Math.max(FACTOR_MINIMO, guardado));
+}
+
+type AjusteVisual = 'contraste' | 'enlaces' | 'espaciado';
 
 function aplicarEscala(factor: number) {
   document.querySelectorAll<HTMLElement>(SELECTOR_TEXTO).forEach((el) => {
@@ -26,16 +40,25 @@ function aplicarFuente(fuente: string) {
 
 export default function Accesibilidad() {
   const [abierto, setAbierto] = useState(false);
+  const [factor, setFactor] = useState(leerFactorGuardado);
+  const [tema, setTemaActual] = useState<'claro' | 'oscuro'>(
+    localStorage.getItem('acc_tema') === 'oscuro' ? 'oscuro' : 'claro',
+  );
+  const [fuente, setFuenteActual] = useState(localStorage.getItem('acc_font') ?? '');
+  const [ajustes, setAjustes] = useState<Record<AjusteVisual, boolean>>({
+    contraste: localStorage.getItem('acc_contraste') === '1',
+    enlaces: localStorage.getItem('acc_enlaces') === '1',
+    espaciado: localStorage.getItem('acc_espaciado') === '1',
+  });
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
-  const factorRef = useRef(
-    Number.parseFloat(localStorage.getItem('acc_factor') ?? '') || 1,
-  );
+  const factorRef = useRef(factor);
   const fuenteRef = useRef(localStorage.getItem('acc_font') ?? '');
 
   useEffect(() => {
-    if (localStorage.getItem('acc_tema') === 'oscuro') {
-      document.body.classList.add('dark-mode');
+    const factorGuardado = localStorage.getItem('acc_factor');
+    if (factorGuardado && Number.parseFloat(factorGuardado) !== factorRef.current) {
+      localStorage.setItem('acc_factor', String(factorRef.current));
     }
     const fuenteGuardada = localStorage.getItem('acc_font');
     if (fuenteGuardada) {
@@ -45,6 +68,16 @@ export default function Accesibilidad() {
       aplicarEscala(factorRef.current);
     }
   }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle('dark-mode', tema === 'oscuro');
+  }, [tema]);
+
+  useEffect(() => {
+    (Object.keys(ajustes) as AjusteVisual[]).forEach((ajuste) => {
+      document.body.classList.toggle(`acc-${ajuste}`, ajustes[ajuste]);
+    });
+  }, [ajustes]);
 
   useEffect(() => {
     let temporizador: ReturnType<typeof setTimeout> | undefined;
@@ -102,33 +135,39 @@ export default function Accesibilidad() {
   }, [abierto]);
 
   const setTema = (modo: 'claro' | 'oscuro') => {
-    if (modo === 'oscuro') {
-      document.body.classList.add('dark-mode');
-      localStorage.setItem('acc_tema', 'oscuro');
-    } else {
-      document.body.classList.remove('dark-mode');
-      localStorage.setItem('acc_tema', 'claro');
-    }
+    setTemaActual(modo);
+    document.body.classList.toggle('dark-mode', modo === 'oscuro');
+    localStorage.setItem('acc_tema', modo);
   };
 
   const cambiarFuente = (direccion: number) => {
     const nuevoFactor =
       Math.round((factorRef.current + direccion * 0.1) * 10) / 10;
-    if (nuevoFactor >= 0.8 && nuevoFactor <= 2.0) {
+    if (nuevoFactor >= FACTOR_MINIMO && nuevoFactor <= FACTOR_MAXIMO) {
       factorRef.current = nuevoFactor;
+      setFactor(nuevoFactor);
       aplicarEscala(nuevoFactor);
       localStorage.setItem('acc_factor', String(nuevoFactor));
     }
   };
 
   const aplicarFuenteSelect = (fuente: string) => {
+    setFuenteActual(fuente);
     fuenteRef.current = fuente;
     aplicarFuente(fuente);
     localStorage.setItem('acc_font', fuente);
   };
 
+  const cambiarAjuste = (ajuste: AjusteVisual) => {
+    setAjustes((actuales) => {
+      const activo = !actuales[ajuste];
+      localStorage.setItem(`acc_${ajuste}`, activo ? '1' : '0');
+      return { ...actuales, [ajuste]: activo };
+    });
+  };
+
   const restablecer = () => {
-    ['acc_tema', 'acc_factor', 'acc_font'].forEach((clave) =>
+    ['acc_tema', 'acc_factor', 'acc_font', 'acc_contraste', 'acc_enlaces', 'acc_espaciado'].forEach((clave) =>
       localStorage.removeItem(clave),
     );
     window.location.reload();
@@ -150,26 +189,30 @@ export default function Accesibilidad() {
           <div className="acc-row-btns">
             <button
               type="button"
-              className="acc_tema"
+              className={`acc_tema${tema === 'claro' ? ' activa' : ''}`}
+              aria-pressed={tema === 'claro'}
               onClick={() => setTema('claro')}
             >
-              Claro
+              Claro{tema === 'claro' ? ' ✓' : ''}
             </button>
             <button
               type="button"
-              className="acc_tema"
+              className={`acc_tema${tema === 'oscuro' ? ' activa' : ''}`}
+              aria-pressed={tema === 'oscuro'}
               onClick={() => setTema('oscuro')}
             >
-              Oscuro
+              Oscuro{tema === 'oscuro' ? ' ✓' : ''}
             </button>
           </div>
         </div>
         <div className="acc-row">
-          <div className="acc-row-label">Tamaño de letra</div>
+          <div className="acc-row-label">Tamaño de letra: {Math.round(factor * 100)} %</div>
           <div className="acc-row-btns">
             <button
               type="button"
               className="acc-btn-option"
+              aria-label="Reducir tamaño de letra"
+              disabled={factor <= FACTOR_MINIMO}
               onClick={() => cambiarFuente(-1)}
             >
               A−
@@ -177,6 +220,8 @@ export default function Accesibilidad() {
             <button
               type="button"
               className="acc-btn-option"
+              aria-label="Aumentar tamaño de letra"
+              disabled={factor >= FACTOR_MAXIMO}
               onClick={() => cambiarFuente(1)}
             >
               A+
@@ -188,18 +233,41 @@ export default function Accesibilidad() {
           <div className="acc-row-btns">
             <button
               type="button"
-              className="acc-btn-option"
-              onClick={() => aplicarFuenteSelect('Georgia, serif')}
+              className={`acc-btn-option${fuente === FUENTES.serif ? ' activa' : ''}`}
+              aria-pressed={fuente === FUENTES.serif}
+              onClick={() => aplicarFuenteSelect(FUENTES.serif)}
             >
-              Serif
+              Serif{fuente === FUENTES.serif ? ' ✓' : ''}
             </button>
             <button
               type="button"
-              className="acc-btn-option"
-              onClick={() => aplicarFuenteSelect('Arial, sans-serif')}
+              className={`acc-btn-option${fuente === FUENTES.sans ? ' activa' : ''}`}
+              aria-pressed={fuente === FUENTES.sans}
+              onClick={() => aplicarFuenteSelect(FUENTES.sans)}
             >
-              Sans
+              Sans{fuente === FUENTES.sans ? ' ✓' : ''}
             </button>
+          </div>
+        </div>
+        <div className="acc-row">
+          <div className="acc-row-label">Lectura</div>
+          <div className="acc-row-btns acc-row-btns-vertical">
+            {([
+              ['contraste', 'Alto contraste'],
+              ['enlaces', 'Resaltar enlaces'],
+              ['espaciado', 'Más espacio en el texto'],
+            ] as const).map(([ajuste, etiqueta]) => (
+              <button
+                key={ajuste}
+                type="button"
+                className={`acc-btn-option acc-btn-toggle${ajustes[ajuste] ? ' activa' : ''}`}
+                aria-pressed={ajustes[ajuste]}
+                onClick={() => cambiarAjuste(ajuste)}
+              >
+                <span>{etiqueta}</span>
+                <span aria-hidden="true">{ajustes[ajuste] ? '✓' : ''}</span>
+              </button>
+            ))}
           </div>
         </div>
         <button type="button" className="acc-btn-reset" onClick={restablecer}>

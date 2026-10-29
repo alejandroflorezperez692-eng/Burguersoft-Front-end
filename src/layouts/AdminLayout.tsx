@@ -7,7 +7,9 @@ import cena from '../assets/img/cena.png';
 import insignia from '../assets/img/insignia.png';
 import hierbas from '../assets/img/tratamiento-a-base-de-hierbas.png';
 import buy from '../assets/img/buy.png';
-import marca from '../assets/img/marca-comercial.png';
+import inventarioIcono from '../assets/img/inventario.svg';
+import cierreInventarioIcono from '../assets/img/cierre-inventario.svg';
+import proveedoresIcono from '../assets/img/proveedores.svg';
 import promocion from '../assets/img/promocion.png';
 import engranaje from '../assets/img/engranaje.png';
 import equipo from '../assets/img/equipo.png';
@@ -15,6 +17,7 @@ import accesibilidad from '../assets/img/accesibilidad.png';
 import cerrarSesion from '../assets/img/cerrar-sesion.png';
 import usuarioPerfil from '../assets/img/usuario-perfil.png';
 import { useAuth } from '../hooks/useAuth';
+import apiClient from '../api/client';
 import { ACCESO, normalizarRol } from '../utils/roles';
 import '../styles/admin.css';
 import '../styles/nu-admin.css';
@@ -26,17 +29,18 @@ import NotificacionesBoton from '../components/NotificacionesBoton';
 // Cada opción dice qué roles la ven (ver ACCESO en utils/roles.ts)
 const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
-  { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.cocina },
-  { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.cocina },
-  { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.caja },
-  { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.personal },
-  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.personal },
-  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas, roles: ACCESO.cocina },
+  { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.menu },
+  { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.menu },
+  { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.ventas },
+  { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.inventario },
+  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.inventario },
+  { to: '/inventario', label: 'Inventario', icono: inventarioIcono, roles: ACCESO.inventario },
+  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: cierreInventarioIcono, roles: ACCESO.inventario },
+  { to: '/gestion-marca', label: 'Proveedores', icono: proveedoresIcono, roles: ACCESO.inventario },
   { to: '/reportes', label: 'Reportes', icono: insignia, roles: ACCESO.soloAdmin },
-  { to: '/gestion-marca', label: 'Proveedores', icono: marca, roles: ACCESO.cocina },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
   { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
-  { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.cocina },
+  { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.personal },
 ];
 
 const estiloItemMenu: React.CSSProperties = {
@@ -66,8 +70,16 @@ export default function AdminLayout() {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const cerrarMenu = () => setMenuOpen(false);
   const rol = normalizarRol(user?.role);
-  const esAdmin = rol === 'admin';
+  const esPersonal = rol !== '' && ACCESO.personal.includes(rol);
   const navItems = todosLosItems.filter((item) => rol !== '' && item.roles.includes(rol));
+
+  // Valida la sesión con el backend al abrir el panel y en cada cambio de pantalla.
+  // Si la cuenta fue suspendida/desactivada, el backend responde 401 y el
+  // interceptor de api/client.ts cierra la sesión y manda al login.
+  useEffect(() => {
+    if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
+    apiClient.get('/me').catch(() => { /* el 401 lo maneja el interceptor */ });
+  }, [location.pathname]);
 
   const handleSalir = () => {
     setSaliendo(true);
@@ -165,6 +177,7 @@ export default function AdminLayout() {
 
       <nav className="header-nav">
         <button type="button" className="topbar-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú">☰</button>
+
         <div className="header-actions">
           {esAdmin && <NotificacionesBoton />}
           {esAdmin && <span className="header-sep" aria-hidden="true" />}
@@ -179,6 +192,12 @@ export default function AdminLayout() {
               title="Cuenta"
               style={{ cursor: 'pointer', font: 'inherit', textAlign: 'left' }}
             >
+
+          <div className="header-actions">
+            {esPersonal && <NotificacionesBoton />}
+            {esPersonal && <span className="header-sep" aria-hidden="true" />}
+            <NavLink to="/configuracion" className="header-user" onClick={cerrarMenu} title="Mi perfil">
+
               <img src={usuarioPerfil} alt="" className="header-avatar" />
               <span className="header-user-info">
                 <span className="header-user-name">{user?.name ?? user?.email ?? 'Administrador'}</span>
@@ -249,7 +268,7 @@ export default function AdminLayout() {
         <AdminFooter />
       </div>
 
-      {esAdmin && <AsistenteIA />}
+      {esPersonal && <AsistenteIA />}
     </div>
   );
 }
