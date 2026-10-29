@@ -356,6 +356,131 @@ body.dark-mode .acc-btn-reset:active {
   }
 }
 
+.acc-panel {
+  max-height: min(80dvh, 620px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.acc-row-btns-vertical {
+  flex-direction: column;
+}
+
+.acc-btn-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+}
+
+.acc-btn-option.activa,
+.acc_tema.activa {
+  font-weight: 800;
+  box-shadow: inset 0 0 0 1px #e8821a;
+}
+
+.acc-btn-toggle > span:last-child {
+  min-width: 1em;
+  text-align: right;
+  font-weight: 900;
+}
+
+body.dark-mode .acc-btn-option.activa,
+body.dark-mode .acc_tema.activa {
+  box-shadow: inset 0 0 0 1px #e8821a;
+}
+
+body.acc-contraste:not(.dark-mode) {
+  --bg: #fff;
+  --surface: #fff;
+  --surface-2: #fff;
+  --surface-3: #f0f0f0;
+  --text-900: #111;
+  --text-600: #222;
+  --text-400: #333;
+  --border: #555;
+  --border-strong: #222;
+  --color-fondo: #fff;
+  --color-card: #fff;
+  --color-oscuro: #111;
+  --color-texto-suave: #222;
+  --color-borde: #444;
+}
+
+body.dark-mode.acc-contraste {
+  --bg: #000;
+  --surface: #000;
+  --surface-2: #111;
+  --surface-3: #222;
+  --text-900: #fff;
+  --text-600: #fff;
+  --text-400: #eee;
+  --border: #aaa;
+  --border-strong: #fff;
+  --color-fondo: #000;
+  --color-card: #000;
+  --color-oscuro: #fff;
+  --color-texto-suave: #fff;
+  --color-borde: #fff;
+}
+
+body.acc-contraste:not(.dark-mode) :is(
+  p, h1, h2, h3, h4, h5, h6, span, label, li, td, th,
+  .descripcion, .subtitulo
+):not(.acc-panel *):not(.acc-fab *) {
+  color: #111 !important;
+}
+
+body.dark-mode.acc-contraste :is(
+ p, h1, h2, h3, h4, h5, h6, span, label, li, td, th,
+ .descripcion, .subtitulo
+):not(.acc-panel *):not(.acc-fab *) {
+ color: #fff !important;
+}
+
+body.acc-contraste:not(.dark-mode) :is(
+  .auth-shell, .card, .contenedor-registro, .checkout-card, .checkout-resumen,
+  .historial-section, .kpi-card, .stat-card, .mn-form-panel
+) {
+  background-color: #fff !important;
+}
+
+body.dark-mode.acc-contraste :is(
+  .auth-shell, .card, .contenedor-registro, .checkout-card, .checkout-resumen,
+  .historial-section, .kpi-card, .stat-card, .mn-form-panel
+) {
+  background-color: #000 !important;
+}
+
+body.acc-contraste :is(
+  input, select, textarea, .card, .contenedor-registro, .checkout-card,
+  .checkout-resumen, .historial-section, .kpi-card, .stat-card, .mn-form-panel
+) {
+  border-color: var(--border-strong) !important;
+}
+
+body.acc-contraste a:not(.acc-panel a) {
+  color: #003b80 !important;
+}
+
+body.dark-mode.acc-contraste a:not(.acc-panel a) {
+  color: #ffd166 !important;
+}
+
+body.acc-enlaces a:not(.acc-panel a) {
+  text-decoration: underline !important;
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: 1.5px;
+}
+
+body.acc-espaciado :is(p, li, label, td, th, .descripcion, .historial-vacio) {
+  line-height: 1.8 !important;
+  letter-spacing: 0.03em !important;
+  word-spacing: 0.08em !important;
+}
+
 /* ============================================= */
 /* FIX: MODO OSCURO - LETRAS BLANCAS EN TODO EL CONTENIDO */
 /* No toca header: .public-body header, .header-nav, .sidebar, .auth-navbar */
