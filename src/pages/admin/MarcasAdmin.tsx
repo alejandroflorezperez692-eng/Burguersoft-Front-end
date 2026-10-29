@@ -25,14 +25,13 @@ const empty: Omit<Marca, 'id'> = {
 
 export default function MarcasAdmin() {
   const [items, setItems] = useState<Marca[]>([]);
-  
+
   // Filtro de búsqueda de texto (Develop)
   const [q, setQ] = useState('');
-  
-  // Filtros avanzados (Carlos)
+
+  // Filtros avanzados
   const [filtroMarca, setFiltroMarca] = useState('');
-  const [filtroInicial, setFiltroInicial] = useState('');
-  const [filtroLogo, setFiltroLogo] = useState('');
+  const [filtroNombre, setFiltroNombre] = useState('');
 
   const [modal, setModal] = useState(false);
   const [form, setForm] = useState(empty);
@@ -75,17 +74,14 @@ export default function MarcasAdmin() {
   }, [vista]);
 
   // --- Lógica de Filtros Combinada ---
-  const inicialDe = (m: Marca) => (m.nombre ?? '').trim().charAt(0).toUpperCase();
-  const iniciales = Array.from(new Set(items.map(inicialDe).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
   const marcasOrdenadas = [...items].sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'));
 
-  const hayFiltros = q !== '' || filtroMarca !== '' || filtroInicial !== '' || filtroLogo !== '';
+  const hayFiltros = q !== '' || filtroMarca !== '' || filtroNombre !== '';
 
   const limpiarFiltros = () => {
     setQ('');
     setFiltroMarca('');
-    setFiltroInicial('');
-    setFiltroLogo('');
+    setFiltroNombre('');
   };
 
   const filtered = items.filter((m) => {
@@ -96,10 +92,8 @@ export default function MarcasAdmin() {
     }
     // 2. Filtros avanzados
     if (filtroMarca && String(m.id) !== filtroMarca) return false;
-    if (filtroInicial && inicialDe(m) !== filtroInicial) return false;
-    if (filtroLogo === 'con' && !m.img) return false;
-    if (filtroLogo === 'sin' && m.img) return false;
-    
+    if (filtroNombre && !(m.nombre ?? '').toLowerCase().includes(filtroNombre.trim().toLowerCase())) return false;
+
     return true;
   });
 
@@ -207,9 +201,9 @@ export default function MarcasAdmin() {
         <button className="btn-primary" onClick={openNew}>+ Nuevo proveedor</button>
       </div>
 
-      {/* Barra de herramientas superior (Develop) + Filtros (Carlos) */}
+      {/* Barra de herramientas superior + Filtros */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
-        
+
         {/* Fila 1: Búsqueda y Vista */}
         <div className="mn-toolbar" style={{ marginBottom: 0 }}>
           <div className="mn-search-wrap">
@@ -246,35 +240,26 @@ export default function MarcasAdmin() {
           </div>
         </div>
 
-        {/* Fila 2: Filtros de Carlos */}
+        {/* Fila 2: Filtros */}
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
             <label>Marca</label>
             <select value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
-              <option value="">Todas las marcas</option>
+              <option value="">Todos los provedores</option>
               {marcasOrdenadas.map((m) => (
                 <option key={m.id} value={String(m.id)}>{m.nombre}</option>
               ))}
             </select>
           </div>
 
-          <div className="form-group" style={{ marginBottom: 0, minWidth: 160 }}>
-            <label>Inicial</label>
-            <select value={filtroInicial} onChange={(e) => setFiltroInicial(e.target.value)}>
-              <option value="">Todas</option>
-              {iniciales.map((l) => (
-                <option key={l} value={l}>{l}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ marginBottom: 0, minWidth: 170 }}>
-            <label>Logo</label>
-            <select value={filtroLogo} onChange={(e) => setFiltroLogo(e.target.value)}>
-              <option value="">Todos</option>
-              <option value="con">Con logo</option>
-              <option value="sin">Sin logo</option>
-            </select>
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 220 }}>
+            <label>Nombre</label>
+            <input
+              type="text"
+              placeholder="Filtrar por nombre..."
+              value={filtroNombre}
+              onChange={(e) => setFiltroNombre(e.target.value)}
+            />
           </div>
 
           {hayFiltros && (

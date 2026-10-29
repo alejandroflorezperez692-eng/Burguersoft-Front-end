@@ -2,7 +2,6 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
-import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 
@@ -15,6 +14,8 @@ interface Usuario {
   estado: string;
   rol: { nombre: string } | null;
 }
+
+const OPCIONES_POR_PAGINA = [10, 50, 100, 200, 500];
 
 const badgeClass = (e: string) =>
   e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
@@ -67,20 +68,21 @@ export default function UsuariosAdmin() {
   const [loading, setLoading] = useState(true);
   const [intentado, setIntentado] = useState(false);
   const [pagina, setPagina] = useState(1);
-  
+  const [porPagina, setPorPagina] = useState(10);
+
   // --- Estados de Filtros ---
   const [q, setQ] = useState('');
   const [filtroRol, setFiltroRol] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('');
-  
+  const [filtroNombre, setFiltroNombre] = useState('');
+
   const { showToast, confirmar } = useToast();
 
-  const hayFiltros = q !== '' || filtroRol !== '' || filtroEstado !== '';
+  const hayFiltros = q !== '' || filtroRol !== '' || filtroNombre !== '';
 
   const limpiarFiltros = () => {
     setQ('');
     setFiltroRol('');
-    setFiltroEstado('');
+    setFiltroNombre('');
     setPagina(1);
   };
 
@@ -110,11 +112,16 @@ export default function UsuariosAdmin() {
       );
     })
     .filter((u) => !filtroRol || u.rol?.nombre === filtroRol)
-    .filter((u) => !filtroEstado || u.estado === filtroEstado)
+    .filter((u) => {
+      if (!filtroNombre.trim()) return true;
+      return `${u.nombre} ${u.apellido ?? ''}`.toLowerCase().includes(filtroNombre.trim().toLowerCase());
+    })
     .sort((a, b) => a.id - b.id);
 
-  // Paginación: de 10 en 10
-  const { visibles, paginaActual } = paginar(filtered, pagina);
+  // Paginación con cantidad configurable (10, 50, 100, 200, 500)
+  const totalPaginas = Math.max(1, Math.ceil(filtered.length / porPagina));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const visibles = filtered.slice((paginaActual - 1) * porPagina, paginaActual * porPagina);
 
   const openEdit = (u: Usuario) => {
     setSel(u);
@@ -217,8 +224,8 @@ export default function UsuariosAdmin() {
 
       {/* Barra de herramientas con Búsqueda + Filtros */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
-        
-        {/* Fila 1: Búsqueda y vista */}
+
+        {/* Fila 1: Búsqueda */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
             <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
@@ -230,7 +237,7 @@ export default function UsuariosAdmin() {
           </div>
         </div>
 
-        {/* Fila 2: Filtros (Carlos) */}
+        {/* Fila 2: Filtros */}
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
             <label>Rol</label>
@@ -246,16 +253,25 @@ export default function UsuariosAdmin() {
             </select>
           </div>
 
-          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
-            <label>Estado</label>
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 220 }}>
+            <label>Nombre</label>
+            <input
+              type="text"
+              placeholder="Filtrar por nombre..."
+              value={filtroNombre}
+              onChange={(e) => { setFiltroNombre(e.target.value); setPagina(1); }}
+            />
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 150 }}>
+            <label>Mostrar</label>
             <select
-              value={filtroEstado}
-              onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}
+              value={porPagina}
+              onChange={(e) => { setPorPagina(Number(e.target.value)); setPagina(1); }}
             >
-              <option value="">Todos los estados</option>
-              <option value="Activo">Activo</option>
-              <option value="Inactivo">Inactivo</option>
-              <option value="Suspendido">Suspendido</option>
+              {OPCIONES_POR_PAGINA.map((n) => (
+                <option key={n} value={n}>{n} por página</option>
+              ))}
             </select>
           </div>
 
@@ -317,7 +333,29 @@ export default function UsuariosAdmin() {
           </table>
         </div>
 
-        <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
+        {totalPaginas > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14, marginTop: 18 }}>
+            <button
+              type="button"
+              className="btn-cancel"
+              disabled={paginaActual <= 1}
+              onClick={() => setPagina(paginaActual - 1)}
+            >
+              Anterior
+            </button>
+            <span style={{ fontSize: 14, color: 'var(--text-600)' }}>
+              Página {paginaActual} de {totalPaginas}
+            </span>
+            <button
+              type="button"
+              className="btn-cancel"
+              disabled={paginaActual >= totalPaginas}
+              onClick={() => setPagina(paginaActual + 1)}
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
 
         </>
       )}
