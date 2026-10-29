@@ -5,6 +5,8 @@ import AdminLoading from '../../components/AdminLoading';
 import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
+import { useAuth } from '../../hooks/useAuth';
+import { normalizarRol } from '../../utils/roles';
 
 interface Marca {
   id: number;
@@ -47,6 +49,10 @@ export default function MarcasAdmin() {
       return 'tarjetas';
     }
   });
+
+const { user } = useAuth();
+const esAdmin = normalizarRol(user?.role) === 'admin';
+
   const [closing, setClosing] = useState(false);
   const [confirmDel, setConfirmDel] = useState<Marca | null>(null);
   const [eliminando, setEliminando] = useState(false);
@@ -204,7 +210,9 @@ export default function MarcasAdmin() {
           <h1>Gestión de Proveedores</h1>
           <p className="subtitulo">Administra los proveedores de insumos</p>
         </div>
-        <button className="btn-primary" onClick={openNew}>+ Nuevo proveedor</button>
+        {esAdmin && (
+          <button className="btn-primary" onClick={openNew}>+ Nuevo proveedor</button>
+        )}
       </div>
 
       {/* Barra de herramientas superior (Develop) + Filtros (Carlos) */}
@@ -326,10 +334,14 @@ export default function MarcasAdmin() {
                     <td>{m.telefono || '—'}</td>
                     <td>{m.correo || '—'}</td>
                     <td>
-                      <div className="mn-table-actions">
-                        <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)}>Editar</button>
-                        <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)}>Eliminar</button>
-                      </div>
+                      {esAdmin && (
+                        <td>
+                          <div className="mn-table-actions">
+                            <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)}>Editar</button>
+                            <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)}>Eliminar</button>
+                          </div>
+                        </td>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -374,10 +386,12 @@ export default function MarcasAdmin() {
                 {detalle.nit && <p><strong>NIT:</strong> {detalle.nit}</p>}
               </div>
               <span className="detalle-estado dot-activo">ID {detalle.id}</span>
-              <div className="detalle-actions">
-                <button className="btn-det-editar" onClick={() => openEdit(detalle)}>Editar</button>
-                <button className="btn-det-eliminar" onClick={() => pedirEliminar(detalle.id)}>Eliminar</button>
-              </div>
+              {esAdmin && (
+                <div className="detalle-actions">
+                  <button className="btn-det-editar" onClick={() => openEdit(detalle)}>Editar</button>
+                  <button className="btn-det-eliminar" onClick={() => pedirEliminar(detalle.id)}>Eliminar</button>
+                </div>
+              )}
             </div>
             <div className="detalle-logo-bg" />
             <img

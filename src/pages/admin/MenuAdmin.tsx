@@ -5,6 +5,8 @@ import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
+import { useAuth } from '../../hooks/useAuth';
+import { normalizarRol } from '../../utils/roles';
 
 type Estado = 'Disponible' | 'Agotado' | 'Por agotarse';
 
@@ -80,6 +82,10 @@ export default function MenuAdmin() {
       return 'tarjetas';
     }
   });
+
+  const { user } = useAuth();
+  const esAdmin = normalizarRol(user?.role) === 'admin';
+
   const [loading, setLoading] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [intentado, setIntentado] = useState(false);
@@ -414,13 +420,15 @@ export default function MenuAdmin() {
           <h1>Gestión del Menú</h1>
           <p className="subtitulo">Productos disponibles en el menú</p>
         </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
-        >
-          {mostrarForm ? 'Cancelar' : '+ Agregar producto'}
-        </button>
+        {esAdmin && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
+          >
+            {mostrarForm ? 'Cancelar' : '+ Agregar producto'}
+          </button>
+        )}
       </div>
 
       {(mostrarForm || editId !== null) && (
@@ -563,10 +571,12 @@ export default function MenuAdmin() {
                     <td className="mn-table-price">${Number(p.valor).toLocaleString('es-CO')}</td>
                     <td><span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span></td>
                     <td>
-                      <div className="mn-table-actions">
-                        <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
-                        <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
-                      </div>
+                      {esAdmin && (
+                        <div className="mn-table-actions">
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -596,10 +606,12 @@ export default function MenuAdmin() {
                           <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
                         </div>
                       </div>
-                      <div className="mn-card-actions">
-                        <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
-                        <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
-                      </div>
+                      {esAdmin && (
+                        <div className="mn-card-actions">
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+                        </div>
+                      )}
                     </article>
                   );
                 })}

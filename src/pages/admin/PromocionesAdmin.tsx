@@ -5,6 +5,8 @@ import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
+import { useAuth } from '../../hooks/useAuth';
+import { normalizarRol } from '../../utils/roles';
 
 interface Producto {
   id: number;
@@ -109,6 +111,9 @@ export default function PromocionesAdmin() {
       return 'tarjetas';
     }
   });
+
+  const { user } = useAuth();
+  const esAdmin = normalizarRol(user?.role) === 'admin';
 
   useEffect(() => {
     try {
@@ -569,13 +574,15 @@ export default function PromocionesAdmin() {
           <h1>Combos y Promociones</h1>
           <p className="subtitulo">{activas} {activas === 1 ? 'promoción activa' : 'promociones activas'}</p>
         </div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
-        >
-          {mostrarForm ? 'Cancelar' : '+ Añadir promoción'}
-        </button>
+        {esAdmin && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
+          >
+            {mostrarForm ? 'Cancelar' : '+ Añadir promoción'}
+          </button>
+        )}
       </div>
 
       {(mostrarForm || editId !== null) && (
@@ -712,10 +719,12 @@ export default function PromocionesAdmin() {
                     </td>
                     <td><span className={`mn-card-estado mn-estado-${estado}`}>{ETIQUETA[estado]}</span></td>
                     <td>
-                      <div className="mn-table-actions">
-                        <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
-                        <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
-                      </div>
+                      {esAdmin && (
+                        <div className="mn-card-actions">
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -765,10 +774,12 @@ export default function PromocionesAdmin() {
                         </div>
                         {ahorro > 0 && <div className="pm-save">Ahorras {fmt(ahorro)}</div>}
                       </div>
-                      <div className="mn-card-actions">
-                        <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
-                        <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
-                      </div>
+                      {esAdmin && (
+                        <div className="mn-table-actions">
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+                        </div>
+                      )}
                     </article>
                   );
                 })}

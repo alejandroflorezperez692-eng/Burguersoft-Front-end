@@ -14,6 +14,7 @@ interface Alerta {
 interface RespuestaAlertas {
   alertas: Alerta[];
   resumen: string | null;
+  titulo_resumen?: string;
   resumen_ia: boolean;
 }
 
@@ -94,7 +95,7 @@ export default function AlertasIA() {
           <div style={{ padding: 16, borderRadius: 14, background: 'rgba(232, 130, 26, 0.07)', border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: 'var(--brand-deep)' }}>
-                Resumen de la semana
+                {datos.titulo_resumen ?? 'Resumen de la semana'}
               </span>
               {datos.resumen_ia && (
                 <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-400)' }}>Redactado por IA</span>

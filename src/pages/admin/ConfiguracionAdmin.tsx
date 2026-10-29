@@ -181,7 +181,7 @@ export default function ConfiguracionAdmin() {
             {user?.name ?? 'Administrador'}
           </h3>
           <p style={{ fontSize: 13, color: 'var(--text-400)', margin: 0 }}>{correo || user?.email || ''}</p>
-          <span className="badge badge-info">Administrador</span>
+          <span className="badge badge-info">{user?.role ?? 'Administrador'}</span>
         </div>
         {normalizarRol(user?.role) === 'admin' && (
           <button
