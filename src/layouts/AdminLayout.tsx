@@ -179,8 +179,8 @@ export default function AdminLayout() {
         <button type="button" className="topbar-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label="Abrir menú">☰</button>
 
         <div className="header-actions">
-          {esAdmin && <NotificacionesBoton />}
-          {esAdmin && <span className="header-sep" aria-hidden="true" />}
+          {esPersonal && <NotificacionesBoton />}
+          {esPersonal && <span className="header-sep" aria-hidden="true" />}
 
           <div ref={userMenuRef} style={{ position: 'relative' }}>
             <button
@@ -192,12 +192,6 @@ export default function AdminLayout() {
               title="Cuenta"
               style={{ cursor: 'pointer', font: 'inherit', textAlign: 'left' }}
             >
-
-          <div className="header-actions">
-            {esPersonal && <NotificacionesBoton />}
-            {esPersonal && <span className="header-sep" aria-hidden="true" />}
-            <NavLink to="/configuracion" className="header-user" onClick={cerrarMenu} title="Mi perfil">
-
               <img src={usuarioPerfil} alt="" className="header-avatar" />
               <span className="header-user-info">
                 <span className="header-user-name">{user?.name ?? user?.email ?? 'Administrador'}</span>
