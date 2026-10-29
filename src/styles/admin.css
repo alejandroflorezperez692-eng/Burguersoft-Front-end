@@ -987,7 +987,7 @@ body.dark-mode .sidebar-header .logo-oscuro {
 }
 
 .marca-card::after {
-  content: 'Haga clic para ver la informaciÃ³n';
+  content: 'Haga clic para ver la informaci\00F3n';
   position: absolute;
   top: 50%;
   left: 50%;

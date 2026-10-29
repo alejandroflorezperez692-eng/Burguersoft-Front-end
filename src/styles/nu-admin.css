@@ -564,114 +564,6 @@ body.dark-mode .mn-ing-row input {
 
 /* Estado de la promoción en la tarjeta */
 .mn-estado-Activa     { background: #d5f5e3; color: #1a7a42; }
-.mn-estado-Inactiva   { background: #ece8e2; color: #6b6055; }
-.mn-estado-Finalizada { background: #fde8e8; color: #992222; }
-
-/* Tarjeta */
-.pm-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.pm-chip {
-  font-size: 10.5px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 20px;
-  background: var(--surface-3);
-  color: var(--text-600);
-}
-.pm-dates { font-size: 11px; color: var(--text-400); font-weight: 500; margin-top: 6px; }
-.pm-old {
-  margin-left: 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--text-400);
-  text-decoration: line-through;
-}
-.pm-save { font-size: 11.5px; font-weight: 700; color: #1a7a42; margin-top: 2px; }
-
-/* Formulario */
-.pm-count {
-  margin-left: 8px;
-  font-weight: 600;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--brand);
-}
-.pm-readonly {
-  display: flex;
-  align-items: center;
-  height: 44px;
-  padding: 0 14px;
-  box-sizing: border-box;
-  border: 1.5px dashed var(--border);
-  border-radius: var(--r-md);
-  background: var(--surface-3);
-  color: var(--text-600);
-  font-size: 13.5px;
-  font-weight: 700;
-}
-.pm-hint { font-size: 12px; color: var(--text-400); margin-top: -8px; line-height: 1.5; }
-.pm-ok   { color: #1a7a42; }
-.pm-warn { color: #b3261e; }
-.pm-link {
-  background: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  font-weight: 700;
-  color: var(--brand);
-  cursor: pointer;
-  text-decoration: underline;
-}
-.pm-desc-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
-
-/* Selector de productos */
-.pm-picker {
-  max-height: 240px;
-  overflow-y: auto;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r-md);
-  background: var(--surface-2);
-  padding: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.pm-picker-empty { padding: 18px; text-align: center; color: var(--text-400); font-size: 13px; }
-.pm-prod {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 10px;
-  border-radius: var(--r-sm);
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--text-900);
-  border: 1.5px solid transparent;
-  transition: background 0.15s, border-color 0.15s;
-}
-.pm-prod:hover { background: var(--surface-3); }
-.pm-prod.on { background: var(--brand-glow); border-color: var(--brand); }
-.mn-field .pm-prod input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  min-width: 18px;
-  padding: 0;
-  margin: 0;
-  flex: none;
-  accent-color: var(--brand);
-  cursor: pointer;
-}
-.pm-prod-name { flex: 1; font-weight: 600; min-width: 0; }
-.pm-prod-cat  { font-size: 11px; color: var(--text-400); white-space: nowrap; }
-.pm-prod-price { font-weight: 800; color: var(--brand); white-space: nowrap; }
-
-@media (max-width: 600px) {
-  .pm-prod-cat { display: none; }
-}
-
-/* ===== Promociones (se apoya en las clases mn-* del Menú) ===== */
-
-/* Estado de la promoción en la tarjeta */
-.mn-estado-Activa     { background: #d5f5e3; color: #1a7a42; }
 .mn-estado-Programada { background: rgba(232, 130, 26, 0.18); color: #8a4a10; }
 .mn-estado-Inactiva   { background: #ece8e2; color: #6b6055; }
 .mn-estado-Finalizada { background: #fde8e8; color: #992222; }
@@ -777,6 +669,7 @@ body.dark-mode .mn-ing-row input {
 @media (max-width: 600px) {
   .pm-prod-cat { display: none; }
 }
+
 /* ===== Footer del panel admin ===== */
 .admin-footer {
   background: #2c1810;
@@ -849,3 +742,86 @@ body.dark-mode .mn-ing-row input {
 @media (max-width: 640px) {
   .us-pag { justify-content: center; }
 }
+
+/* ===== Filtros de Materia Prima (reutilizan .mn-field) ===== */
+.mn-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.mn-filtros .mn-field { flex: 1 1 180px; max-width: 260px; }
+
+/* Filtro con un valor elegido */
+.mn-field select.activo {
+  border-color: var(--brand);
+  background-color: var(--brand-glow);
+  font-weight: 700;
+}
+
+.mn-filtros .mn-btn-cancel {
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--r-md);
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .mn-filtros .mn-field { flex: 1 1 calc(50% - 7px); max-width: none; }
+}
+
+/* Materia prima inactiva: atenúa los datos pero deja los botones con color normal */
+.data-table tr.fila-inactiva td:not(:last-child) {
+  opacity: 0.55;
+}
+
+/* ---------- Toggle de vista + tabla ---------- */
+.mn-toolbar { display: flex; align-items: center; gap: 12px; }
+.mn-toolbar .mn-search-wrap { flex: 1; }
+
+.mn-view-toggle {
+  display: inline-flex;
+  border: 1.5px solid var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--surface);
+}
+.mn-view-toggle button {
+  display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 40px;
+  border: none; background: transparent;
+  color: var(--text-900); cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.mn-view-toggle button + button { border-left: 1.5px solid var(--border); }
+.mn-view-toggle button.active { background: rgba(47, 138, 240, 0.15); color: var(--info); }
+
+.mn-table-wrap {
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+.mn-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.mn-table th {
+  text-align: left; padding: 14px 16px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--text-400); border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.mn-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.mn-table tbody tr:last-child td { border-bottom: none; }
+.mn-table tbody tr:hover { background: var(--surface-3); }
+.mn-table tr.agotado { opacity: .6; }
+
+.mn-table-prod { display: flex; align-items: center; gap: 12px; min-width: 180px; }
+.mn-table-img { width: 44px; height: 44px; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
+.mn-table-img .mn-card-img,
+.mn-table-img .mn-card-noimg { height: 100%; font-size: 18px; }
+
+.mn-table-desc { color: var(--text-400); max-width: 280px; }
+.mn-table-price { font-weight: 800; color: var(--brand); white-space: nowrap; }
+.mn-table-actions { display: flex; gap: 8px; }
+.mn-table-actions .mn-btn-edit,
+.mn-table-actions .mn-btn-del { flex: none; padding: 7px 14px; }

@@ -1,8 +1,10 @@
-﻿import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
 
 interface Usuario {
   id: number;
@@ -17,46 +19,24 @@ interface Usuario {
 const badgeClass = (e: string) =>
   e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
 
-/* ---------- ValidaciÃ³n de nombres ---------- */
-
-// Solo letras (con tildes y Ã±), espacios, guion y apÃ³strofe: "MarÃ­a JosÃ©", "De la Cruz", "O'Brien"
-const NOMBRE_REGEX = /^\p{L}+(?:[ 'â€™-]\p{L}+)*$/u;
+const NOMBRE_REGEX = /^\p{L}+(?:[ '’-]\p{L}+)*$/u;
 
 const limpiarEspacios = (v: string) => v.trim().replace(/\s+/g, ' ');
 
-// Mientras escribe, quita nÃºmeros y sÃ­mbolos
-const soloLetras = (v: string) => v.replace(/[^\p{L}\s'â€™-]/gu, '');
+const soloLetras = (v: string) => v.replace(/[^\p{L}\s'’-]/gu, '');
 
-// "alejandro FLOREZ" -> "Alejandro Florez"
 const formatearNombre = (v: string) =>
   limpiarEspacios(v)
     .toLowerCase()
-    .replace(/(^|[\s'â€™-])(\p{L})/gu, (_, sep, letra) => sep + letra.toUpperCase());
+    .replace(/(^|[\s'’-])(\p{L})/gu, (_, sep, letra) => sep + letra.toUpperCase());
 
 const nombreValido = (v: string) => {
   const t = limpiarEspacios(v);
   if (t.length < 2 || t.length > 50) return false;
-  if (!NOMBRE_REGEX.test(t)) return false;       // solo letras
-  if (/(\p{L})\1{2,}/iu.test(t)) return false;   // "aaa", "xxx"
-  if (!/[aeiouÃ¡Ã©Ã­Ã³ÃºÃ¼y]/i.test(t)) return false;  // "xyz", "bcd"
+  if (!NOMBRE_REGEX.test(t)) return false;
+  if (/(\p{L})\1{2,}/iu.test(t)) return false;
+  if (!/[aeiouáéíóúüy]/i.test(t)) return false;
   return true;
-};
-
-/* ---------- PaginaciÃ³n ---------- */
-
-const POR_PAGINA = 10;
-
-// [1, 'â€¦', 4, 5, 6, 'â€¦', 12]
-const numerosPagina = (actual: number, total: number): (number | 'â€¦')[] => {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const out: (number | 'â€¦')[] = [1];
-  const ini = Math.max(2, actual - 1);
-  const fin = Math.min(total - 1, actual + 1);
-  if (ini > 2) out.push('â€¦');
-  for (let i = ini; i <= fin; i++) out.push(i);
-  if (fin < total - 1) out.push('â€¦');
-  out.push(total);
-  return out;
 };
 
 function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string; estado: string }) {
@@ -75,7 +55,6 @@ function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string
 
 export default function UsuariosAdmin() {
   const [items, setItems] = useState<Usuario[]>([]);
-  const [q, setQ] = useState('');
   const [modal, setModal] = useState(false);
   const [sel, setSel] = useState<Usuario | null>(null);
   const [rol, setRol] = useState('');
@@ -88,7 +67,22 @@ export default function UsuariosAdmin() {
   const [loading, setLoading] = useState(true);
   const [intentado, setIntentado] = useState(false);
   const [pagina, setPagina] = useState(1);
+  
+  // --- Estados de Filtros ---
+  const [q, setQ] = useState('');
+  const [filtroRol, setFiltroRol] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  
   const { showToast, confirmar } = useToast();
+
+  const hayFiltros = q !== '' || filtroRol !== '' || filtroEstado !== '';
+
+  const limpiarFiltros = () => {
+    setQ('');
+    setFiltroRol('');
+    setFiltroEstado('');
+    setPagina(1);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -104,25 +98,23 @@ export default function UsuariosAdmin() {
 
   useEffect(() => { load(); }, []);
 
+  // --- Lógica de Filtrado Combinada ---
   const filtered = items
-    .filter((u) =>
-      `${u.nombre} ${u.apellido} ${u.correo} ${u.telefono ?? ''}`.toLowerCase().includes(q.toLowerCase())
-    )
+    .filter((u) => {
+      if (!q) return true;
+      const t = q.toLowerCase();
+      return (
+        `${u.nombre} ${u.apellido}`.toLowerCase().includes(t) ||
+        u.correo.toLowerCase().includes(t) ||
+        (u.telefono && u.telefono.includes(t))
+      );
+    })
+    .filter((u) => !filtroRol || u.rol?.nombre === filtroRol)
+    .filter((u) => !filtroEstado || u.estado === filtroEstado)
     .sort((a, b) => a.id - b.id);
 
-  // PaginaciÃ³n: de 10 en 10
-  const totalPaginas = Math.max(1, Math.ceil(filtered.length / POR_PAGINA));
-  const paginaActual = Math.min(pagina, totalPaginas); // si borras el Ãºltimo de una pÃ¡gina, retrocede sola
-  const inicio = (paginaActual - 1) * POR_PAGINA;
-  const visibles = filtered.slice(inicio, inicio + POR_PAGINA);
-
-  const irAPagina = (n: number) => setPagina(Math.min(Math.max(1, n), totalPaginas));
-
-  const total = items.length;
-  const admins = items.filter((u) => u.rol?.nombre === 'Administrador').length;
-  const activos = items.filter((u) => String(u.estado).toLowerCase() === 'activo').length;
-
-  /* ---------- EdiciÃ³n ---------- */
+  // Paginación: de 10 en 10
+  const { visibles, paginaActual } = paginar(filtered, pagina);
 
   const openEdit = (u: Usuario) => {
     setSel(u);
@@ -138,10 +130,10 @@ export default function UsuariosAdmin() {
   };
 
   const requisitos = [
-    { id: 'largo',     texto: 'MÃ­nimo 8 caracteres',                 cumple: password.length >= 8 },
-    { id: 'mayuscula', texto: 'Al menos una mayÃºscula',              cumple: /[A-Z]/.test(password) },
-    { id: 'numero',    texto: 'Al menos un nÃºmero',                  cumple: /\d/.test(password) },
-    { id: 'simbolo',   texto: 'Al menos un sÃ­mbolo (@, #, $, etc.)', cumple: /[^A-Za-z0-9\s]/.test(password) },
+    { id: 'largo',     texto: 'Mínimo 8 caracteres',                 cumple: password.length >= 8 },
+    { id: 'mayuscula', texto: 'Al menos una mayúscula',              cumple: /[A-Z]/.test(password) },
+    { id: 'numero',    texto: 'Al menos un número',                  cumple: /\d/.test(password) },
+    { id: 'simbolo',   texto: 'Al menos un símbolo (@, #, $, etc.)', cumple: /[^A-Za-z0-9\s]/.test(password) },
   ];
 
   const requisitosCumplidos = requisitos.filter((r) => r.cumple).length;
@@ -155,7 +147,6 @@ export default function UsuariosAdmin() {
     nombre: !nombreValido(nombre),
     apellido: !nombreValido(apellido),
     correo: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim()),
-    // opcional, pero si escribe algo debe cumplir todos los requisitos
     password: password !== '' && requisitosCumplidos < requisitos.length,
     rol: !rol,
     estado: !estado,
@@ -167,10 +158,10 @@ export default function UsuariosAdmin() {
   const guardar = async () => {
     if (!sel) return;
     setIntentado(true);
-    if (errores.nombre) { showToast('Escribe un nombre real: solo letras, sin nÃºmeros ni sÃ­mbolos', true); return; }
-    if (errores.apellido) { showToast('Escribe un apellido real: solo letras, sin nÃºmeros ni sÃ­mbolos', true); return; }
-    if (errores.correo) { showToast('Escribe un correo vÃ¡lido', true); return; }
-    if (errores.password) { showToast('La contraseÃ±a debe tener 8+ caracteres, mayÃºscula, nÃºmero y sÃ­mbolo', true); return; }
+    if (errores.nombre) { showToast('Escribe un nombre real: solo letras, sin números ni símbolos', true); return; }
+    if (errores.apellido) { showToast('Escribe un apellido real: solo letras, sin números ni símbolos', true); return; }
+    if (errores.correo) { showToast('Escribe un correo válido', true); return; }
+    if (errores.password) { showToast('La contraseña debe tener 8+ caracteres, mayúscula, número y símbolo', true); return; }
     if (errores.rol) { showToast('Selecciona un rol', true); return; }
     if (errores.estado) { showToast('Selecciona un estado', true); return; }
 
@@ -181,7 +172,7 @@ export default function UsuariosAdmin() {
       rol,
       estado,
     };
-    if (password) payload.password = password; // solo si escribiÃ³ una nueva
+    if (password) payload.password = password;
 
     try {
       await apiClient.put(`/usuarios/${sel.id}`, payload);
@@ -211,37 +202,70 @@ export default function UsuariosAdmin() {
     }
   };
 
+  useEscape([
+    [modal && !!sel, () => setModal(false)],
+  ]);
+
   return (
     <div className="page-inner">
       <div className="page-header">
         <div>
-          <h1>GestiÃ³n de Usuarios</h1>
+          <h1>Gestión de Usuarios</h1>
           <p className="subtitulo">Administra los usuarios del sistema</p>
         </div>
       </div>
 
-      <div className="stat-grid">
-        <div className="stat-card">
-          <span className="stat-label">Total usuarios</span>
-          <span className="stat-val">{total}</span>
+      {/* Barra de herramientas con Búsqueda + Filtros */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
+        
+        {/* Fila 1: Búsqueda y vista */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
+            <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
+          </div>
         </div>
-        <div className="stat-card">
-          <span className="stat-label">Administradores</span>
-          <span className="stat-val">{admins}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">Activos</span>
-          <span className="stat-val">{activos}</span>
-        </div>
-      </div>
 
-      <div className="mn-search-wrap" style={{ marginBottom: 24 }}>
-        <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o telÃ©fono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
+        {/* Fila 2: Filtros (Carlos) */}
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+            <label>Rol</label>
+            <select
+              value={filtroRol}
+              onChange={(e) => { setFiltroRol(e.target.value); setPagina(1); }}
+            >
+              <option value="">Todos los roles</option>
+              <option value="Administrador">Administrador</option>
+              <option value="Cajero">Cajero</option>
+              <option value="Cocinero">Cocinero</option>
+              <option value="Mesero">Mesero</option>
+              <option value="Cliente">Cliente</option>
+            </select>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
+            <label>Estado</label>
+            <select
+              value={filtroEstado}
+              onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}
+            >
+              <option value="">Todos los estados</option>
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+              <option value="Suspendido">Suspendido</option>
+            </select>
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>
+              Limpiar filtros
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="meta-bar">
@@ -259,7 +283,7 @@ export default function UsuariosAdmin() {
                 <th>#</th>
                 <th>Usuario</th>
                 <th>Correo</th>
-                <th>TelÃ©fono</th>
+                <th>Teléfono</th>
                 <th>Estado</th>
                 <th>Rol</th>
                 <th className="th-acciones">Acciones</th>
@@ -276,9 +300,9 @@ export default function UsuariosAdmin() {
                     </div>
                   </td>
                   <td>{u.correo}</td>
-                  <td>{u.telefono || 'â€”'}</td>
+                  <td>{u.telefono || '—'}</td>
                   <td><span className={`badge ${badgeClass(u.estado)}`}>{u.estado}</span></td>
-                  <td><span className="badge badge-info">{u.rol?.nombre ?? 'â€”'}</span></td>
+                  <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
                   <td className="td-acciones">
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                       <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar">Editar</button>
@@ -294,51 +318,8 @@ export default function UsuariosAdmin() {
           </table>
         </div>
 
-        {filtered.length > 0 && (
-          <div className="us-pag">
-            <span className="us-pag-info">
-              Mostrando {inicio + 1}â€“{Math.min(inicio + POR_PAGINA, filtered.length)} de {filtered.length}
-            </span>
+        <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
 
-            {totalPaginas > 1 && (
-              <nav className="us-pag-nav" aria-label="PaginaciÃ³n de usuarios">
-                <button
-                  type="button"
-                  className="us-pag-btn"
-                  onClick={() => irAPagina(paginaActual - 1)}
-                  disabled={paginaActual === 1}
-                >
-                  â€¹ Anterior
-                </button>
-
-                {numerosPagina(paginaActual, totalPaginas).map((n, i) =>
-                  n === 'â€¦' ? (
-                    <span key={`e${i}`} className="us-pag-dots">â€¦</span>
-                  ) : (
-                    <button
-                      key={n}
-                      type="button"
-                      className={`us-pag-btn us-pag-num${n === paginaActual ? ' activa' : ''}`}
-                      onClick={() => irAPagina(n)}
-                      aria-current={n === paginaActual ? 'page' : undefined}
-                    >
-                      {n}
-                    </button>
-                  )
-                )}
-
-                <button
-                  type="button"
-                  className="us-pag-btn"
-                  onClick={() => irAPagina(paginaActual + 1)}
-                  disabled={paginaActual === totalPaginas}
-                >
-                  Siguiente â€º
-                </button>
-              </nav>
-            )}
-          </div>
-        )}
         </>
       )}
 
@@ -386,7 +367,7 @@ export default function UsuariosAdmin() {
 
             <div className="form-group" style={{ marginBottom: 14 }}>
               <label>
-                Nueva contraseÃ±a{' '}
+                Nueva contraseña{' '}
                 <span style={{ color: 'var(--text-400)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>
                   (opcional)
                 </span>
@@ -399,14 +380,14 @@ export default function UsuariosAdmin() {
                   value={password}
                   maxLength={64}
                   autoComplete="new-password"
-                  placeholder="Dejar vacÃ­o para no cambiarla"
+                  placeholder="Dejar vacío para no cambiarla"
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
                   onClick={() => setVerPass((v) => !v)}
-                  aria-label={verPass ? 'Ocultar contraseÃ±a' : 'Mostrar contraseÃ±a'}
-                  title={verPass ? 'Ocultar contraseÃ±a' : 'Mostrar contraseÃ±a'}
+                  aria-label={verPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  title={verPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   style={{
                     position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer', padding: 0,
@@ -422,7 +403,7 @@ export default function UsuariosAdmin() {
               <div
                 className={`barra-contrasena ${claseBarra}`}
                 role="progressbar"
-                aria-label="Requisitos de la contraseÃ±a"
+                aria-label="Requisitos de la contraseña"
                 aria-valuemin={0}
                 aria-valuemax={requisitos.length}
                 aria-valuenow={requisitosCumplidos}
@@ -432,8 +413,8 @@ export default function UsuariosAdmin() {
               </div>
               <ul className="requisitos" style={{ marginTop: 10 }}>
                 {requisitos.map((r) => (
-                  <li key={r.id} className={`requisito${r.cumple ? ' cumple' : ''}`}>
-                    <span aria-hidden="true">{r.cumple ? 'âœ…' : 'âŒ'}</span>
+                  <li key={r.id} className={`requisito${r.cumple ? '✅' : '❌'}`}>
+                    <span aria-hidden="true">{r.cumple ? '✅' : '❌'}</span>
                     {r.texto}
                   </li>
                 ))}
@@ -448,6 +429,7 @@ export default function UsuariosAdmin() {
                   <option value="Administrador">Administrador</option>
                   <option value="Cajero">Cajero</option>
                   <option value="Cocinero">Cocinero</option>
+                  <option value="Mesero">Mesero</option>
                   <option value="Cliente">Cliente</option>
                 </select>
               </div>

@@ -1,4 +1,4 @@
-export type RolNormalizado = 'admin' | 'cliente' | 'cajero' | 'cocinero';
+export type RolNormalizado = 'admin' | 'cliente' | 'cajero' | 'cocinero' | 'mesero';
 
 /** Convierte el nombre del rol que manda el backend a un valor fijo. */
 export function normalizarRol(rol?: string): RolNormalizado | '' {
@@ -12,21 +12,15 @@ export function normalizarRol(rol?: string): RolNormalizado | '' {
   if (limpio === 'cliente') return 'cliente';
   if (limpio === 'cajero') return 'cajero';
   if (limpio === 'cocinero') return 'cocinero';
+  if (limpio === 'mesero') return 'mesero';
   return '';
 }
 
-/**
- * Quién puede entrar a cada grupo de secciones.
- * Para cambiar permisos, edita SOLO este objeto (menú y rutas lo usan).
- */
-export const ACCESO: Record<'personal' | 'caja' | 'cocina' | 'soloAdmin', RolNormalizado[]> = {
-  // Inicio, Materia prima, Compras
-  personal: ['admin', 'cajero', 'cocinero'],
-  // Ventas
-  caja: ['admin', 'cajero'],
-  // Menú, Cierre de inventario, Marcas, Promociones, Ayuda
-  cocina: ['admin', 'cocinero'],
-  // Usuarios, Copias de seguridad
+export const ACCESO: Record<'personal' | 'menu' | 'ventas' | 'inventario' | 'soloAdmin', RolNormalizado[]> = {
+  personal: ['admin', 'cajero', 'cocinero', 'mesero'],
+  menu: ['admin', 'cajero', 'mesero'],
+  ventas: ['admin', 'cajero', 'cocinero', 'mesero'],
+  inventario: ['admin', 'cajero', 'cocinero'],
   soloAdmin: ['admin'],
 };
 

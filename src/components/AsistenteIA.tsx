@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import apiClient from '../api/client';
+import { useAuth } from '../hooks/useAuth';
+import { normalizarRol } from '../utils/roles';
 
 interface Grafica {
   titulo: string;
@@ -58,6 +60,39 @@ const SUGERENCIAS = [
   'Muéstrame una gráfica de ventas de la semana',
 ];
 const ICONOS = ['💰', '📦', '🧾', '🔥', '📈', '📊'];
+
+// Cada rol ve preguntas acordes a lo que Burgi le puede responder
+const SUGERENCIAS_PERSONAL = {
+  cocinero: {
+    textos: [
+      '¿Qué insumos se me están acabando?',
+      '¿Qué productos no se pueden preparar?',
+      '¿Qué se vendió más esta semana?',
+      '¿Qué preparo hoy según las ventas?',
+      '¿Qué ingredientes lleva cada producto?',
+    ],
+    iconos: ['📦', '🚫', '🔥', '👨‍🍳', '📋'],
+  },
+  cajero: {
+    textos: [
+      '¿Subió el precio de algún insumo?',
+      '¿Cuánto he gastado en compras este mes?',
+      '¿En qué proveedor gasté más este mes?',
+      '¿Qué insumos se me están acabando?',
+    ],
+    iconos: ['📈', '🧾', '🏷️', '📦'],
+  },
+  mesero: {
+    textos: [
+      '¿Qué productos están agotados?',
+      '¿Qué promociones hay hoy?',
+      '¿Qué se vendió más esta semana?',
+      'Sugiéreme un combo para una mesa de 4',
+      '¿Qué ingredientes lleva el menú?',
+    ],
+    iconos: ['🚫', '🎁', '🔥', '🍔', '📋'],
+  },
+} as const;
 
 /** Burgi: hamburguesa-robot dibujada en SVG (quieta, solo parpadea) */
 export function BurgiRobot({ size, uid }: { size: number; uid: string }) {
@@ -178,6 +213,11 @@ export function Chispa({ size, color }: { size: number; color: string }) {
 
 export default function AsistenteIA() {
   const { pathname } = useLocation();
+  const { user } = useAuth();
+  const rol = normalizarRol(user?.role);
+  const personal = rol === 'cocinero' || rol === 'cajero' || rol === 'mesero' ? SUGERENCIAS_PERSONAL[rol] : null;
+  const sugerencias: readonly string[] = personal ? personal.textos : SUGERENCIAS;
+  const iconos: readonly string[] = personal ? personal.iconos : ICONOS;
   const [abierto, setAbierto] = useState(false);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [texto, setTexto] = useState('');
@@ -230,7 +270,7 @@ export default function AsistenteIA() {
           'Cl. 9 # 1A-43, Sogamoso, Boyacá\n' +
           '📍 Abrir en Google Maps: 5.707974, -72.920502';
       else if (status === 401) aviso = 'Tu sesión expiró. Cierra sesión y vuelve a entrar.';
-      else if (status === 403) aviso = 'Esta función es solo para administradores.';
+      else if (status === 403) aviso = 'No tienes permiso para usar a Burgi.';
       else if (status >= 500) aviso = `El servidor tuvo un error (${status}). El detalle está en storage/logs/laravel.log del backend.`;
       else aviso = `No pude responder (error ${status}).`;
       setMensajes((m) => [...m, { role: 'assistant', content: aviso }]);
@@ -352,7 +392,7 @@ export default function AsistenteIA() {
                     </p>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-                    {SUGERENCIAS.map((sug, i) => (
+                    {sugerencias.map((sug, i) => (
                       <button
                         key={sug}
                         type="button"
@@ -361,7 +401,7 @@ export default function AsistenteIA() {
                         style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', padding: '9px 12px', borderRadius: 16, border: '1.5px solid var(--border)', background: 'rgba(232,130,26,0.04)', color: 'var(--text-900)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
                       >
                         <span aria-hidden="true" style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(232,130,26,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0 }}>
-                          {ICONOS[i]}
+                          {iconos[i]}
                         </span>
                         <span style={{ flex: 1 }}>{sug}</span>
                         <span aria-hidden="true" style={{ color: 'var(--brand)', fontSize: 18, fontWeight: 800 }}>›</span>
