@@ -1,11 +1,10 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import apiClient from '../../api/client';
-import ComprasResumen from '../../components/ComprasResumen';
 import AdminLoading from '../../components/AdminLoading';
 
 import Paginacion, { paginar } from '../../components/Paginacion';
-import ToastMessage, { useToast } from '../../components/Toast';
+import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 
@@ -36,13 +35,13 @@ interface Compra {
 const badgeEstado = (e: string) =>
   e === 'Finalizada' ? 'badge-success' : e === 'En revisión' ? 'badge-info' : 'badge-warning';
 
-interface MateriaPrima { 
-  id: number; 
-  nombre: string; 
-  valor: number; 
-  tipo?: string | null; 
-  unidad_medida?: string | null; 
-  estado?: string | null; 
+interface MateriaPrima {
+  id: number;
+  nombre: string;
+  valor: number;
+  tipo?: string | null;
+  unidad_medida?: string | null;
+  estado?: string | null;
 }
 interface Marca { id: number; nombre: string; }
 
@@ -271,8 +270,8 @@ export default function ComprasAdmin() {
   const [items, setItems] = useState<Compra[]>([]);
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
-  
-  // --- ESTADOS DE FILTROS (Mantenidos de la rama Carlos) ---
+
+  // --- Estados de filtros ---
   const [q, setQ] = useState('');
   const [fDesde, setFDesde] = useState('');
   const [fHasta, setFHasta] = useState('');
@@ -280,7 +279,7 @@ export default function ComprasAdmin() {
   const [fInsumo, setFInsumo] = useState('');
   const [fMarca, setFMarca] = useState('');
 
-  // --- ESTADOS DE PAGINACIÓN (Mantenidos de la rama Develop) ---
+  // --- Estados de paginación ---
   const DIAS_POR_PAGINA = 5;
   const [pagina, setPagina] = useState(1);
 
@@ -288,7 +287,7 @@ export default function ComprasAdmin() {
   const [metodoPago, setMetodoPago] = useState('');
   const [numeroFactura, setNumeroFactura] = useState('');
   const [tipoFactura, setTipoFactura] = useState('');
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
 
   const [lineas, setLineas] = useState<Linea[]>([
     { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' },
@@ -296,7 +295,7 @@ export default function ComprasAdmin() {
   const [modalDetalle, setModalDetalle] = useState<Compra | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [eliminarCompra, setEliminarCompra] = useState<Compra | null>(null);
-  
+
   const [revisando, setRevisando] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
   const [guardando, setGuardando] = useState(false);
@@ -304,7 +303,7 @@ export default function ComprasAdmin() {
   const [hayBorradorLocal, setHayBorradorLocal] = useState(() => {
     try { return !!localStorage.getItem(CLAVE_BORRADOR); } catch { return false; }
   });
-  const sinRed = useRef(false); 
+  const sinRed = useRef(false);
   const guardarBorradorRef = useRef<() => void>(() => {});
   const [loading, setLoading] = useState(true);
   const cargado = useRef(false);
@@ -359,7 +358,7 @@ export default function ComprasAdmin() {
     setFMarca('');
   };
 
-  // Copia automática en este equipo mientras escribes (Develop)
+  // Copia automática en este equipo mientras escribes
   useEffect(() => {
     if (!showForm || editId) return;
     const vacio = !metodoPago && !numeroFactura && !tipoFactura &&
@@ -387,7 +386,7 @@ export default function ComprasAdmin() {
     [marcas],
   );
 
-  // --- LÓGICA DE FILTRADO (Mantenida de la rama Carlos) ---
+  // --- Lógica de filtrado ---
   const filtered = useMemo(() => {
     const texto = q.toLowerCase();
     return items.filter((c) => {
@@ -411,7 +410,7 @@ export default function ComprasAdmin() {
         return acc;
       }, {})
   );
-  
+
   const { visibles: gruposVisibles, paginaActual } = paginar(grupos, pagina, DIAS_POR_PAGINA);
 
   const addLinea = () => {
@@ -856,8 +855,6 @@ export default function ComprasAdmin() {
         </div>
       )}
 
-      <ComprasResumen items={items.filter((c) => c.estado === 'Finalizada')} />
-
       {showForm && (
         <div className="mn-modal-overlay">
         <div style={estiloModalCompra} onClick={(e) => e.stopPropagation()}>
@@ -887,7 +884,7 @@ export default function ComprasAdmin() {
             </div>
           )}
           <div className="form-group">
-           <label>Método de pago <span className="mn-req">*</span></label>
+            <label>Método de pago <span className="mn-req">*</span></label>
             <select value={metodoPago} style={rojo(!metodoPago)} onChange={(e) => setMetodoPago(e.target.value)}>
               <option value="">Seleccionar...</option>
               {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -913,7 +910,7 @@ export default function ComprasAdmin() {
           </div>
 
           {lineas.map((l, i) => (
-           <div
+            <div
               key={i}
               className="grid-lineas"
               style={{
@@ -996,7 +993,7 @@ export default function ComprasAdmin() {
                   {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </select>
               </div>
-              
+
               {lineas.length > 1 && (
                 <button className="btn-icon btn-icon-del" onClick={() => removeLinea(i)} style={{ position: 'absolute', top: 6, right: 8 }}>✕</button>
               )}
@@ -1227,7 +1224,7 @@ export default function ComprasAdmin() {
           </div>
         );
       })()}
-      
+
       {escaneando && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(22, 8, 0, 0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <style>{`@keyframes iaScan{0%,100%{top:6%}50%{top:90%}}@keyframes iaDots{0%,100%{opacity:.25}50%{opacity:1}}`}</style>
@@ -1250,7 +1247,7 @@ export default function ComprasAdmin() {
           </div>
         </div>
       )}
-      
+
       {eliminarCompra && (
         <div className="mn-modal-overlay" onClick={() => setEliminarCompra(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
@@ -1375,8 +1372,6 @@ export default function ComprasAdmin() {
           </div>
         </div>
       )}
-      
-      <ToastMessage toast={toast} />
     </div>
   );
 }
