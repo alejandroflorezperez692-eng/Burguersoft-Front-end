@@ -53,6 +53,8 @@ const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
 const ESTADOS = ['En barra', 'En cocina', 'En camino', 'Listo para recoger', 'Entregado', 'Pagado', 'Cancelado', 'Reembolsada'];
 
+const ESTADOS_MESERO = ['En barra', 'En cocina', 'Entregado', 'Cancelado'];
+
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
@@ -71,7 +73,9 @@ export default function VentasAdmin() {
   const { user } = useAuth();
   const { showToast } = useToast();
   const alertar = (m: any) => showToast(String(m), true);
-  const esAdmin = normalizarRol(user?.role) === 'admin';
+   const esAdmin = normalizarRol(user?.role) === 'admin';
+  const esMesero = normalizarRol(user?.role) === 'mesero';
+
   
   const [items, setItems] = useState<Venta[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
@@ -90,7 +94,7 @@ export default function VentasAdmin() {
 
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
-  const [tipoEntrega, setTipoEntrega] = useState('Domicilio');
+  const [tipoEntrega, setTipoEntrega] = useState(esMesero ? 'Consumir' : 'Domicilio');
   const [clienteNombre, setClienteNombre] = useState('');
   const [intentado, setIntentado] = useState(false);
   const [productoId, setProductoId] = useState<number>(0);
@@ -631,7 +635,7 @@ export default function VentasAdmin() {
                     style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                   >
                     {ESTADOS.map((e) => (
-                      <option key={e} value={e} disabled={!esAdmin && e === 'Reembolsada'}>{e}</option>
+                      <option key={e} value={e} disabled={(!esAdmin && e === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(e))}>{e}</option>
                     ))}
                   </select>
                 </td>

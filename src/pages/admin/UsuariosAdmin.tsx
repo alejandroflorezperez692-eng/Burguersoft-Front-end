@@ -242,6 +242,7 @@ export default function UsuariosAdmin() {
               <option value="Administrador">Administrador</option>
               <option value="Cajero">Cajero</option>
               <option value="Cocinero">Cocinero</option>
+              <option value="Mesero">Mesero</option>
               <option value="Cliente">Cliente</option>
             </select>
           </div>
@@ -428,6 +429,7 @@ export default function UsuariosAdmin() {
                   <option value="Administrador">Administrador</option>
                   <option value="Cajero">Cajero</option>
                   <option value="Cocinero">Cocinero</option>
+                  <option value="Mesero">Mesero</option>
                   <option value="Cliente">Cliente</option>
                 </select>
               </div>

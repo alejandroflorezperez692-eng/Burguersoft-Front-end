@@ -36,6 +36,7 @@ import Ayuda from './pages/admin/Ayuda';
 import AyudaCliente from './pages/AyudaCliente';
 import { ACCESO } from './utils/roles';
 import { ToastProvider } from './components/Toast';
+import InventarioAdmin from './pages/admin/InventarioAdmin';
 
 
 function App() {
@@ -70,39 +71,42 @@ function App() {
       <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
       <Route path="/verificar-codigo" element={<VerificarCodigo />} />
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
-      <Route path="/social-callback" element={<SocialCallback />} />
       <Route path="/ayuda" element={<Ayuda />} />
 
       <Route element={<ProtectedRoute roles={['cliente']} redirect="/" />}>
         <Route path="/ayuda-cliente" element={<AyudaCliente />} />
       </Route>
 
-      {/* Panel interno: admin, cajero y cocinero comparten el mismo layout */}
+      {/* Panel interno: admin, cajero, cocinero y mesero comparten el mismo layout */}
       <Route element={<ProtectedRoute roles={ACCESO.personal} redirect="/" />}>
         <Route element={<AdminLayout />}>
 
-          {/* Admin + cajero + cocinero */}
+          {/* Todo el personal */}
           <Route path="/inicio" element={<Inicio />} />
-          <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
-          <Route path="/compras" element={<ComprasAdmin />} />
           <Route path="/configuracion" element={<ConfiguracionAdmin />} />
+          <Route path="/ayuda-admin" element={<AyudaAdmin />} />
 
-          {/* Admin + cajero */}
-          <Route element={<ProtectedRoute roles={ACCESO.caja} />}>
+          {/* Admin + cajero + mesero */}
+          <Route element={<ProtectedRoute roles={ACCESO.menu} />}>
+            <Route path="/menu" element={<MenuAdmin />} />
+            <Route path="/promociones" element={<PromocionesAdmin />} />
+          </Route>
+
+          {/* Admin + cocinero + mesero */}
+          <Route element={<ProtectedRoute roles={ACCESO.ventas} />}>
             <Route path="/ventas" element={<VentasAdmin />} />
           </Route>
 
-          {/* Admin + cocinero */}
-          <Route element={<ProtectedRoute roles={ACCESO.cocina} />}>
-            <Route path="/menu" element={<MenuAdmin />} />
+          {/* Admin + cajero + cocinero */}
+          <Route element={<ProtectedRoute roles={ACCESO.inventario} />}>
+            <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
+            <Route path="/inventario" element={<InventarioAdmin />} />
+            <Route path="/compras" element={<ComprasAdmin />} />
             <Route path="/cierre-inventario" element={<CierreInventarioAdmin />} />
             <Route path="/gestion-marca" element={<MarcasAdmin />} />
-            <Route path="/promociones" element={<PromocionesAdmin />} />
-            <Route path="/ayuda-admin" element={<AyudaAdmin />} />
           </Route>
 
           {/* Solo admin */}
-                    {/* Solo admin */}
           <Route element={<ProtectedRoute roles={ACCESO.soloAdmin} />}>
             <Route path="/copias-de-seguridad" element={<BackupsAdmin />} />
             <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />

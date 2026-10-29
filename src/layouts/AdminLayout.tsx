@@ -22,22 +22,23 @@ import AdminLoading from '../components/AdminLoading';
 import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
+import apiClient from '../api/client';
 
 // Cada opción dice qué roles la ven (ver ACCESO en utils/roles.ts)
 const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
-  { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.cocina },
-  { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.cocina },
-  { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.caja },
-  { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.personal },
-  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.personal },
-  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas, roles: ACCESO.cocina },
+  { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.menu },
+  { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.menu },
+  { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.ventas },
+  { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.inventario },
+  { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.inventario },
+  { to: '/inventario', label: 'Inventario', icono: hierbas, roles: ACCESO.inventario },
+  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: hierbas, roles: ACCESO.inventario },
+  { to: '/gestion-marca', label: 'Proveedores', icono: marca, roles: ACCESO.inventario },
   { to: '/reportes', label: 'Reportes', icono: insignia, roles: ACCESO.soloAdmin },
-  { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.cocina },
-  { to: '/gestion-marca', label: 'Proveedores', icono: marca, roles: ACCESO.cocina },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
   { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
-  { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.cocina },
+  { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.personal },
 ];
 
 export default function AdminLayout() {
@@ -50,6 +51,11 @@ export default function AdminLayout() {
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
   const navItems = todosLosItems.filter((item) => rol !== '' && item.roles.includes(rol));
+
+    useEffect(() => {
+      if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
+      apiClient.get('/me').catch(() => { /* el 401 lo maneja el interceptor */ });
+    }, [location.pathname]);
 
   const handleSalir = () => {
     setSaliendo(true);
