@@ -15,7 +15,7 @@ import {
 type Tab = 'datos' | 'pwd' | 'info';
 
 export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { showToast } = useToast();
   // Si el usuario ya editó algo, la respuesta tardía de /me no debe borrarlo.
   const dirtyRef = useRef(false);
@@ -114,8 +114,9 @@ const handlePassword = async (e: React.FormEvent) => {
   setEnviandoPwd(true);
   try {
     await apiClient.post('/perfil/password', { actual, nueva, confirmar });
-    showToast('Contraseña actualizada correctamente.');
-    setActual(''); setNueva(''); setConfirmar('');
+    sessionStorage.setItem('login_toast', 'password_ok');
+    logout();
+    window.location.replace('/login');
   } catch (err: any) {
     const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? '';
     if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {

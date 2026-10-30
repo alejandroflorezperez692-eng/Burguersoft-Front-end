@@ -63,8 +63,15 @@ export default function Login() {
   };
   const [aviso, setAviso] = useState<string | null>(MENSAJE_AVISO[tipoToast] ?? null);
   useEffect(() => {
-    if (!tipoToast) return;
-    setAviso(MENSAJE_AVISO[tipoToast] ?? null);
+    const avisoPendiente = sessionStorage.getItem('login_toast');
+    if (avisoPendiente) {
+      sessionStorage.removeItem('login_toast');
+      setAviso(MENSAJE_AVISO[avisoPendiente] ?? null);
+    } else if (tipoToast) {
+      setAviso(MENSAJE_AVISO[tipoToast] ?? null);
+    } else {
+      return;
+    }
     const t = setTimeout(() => setAviso(null), 6000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
