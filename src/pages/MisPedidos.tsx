@@ -6,6 +6,7 @@ import apiClient from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 import '../styles/mis-pedidos.css';
+import { mensajeError } from '../utils/errores';
 
 
 type ItemUI = {
@@ -343,12 +344,7 @@ export default function MisPedidos() {
       );
       await cargar();
     } catch (e: unknown) {
-      let mensaje = 'No se pudo cancelar el pedido.';
-      if (typeof e === 'object' && e !== null) {
-        const err = e as { response?: { data?: { error?: string; message?: string } }; message?: string };
-        mensaje = err.response?.data?.error ?? err.response?.data?.message ?? err.message ?? mensaje;
-      }
-      setError(mensaje);
+      setError(mensajeError(e, 'No se pudo cancelar el pedido'));
     } finally {
       setCancelandoId(null);
     }

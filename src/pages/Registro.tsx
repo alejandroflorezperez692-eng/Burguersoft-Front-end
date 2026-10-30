@@ -1,24 +1,11 @@
 ﻿import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { isAxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import ModalVerificarCorreo from '../components/ModalVerificarCorreo';
 import ModalLegal, { type DocumentoLegal } from '../components/ModalLegal';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/Toast';
-
-function getErrorMessage(error: unknown): string {
-  if (isAxiosError(error)) {
-    const data = error.response?.data as
-      | { message?: string; error?: string }
-      | undefined;
-    return data?.message ?? data?.error ?? 'No fue posible completar el registro.';
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return 'Ocurrió un error inesperado.';
-}
+import { mensajeError } from '../utils/errores';
 
 const TIPOS_DOCUMENTO = [
   'Cédula de Ciudadanía',
@@ -166,9 +153,10 @@ export default function Registro() {
         tipoDocumento,
         numeroDocumento,
       );
-      navigate('/login', { replace: true });
+      sessionStorage.setItem('aviso_login', 'registro_ok');
+      navigate('/login', { replace: true, state: { toast: 'registro_ok' } });
     } catch (err) {
-      showToast(getErrorMessage(err), true);
+      showToast(mensajeError(err, 'No fue posible completar el registro'), true);
     } finally {
       setLoading(false);
     }

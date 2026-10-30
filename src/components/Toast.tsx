@@ -120,7 +120,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const showToast = useCallback((msg: string, error = false, aviso = false) => {
     setToast({ msg, error, aviso });
     window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setToast(null), 3200);
+    // Los mensajes largos duran más para que alcancen a leerse (mínimo 3.5s).
+    const duracion = Math.min(8000, Math.max(3500, 3200 + msg.length * 25));
+    timer.current = window.setTimeout(() => setToast(null), duracion);
   }, []);
 
   const confirmar = useCallback((msg: string, textoConfirmar = 'Aceptar', peligro = false) => {

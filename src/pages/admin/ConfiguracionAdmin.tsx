@@ -4,6 +4,7 @@ import { useToast } from '../../components/Toast';
 import apiClient from '../../api/client';
 import HistorialModal from '../../components/HistorialModal';
 import { normalizarRol } from '../../utils/roles';
+import { mensajeError } from '../../utils/errores';
 import {
   maxLenDocumento,
   reglasPassword,
@@ -107,8 +108,7 @@ export default function ConfiguracionAdmin() {
       updateUser({ name: nombreCompleto });
       localStorage.setItem('perfil_extra', JSON.stringify({ Tdocumento: tdoc, Ndocumento: ndoc, telefono }));
     } catch (error: unknown) {
-      const data = (error as { response?: { data?: { message?: string } } })?.response?.data;
-      showToast(data?.message ?? 'No se pudieron guardar los cambios. Intenta de nuevo.', true);
+      showToast(mensajeError(error, 'No se pudieron guardar los cambios'), true);
     } finally {
       setGuardando(false);
     }
@@ -138,14 +138,11 @@ export default function ConfiguracionAdmin() {
       setNueva('');
       setConfirmar('');
     } catch (error: unknown) {
-      const data = (error as { response?: { data?: { message?: string } } })?.response?.data;
-      const msg = data?.message ?? '';
+      const msg = mensajeError(error, 'No se pudo actualizar la contraseña');
       if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
         showToast('La contraseña actual es incorrecta.', true);
-      } else if (msg) {
-        showToast(msg, true);
       } else {
-        showToast('No se pudo actualizar la contraseña. Intenta de nuevo más tarde.', true);
+        showToast(msg, true);
       }
     } finally {
       setActualizandoPwd(false);

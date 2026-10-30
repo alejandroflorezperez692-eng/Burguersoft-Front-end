@@ -6,6 +6,7 @@ import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
+import { mensajeError } from '../../utils/errores';
 
 interface MateriaPrima {
   id: number;
@@ -43,14 +44,6 @@ const textoEstado = (stock: unknown) => {
 const claseBadge = (stock: unknown) => {
   const k = estadoKey(stock);
   return k === 'agotado' ? 'badge-danger' : k === 'bajo' ? 'badge-warning' : 'badge-success';
-};
-
-const mensajeError = (e: unknown, base: string): string => {
-  const r = (e as { response?: { status?: number; data?: { message?: string; error?: string; errors?: Record<string, string[]> } } })?.response;
-  if (!r) return `${base}: no hay conexión con el servidor`;
-  const primerError = r.data?.errors ? Object.values(r.data.errors)[0]?.[0] : undefined;
-  const detalle = primerError || r.data?.error || r.data?.message || '';
-  return `${base} (${r.status})${detalle ? `: ${detalle}` : ''}`;
 };
 
 // Deja solo dígitos y un punto decimal (acepta coma como punto)

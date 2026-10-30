@@ -7,6 +7,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import { mensajeError as mensajeErrorBase } from '../../utils/errores';
 
 type Estado = 'Disponible' | 'Agotado' | 'Por agotarse';
 
@@ -51,13 +52,14 @@ const estadoVisible = (p: Producto): Estado => {
 const estadoClase = (e: Estado) => `mn-estado-${e.replace(/ /g, '_')}`;
 
 const mensajeError = (err: unknown, porDefecto: string): string => {
-  const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
-  const primero = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined;
-  const msg = primero || data?.message || porDefecto;
-  if (/23503|foreign key|sale_details|llave for[aá]nea/i.test(msg)) {
+  // Se revisa el mensaje crudo antes de sanearlo: Postgres devuelve el
+  // detalle de la llave foránea en inglés y hay que convertirlo en un aviso útil.
+  const data = (err as { response?: { data?: { __crudo?: string } } })?.response?.data;
+  const crudo = String(data?.__crudo ?? '');
+  if (/23503|foreign key|sale_details|llave for[aá]nea/i.test(crudo)) {
     return 'No se puede eliminar porque tiene ventas registradas. Edítalo y cambia su estado a Agotado.';
   }
-  return msg;
+  return mensajeErrorBase(err, porDefecto);
 };
 
 // Solo acepta URLs de imagen utilizables (absolutas, data/blob o /storage).

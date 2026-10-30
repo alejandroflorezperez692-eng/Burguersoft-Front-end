@@ -5,6 +5,7 @@ import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
+import { mensajeError } from '../../utils/errores';
 
 interface FilaCierre {
   id: number;
@@ -248,9 +249,7 @@ export default function CierreInventarioAdmin() {
       limpiarFiltrosConteo();
       load();
     } catch (e) {
-      const d = (e as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
-      const primero = d?.errors ? Object.values(d.errors)[0]?.[0] : undefined;
-      showToast(primero || d?.message || 'No se pudo guardar el cierre', true);
+      showToast(mensajeError(e, 'No se pudo guardar el cierre'), true);
     } finally {
       setGuardando(false);
     }

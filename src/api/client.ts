@@ -1,4 +1,9 @@
 import axios from 'axios';
+import {
+  MENSAJE_DESCONOCIDO,
+  MENSAJE_SERVIDOR,
+  mensajeSeguro,
+} from '../utils/errores';
 
 const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -8,25 +13,11 @@ const apiClient = axios.create({
   },
 });
 
-const traducirMensaje = (mensajeOriginal: string): string => {
-  if (!mensajeOriginal) return mensajeOriginal;
-  // Laravel agrega "(and 1 more error)" / "(y 2 errores más)" al mensaje de validación: se quita.
-  const mensaje = mensajeOriginal
-    .replace(/\s*\((?:and\s+\d+\s+more\s+errors?|y\s+\d+\s+errores?\s+más)\)\.?/gi, '')
-    .trim();
-  const m = mensaje.toLowerCase();
-  if (m.includes('the correo field must be a valid email address')) return 'El campo correo debe ser una dirección de correo válida.';
-  if (m.includes('correo field') && m.includes('valid email')) return 'El campo correo debe ser una dirección de correo válida.';
-  if (m.includes('email field') && m.includes('valid')) return 'El campo correo debe ser una dirección de correo válida.';
-  if (m.includes('must be a valid email')) return 'Debe ser una dirección de correo válida.';
-  if (m.includes('invalid email')) return 'Correo electrónico inválido.';
-  if (m.includes('password') && m.includes('required')) return 'La contraseña es obligatoria.';
-  if (m.includes('correo') && m.includes('required')) return 'El correo es obligatorio.';
-  if (m.includes('email') && m.includes('required')) return 'El correo es obligatorio.';
-  if (m.includes('unauthenticated') || m.includes('invalid credentials')) return 'Correo o contraseña incorrectos.';
-  if (m.includes('these credentials do not match')) return 'Correo o contraseña incorrectos.';
-  if (m.includes('too many attempts')) return 'Demasiados intentos. Por favor, inténtalo más tarde.';
-  return mensaje;
+/** Deja cualquier mensaje del backend listo para mostrarse (siempre en español). */
+const sanitizar = (mensaje: unknown, status?: number): string => {
+  const seguro = mensajeSeguro(mensaje, status);
+  if (seguro) return seguro;
+  return status && status >= 500 ? MENSAJE_SERVIDOR : MENSAJE_DESCONOCIDO;
 };
 
 apiClient.interceptors.request.use((config) => {
@@ -48,32 +39,70 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && token && !esLogin && !esDemo) {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
+      // Se avisa en el login que la sesión expiró (en vez de redirigir en silencio).
+      sessionStorage.setItem('aviso_login', 'sesion_expirada');
       window.location.href = '/login';
+    }
+
+    const status: number | undefined = error.response?.status;
+
+    // Errores de red / tiempo de espera: se traducen para que nunca salgan en inglés.
+    if (!error.response) {
+      const msg = String(error.message ?? '');
+      if (error.code === 'ECONNABORTED' || /timeout|timed out/i.test(msg)) {
+        error.message = 'El servidor tardó demasiado en responder. Intenta de nuevo.';
+      } else if (/network error|failed to fetch/i.test(msg)) {
+        error.message = 'No se pudo conectar con el servidor. Revisa tu conexión.';
+      }
     }
 
     if (error.response?.data) {
       const data = error.response.data;
+      // Se guarda el texto original (sin sanear) por si alguna pantalla
+      // necesita detectar casos concretos (p. ej. llaves foráneas de Postgres).
+      const originales: string[] = [];
+      const guardar = (v: unknown) => {
+        if (typeof v === 'string' && v) originales.push(v);
+      };
+
       if (typeof data === 'string') {
-        error.response.data = traducirMensaje(data);
+        guardar(data);
+        error.response.data = sanitizar(data, status);
       } else if (typeof data === 'object') {
         if (typeof data.message === 'string') {
-          data.message = traducirMensaje(data.message);
+          guardar(data.message);
+          data.message = sanitizar(data.message, status);
         }
         if (typeof data.error === 'string') {
-          data.error = traducirMensaje(data.error);
+          guardar(data.error);
+          data.error = sanitizar(data.error, status);
         }
         if (data.errors && typeof data.errors === 'object') {
           Object.keys(data.errors).forEach((key) => {
             const val = data.errors[key];
             if (Array.isArray(val)) {
-              data.errors[key] = val.map((v) => (typeof v === 'string' ? traducirMensaje(v) : v));
+              data.errors[key] = val.map((v) => (typeof v === 'string' ? sanitizar(v, status) : v));
+              val.forEach(guardar);
             } else if (typeof val === 'string') {
-              data.errors[key] = traducirMensaje(val);
+              guardar(val);
+              data.errors[key] = sanitizar(val, status);
             }
           });
         }
+        if (originales.length) {
+          try {
+            Object.defineProperty(data, '__crudo', {
+              value: originales.join(' '),
+              enumerable: false,
+              configurable: true,
+            });
+          } catch {
+            // Si no se puede definir, no es crítico.
+          }
+        }
       }
     }
+
     return Promise.reject(error);
   }
 );

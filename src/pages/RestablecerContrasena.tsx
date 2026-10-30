@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { isAxiosError } from 'axios';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
 import { useToast } from '../components/Toast';
 import { useAuth } from '../hooks/useAuth';
+import { mensajeError } from '../utils/errores';
 import iconoBloqueo from '../assets/img/bloquear.png';
 
 export default function RestablecerContrasena() {
@@ -55,17 +55,13 @@ export default function RestablecerContrasena() {
       });
       sessionStorage.removeItem('correo_recuperacion');
       sessionStorage.removeItem('codigo_verificado');
-      // Este cambio viene del login: se cierra cualquier sesión previa para
-      // que el aviso de éxito y el inicio de sesión se muestren correctamente.
+      // Este cambio viene del login: se cierra cualquier sesión previa y el
+      // aviso de éxito se guarda para que el login lo muestre al redirigir.
+      sessionStorage.setItem('aviso_login', 'password_ok');
       logout();
       navigate('/login', { replace: true, state: { toast: 'password_ok' } });
     } catch (err) {
-      if (isAxiosError(err)) {
-        const data = err.response?.data as { message?: string } | undefined;
-        showToast(data?.message ?? 'No se pudo cambiar la contraseña.', true);
-      } else {
-        showToast('No se pudo cambiar la contraseña.', true);
-      }
+      showToast(mensajeError(err, 'No se pudo cambiar la contraseña'), true);
     } finally {
       setLoading(false);
     }

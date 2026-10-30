@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { isAxiosError } from 'axios';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
@@ -7,40 +6,7 @@ import AdminLoading from '../components/AdminLoading';
 import { IconoToast, useToast } from '../components/Toast';
 import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
-
-
-function getErrorMessage(error: unknown): string {
-  if (isAxiosError(error)) {
-    if (!error.response) {
-      return 'No se pudo conectar con el servidor.';
-    }
-    const data = error.response.data;
-    if (typeof data === 'string') {
-      return `Error del servidor (${error.response.status}).`;
-    }
-    // Si el backend manda el detalle por campo, se muestran TODOS los errores indicando qué campo falla.
-    const errores = (data as { errors?: Record<string, unknown> })?.errors;
-    if (errores && typeof errores === 'object') {
-      const etiquetas: Record<string, string> = { correo: 'correo electrónico', email: 'correo electrónico', contrasena: 'contraseña', password: 'contraseña' };
-      const lista: string[] = [];
-      Object.entries(errores).forEach(([campo, val]) => {
-        const texto = Array.isArray(val) ? String(val[0] ?? '') : String(val ?? '');
-        if (!texto) return;
-        const etiqueta = etiquetas[campo] ?? campo;
-        lista.push(/obligatori|required/i.test(texto) ? `El campo ${etiqueta} es obligatorio.` : texto);
-      });
-      const unicos = Array.from(new Set(lista));
-      if (unicos.length > 0) return unicos.join(' ');
-    }
-    const msg = (data as Record<string, unknown>)?.message ?? (data as Record<string, unknown>)?.error;
-    if (typeof msg === 'string') return msg;
-    return `Error inesperado (${error.response.status}).`;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return 'Ocurrió un error inesperado.';
-}
+import { mensajeError } from '../utils/errores';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -56,15 +22,23 @@ export default function Login() {
   const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
 
 
-  // Aviso flotante (estilo toast) en el login: contraseña cambiada o sesión cerrada
+  // Aviso flotante (estilo toast) en el login: contraseña cambiada, sesión
+  // cerrada o sesión expirada. Se lee también de sessionStorage para que el
+  // aviso sobreviva a la redirección (p. ej. al restablecer la contraseña).
   const MENSAJE_AVISO: Record<string, string> = {
     password_ok: 'Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
     logout_ok: 'Has cerrado sesión correctamente.',
+    sesion_expirada: 'Tu sesión expiró. Inicia sesión de nuevo.',
+    registro_ok: 'Tu cuenta fue creada correctamente. Inicia sesión para continuar.',
   };
-  const [aviso, setAviso] = useState<string | null>(MENSAJE_AVISO[tipoToast] ?? null);
+  const [aviso, setAviso] = useState<string | null>(null);
   useEffect(() => {
-    if (!tipoToast) return;
-    setAviso(MENSAJE_AVISO[tipoToast] ?? null);
+    const guardado = sessionStorage.getItem('aviso_login') ?? '';
+    const clave = tipoToast || guardado;
+    if (!clave) return;
+    if (guardado) sessionStorage.removeItem('aviso_login');
+    setAviso(MENSAJE_AVISO[clave] ?? null);
+    // Se mantiene visible 6 segundos para que se alcance a leer.
     const t = setTimeout(() => setAviso(null), 6000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -84,7 +58,7 @@ export default function Login() {
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
-      showToast(getErrorMessage(err), true);
+      showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
     } finally {
       setLoading(false);
     }

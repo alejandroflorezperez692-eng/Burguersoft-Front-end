@@ -4,6 +4,7 @@ import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
+import { mensajeError } from '../../utils/errores';
 
 interface Usuario {
   id: number;
@@ -186,13 +187,8 @@ export default function UsuariosAdmin() {
       showToast('Usuario actualizado correctamente');
       setModal(false);
       load();
-    } catch (e: any) {
-      const errs = e?.response?.data?.errors;
-      const msg =
-        (errs && (Object.values(errs).flat()[0] as string)) ||
-        e?.response?.data?.error ||
-        'No se pudo actualizar el usuario';
-      showToast(msg, true);
+    } catch (e: unknown) {
+      showToast(mensajeError(e, 'No se pudo actualizar el usuario'), true);
     }
   };
 

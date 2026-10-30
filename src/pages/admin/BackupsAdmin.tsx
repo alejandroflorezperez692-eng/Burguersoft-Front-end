@@ -4,6 +4,7 @@ import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import { useToast } from '../../components/Toast';
+import { MENSAJE_DESCONOCIDO, mensajeSeguro } from '../../utils/errores';
 
 /* ------------------------------------------------------------------ */
 /* Estilos locales (autocontenidos, mismas variables que el resto)      */
@@ -98,21 +99,27 @@ type ModoRestauracion = 'replace' | 'merge';
 /* ------------------------------------------------------------------ */
 const mensajeDeError = async (e: unknown): Promise<string> => {
   if (axios.isAxiosError(e)) {
+    const status = e.response?.status;
     const data: unknown = e.response?.data;
+    const mostrar = (v: unknown) => mensajeSeguro(v, status);
     if (data instanceof Blob) {
       try {
         const json = JSON.parse(await data.text()) as { message?: unknown; error?: unknown };
-        if (typeof json?.message === 'string' && json.message) return json.message;
-        if (typeof json?.error === 'string' && json.error) return json.error;
+        const msg = mostrar(json?.message) || mostrar(json?.error);
+        if (msg) return msg;
       } catch { /* el cuerpo no era JSON */ }
     } else if (data && typeof data === 'object') {
       const obj = data as { message?: unknown; error?: unknown };
-      if (typeof obj.message === 'string' && obj.message) return obj.message;
-      if (typeof obj.error === 'string' && obj.error) return obj.error;
+      const msg = mostrar(obj.message) || mostrar(obj.error);
+      if (msg) return msg;
+    } else if (typeof data === 'string') {
+      const msg = mostrar(data);
+      if (msg) return msg;
     }
-    return 'No se pudo conectar con el servidor. Intenta de nuevo.';
+    if (!e.response) return 'No se pudo conectar con el servidor. Revisa tu conexión.';
+    return MENSAJE_DESCONOCIDO;
   }
-  return 'Ocurrió un error inesperado.';
+  return MENSAJE_DESCONOCIDO;
 };
 
 const descargarBlob = (blob: Blob, nombre: string) => {
