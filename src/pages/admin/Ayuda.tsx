@@ -134,6 +134,7 @@ export default function Ayuda() {
           </section>
 
           <section className="ayuda-explorar" id="explorar">
+          <div className="ayuda-seccion-numero" aria-hidden="true">04</div>
           <div className={`ayuda-explorar-acordeon${acordeonAbierto === 'explorar' ? ' ayuda-acordeon-abierto' : ''}`}>
             <button
               type="button"

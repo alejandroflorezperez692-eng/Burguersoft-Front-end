@@ -94,8 +94,8 @@ export default function RecuperarContrasena() {
         document.body
       )}
       <AuthLayout regresarA="/login">
-        <div className="header-bar">¿TIENES PROBLEMAS?</div>
-        <div className="card">
+        <div className="header-bar header-bar-recuperacion">¿TIENES PROBLEMAS?</div>
+        <div className="card card-recuperacion">
           <form onSubmit={handleSubmit} noValidate>
             <div className="icono-card">
               <img src={iconoBloqueo} alt="Imagen Bloqueo" />

@@ -368,6 +368,7 @@ body.dark-mode .acc-btn-reset:active {
 @media (max-width: 480px) {
   .acc-panel {
     width: calc(100vw - 24px);
+    max-height: min(calc(100dvh - 88px), 620px);
     right: 12px;
     left: 12px;
     bottom: 72px;
@@ -388,22 +389,85 @@ body.dark-mode .acc-btn-reset:active {
 }
 
 .acc-panel {
-  max-height: min(80dvh, 620px);
+  max-height: min(calc(100dvh - 100px), 620px);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
-.acc-row-btns-vertical {
-  flex-direction: column;
+.acc-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .acc-btn-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  width: 100%;
-  text-align: left;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 4px;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.acc-btn-option:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+body.acc-grises::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  pointer-events: none;
+  backdrop-filter: grayscale(1);
+  -webkit-backdrop-filter: grayscale(1);
+}
+
+body.acc-cursor,
+body.acc-cursor * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M4 2v23l6-6 4 9 5-2-4-9h9z' fill='%23E8821A' stroke='%23000000' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E") 4 2,
+    auto !important;
+}
+
+.acc-guia-lectura {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 44px;
+  transform: translateY(-50%);
+  border-top: 2px solid #e8821a;
+  border-bottom: 2px solid #e8821a;
+  box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.62);
+  pointer-events: none;
+  z-index: 149;
+}
+
+body.acc-movimiento *,
+body.acc-movimiento *::before,
+body.acc-movimiento *::after {
+  animation-play-state: paused !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:not(.acc-movimiento-configurado) *,
+  body:not(.acc-movimiento-configurado) *::before,
+  body:not(.acc-movimiento-configurado) *::after {
+    animation-play-state: paused !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body.acc-espaciado :is(
+  h1, h2, h3, h4, h5, h6, span, a, .main-content,
+  .public-body main
+):not(.acc-panel *) {
+  line-height: 1.8 !important;
+  letter-spacing: 0.03em !important;
+  word-spacing: 0.08em !important;
 }
 
 .acc-btn-option.activa,
@@ -412,32 +476,31 @@ body.dark-mode .acc-btn-reset:active {
   box-shadow: inset 0 0 0 1px #e8821a;
 }
 
-.acc-btn-toggle > span:last-child {
-  min-width: 1em;
-  text-align: right;
-  font-weight: 900;
-}
-
 body.dark-mode .acc-btn-option.activa,
 body.dark-mode .acc_tema.activa {
   box-shadow: inset 0 0 0 1px #e8821a;
 }
 
 body.acc-contraste:not(.dark-mode) {
-  --bg: #fff;
+  --bg: #ffffff;
   --surface: #fff;
-  --surface-2: #fff;
-  --surface-3: #f0f0f0;
-  --text-900: #111;
-  --text-600: #222;
-  --text-400: #333;
-  --border: #555;
-  --border-strong: #222;
-  --color-fondo: #fff;
+  --surface-2: #fffaf5;
+  --surface-3: #fff0df;
+  --text-900: #241208;
+  --text-600: #422817;
+  --text-400: #56361f;
+  --border: #b75d16;
+  --border-strong: #8a3c08;
+  --color-fondo: #ffffff;
   --color-card: #fff;
-  --color-oscuro: #111;
-  --color-texto-suave: #222;
-  --color-borde: #444;
+  --color-oscuro: #241208;
+  --color-texto-suave: #422817;
+  --color-borde: #8a3c08;
+  --brand: #e8821a;
+  --brand-deep: #cf6e12;
+  --brand-suave: #e67e22;
+  --color-primario: #e8821a;
+  --color-acento: #f5a623;
 }
 
 body.dark-mode.acc-contraste {
@@ -457,25 +520,11 @@ body.dark-mode.acc-contraste {
   --color-borde: #fff;
 }
 
-body.acc-contraste:not(.dark-mode) :is(
-  p, h1, h2, h3, h4, h5, h6, span, label, li, td, th,
-  .descripcion, .subtitulo
-):not(.acc-panel *):not(.acc-fab *) {
-  color: #111 !important;
-}
-
 body.dark-mode.acc-contraste :is(
  p, h1, h2, h3, h4, h5, h6, span, label, li, td, th,
  .descripcion, .subtitulo
 ):not(.acc-panel *):not(.acc-fab *) {
  color: #fff !important;
-}
-
-body.acc-contraste:not(.dark-mode) :is(
-  .auth-shell, .card, .contenedor-registro, .checkout-card, .checkout-resumen,
-  .historial-section, .kpi-card, .stat-card, .mn-form-panel
-) {
-  background-color: #fff !important;
 }
 
 body.dark-mode.acc-contraste :is(
@@ -485,15 +534,8 @@ body.dark-mode.acc-contraste :is(
   background-color: #000 !important;
 }
 
-body.acc-contraste :is(
-  input, select, textarea, .card, .contenedor-registro, .checkout-card,
-  .checkout-resumen, .historial-section, .kpi-card, .stat-card, .mn-form-panel
-) {
+body.acc-contraste:not(.dark-mode) :is(input, select, textarea) {
   border-color: var(--border-strong) !important;
-}
-
-body.acc-contraste a:not(.acc-panel a) {
-  color: #003b80 !important;
 }
 
 body.dark-mode.acc-contraste a:not(.acc-panel a) {
@@ -1647,4 +1689,99 @@ body:not(.dark-mode) .public-body .cart-panel .btn-ir-pagar:not(:disabled):activ
 @keyframes toastFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+body.acc-contraste:not(.dark-mode),
+body.acc-contraste:not(.dark-mode) #root {
+  background-color: var(--bg) !important;
+  color: var(--text-900) !important;
+}
+
+body.acc-contraste:not(.dark-mode) .public-body,
+body.acc-contraste:not(.dark-mode) .main-content,
+body.acc-contraste:not(.dark-mode) .auth-shell,
+body.acc-contraste:not(.dark-mode) .checkout-wrapper {
+  background-color: var(--bg) !important;
+  color: var(--text-900) !important;
+}
+
+body.acc-contraste:not(.dark-mode) :is(
+  .promociones,
+  .nosotros-content,
+  .contact-section,
+  .ayuda-page,
+  .historial-section
+):not(.acc-panel *) {
+  background-color: var(--surface-2) !important;
+  color: var(--text-900) !important;
+}
+
+body.acc-contraste:not(.dark-mode) :is(
+  .card,
+  .promo-card-pub,
+  .auth-card,
+  .auth-form,
+  .checkout-card,
+  .checkout-resumen,
+  .historial-section,
+  .kpi-card,
+  .stat-card,
+  .mn-form-panel,
+  .modal-box,
+  .detalle-box,
+  .data-table,
+  .cart-panel
+):not(.acc-panel *) {
+  background-color: var(--surface-2) !important;
+  border: 2px solid var(--border-strong) !important;
+}
+
+body.acc-contraste:not(.dark-mode) :is(
+  p, h1, h2, h3, h4, h5, h6, span, a, li, label, td, th, small, strong, b
+):not(
+  .acc-panel *,
+  .acc-fab *,
+  header *,
+  nav *,
+  footer *,
+  button *,
+  [class*="badge"],
+  [class*="estado"],
+  [class*="status"],
+  [class*="icon"],
+  .required-marker
+) {
+  color: var(--text-900) !important;
+}
+
+body.acc-contraste:not(.dark-mode) :is(
+  .promo-info-pub p,
+  .promo-fechas,
+  .promo-precio-old,
+  input::placeholder,
+  textarea::placeholder
+):not(.acc-panel *) {
+  color: var(--text-600) !important;
+}
+
+body.acc-contraste:not(.dark-mode) a:not(.acc-panel a, header a, nav a, footer a) {
+  color: var(--border-strong) !important;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+body.acc-contraste:not(.dark-mode) :is(input, select, textarea) {
+  background-color: #fff !important;
+  border-color: var(--border-strong) !important;
+  color: var(--text-900) !important;
+}
+
+body.acc-contraste:not(.dark-mode) :is(
+  .promo-badge-pub,
+  .btn-circular-add,
+  .btn-sesion,
+  .btn-login,
+  .carousel-indicator.active
+) {
+  color: #fff !important;
 }

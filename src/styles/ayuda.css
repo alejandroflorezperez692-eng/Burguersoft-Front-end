@@ -452,21 +452,16 @@ body:not(.dark-mode) .ayuda-hero-contenido > p {
 .ayuda-temas > .ayuda-seccion,
 .ayuda-temas > .ayuda-explorar {
   min-width: 0;
-  height: 146px;
+  min-height: 146px;
   margin: 0;
   padding: 22px;
+  box-sizing: border-box;
   border: 1px solid var(--color-borde);
   border-top: 3px solid var(--color-secundario);
   border-radius: 14px;
   background: var(--color-fondo);
   box-shadow: var(--sombra-suave);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.ayuda-temas > .ayuda-seccion:has(.ayuda-acordeon-abierto),
-.ayuda-temas > .ayuda-explorar:has(.ayuda-acordeon-abierto) {
-  height: auto;
-  min-height: 146px;
 }
 
 body:not(.dark-mode) .ayuda-temas > .ayuda-seccion,
@@ -490,7 +485,10 @@ body:not(.dark-mode) .ayuda-page .ayuda-contacto {
 
 .ayuda-temas > .ayuda-explorar {
   display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 14px;
   align-content: center;
+  align-items: center;
 }
 
 .ayuda-temas > .ayuda-seccion:hover,
