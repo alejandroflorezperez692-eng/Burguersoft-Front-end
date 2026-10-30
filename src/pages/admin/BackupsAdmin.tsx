@@ -21,11 +21,6 @@ const BACKUPS_CSS = `
 .bk-modo input{margin-top:3px;accent-color:var(--brand)}
 .bk-modo strong{display:block;font-size:13px;color:var(--text-900);margin-bottom:3px}
 .bk-modo p{margin:0;font-size:12px;color:var(--text-600);line-height:1.45}
-.bk-opcion{display:block;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:13px 15px;cursor:pointer;margin-bottom:10px;transition:border-color .15s,background .15s;font-family:inherit}
-.bk-opcion:hover:not(:disabled){border-color:var(--brand);background:var(--surface-3)}
-.bk-opcion:disabled{opacity:.6;cursor:wait}
-.bk-opcion strong{display:block;font-size:13.5px;color:var(--text-900);margin-bottom:4px;font-weight:700}
-.bk-opcion span{display:block;font-size:12px;color:var(--text-600);line-height:1.45}
 .bk-warn{font-size:12px;color:#a2651a;background:rgba(232,130,26,.1);border:1px solid rgba(232,130,26,.3);border-radius:var(--r-sm);padding:10px 12px;line-height:1.5;margin:0 0 14px}
 .bk-archivo{display:flex;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-900)}
 .bk-archivo span:last-child{color:var(--text-400);font-size:12px;white-space:nowrap}
@@ -169,13 +164,8 @@ const extraerArreglo = <T,>(payload: unknown): T[] => {
   return [];
 };
 
-const asegurarExtension = (base: string, ext: '.sql.enc' | '.sql'): string => {
-  if (ext === '.sql.enc') {
-    return /\.sql\.enc$/i.test(base) ? base : `${base}.sql.enc`;
-  }
-  const sinCifrar = base.replace(/\.enc$/i, '');
-  return /\.sql$/i.test(sinCifrar) ? sinCifrar : `${sinCifrar}.sql`;
-};
+const asegurarExtension = (base: string): string =>
+  /\.sql\.enc$/i.test(base) ? base : `${base}.sql.enc`;
 
 export default function BackupsAdmin() {
   const { showToast, confirmar } = useToast();
@@ -199,13 +189,6 @@ export default function BackupsAdmin() {
   const [restorePass, setRestorePass] = useState('');
   const [verRestorePass, setVerRestorePass] = useState(false);
   const [restaurando, setRestaurando] = useState(false);
-
-  // Modal de descarga
-  const [dlSel, setDlSel] = useState<Backup | null>(null);
-  const [dlPidiendoPass, setDlPidiendoPass] = useState(false);
-  const [dlPass, setDlPass] = useState('');
-  const [verDlPass, setVerDlPass] = useState(false);
-  const [descargandoPlano, setDescargandoPlano] = useState(false);
 
   // Descargas / subidas en curso
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
@@ -350,7 +333,7 @@ export default function BackupsAdmin() {
   const confirmarRestaurar = async () => {
     if (!restoreSel) return;
     if (!restorePass.trim()) {
-      showToast('Ingresa tu contraseña para restaurar la copia.', true);
+      showToast('Ingresa la contraseña de tu cuenta o la usada al crear la copia.', true);
       return;
     }
     setRestaurando(true);
@@ -385,60 +368,13 @@ export default function BackupsAdmin() {
       const r = await apiClient.get<Blob>(`/backups/${b.id}/descargar`, { responseType: 'blob' });
       const cd: unknown = r.headers?.['content-disposition'];
       const nombre = nombreDesdeDisposition(cd)
-        ?? asegurarExtension(b.archivo ?? b.nombre ?? `backup-${b.id}`, '.sql.enc');
+        ?? asegurarExtension(b.archivo ?? b.nombre ?? `backup-${b.id}`);
       descargarBlob(r.data, nombre);
       showToast('Descarga iniciada: archivo cifrado (.sql.enc).');
     } catch (e) {
       showToast(await mensajeDeError(e), true);
     } finally {
       setDescargandoId(null);
-    }
-  };
-
-  const abrirModalDescarga = (b: Backup) => {
-    setDlSel(b);
-    setDlPidiendoPass(false);
-    setDlPass('');
-    setVerDlPass(false);
-  };
-
-  const cerrarModalDescarga = () => {
-    if (descargandoPlano) return;
-    setDlSel(null);
-    setDlPidiendoPass(false);
-    setDlPass('');
-    setVerDlPass(false);
-  };
-
-  const empezarDescargaPlana = () => {
-    setDlPidiendoPass(true);
-    setDlPass('');
-    setVerDlPass(false);
-  };
-
-  const descargarPlano = async () => {
-    if (!dlSel) return;
-    if (!dlPass.trim()) {
-      showToast('Ingresa tu contraseña para descifrar el archivo.', true);
-      return;
-    }
-    setDescargandoPlano(true);
-    try {
-      const r = await apiClient.post<Blob>(
-        `/backups/${dlSel.id}/descargar-plano`,
-        { password: dlPass },
-        { responseType: 'blob' }
-      );
-      const cd: unknown = r.headers?.['content-disposition'];
-      const nombre = nombreDesdeDisposition(cd)
-        ?? asegurarExtension(dlSel.archivo ?? dlSel.nombre ?? `backup-${dlSel.id}`, '.sql');
-      descargarBlob(r.data, nombre);
-      showToast('Descarga iniciada: archivo SQL sin cifrar (.sql).');
-      cerrarModalDescarga();
-    } catch (e) {
-      showToast(await mensajeDeError(e), true);
-    } finally {
-      setDescargandoPlano(false);
     }
   };
 
@@ -514,7 +450,7 @@ export default function BackupsAdmin() {
       const r = await apiClient.get<Blob>(`/backups/${b.id}/drive/descargar`, { responseType: 'blob' });
       const cd: unknown = r.headers?.['content-disposition'];
       const nombre = nombreDesdeDisposition(cd)
-        ?? asegurarExtension(b.archivo ?? b.nombre ?? `backup-${b.id}`, '.sql.enc');
+        ?? asegurarExtension(b.archivo ?? b.nombre ?? `backup-${b.id}`);
       descargarBlob(r.data, nombre);
       showToast('Descarga iniciada desde Google Drive.');
     } catch (e) {
@@ -666,9 +602,9 @@ export default function BackupsAdmin() {
                           </button>
                           <button
                             className="btn-icon btn-icon-edit btn-accion"
-                            onClick={() => abrirModalDescarga(b)}
-                            disabled={ocupado}
-                            title="Descargar esta copia a tu PC"
+                            onClick={() => descargarCifrado(b)}
+                            disabled={ocupado || descargandoId === b.id}
+                            title="Descargar esta copia cifrada a tu PC"
                           >
                             Descargar
                           </button>
@@ -824,8 +760,8 @@ export default function BackupsAdmin() {
               <div>
                 <strong>Combinar con datos actuales</strong>
                 <p>
-                  Inserta los registros de la copia sin borrar lo que ya existe. Puede generar duplicados
-                  si los registros ya se encuentran en la base de datos.
+                  Inserta únicamente los registros que no existan en la base de datos, sin borrar ni
+                  modificar los actuales y sin duplicar información.
                 </p>
               </div>
             </label>
@@ -836,8 +772,8 @@ export default function BackupsAdmin() {
             </p>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Contraseña de tu cuenta <span className="mn-req">*</span></label>
-              {inputPassword(restorePass, setRestorePass, verRestorePass, setVerRestorePass, confirmarRestaurar)}
+              <label>Contraseña de tu cuenta o de la copia <span className="mn-req">*</span></label>
+              {inputPassword(restorePass, setRestorePass, verRestorePass, setVerRestorePass, confirmarRestaurar, 'Contraseña de tu cuenta o de la copia')}
             </div>
 
             <div className="modal-actions">
@@ -854,70 +790,6 @@ export default function BackupsAdmin() {
           </div>
         </div>
       )}
-
-      {/* ===================== Modal: descargar copia ===================== */}
-      {dlSel && (
-        <div className="modal-overlay open" onClick={cerrarModalDescarga}>
-          <div className="modal-box" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
-            {!dlPidiendoPass ? (
-              <>
-                <h2>Descargar copia de seguridad</h2>
-                <p className="bk-desc">
-                  Copia <strong>#{dlSel.id}</strong> · {resumenContenido(dlSel).texto}
-                  <br />
-                  Elige cómo quieres llevarla a tu PC. Las dos son copias válidas; cambian en si quedan abiertas o cerradas.
-                </p>
-
-                <button
-                  className="bk-opcion"
-                  onClick={() => { cerrarModalDescarga(); descargarCifrado(dlSel); }}
-                  disabled={descargandoId === dlSel.id}
-                >
-                  <strong>{descargandoId === dlSel.id ? 'Descargando…' : 'Archivo cifrado (.sql.enc)'}</strong>
-                  <span>Se baja tal como está guardada, con candado. Sirve para moverla a otro servidor de Burguersoft.</span>
-                </button>
-
-                <button
-                  className="bk-opcion"
-                  onClick={empezarDescargaPlana}
-                  disabled={descargandoId === dlSel.id}
-                >
-                  <strong>SQL abierto (.sql)</strong>
-                  <span>Pide tu contraseña y te la deja legible. Para emergencias: se abre con cualquier programa de bases de datos.</span>
-                </button>
-
-                <div className="modal-actions">
-                  <button className="btn-cancel" onClick={cerrarModalDescarga}>Cancelar</button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h2>Descargar SQL abierto</h2>
-                <p className="bk-desc">
-                  Ingresa tu contraseña para que el servidor descifre la copia <strong>#{dlSel.id}</strong> y te la entregue en texto plano.
-                </p>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label>Contraseña de tu cuenta <span className="mn-req">*</span></label>
-                  {inputPassword(dlPass, setDlPass, verDlPass, setVerDlPass, descargarPlano)}
-                </div>
-                <div className="modal-actions">
-                  <button
-                    className="btn-cancel"
-                    onClick={() => setDlPidiendoPass(false)}
-                    disabled={descargandoPlano}
-                  >
-                    Volver
-                  </button>
-                  <button className="btn-save" onClick={descargarPlano} disabled={descargandoPlano}>
-                    {descargandoPlano ? 'Descargando...' : 'Descargar .sql'}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
 
       {/* ===================== Modal: copias en Drive ===================== */}
       {modalDrive && (

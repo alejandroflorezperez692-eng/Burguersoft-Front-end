@@ -104,7 +104,7 @@ export default function MateriaPrimaAdmin() {
   const [filtroUnidad, setFiltroUnidad] = useState('');
   const [orden, setOrden] = useState<Orden>('nombre');
 
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
 
   const toArray = <T,>(v: unknown): T[] =>
     Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
