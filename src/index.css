@@ -1,5 +1,36 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,700;9..144,900&family=Lato:wght@300;400;700;900&display=swap');
 
+.burguersoft-tooltip {
+  position: fixed;
+  z-index: 2147483647;
+  max-width: min(280px, calc(100vw - 24px));
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  background: #241208;
+  color: #fff;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.28);
+  font: 600 12px/1.4 var(--font-sans, system-ui, sans-serif);
+  text-align: center;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  animation: burguersoft-tooltip-aparecer 120ms ease-out;
+}
+
+.burguersoft-tooltip-debajo {
+  transform: translate(-50%, 0);
+}
+
+@keyframes burguersoft-tooltip-aparecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .required-marker,
 .checkout-required,
 .cfg-req,

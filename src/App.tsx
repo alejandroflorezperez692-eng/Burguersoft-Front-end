@@ -37,11 +37,13 @@ import AyudaCliente from './pages/AyudaCliente';
 import { ACCESO } from './utils/roles';
 import { ToastProvider } from './components/Toast';
 import InventarioAdmin from './pages/admin/InventarioAdmin';
+import TooltipsGlobales from './components/TooltipsGlobales';
 
 
 function App() {
   return (
     <ToastProvider>
+      <TooltipsGlobales />
       <DemoAccess />
       <Routes>
       <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
