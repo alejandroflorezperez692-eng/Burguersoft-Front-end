@@ -717,7 +717,7 @@ export default function ComprasAdmin() {
       ? apiClient.put(`/compras/${editId}`, payload)
       : apiClient.post('/compras', payload);
     peticion.then(() => {
-      showToast('Compra registrada: el stock se sumó a Materia Prima');
+      showToast('Compra registrada: la cantidad se sumó a Materia Prima');
       sinRed.current = false;
       borrarLocal();
       setPagina(1);

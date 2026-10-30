@@ -368,7 +368,7 @@ export default function MateriaPrimaAdmin() {
                 <th>Tipo</th>
                 <th>Cantidad</th>
                 <th style={{ textAlign: 'right' }}>Precio total</th>
-                <th>Stock</th>
+                <th>Disponibilidad</th>
                 <th>Estado</th>
                 <th>Proveedor</th>
                 <th>Acciones</th>
