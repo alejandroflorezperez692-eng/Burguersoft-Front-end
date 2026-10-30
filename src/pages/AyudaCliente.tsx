@@ -139,7 +139,7 @@ export default function AyudaCliente() {
                   <ol className="ayuda-pasos">
                     <li>Abre tu menú de perfil y selecciona <strong>Mis pedidos</strong> para ver el estado, el tipo de entrega, los productos y el total.</li>
                     <li>La lista se actualiza automáticamente y también puedes usar <strong>Actualizar</strong> para consultar el estado más reciente.</li>
-                    <li>Si el pedido aún está <strong>En cocina</strong>, <strong>En barra</strong> o <strong>Pendiente de pago</strong>, puedes seleccionar <strong>Cancelar pedido</strong> y confirmar la acción.</li>
+                    <li>Si el pedido aún está <strong>Registrado</strong>, <strong>Por verificar</strong> o <strong>Recepcionado</strong>, puedes seleccionar <strong>Cancelar pedido</strong> y confirmar la acción.</li>
                   </ol>
                   <p className="ayuda-nota">
                     Cuando el pedido avance a otro estado, la opción de cancelación puede dejar de estar disponible. En ese caso, comunícate con el local.

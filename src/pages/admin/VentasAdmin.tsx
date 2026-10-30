@@ -8,6 +8,9 @@ import { useToast } from '../../components/Toast';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
+import MotivoModal from '../../components/MotivoModal';
+import TrazabilidadModal from '../../components/TrazabilidadModal';
+import { mensajeDeError, type MapaTransiciones } from '../../types/Trazabilidad';
 
 interface DetalleVenta {
   id: number;
@@ -51,9 +54,7 @@ interface Promocion {
 
 const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
-const ESTADOS = ['En barra', 'En cocina', 'En camino', 'Listo para recoger', 'Entregado', 'Pagado', 'Cancelado', 'Reembolsada'];
-
-const ESTADOS_MESERO = ['En barra', 'En cocina', 'Entregado', 'Cancelado'];
+const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
 
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
@@ -104,19 +105,23 @@ export default function VentasAdmin() {
   const [cantidadCombo, setCantidadCombo] = useState('1');
   const [combos, setCombos] = useState<{ promocion_id: number; cantidad: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [version, setVersion] = useState(0);
+  const [transiciones, setTransiciones] = useState<MapaTransiciones | null>(null);
+  const [cambioConMotivo, setCambioConMotivo] = useState<{ venta: Venta; estado: string } | null>(null);
+  const [historialId, setHistorialId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [r1, r2, r3] = await Promise.all([
+      const [r1, r2, r3, r4] = await Promise.all([
         apiClient.get('/ventas'),
         apiClient.get('/productos'),
         apiClient.get('/promociones'),
+        apiClient.get('/pedidos/transiciones').catch(() => null),
       ]);
       setItems(toArray<Venta>(r1.data));
       setProductos(toArray<Producto>(r2.data));
       setPromociones(toArray<Promocion>(r3.data));
+      setTransiciones((r4?.data as MapaTransiciones | undefined) ?? null);
     } catch {
       setItems([]);
       setProductos([]);
@@ -195,7 +200,6 @@ export default function VentasAdmin() {
     };
     apiClient.post('/ventas', body).then(() => {
       cerrarFormulario();
-      setVersion((v) => v + 1);
       load();
     }).catch(() => alertar('No se pudo registrar la venta. Revisa el stock y los datos.'));
   };
@@ -274,10 +278,35 @@ export default function VentasAdmin() {
 
   const totalCarrito = totalProductos + totalCombos;
 
-  const updateEstado = (id: number, estado: string) => {
-    apiClient.patch(`/ventas/${id}/estado`, { estado })
-      .then(() => { setVersion((v) => v + 1); load(); })
-      .catch(() => alertar('No se pudo cambiar el estado.'));
+  const updateEstado = (id: number, estado: string, motivo?: string) => {
+    apiClient.patch(`/ventas/${id}/estado`, { estado, motivo })
+      .then(() => { load(); })
+      .catch((e) => alertar(mensajeDeError(e, 'No se pudo cambiar el estado.')));
+  };
+
+  // "Rechazada" solo la puede marcar el cliente desde "Mis pedidos";
+  // el admin no puede ponerla (excepto verla si el pedido ya la tiene).
+  const opcionesEstado = (v: Venta) => {
+    const t = transiciones?.[v.estado];
+    const base = ESTADOS.filter((e) => e !== 'Rechazada' || v.estado === 'Rechazada');
+    if (!t) return base.map((e) => ({ estado: e, habilitado: true, conMotivo: e === 'Cancelado' }));
+
+    return base
+      .filter((e) => e === v.estado || t.directas.includes(e) || t.con_motivo.includes(e))
+      .map((e) => ({
+        estado: e,
+        habilitado: true,
+        conMotivo: e !== v.estado && (e === 'Cancelado' || t.con_motivo.includes(e)),
+      }));
+  };
+
+  const pedirCambioEstado = (v: Venta, estado: string) => {
+    const op = opcionesEstado(v).find((o) => o.estado === estado);
+    if (op?.conMotivo) {
+      setCambioConMotivo({ venta: v, estado });
+      return;
+    }
+    updateEstado(v.id, estado);
   };
 
   const verFactura = async (id: number) => {
@@ -577,6 +606,7 @@ export default function VentasAdmin() {
               <th>Total</th>
               <th>Método</th>
               <th>Estado</th>
+              <th>Historial</th>
               <th>Factura</th>
             </tr>
           </thead>
@@ -602,13 +632,25 @@ export default function VentasAdmin() {
                 <td>
                   <select
                     value={v?.estado ?? ''}
-                    onChange={(e) => updateEstado(v.id, e.target.value)}
+                    onChange={(e) => pedirCambioEstado(v, e.target.value)}
                     style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
                   >
-                    {ESTADOS.map((e) => (
-                      <option key={e} value={e} disabled={(!esAdmin && e === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(e))}>{e}</option>
+                    {opcionesEstado(v).map((o) => (
+                      <option key={o.estado} value={o.estado} disabled={!o.habilitado}>
+                        {o.estado}{o.conMotivo ? ' (requiere motivo)' : ''}
+                      </option>
                     ))}
                   </select>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+                    onClick={() => setHistorialId(v.id)}
+                  >
+                    Ver historial
+                  </button>
                 </td>
                 <td>
                   <button
@@ -623,13 +665,39 @@ export default function VentasAdmin() {
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
+              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
       <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
+
+      {historialId !== null && (
+        <TrazabilidadModal ventaId={historialId} onClose={() => setHistorialId(null)} />
+      )}
+
+      {cambioConMotivo && (
+        <MotivoModal
+          titulo={
+            cambioConMotivo.estado === 'Cancelado'
+              ? `Cancelar el pedido #${cambioConMotivo.venta.id}`
+              : `Cambiar el pedido #${cambioConMotivo.venta.id} a «${cambioConMotivo.estado}»`
+          }
+          descripcion={
+            cambioConMotivo.estado === 'Cancelado'
+              ? 'Indica por qué se cancela. Quedará registrado en el historial del pedido.'
+              : `Este cambio sale del flujo normal (de «${cambioConMotivo.venta.estado}»). Indica el motivo; quedará registrado.`
+          }
+          confirmarTexto={cambioConMotivo.estado === 'Cancelado' ? 'Cancelar pedido' : 'Confirmar cambio'}
+          onClose={() => setCambioConMotivo(null)}
+          onConfirm={(motivo) => {
+            const { venta, estado } = cambioConMotivo;
+            setCambioConMotivo(null);
+            updateEstado(venta.id, estado, motivo);
+          }}
+        />
+      )}
     </div>
   );
 }
