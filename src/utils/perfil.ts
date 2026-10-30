@@ -25,15 +25,18 @@ export function validarDatos(d: {
   tdoc: string;
   ndoc: string;
   telefono: string;
-}): string | null {
+}, opciones: { validarNumeroDocumento?: boolean } = {}): string | null {
+  const validarNumeroDocumento = opciones.validarNumeroDocumento ?? true;
   if (!d.nombre.trim() || !d.apellido.trim()) return 'Nombre y apellido son obligatorios.';
   if (!d.tdoc) return 'Debes seleccionar un tipo de documento.';
-  if (!d.ndoc.trim()) return 'El número de documento es obligatorio.';
-  const len = d.ndoc.trim().length;
-  if (d.tdoc === 'Cédula de Ciudadanía' && (len < 6 || len > 10)) return 'La cédula debe tener entre 6 y 10 dígitos.';
-  if (d.tdoc === 'Tarjeta de Identidad' && (len < 10 || len > 11)) return 'La tarjeta de identidad debe tener entre 10 y 11 dígitos.';
-  if (d.tdoc === 'Cédula de Extranjería' && (len < 6 || len > 10)) return 'La cédula de extranjería debe tener entre 6 y 10 dígitos.';
-  if (d.tdoc === 'Pasaporte' && (len < 6 || len > 9)) return 'El pasaporte debe tener entre 6 y 9 caracteres.';
+  if (validarNumeroDocumento) {
+    if (!d.ndoc.trim()) return 'El número de documento es obligatorio.';
+    const len = d.ndoc.trim().length;
+    if (d.tdoc === 'Cédula de Ciudadanía' && (len < 6 || len > 10)) return 'La cédula debe tener entre 6 y 10 dígitos.';
+    if (d.tdoc === 'Tarjeta de Identidad' && (len < 10 || len > 11)) return 'La tarjeta de identidad debe tener entre 10 y 11 dígitos.';
+    if (d.tdoc === 'Cédula de Extranjería' && (len < 6 || len > 10)) return 'La cédula de extranjería debe tener entre 6 y 10 dígitos.';
+    if (d.tdoc === 'Pasaporte' && (len < 6 || len > 9)) return 'El pasaporte debe tener entre 6 y 9 caracteres.';
+  }
   if (!d.telefono.trim()) return 'El teléfono es obligatorio.';
   const limpio = d.telefono.replace(/\s/g, '');
   if (!/^(\+57|57)?3[0-9]{9}$/.test(limpio)) return 'El teléfono debe ser un número colombiano válido (ej: 3001234567).';

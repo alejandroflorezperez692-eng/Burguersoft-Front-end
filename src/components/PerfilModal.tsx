@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from './Toast';
 import apiClient from '../api/client';
+import { normalizarRol } from '../utils/roles';
 import {
   formatearTelefono,
   maxLenDocumento,
@@ -17,6 +18,7 @@ type Tab = 'datos' | 'pwd' | 'info';
 export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { user, updateUser, logout } = useAuth();
   const { showToast } = useToast();
+  const esCliente = normalizarRol(user?.role) === 'cliente';
   // Si el usuario ya editó algo, la respuesta tardía de /me no debe borrarlo.
   const dirtyRef = useRef(false);
   const abiertoRef = useRef(false);
@@ -91,15 +93,31 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
   const handleGuardarDatos = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const err = validarDatos({ nombre, apellido, tdoc, ndoc, telefono });
+    const err = validarDatos(
+      { nombre, apellido, tdoc, ndoc, telefono },
+      { validarNumeroDocumento: !esCliente },
+    );
     if (err) { showToast(err, true); return; }
     const nombreCompleto = `${nombre.trim()} ${apellido.trim()}`.trim();
     try {
-      await apiClient.put('/perfil', { nombre, apellido, Tdocumento: tdoc, Ndocumento: ndoc, telefono });
+      await apiClient.put('/perfil', {
+        nombre,
+        apellido,
+        Tdocumento: tdoc,
+        ...(esCliente ? {} : { Ndocumento: ndoc }),
+        telefono,
+      });
       showToast('Datos actualizados correctamente.');
       // actualizar contexto + local para que no se revierta al reabrir
       updateUser({ name: nombreCompleto });
-      localStorage.setItem('perfil_extra', JSON.stringify({ Tdocumento: tdoc, Ndocumento: ndoc, telefono }));
+      localStorage.setItem(
+        'perfil_extra',
+        JSON.stringify({
+          Tdocumento: tdoc,
+          ...(esCliente ? {} : { Ndocumento: ndoc }),
+          telefono,
+        }),
+      );
     } catch {
       showToast('No se pudieron actualizar los datos. Intenta de nuevo.', true);
     }
@@ -231,7 +249,17 @@ const handlePassword = async (e: React.FormEvent) => {
                 </div>
                 <div className="mp-field">
                   <label className="mp-label">Número de documento <span className="mp-req">*</span></label>
-                  <input type="text" value={ndoc} onChange={(e) => setNdoc(e.target.value.replace(/[^0-9A-Za-z]/g, ''))} placeholder="Número de documento" maxLength={maxLenDoc} required />
+                  <input
+                    type="text"
+                    value={ndoc}
+                    onChange={(e) => setNdoc(e.target.value.replace(/[^0-9A-Za-z]/g, ''))}
+                    placeholder="Número de documento"
+                    maxLength={maxLenDoc}
+                    required={!esCliente}
+                    disabled={esCliente}
+                    readOnly={esCliente}
+                  />
+                  {esCliente && <span className="mp-hint">El número de documento no se puede cambiar.</span>}
                 </div>
                 <div className="mp-field mp-full">
                   <label className="mp-label">Teléfono <span className="mp-req">*</span></label>
