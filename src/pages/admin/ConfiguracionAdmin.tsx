@@ -5,6 +5,7 @@ import apiClient from '../../api/client';
 import HistorialModal from '../../components/HistorialModal';
 import { normalizarRol } from '../../utils/roles';
 import { mensajeError } from '../../utils/errores';
+import AdminLoading from '../../components/AdminLoading';
 import {
   maxLenDocumento,
   reglasPassword,
@@ -155,6 +156,7 @@ export default function ConfiguracionAdmin() {
 
   return (
     <div className="page-inner">
+      {cargando && <AdminLoading texto="Cargando configuración" subtexto="Revisando tus datos" />}
       <div className="page-header">
         <div>
           <h1>Configuración de Cuenta</h1>

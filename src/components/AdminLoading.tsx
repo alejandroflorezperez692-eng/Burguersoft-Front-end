@@ -1,6 +1,19 @@
+import { useEffect } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import loadingAnimation from '../assets/hamburguesa.json';
 
+// Bloqueo de scroll compartido: si hay varios loaders montados a la vez se
+// cuenta cuántos hay y solo se restaura el scroll cuando se desmonta el último.
+let bloqueosScroll = 0;
+let overflowOriginal = '';
+
+/**
+ * Loading de la aplicación.
+ *
+ * Por defecto ocupa TODA la pantalla (incluido el sidebar y el header del
+ * admin), para que al entrar o recargar una página no se vea el contenido a
+ * medio cargar. Con `compact` se muestra en línea, dentro de un contenedor.
+ */
 export default function AdminLoading({
   texto = 'Cargando',
   subtexto = 'Preparando tus datos',
@@ -10,18 +23,49 @@ export default function AdminLoading({
   subtexto?: string;
   compact?: boolean;
 }) {
+  // Mientras el loading de pantalla completa está visible no se puede hacer
+  // scroll de la página que hay detrás.
+  useEffect(() => {
+    if (compact) return;
+    if (bloqueosScroll === 0) overflowOriginal = document.body.style.overflow;
+    bloqueosScroll += 1;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      bloqueosScroll = Math.max(0, bloqueosScroll - 1);
+      if (bloqueosScroll === 0) document.body.style.overflow = overflowOriginal;
+    };
+  }, [compact]);
+
   return (
     <div
-      style={{
-        minHeight: compact ? 0 : 'min(68vh, 420px)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: compact ? '16px' : '20px',
-      }}
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      style={
+        compact
+          ? {
+              minHeight: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '16px',
+            }
+          : {
+              position: 'fixed',
+              inset: 0,
+              zIndex: 2147483000,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '20px',
+              background: 'var(--bg, #fff)',
+              animation: 'burguerFadeIn 0.2s ease-out',
+            }
+      }
     >
-      <style>{`@keyframes burguerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}@keyframes burguerFill{0%{width:0%}100%{width:100%}}@keyframes burguerDots{0%{opacity:.2}20%{opacity:1}100%{opacity:.2}}`}</style>
+      <style>{`@keyframes burguerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}@keyframes burguerFill{0%{width:0%}100%{width:100%}}@keyframes burguerDots{0%{opacity:.2}20%{opacity:1}100%{opacity:.2}}@keyframes burguerFadeIn{from{opacity:0}to{opacity:1}}`}</style>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: compact ? 10 : 18 }}>
         <div
