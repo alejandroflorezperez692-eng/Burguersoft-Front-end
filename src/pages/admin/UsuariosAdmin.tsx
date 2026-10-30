@@ -4,6 +4,7 @@ import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
+import { useAuth } from '../../hooks/useAuth';
 
 interface Usuario {
   id: number;
@@ -76,6 +77,7 @@ export default function UsuariosAdmin() {
   const [filtroNombre, setFiltroNombre] = useState('');
 
   const { showToast, confirmar } = useToast();
+  const { user: sesion } = useAuth();
 
   const hayFiltros = q !== '' || filtroRol !== '' || filtroNombre !== '';
 
@@ -209,6 +211,56 @@ export default function UsuariosAdmin() {
     }
   };
 
+  /** Activa/inactiva desde la fila, con confirmación.
+   *  - Nunca se inactiva la propia cuenta.
+   *  - Siempre debe quedar al menos un administrador activo.
+   *  Manda el mismo payload que el modal de editar para que el backend no rechace el PUT. */
+  const alternarEstado = async (u: Usuario) => {
+    if (u.id === sesion?.id) {
+      showToast('No puedes inactivar tu propia cuenta.', true);
+      return;
+    }
+    const esAdmin = /admin/i.test(u.rol?.nombre ?? '');
+    const activosAdmin = items.filter(
+      (x) => x.estado === 'Activo' && /admin/i.test(x.rol?.nombre ?? ''),
+    );
+    if (u.estado === 'Activo' && esAdmin && activosAdmin.length <= 1) {
+      showToast('Debe existir al menos un administrador activo.', true);
+      return;
+    }
+
+    const inactivando = u.estado === 'Activo';
+    const nuevo = inactivando ? 'Inactivo' : 'Activo';
+    const nombreCompleto = `${u.nombre} ${u.apellido ?? ''}`.trim();
+    const ok = await confirmar(
+      inactivando
+        ? `¿Inactivar a "${nombreCompleto}"? No podrá iniciar sesión hasta que lo actives de nuevo.`
+        : `¿Activar a "${nombreCompleto}"? Volverá a poder iniciar sesión.`,
+      inactivando ? 'Sí, inactivar' : 'Sí, activar',
+      inactivando,
+    );
+    if (!ok) return;
+
+    try {
+      await apiClient.put(`/usuarios/${u.id}`, {
+        nombre: u.nombre,
+        apellido: u.apellido ?? '',
+        email: u.correo,
+        rol: u.rol?.nombre ?? '',
+        estado: nuevo,
+      });
+      showToast(`Usuario ${inactivando ? 'inactivado' : 'activado'} correctamente`);
+      load();
+    } catch (e: any) {
+      const errs = e?.response?.data?.errors;
+      const msg =
+        (errs && (Object.values(errs).flat()[0] as string)) ||
+        e?.response?.data?.error ||
+        'No se pudo actualizar el estado del usuario';
+      showToast(msg, true);
+    }
+  };
+
   useEscape([
     [modal && !!sel, () => setModal(false)],
   ]);
@@ -321,6 +373,13 @@ export default function UsuariosAdmin() {
                   <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
                   <td className="td-acciones">
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                      <button
+                        className="btn-icon btn-icon-estado btn-accion"
+                        onClick={() => alternarEstado(u)}
+                        title={u.estado === 'Activo' ? 'Inactivar cuenta' : 'Activar cuenta'}
+                      >
+                        {u.estado === 'Activo' ? 'Inactivar' : 'Activar'}
+                      </button>
                       <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar">Editar</button>
                       <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar">Eliminar</button>
                     </div>

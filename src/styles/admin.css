@@ -661,6 +661,25 @@ body.dark-mode .sidebar-header .logo-oscuro {
   color: #fff;
 }
 
+.btn-icon-estado {
+  background: #6b7280;
+  color: #fff;
+}
+
+.btn-icon-estado:hover {
+  background: #4b5563;
+  color: #fff;
+}
+
+body.dark-mode .btn-icon-estado {
+  background: #3f3a36;
+  color: var(--text-300, #e5d5c8);
+}
+
+body.dark-mode .btn-icon-estado:hover {
+  background: #574f49;
+}
+
 .btn-icon-restore {
   background: #10b981;
   color: #fff;
