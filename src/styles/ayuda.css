@@ -608,3 +608,72 @@ body:not(.dark-mode) .ayuda-page .ayuda-contacto a:focus-visible {
   text-decoration-thickness: auto;
   text-underline-offset: auto;
 }
+
+body.dark-mode .ayuda-temas > .ayuda-seccion,
+body.dark-mode .ayuda-temas > .ayuda-explorar,
+body.dark-mode .ayuda-page .ayuda-contacto {
+  background: #000;
+  border-color: #E8821A;
+}
+
+body.dark-mode .ayuda-temas > .ayuda-seccion .ayuda-acordeon-titulo h2,
+body.dark-mode .ayuda-temas > .ayuda-seccion .ayuda-seccion-contenido,
+body.dark-mode .ayuda-temas > .ayuda-seccion .ayuda-seccion-contenido p,
+body.dark-mode .ayuda-temas > .ayuda-seccion .ayuda-pasos,
+body.dark-mode .ayuda-temas > .ayuda-seccion .ayuda-lista,
+body.dark-mode .ayuda-temas > .ayuda-explorar .ayuda-acordeon-titulo h2,
+body.dark-mode .ayuda-temas > .ayuda-explorar .ayuda-acordeon-titulo > p,
+body.dark-mode .ayuda-page .ayuda-contacto > p {
+  color: #fff;
+}
+
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar a,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar button,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar a:hover,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar a:focus-visible,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar button:hover,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar button:focus-visible {
+  border-color: #E8821A !important;
+  background: #000 !important;
+  color: #fff !important;
+}
+
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar a span,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar button span {
+  color: #fff !important;
+}
+
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar a:hover,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar a:focus-visible,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar button:hover,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar button:focus-visible {
+  border-color: #E8821A !important;
+  background: #E8821A !important;
+  color: #fff !important;
+}
+
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar a:hover span,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar a:focus-visible span,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar button:hover span,
+body.dark-mode .ayuda-page .ayuda-enlaces-explorar button:focus-visible span {
+  color: #fff !important;
+}
+
+body.dark-mode .ayuda-page .ayuda-enlace,
+body.dark-mode .ayuda-page .ayuda-contacto a {
+  color: #fff !important;
+  font-family: 'Lato', 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: normal;
+  text-decoration: none;
+}
+
+body.dark-mode .ayuda-page .ayuda-enlace:hover,
+body.dark-mode .ayuda-page .ayuda-enlace:focus-visible,
+body.dark-mode .ayuda-page .ayuda-contacto a:hover,
+body.dark-mode .ayuda-page .ayuda-contacto a:focus-visible {
+  color: #fff !important;
+  background: transparent;
+  text-decoration: underline;
+}
