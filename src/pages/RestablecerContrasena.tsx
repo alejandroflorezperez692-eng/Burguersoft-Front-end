@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
 import { useToast } from '../components/Toast';
+import { useAuth } from '../hooks/useAuth';
 import iconoBloqueo from '../assets/img/bloquear.png';
 
 export default function RestablecerContrasena() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { logout } = useAuth();
   const correo = sessionStorage.getItem('correo_recuperacion') ?? '';
   const codigo = sessionStorage.getItem('codigo_verificado') ?? '';
   const [password, setPassword] = useState('');
@@ -53,7 +55,9 @@ export default function RestablecerContrasena() {
       });
       sessionStorage.removeItem('correo_recuperacion');
       sessionStorage.removeItem('codigo_verificado');
-      // Redirige al login apenas cambia, con aviso de éxito.
+      // Este cambio viene del login: se cierra cualquier sesión previa para
+      // que el aviso de éxito y el inicio de sesión se muestren correctamente.
+      logout();
       navigate('/login', { replace: true, state: { toast: 'password_ok' } });
     } catch (err) {
       if (isAxiosError(err)) {
