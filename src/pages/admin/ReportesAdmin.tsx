@@ -702,7 +702,7 @@ export default function ReportesAdmin() {
           disabled={!reporte || reporte.enRango.length === 0}
           style={{ opacity: reporte && reporte.enRango.length ? 1 : 0.5, cursor: reporte && reporte.enRango.length ? 'pointer' : 'not-allowed' }}
         >
-          Exportar ventas CSV
+          EXCEL
         </button>
       </div>
 
