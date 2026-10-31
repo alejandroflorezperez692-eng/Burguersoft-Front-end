@@ -76,6 +76,22 @@ export default function Login() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // Si faltan credenciales, mostramos el error y NO activamos el loading
+    const faltaCorreo = !email.trim();
+    const faltaPassword = !password.trim();
+
+    if (faltaCorreo || faltaPassword) {
+      if (faltaCorreo && faltaPassword) {
+        showToast('Ingresa tu correo electrónico y tu contraseña.', true);
+      } else if (faltaCorreo) {
+        showToast('El campo correo electrónico es obligatorio.', true);
+      } else {
+        showToast('El campo contraseña es obligatorio.', true);
+      }
+      return;
+    }
+
     setLoading(true);
 
     try {
