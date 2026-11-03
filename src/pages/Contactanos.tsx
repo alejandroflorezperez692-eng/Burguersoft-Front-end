@@ -26,7 +26,7 @@ export default function Contactanos() {
         </p>
 
         <div className="icons-container">
-          <div className="icon-box">
+          <div className="icon-box" data-tooltip="WhatsApp">
             <button
               className="icon-button"
               onClick={() => setShowWspMenu(!showWspMenu)}
@@ -56,7 +56,7 @@ export default function Contactanos() {
             <p>WhatsApp</p>
           </div>
 
-          <div className="icon-box">
+          <div className="icon-box" data-tooltip="Facebook">
             <a
               className="icon-button"
               href="https://www.facebook.com/ComidasElOriente"
@@ -68,7 +68,7 @@ export default function Contactanos() {
             <p>Comidas Rápidas El Oriente</p>
           </div>
 
-          <div className="icon-box">
+          <div className="icon-box" data-tooltip="Instagram">
             <a
               className="icon-button"
               href="https://www.instagram.com/ComidasElOriente"
@@ -80,7 +80,7 @@ export default function Contactanos() {
             <p>@ComidasElOriente</p>
           </div>
 
-          <div className="icon-box">
+          <div className="icon-box" data-tooltip="Gmail">
             <a className="icon-button" href="mailto:ComidasElOriente@gmail.com">
               <img src="/estilos/img/gmail.png" alt="Correo" />
             </a>

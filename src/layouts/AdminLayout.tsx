@@ -190,6 +190,7 @@ export default function AdminLayout() {
               aria-haspopup="menu"
               aria-expanded={userMenuOpen}
               title="Cuenta"
+              data-tooltip="Abrir menú de cuenta"
               style={{ cursor: 'pointer', font: 'inherit', textAlign: 'left' }}
             >
               <img src={usuarioPerfil} alt="" className="header-avatar" />
@@ -221,6 +222,7 @@ export default function AdminLayout() {
                 <button
                   type="button"
                   role="menuitem"
+                  data-tooltip="Ver mi perfil"
                   style={estiloItemMenu}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3, #f3ece4)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
@@ -232,6 +234,7 @@ export default function AdminLayout() {
                 <button
                   type="button"
                   role="menuitem"
+                  data-tooltip="Cerrar sesión"
                   style={{ ...estiloItemMenu, color: 'var(--danger, #d32f2f)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(211, 47, 47, 0.1)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}

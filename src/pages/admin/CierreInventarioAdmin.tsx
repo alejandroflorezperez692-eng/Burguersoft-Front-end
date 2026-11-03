@@ -462,7 +462,8 @@ export default function CierreInventarioAdmin() {
                     </td>
                     <td>
                       <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }}
-                        disabled={cargandoDetalle === h.id} onClick={() => verDetalle(h.id)}>
+                        disabled={cargandoDetalle === h.id} onClick={() => verDetalle(h.id)}
+                        data-tooltip="Ver detalle">
                         {cargandoDetalle === h.id ? 'Cargando...' : 'Ver detalle'}
                       </button>
                     </td>

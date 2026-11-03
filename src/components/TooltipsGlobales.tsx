@@ -1,7 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-const ELEMENTOS_CON_TOOLTIP = [
+const SELECTOR_ICONOS = [
+  'svg[class*="lucide-"]',
+  'svg[aria-label]',
+  'svg[role="img"]',
+  'img[alt]:not([alt=""])',
+].join(',');
+
+const SELECTOR_ACCIONES = [
   'button',
   'a[href]',
   '[role="button"]',
@@ -10,10 +17,6 @@ const ELEMENTOS_CON_TOOLTIP = [
   'input[type="submit"]',
   'input[type="reset"]',
   'input[type="image"]',
-  'img[alt]:not([alt=""])',
-  'svg[class*="lucide-"]',
-  'svg[aria-label]',
-  'svg[role="img"]',
 ].join(',');
 
 const DESCRIPCIONES_ICONOS: Record<string, string> = {
@@ -49,12 +52,28 @@ type TooltipVisible = {
   texto: string;
   izquierda: number;
   arriba: number;
-  debajo: boolean;
+  anchoMaximo: number;
+  posicion: 'lado' | 'vertical';
+  fondoOscuro: boolean;
 };
 
 function limitarTexto(texto: string): string {
   const normalizado = texto.replace(/\s+/g, ' ').trim();
   return normalizado.length > 120 ? `${normalizado.slice(0, 117)}...` : normalizado;
+}
+
+function detectarFondoOscuro(elemento: Element | null): boolean {
+  let actual = elemento;
+  while (actual) {
+    const color = getComputedStyle(actual).backgroundColor;
+    const valores = color.match(/[\d.]+/g)?.map(Number);
+    if (valores && valores.length >= 3 && (valores[3] ?? 1) >= 0.9) {
+      const [rojo, verde, azul] = valores;
+      return (0.2126 * rojo + 0.7152 * verde + 0.0722 * azul) < 128;
+    }
+    actual = actual.parentElement;
+  }
+  return false;
 }
 
 function descripcionDelIcono(elemento: Element): string | undefined {
@@ -78,12 +97,12 @@ function descripcionDelIcono(elemento: Element): string | undefined {
 }
 
 function obtenerDescripcion(elemento: Element): string {
-  const textoAccesible = elemento.getAttribute('aria-label')
+  const textoAccesible = elemento.getAttribute('data-tooltip')
+    || elemento.getAttribute('aria-label')
     || elemento.getAttribute('aria-labelledby')
       ?.split(/\s+/)
       .map((id) => document.getElementById(id)?.textContent ?? '')
       .join(' ')
-    || elemento.getAttribute('data-tooltip')
     || elemento.getAttribute('data-bs-title')
     || elemento.getAttribute('title');
 
@@ -107,13 +126,150 @@ function obtenerDescripcion(elemento: Element): string {
 
 function encontrarElemento(target: EventTarget | null): Element | null {
   if (!(target instanceof Element)) return null;
-  return target.closest(ELEMENTOS_CON_TOOLTIP);
+  const accion = target.closest(SELECTOR_ACCIONES);
+  if (accion?.getAttribute('aria-expanded') === 'true') return null;
+
+  const cajaContacto = target.closest('.icon-box[data-tooltip]');
+  if (cajaContacto) return cajaContacto;
+
+  const enlaceConTooltip = target.closest('a[data-tooltip]');
+  if (enlaceConTooltip) return enlaceConTooltip;
+
+  if (accion && !(accion instanceof HTMLInputElement)
+    && (accion.hasAttribute('data-tooltip') || accion.hasAttribute('title'))) {
+    return accion;
+  }
+
+  const icono = target.closest(SELECTOR_ICONOS);
+  if (icono) return icono;
+
+  if (!accion || accion instanceof HTMLInputElement) return null;
+
+  const iconos = accion.querySelectorAll('svg, img');
+  if (iconos.length === 0) return null;
+
+  const contenido = accion.cloneNode(true) as Element;
+  contenido.querySelectorAll('svg, img').forEach((elemento) => elemento.remove());
+  if (/[a-záéíóúñü0-9]/i.test(contenido.textContent ?? '')) return null;
+
+  return accion;
 }
 
 export default function TooltipsGlobales() {
   const [tooltip, setTooltip] = useState<TooltipVisible | null>(null);
   const elementoActivo = useRef<Element | null>(null);
   const descripcionPrevia = useRef<string | null>(null);
+  const tituloPrevio = useRef<string | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const elemento = elementoActivo.current;
+    const tooltipElement = tooltipRef.current;
+    if (!elemento || !tooltipElement) return;
+
+    const ancla = elemento.getBoundingClientRect();
+    const descripcion = tooltipElement.getBoundingClientRect();
+    const margen = 8;
+    const esOpcionMenu = elemento.matches('[role="menuitem"]')
+      || Boolean(elemento.closest('.dropdown-menu'));
+    const esControlCabecera = elemento.matches(
+      '.header-user, .notif-btn, .btn-icono, .btn-perfil',
+    );
+    const esBotonFlotante = elemento.matches('.acc-fab, .burgi-btn');
+    const esEnlaceSesion = elemento.matches('.link-sesion');
+    const esSesionHeader = esEnlaceSesion && Boolean(elemento.closest('header'));
+    const panelSesion = esEnlaceSesion
+      ? elemento.closest('.promo-card-pub')?.getBoundingClientRect()
+      : undefined;
+    const esAccionTarjeta = Boolean(elemento.closest('.mn-card-actions'));
+    const esPestanaPerfil = elemento.matches('.mp-tab');
+    const esCajaContacto = elemento.matches('.icon-box');
+    const espacio = 10;
+    const espacioLateral = esOpcionMenu ? 20 : espacio;
+    const espacioVertical = esControlCabecera ? 6
+      : esAccionTarjeta ? 16
+        : esPestanaPerfil ? 2
+          : esCajaContacto ? 10 : 6;
+    const espacioDerecha = window.innerWidth
+      - (panelSesion?.right ?? ancla.right) - espacioLateral - margen;
+    const espacioIzquierda = (panelSesion?.left ?? ancla.left) - espacioLateral - margen;
+    const aLaDerecha = espacioDerecha >= espacioIzquierda;
+    const anchoLateral = Math.min(
+      280,
+      aLaDerecha ? espacioDerecha : espacioIzquierda,
+    );
+    const posicionLateral = (esOpcionMenu || esBotonFlotante
+      || (esEnlaceSesion && !esSesionHeader))
+      && anchoLateral >= 100;
+    const posicion = posicionLateral ? 'lado' : 'vertical';
+    const anchoMaximo = posicionLateral
+      ? anchoLateral
+      : Math.min(280, window.innerWidth - margen * 2);
+    const anchoDescripcion = Math.min(descripcion.width, anchoMaximo);
+    const izquierdaVertical = Math.max(
+      margen,
+      Math.min(
+        ancla.left + ancla.width / 2 - anchoDescripcion / 2,
+        window.innerWidth - anchoDescripcion - margen,
+      ),
+    );
+    const izquierdaLateral = aLaDerecha
+      ? (panelSesion?.right ?? ancla.right) + espacioLateral
+      : (panelSesion?.left ?? ancla.left) - espacioLateral - anchoDescripcion;
+    const izquierda = posicionLateral ? izquierdaLateral : izquierdaVertical;
+    const contenedorCabecera = esControlCabecera
+      ? elemento.closest('.header-actions, .header-right')?.getBoundingClientRect()
+      : undefined;
+    const filaContacto = esCajaContacto ? elemento.closest('.icons-container') : null;
+    const finFilaContacto = filaContacto
+      ? Array.from(filaContacto.querySelectorAll('.icon-box'))
+        .map((caja) => caja.getBoundingClientRect())
+        .filter((rect) => Math.abs(rect.top - ancla.top) < 4)
+        .reduce((fin, rect) => Math.max(fin, rect.bottom), ancla.bottom)
+      : undefined;
+    const anclaVertical = panelSesion && !posicionLateral
+      ? panelSesion.bottom
+      : ancla.bottom;
+    const abajo = (contenedorCabecera?.bottom ?? finFilaContacto ?? anclaVertical)
+      + espacioVertical;
+    const arriba = abajo + descripcion.height <= window.innerHeight - margen
+      ? abajo
+      : (panelSesion && !posicionLateral ? panelSesion.top : ancla.top)
+        - descripcion.height - espacioVertical;
+    const top = posicionLateral
+      ? Math.max(
+        margen,
+        Math.min(
+          ancla.top + (ancla.height - descripcion.height) / 2,
+          window.innerHeight - descripcion.height - margen,
+        ),
+      )
+      : Math.max(margen, Math.min(arriba, window.innerHeight - descripcion.height - margen));
+    const fondoOscuro = detectarFondoOscuro(
+      document.elementFromPoint(
+        izquierda + anchoDescripcion / 2,
+        top + descripcion.height / 2,
+      ),
+    );
+
+    setTooltip((actual) => {
+      if (!actual || (Math.abs(actual.izquierda - izquierda) < 1
+        && Math.abs(actual.arriba - top) < 1
+        && Math.abs(actual.anchoMaximo - anchoMaximo) < 1
+        && actual.posicion === posicion
+        && actual.fondoOscuro === fondoOscuro)) {
+        return actual;
+      }
+      return {
+        ...actual,
+        izquierda,
+        arriba: top,
+        anchoMaximo,
+        posicion,
+        fondoOscuro,
+      };
+    });
+  }, [tooltip]);
 
   useEffect(() => {
     const ocultar = () => {
@@ -123,9 +279,13 @@ export default function TooltipsGlobales() {
         } else {
           elementoActivo.current.setAttribute('aria-describedby', descripcionPrevia.current);
         }
+        if (tituloPrevio.current !== null) {
+          elementoActivo.current.setAttribute('title', tituloPrevio.current);
+        }
       }
       elementoActivo.current = null;
       descripcionPrevia.current = null;
+      tituloPrevio.current = null;
       setTooltip(null);
     };
 
@@ -148,21 +308,18 @@ export default function TooltipsGlobales() {
         const ids = new Set((descripcionPrevia.current ?? '').split(/\s+/).filter(Boolean));
         ids.add('burguersoft-tooltip');
         elemento.setAttribute('aria-describedby', Array.from(ids).join(' '));
+        tituloPrevio.current = elemento.getAttribute('title');
+        elemento.removeAttribute('title');
       }
 
       const rect = elemento.getBoundingClientRect();
-      const debajo = rect.top < 56;
-      const centro = rect.left + rect.width / 2;
-      const margenCentro = Math.min(152, window.innerWidth / 2 - 12);
-      const izquierda = Math.max(
-        margenCentro,
-        Math.min(centro, window.innerWidth - margenCentro),
-      );
       setTooltip({
         texto,
-        izquierda,
-        arriba: debajo ? rect.bottom + 10 : rect.top - 10,
-        debajo,
+        izquierda: rect.left + rect.width / 2,
+        arriba: rect.top,
+        anchoMaximo: Math.min(280, window.innerWidth - 16),
+        posicion: elemento.matches('[role="menuitem"]') ? 'lado' : 'vertical',
+        fondoOscuro: false,
       });
     };
 
@@ -178,11 +335,23 @@ export default function TooltipsGlobales() {
       const siguiente = encontrarElemento(event.relatedTarget);
       if (anterior && anterior !== siguiente && elementoActivo.current === anterior) ocultar();
     };
+    const alHacerClick = (event: MouseEvent) => {
+      const accion = event.target instanceof Element
+        ? event.target.closest(SELECTOR_ACCIONES)
+        : null;
+      if (!accion || !accion.hasAttribute('aria-expanded')) return;
+      if (accion.getAttribute('aria-expanded') === 'true') {
+        ocultar();
+      } else if (accion.matches(':hover')) {
+        mostrar(encontrarElemento(accion));
+      }
+    };
 
     document.addEventListener('pointerover', alPasar);
     document.addEventListener('pointerout', alSalir);
     document.addEventListener('focusin', alEnfocar);
     document.addEventListener('focusout', alDesenfocar);
+    document.addEventListener('click', alHacerClick);
     window.addEventListener('scroll', ocultar, true);
     window.addEventListener('resize', ocultar);
 
@@ -191,6 +360,7 @@ export default function TooltipsGlobales() {
       document.removeEventListener('pointerout', alSalir);
       document.removeEventListener('focusin', alEnfocar);
       document.removeEventListener('focusout', alDesenfocar);
+      document.removeEventListener('click', alHacerClick);
       window.removeEventListener('scroll', ocultar, true);
       window.removeEventListener('resize', ocultar);
       ocultar();
@@ -202,9 +372,17 @@ export default function TooltipsGlobales() {
   return createPortal(
     <div
       id="burguersoft-tooltip"
-      className={`burguersoft-tooltip${tooltip.debajo ? ' burguersoft-tooltip-debajo' : ''}`}
+      className={`burguersoft-tooltip${tooltip.fondoOscuro ? ' burguersoft-tooltip-fondo-oscuro' : ''}`}
+      ref={tooltipRef}
       role="tooltip"
-      style={{ left: tooltip.izquierda, top: tooltip.arriba }}
+      style={{
+        left: tooltip.izquierda,
+        top: tooltip.arriba,
+        maxWidth: tooltip.anchoMaximo,
+        width: 'max-content',
+        transform: 'none',
+        textAlign: tooltip.posicion === 'vertical' ? 'center' : 'left',
+      }}
     >
       {tooltip.texto}
     </div>,

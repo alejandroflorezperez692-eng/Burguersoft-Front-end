@@ -1101,7 +1101,7 @@ export default function ComprasAdmin() {
                         <td><span className={`badge ${badgeEstado(c.estado)}`}>{c.estado}</span></td>
                         <td>
                           <div style={{ display: 'flex', gap: 8 }}>
-                            <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)}>Ver detalle</button>
+                            <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)} data-tooltip="Ver detalle">Ver detalle</button>
                             {c.estado !== 'Finalizada' && (
                               <>
                                 <button
@@ -1109,6 +1109,7 @@ export default function ComprasAdmin() {
                                   className="mn-btn-edit"
                                   style={{ flex: 'none', padding: '7px 14px' }}
                                   onClick={() => abrirEditar(c)}
+                                  data-tooltip="Modificar"
                                 >
                                   Modificar
                                 </button>
@@ -1117,6 +1118,7 @@ export default function ComprasAdmin() {
                                   className="mn-btn-del"
                                   style={{ flex: 'none', padding: '7px 14px' }}
                                   onClick={() => del(c)}
+                                  data-tooltip="Eliminar"
                                 >
                                   Eliminar
                                 </button>

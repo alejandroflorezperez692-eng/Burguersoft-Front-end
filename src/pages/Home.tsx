@@ -146,12 +146,12 @@ export default function Home() {
                         )}
                       </div>
                       {isAuthenticated ? (
-                        <button type="button" className="btn-circular-add" title="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
+                        <button type="button" className="btn-circular-add" title="Agregar al carrito" data-tooltip="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
                           +
 
                         </button>
                       ) : (
-                        <Link to="/login" title="Inicia sesión para pedir">
+                        <Link to="/login" className="link-sesion" data-tooltip="Inicia sesión para pedir">
                           <button type="button" className="btn-circular-add btn-login">
                             +
                           </button>

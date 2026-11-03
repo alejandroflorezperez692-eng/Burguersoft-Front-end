@@ -176,7 +176,7 @@ const handlePassword = async (e: React.FormEvent) => {
 
 
           <div className="mp-tabs-container">
-            <button type="button" className={`mp-tab ${tab === 'datos' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('datos'); }}>
+            <button type="button" className={`mp-tab ${tab === 'datos' ? 'mp-tab-active' : ''}`} data-tooltip="Mis datos" onClick={() => { setTab('datos'); }}>
               <span className="mp-tab-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
@@ -186,7 +186,7 @@ const handlePassword = async (e: React.FormEvent) => {
                 </svg>
               </span><span className="mp-tab-label">Mis datos</span>
             </button>
-            <button type="button" className={`mp-tab ${tab === 'pwd' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('pwd'); }}>
+            <button type="button" className={`mp-tab ${tab === 'pwd' ? 'mp-tab-active' : ''}`} data-tooltip="Contraseña" onClick={() => { setTab('pwd'); }}>
               <span className="mp-tab-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="8" cy="14" r="4.5" />
@@ -195,7 +195,7 @@ const handlePassword = async (e: React.FormEvent) => {
                 </svg>
               </span><span className="mp-tab-label">Contraseña</span>
             </button>
-            <button type="button" className={`mp-tab ${tab === 'info' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('info'); }}>
+            <button type="button" className={`mp-tab ${tab === 'info' ? 'mp-tab-active' : ''}`} data-tooltip="Cuenta" onClick={() => { setTab('info'); }}>
               <span className="mp-tab-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3Z" />

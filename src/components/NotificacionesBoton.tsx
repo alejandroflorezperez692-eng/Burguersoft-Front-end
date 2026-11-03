@@ -300,6 +300,7 @@ export default function NotificacionesBoton() {
         className={`notif-btn${abierto ? ' open' : ''}${sonando ? ' ring' : ''}`}
         onClick={() => setAbierto((v) => !v)}
         aria-label={sinLeer > 0 ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}
+        data-tooltip="Ver notificaciones"
         aria-haspopup="true"
         aria-expanded={abierto}
       >

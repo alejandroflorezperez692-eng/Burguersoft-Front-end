@@ -482,6 +482,7 @@ export default function Accesibilidad() {
         className="acc-fab"
         id="accFab"
         aria-label="Accesibilidad"
+        data-tooltip="Accesibilidad"
         aria-expanded={abierto}
         aria-controls="accPanel"
         ref={fabRef}
