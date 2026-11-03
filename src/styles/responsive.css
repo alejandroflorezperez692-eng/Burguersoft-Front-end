@@ -344,6 +344,42 @@ canvas {
 }
 
 @media (max-width: 768px) {
+  .acc-panel {
+    left: auto;
+    right: 16px;
+    bottom: 72px;
+    width: min(300px, calc(100vw - 32px));
+    max-width: calc(100vw - 32px);
+    max-height: min(calc(100dvh - 220px), 480px);
+    padding: 14px;
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .acc-row {
+    gap: 6px;
+  }
+
+  .acc-tools-grid {
+    gap: 5px;
+  }
+
+  .acc-btn-toggle {
+    padding: 6px 7px;
+    font-size: 11px;
+    line-height: 1.25;
+  }
+
+  .burgi-dialogo {
+    top: calc(140px + env(safe-area-inset-top)) !important;
+    right: 12px !important;
+    bottom: calc(144px + env(safe-area-inset-bottom)) !important;
+    width: min(380px, calc(100vw - 24px)) !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+    z-index: 1001 !important;
+  }
+
   .footer-scroll-top {
     position: fixed;
     right: 30px;
@@ -368,6 +404,14 @@ canvas {
     pointer-events: none;
     transform: translateY(8px);
     transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  body:has(.acc-panel.open, .burgi-dialogo) .footer-scroll-top {
+    display: none;
+  }
+
+  .footer-scroll-top-prelogin {
+    bottom: calc(72px + env(safe-area-inset-bottom));
   }
 
   .footer-scroll-top-visible {

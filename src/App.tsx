@@ -38,6 +38,7 @@ import { ACCESO } from './utils/roles';
 import { ToastProvider } from './components/Toast';
 import InventarioAdmin from './pages/admin/InventarioAdmin';
 import TooltipsGlobales from './components/TooltipsGlobales';
+import ScrollToTop from './components/ScrollToTop';
 
 
 function App() {
@@ -76,7 +77,9 @@ function App() {
       <Route path="/ayuda" element={<Ayuda />} />
 
       <Route element={<ProtectedRoute roles={['cliente']} redirect="/" />}>
-        <Route path="/ayuda-cliente" element={<AyudaCliente />} />
+        <Route element={<ConAsistenteCliente />}>
+          <Route path="/ayuda-cliente" element={<AyudaCliente />} />
+        </Route>
       </Route>
 
       {/* Panel interno: admin, cajero, cocinero y mesero comparten el mismo layout */}
@@ -121,6 +124,7 @@ function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <ScrollToTop />
       <Accesibilidad />
     </ToastProvider>
   );
