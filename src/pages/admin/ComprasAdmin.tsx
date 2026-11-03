@@ -1047,9 +1047,9 @@ export default function ComprasAdmin() {
           </select>
         </label>
         <label style={estiloEtiqueta}>
-          Marca
+          Proveedores
           <select style={estiloFiltro} value={fMarca} onChange={(e) => setFMarca(e.target.value)}>
-            <option value="">Todas</option>
+            <option value="">Todos</option>
             {marcasOrdenadas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
           </select>
         </label>
