@@ -5,7 +5,6 @@ const SELECTOR_ICONOS = [
   'svg[class*="lucide-"]',
   'svg[aria-label]',
   'svg[role="img"]',
-  'img[alt]:not([alt=""])',
 ].join(',');
 
 const SELECTOR_ACCIONES = [
@@ -178,9 +177,7 @@ export default function TooltipsGlobales() {
     const esBotonFlotante = elemento.matches('.acc-fab, .burgi-btn');
     const esEnlaceSesion = elemento.matches('.link-sesion');
     const esSesionHeader = esEnlaceSesion && Boolean(elemento.closest('header'));
-    const panelSesion = esEnlaceSesion
-      ? elemento.closest('.promo-card-pub')?.getBoundingClientRect()
-      : undefined;
+    const tarjetaPromocion = elemento.closest('.promo-card-pub')?.getBoundingClientRect();
     const esAccionTarjeta = Boolean(elemento.closest('.mn-card-actions'));
     const esPestanaPerfil = elemento.matches('.mp-tab');
     const esCajaContacto = elemento.matches('.icon-box');
@@ -191,14 +188,14 @@ export default function TooltipsGlobales() {
         : esPestanaPerfil ? 2
           : esCajaContacto ? 10 : 6;
     const espacioDerecha = window.innerWidth
-      - (panelSesion?.right ?? ancla.right) - espacioLateral - margen;
-    const espacioIzquierda = (panelSesion?.left ?? ancla.left) - espacioLateral - margen;
+      - (tarjetaPromocion?.right ?? ancla.right) - espacioLateral - margen;
+    const espacioIzquierda = (tarjetaPromocion?.left ?? ancla.left) - espacioLateral - margen;
     const aLaDerecha = espacioDerecha >= espacioIzquierda;
     const anchoLateral = Math.min(
       280,
       aLaDerecha ? espacioDerecha : espacioIzquierda,
     );
-    const posicionLateral = (esOpcionMenu || esBotonFlotante
+    const posicionLateral = !tarjetaPromocion && (esOpcionMenu || esBotonFlotante
       || (esEnlaceSesion && !esSesionHeader))
       && anchoLateral >= 100;
     const posicion = posicionLateral ? 'lado' : 'vertical';
@@ -209,13 +206,14 @@ export default function TooltipsGlobales() {
     const izquierdaVertical = Math.max(
       margen,
       Math.min(
-        ancla.left + ancla.width / 2 - anchoDescripcion / 2,
+        (tarjetaPromocion ? tarjetaPromocion.left + tarjetaPromocion.width / 2 : ancla.left + ancla.width / 2)
+          - anchoDescripcion / 2,
         window.innerWidth - anchoDescripcion - margen,
       ),
     );
     const izquierdaLateral = aLaDerecha
-      ? (panelSesion?.right ?? ancla.right) + espacioLateral
-      : (panelSesion?.left ?? ancla.left) - espacioLateral - anchoDescripcion;
+      ? (tarjetaPromocion?.right ?? ancla.right) + espacioLateral
+      : (tarjetaPromocion?.left ?? ancla.left) - espacioLateral - anchoDescripcion;
     const izquierda = posicionLateral ? izquierdaLateral : izquierdaVertical;
     const contenedorCabecera = esControlCabecera
       ? elemento.closest('.header-actions, .header-right')?.getBoundingClientRect()
@@ -227,14 +225,12 @@ export default function TooltipsGlobales() {
         .filter((rect) => Math.abs(rect.top - ancla.top) < 4)
         .reduce((fin, rect) => Math.max(fin, rect.bottom), ancla.bottom)
       : undefined;
-    const anclaVertical = panelSesion && !posicionLateral
-      ? panelSesion.bottom
-      : ancla.bottom;
+    const anclaVertical = tarjetaPromocion?.bottom ?? ancla.bottom;
     const abajo = (contenedorCabecera?.bottom ?? finFilaContacto ?? anclaVertical)
       + espacioVertical;
     const arriba = abajo + descripcion.height <= window.innerHeight - margen
       ? abajo
-      : (panelSesion && !posicionLateral ? panelSesion.top : ancla.top)
+      : (tarjetaPromocion?.top ?? ancla.top)
         - descripcion.height - espacioVertical;
     const top = posicionLateral
       ? Math.max(

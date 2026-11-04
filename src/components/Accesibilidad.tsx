@@ -1,12 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import {
+  BookOpen,
+  CaseSensitive,
+  Contrast,
+  Link2,
+  Minus,
+  Moon,
+  MousePointer2,
+  Plus,
+  RotateCcw,
+  Sun,
+  Text,
+  Volume1,
+  Volume2,
+} from 'lucide-react';
 import iconoAcc from '../assets/img/accesibilidad.png';
 
 const SELECTOR_TEXTO =
   'p, h1, h2, h3, h4, h5, h6, span, a, li, button, label, b, i, strong, td, th, div, select, input, textarea';
-const FUENTES = {
-  serif: 'Georgia, serif',
-  sans: 'Arial, sans-serif',
-};
+const FUENTE_LEGIBLE = '"Atkinson Hyperlegible", Arial, sans-serif';
+const VELOCIDADES_LECTURA = [
+  { id: 'lento', etiqueta: 'Lento', velocidad: 0.75 },
+  { id: 'normal', etiqueta: 'Normal', velocidad: 1 },
+  { id: 'rapido', etiqueta: 'Rápido', velocidad: 1.25 },
+] as const;
+type VelocidadLectura = (typeof VELOCIDADES_LECTURA)[number]['id'];
 const FACTOR_MINIMO = 0.8;
 const FACTOR_MAXIMO = 1.5;
 type AjusteAccesibilidad =
@@ -17,6 +36,24 @@ type AjusteAccesibilidad =
   | 'cursor'
   | 'movimiento'
   | 'guia';
+
+function IconoAjuste({ id }: { id: AjusteAccesibilidad }) {
+  const props = { size: 23, strokeWidth: 2, 'aria-hidden': true as const };
+  switch (id) {
+    case 'grises':
+      return <Contrast {...props} />;
+    case 'enlaces':
+      return <Link2 {...props} />;
+    case 'espaciado':
+      return <Text {...props} />;
+    case 'cursor':
+      return <MousePointer2 {...props} />;
+    case 'guia':
+      return <BookOpen {...props} />;
+    default:
+      return <CaseSensitive {...props} />;
+  }
+}
 
 const AJUSTES: { id: AjusteAccesibilidad; etiqueta: string }[] = [
   { id: 'contraste', etiqueta: 'Alto contraste' },
@@ -52,11 +89,46 @@ function leerFactorGuardado(): number {
   return Math.min(FACTOR_MAXIMO, Math.max(FACTOR_MINIMO, guardado));
 }
 
+function leerVelocidadGuardada(): VelocidadLectura {
+  const guardada = localStorage.getItem('acc_velocidad_lectura');
+  return VELOCIDADES_LECTURA.find(({ id }) => id === guardada)?.id ?? 'normal';
+}
+
+function leerVelocidadSeleccionada(): VelocidadLectura | null {
+  const guardada = localStorage.getItem('acc_velocidad_lectura');
+  return VELOCIDADES_LECTURA.find(({ id }) => id === guardada)?.id ?? null;
+}
+
 function aplicarEscala(factor: number) {
-  const elementos = Array.from(document.querySelectorAll<HTMLElement>(SELECTOR_TEXTO));
+  const elementosPagina = Array.from(
+    document.querySelectorAll<HTMLElement>(SELECTOR_TEXTO),
+  ).filter((el) => !el.closest('.acc-panel'));
+  const titulosPanel = Array.from(
+    document.querySelectorAll<HTMLElement>('.acc-panel-title > span, .acc-row-label'),
+  );
+  const elementos = [...new Set([...elementosPagina, ...titulosPanel])];
   const tamanosOriginales = elementos.map((el) => {
     if (!el.dataset.origSize) {
-      el.dataset.origSize = window.getComputedStyle(el).fontSize;
+      const estilo = window.getComputedStyle(el);
+      const tamanoActual = Number.parseFloat(estilo.fontSize);
+      let ancestro = el.parentElement;
+      while (ancestro && !ancestro.dataset.origSize) {
+        ancestro = ancestro.parentElement;
+      }
+      const estiloAncestro = ancestro ? window.getComputedStyle(ancestro) : null;
+      const tamanoAncestro = estiloAncestro
+        ? Number.parseFloat(estiloAncestro.fontSize)
+        : Number.NaN;
+      const tamanoOriginalAncestro = Number.parseFloat(
+        ancestro?.dataset.origSize ?? '',
+      );
+      const heredaTamanoEscalado =
+        Number.isFinite(tamanoAncestro) &&
+        Number.isFinite(tamanoOriginalAncestro) &&
+        Math.abs(tamanoActual - tamanoAncestro) < 0.1;
+      el.dataset.origSize = String(
+        heredaTamanoEscalado ? tamanoOriginalAncestro : tamanoActual,
+      );
     }
     return parseFloat(el.dataset.origSize);
   });
@@ -77,21 +149,100 @@ function aplicarFuente(fuente: string) {
     .forEach((el) => el.style.setProperty('font-family', fuente, 'important'));
 }
 
+function quitarFuente() {
+  document.body.style.removeProperty('font-family');
+  document
+    .querySelectorAll<HTMLElement>(SELECTOR_TEXTO)
+    .forEach((el) => el.style.removeProperty('font-family'));
+}
+
+function obtenerTextoVisibleDePagina(): string {
+  const pagina = document.querySelector<HTMLElement>(
+    '.main-content, .public-body, .auth-shell, main, [role="main"]',
+  ) ?? document.getElementById('root') ?? document.body;
+  const copia = pagina.cloneNode(true) as HTMLElement;
+  const elementosOriginales = pagina.querySelectorAll<HTMLElement>('*');
+  const elementosCopia = copia.querySelectorAll<HTMLElement>('*');
+  elementosOriginales.forEach((elemento, indice) => {
+    let actual: HTMLElement | null = elemento;
+    let oculto = false;
+    while (actual && actual !== pagina) {
+      const estilo = window.getComputedStyle(actual);
+      if (
+        actual.hidden ||
+        actual.getAttribute('aria-hidden') === 'true' ||
+        estilo.display === 'none' ||
+        estilo.visibility === 'hidden' ||
+        estilo.visibility === 'collapse'
+      ) {
+        oculto = true;
+        break;
+      }
+      actual = actual.parentElement;
+    }
+    if (oculto) elementosCopia[indice]?.remove();
+  });
+
+  copia.querySelectorAll(
+    'header, nav, .acc-panel, .acc-fab, [aria-hidden="true"], [hidden], [role="status"], input, select, textarea, .btn-regresar, .boton-mostrar-password, .password-toggle, .required-marker, .input-group-append, .input-group-prepend, .input-group-text, svg, iframe, canvas, [data-no-read-aloud]',
+  ).forEach((elemento) => elemento.remove());
+
+  copia.querySelectorAll<HTMLElement>('button, a[href], [role="button"]').forEach((control) => {
+    if (control.matches('.boton-mostrar-password, .password-toggle')) {
+      control.remove();
+      return;
+    }
+    if (!/[\p{L}]/u.test(control.textContent ?? '')) {
+      control.remove();
+      return;
+    }
+    control.querySelectorAll('img, picture').forEach((icono) => icono.remove());
+  });
+
+  const contenido = copia.innerText
+    .split(/\n+/)
+    .map((linea) => linea
+      .replace(/[^\p{L}\p{N}\s.,;:!?¿¡…-]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLocaleLowerCase('es-CO'))
+    .filter((linea) => /[\p{L}\p{N}]/u.test(linea))
+    .join('\n');
+  const seccionActiva = document.querySelector<HTMLElement>(
+    'header nav a.activo, header nav a[aria-current="page"]',
+  )?.innerText.trim().replace(/\s+/g, ' ');
+  return seccionActiva ? `${seccionActiva}.\n${contenido}`.trim() : contenido;
+}
+
 export default function Accesibilidad() {
+  const location = useLocation();
   const [abierto, setAbierto] = useState(false);
   const [factor, setFactor] = useState(leerFactorGuardado);
   const [tema, setTemaActual] = useState<'claro' | 'oscuro'>(
     localStorage.getItem('acc_tema') === 'oscuro' ? 'oscuro' : 'claro',
   );
-  const [fuente, setFuenteActual] = useState(localStorage.getItem('acc_font') ?? '');
+  const [fuente, setFuenteActual] = useState(
+    localStorage.getItem('acc_font') === FUENTE_LEGIBLE ? FUENTE_LEGIBLE : '',
+  );
+  const [velocidadLectura, setVelocidadLectura] = useState(leerVelocidadGuardada);
+  const [velocidadSeleccionada, setVelocidadSeleccionada] = useState(
+    leerVelocidadSeleccionada,
+  );
   const [ajustes, setAjustes] = useState(leerAjustesGuardados);
   const [leyendo, setLeyendo] = useState(false);
   const [guiaY, setGuiaY] = useState(() => window.innerHeight / 2);
   const panelRef = useRef<HTMLDivElement>(null);
   const fabRef = useRef<HTMLButtonElement>(null);
   const factorRef = useRef(factor);
-  const fuenteRef = useRef(localStorage.getItem('acc_font') ?? '');
+  const fuenteRef = useRef(
+    localStorage.getItem('acc_font') === FUENTE_LEGIBLE ? FUENTE_LEGIBLE : '',
+  );
   const lecturaRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const lecturaIdRef = useRef(0);
+  const lecturaActivaRef = useRef(false);
+  const velocidadLecturaRef = useRef(velocidadLectura);
+  const rutaAnteriorRef = useRef(location.pathname);
+  const temporizadorCambioPaginaRef = useRef<number | null>(null);
   const videosEnReproduccionRef = useRef(new Set<HTMLVideoElement>());
   const gifsPausadosRef = useRef(
     new Map<HTMLImageElement, { src: string; srcSet: string }>(),
@@ -103,8 +254,10 @@ export default function Accesibilidad() {
       localStorage.setItem('acc_factor', String(factorRef.current));
     }
     const fuenteGuardada = localStorage.getItem('acc_font');
-    if (fuenteGuardada) {
-      aplicarFuente(fuenteGuardada);
+    if (fuenteGuardada === FUENTE_LEGIBLE) {
+      aplicarFuente(FUENTE_LEGIBLE);
+    } else if (fuenteGuardada) {
+      localStorage.removeItem('acc_font');
     }
     if (factorRef.current !== 1) {
       aplicarEscala(factorRef.current);
@@ -225,6 +378,11 @@ export default function Accesibilidad() {
 
   useEffect(
     () => () => {
+      lecturaIdRef.current += 1;
+      lecturaActivaRef.current = false;
+      if (temporizadorCambioPaginaRef.current !== null) {
+        window.clearTimeout(temporizadorCambioPaginaRef.current);
+      }
       if (lecturaRef.current) window.speechSynthesis.cancel();
     },
     [],
@@ -233,6 +391,10 @@ export default function Accesibilidad() {
   useEffect(() => {
     document.body.classList.toggle('dark-mode', tema === 'oscuro');
   }, [tema]);
+
+  useEffect(() => {
+    document.body.classList.toggle('acc-texto-ampliado', factor > 1);
+  }, [factor]);
 
   useEffect(() => {
     let temporizador: ReturnType<typeof setTimeout> | undefined;
@@ -306,11 +468,17 @@ export default function Accesibilidad() {
     }
   };
 
-  const aplicarFuenteSelect = (fuente: string) => {
-    setFuenteActual(fuente);
-    fuenteRef.current = fuente;
-    aplicarFuente(fuente);
-    localStorage.setItem('acc_font', fuente);
+  const alternarFuenteLegible = () => {
+    const nuevaFuente = fuente === FUENTE_LEGIBLE ? '' : FUENTE_LEGIBLE;
+    setFuenteActual(nuevaFuente);
+    fuenteRef.current = nuevaFuente;
+    if (nuevaFuente) {
+      aplicarFuente(nuevaFuente);
+      localStorage.setItem('acc_font', nuevaFuente);
+    } else {
+      quitarFuente();
+      localStorage.removeItem('acc_font');
+    }
   };
 
   const cambiarAjuste = (ajuste: AjusteAccesibilidad) => {
@@ -319,41 +487,99 @@ export default function Accesibilidad() {
     setAjustes((actuales) => ({ ...actuales, [ajuste]: activo }));
   };
 
-  const alternarLectura = () => {
-    if (!('speechSynthesis' in window)) return;
-    if (leyendo) {
-      window.speechSynthesis.cancel();
-      lecturaRef.current = null;
+  const iniciarLectura = (velocidad: VelocidadLectura) => {
+    if (!('speechSynthesis' in window)) {
+      lecturaActivaRef.current = false;
       setLeyendo(false);
       return;
     }
 
-    const principal =
-      document.querySelector<HTMLElement>('main, [role="main"], .main-content') ??
-      document.body;
-    const copia = principal.cloneNode(true) as HTMLElement;
-    copia.querySelectorAll('.acc-panel, .acc-fab, [aria-hidden="true"]').forEach((elemento) =>
-      elemento.remove(),
-    );
-    const texto = copia.innerText.trim();
-    if (!texto) return;
+    const texto = obtenerTextoVisibleDePagina();
+    if (!texto) {
+      lecturaActivaRef.current = false;
+      setLeyendo(false);
+      return;
+    }
 
-    const lectura = new SpeechSynthesisUtterance(texto);
-    lectura.lang = navigator.language;
+    const lecturaId = ++lecturaIdRef.current;
+    const lectura = new SpeechSynthesisUtterance(texto.replace(/\n+/g, '. '));
+    const voces = window.speechSynthesis.getVoices();
+    const vozEspanol = voces.find(
+      (voz) => voz.lang.toLowerCase().startsWith('es-co'),
+    ) ?? voces.find(
+      (voz) => voz.lang.toLowerCase().startsWith('es-mx'),
+    ) ?? voces.find(
+      (voz) => voz.lang.toLowerCase().startsWith('es'),
+    );
+    lectura.lang = vozEspanol?.lang ?? 'es-CO';
+    if (vozEspanol) lectura.voice = vozEspanol;
+    lectura.rate = VELOCIDADES_LECTURA.find(({ id }) => id === velocidad)?.velocidad ?? 1;
     lectura.onend = () => {
+      if (lecturaId !== lecturaIdRef.current) return;
       lecturaRef.current = null;
+      lecturaActivaRef.current = false;
       setLeyendo(false);
     };
     lectura.onerror = (event) => {
+      if (lecturaId !== lecturaIdRef.current) return;
       lecturaRef.current = null;
+      lecturaActivaRef.current = false;
       setLeyendo(false);
       if (event.error !== 'canceled' && event.error !== 'interrupted') {
         console.error('Falló la lectura en voz alta:', event.error);
       }
     };
     lecturaRef.current = lectura;
+    lecturaActivaRef.current = true;
     setLeyendo(true);
     window.speechSynthesis.speak(lectura);
+  };
+
+  useEffect(() => {
+    if (rutaAnteriorRef.current === location.pathname) return;
+    rutaAnteriorRef.current = location.pathname;
+    if (!lecturaActivaRef.current) return;
+
+    window.speechSynthesis.cancel();
+    lecturaIdRef.current += 1;
+    lecturaRef.current = null;
+    temporizadorCambioPaginaRef.current = window.setTimeout(() => {
+      temporizadorCambioPaginaRef.current = null;
+      iniciarLectura(velocidadLecturaRef.current);
+    }, 250);
+  }, [location.pathname]);
+
+  const detenerLectura = () => {
+    lecturaIdRef.current += 1;
+    lecturaActivaRef.current = false;
+    if (temporizadorCambioPaginaRef.current !== null) {
+      window.clearTimeout(temporizadorCambioPaginaRef.current);
+      temporizadorCambioPaginaRef.current = null;
+    }
+    window.speechSynthesis.cancel();
+    lecturaRef.current = null;
+    setLeyendo(false);
+  };
+
+  const alternarLectura = () => {
+    if (!('speechSynthesis' in window)) return;
+    if (leyendo) {
+      detenerLectura();
+      return;
+    }
+
+    iniciarLectura(velocidadLectura);
+  };
+
+  const cambiarVelocidadLectura = (velocidad: VelocidadLectura) => {
+    setVelocidadLectura(velocidad);
+    setVelocidadSeleccionada(velocidad);
+    velocidadLecturaRef.current = velocidad;
+    localStorage.setItem('acc_velocidad_lectura', velocidad);
+    if (!leyendo) return;
+
+    detenerLectura();
+    iniciarLectura(velocidad);
   };
 
   const restablecer = () => {
@@ -361,6 +587,9 @@ export default function Accesibilidad() {
       'acc_tema',
       'acc_factor',
       'acc_font',
+      'acc_velocidad_lectura',
+      'acc_fab_x',
+      'acc_fab_y',
       ...AJUSTES.map(({ id }) => `acc_${id}`),
     ].forEach((clave) =>
       localStorage.removeItem(clave),
@@ -378,104 +607,123 @@ export default function Accesibilidad() {
         aria-modal="true"
         aria-label="Opciones de accesibilidad"
       >
-        <div className="acc-panel-title">Accesibilidad</div>
+        <div className="acc-panel-title">
+          <span>Accesibilidad</span>
+          <button type="button" className="acc-reset-header" onClick={restablecer}>
+            <RotateCcw size={14} strokeWidth={2} aria-hidden="true" />
+            <span>Restablecer</span>
+          </button>
+        </div>
         <div className="acc-row">
           <div className="acc-row-label">Tema</div>
-          <div className="acc-row-btns">
+          <div className="acc-row-btns acc-row-tiles">
             <button
               type="button"
-              className={`acc_tema${tema === 'claro' ? ' activa' : ''}`}
+              className={`acc_tema acc-btn-tile${tema === 'claro' ? ' activa' : ''}`}
               aria-pressed={tema === 'claro'}
               onClick={() => setTema('claro')}
             >
-              Claro
+              <Sun size={23} strokeWidth={2} aria-hidden="true" />
+              <span>Claro</span>
             </button>
             <button
               type="button"
-              className={`acc_tema${tema === 'oscuro' ? ' activa' : ''}`}
+              className={`acc_tema acc-btn-tile${tema === 'oscuro' ? ' activa' : ''}`}
               aria-pressed={tema === 'oscuro'}
               onClick={() => setTema('oscuro')}
             >
-              Oscuro
+              <Moon size={23} strokeWidth={2} aria-hidden="true" />
+              <span>Oscuro</span>
             </button>
           </div>
         </div>
         <div className="acc-row">
           <div className="acc-row-label">Tamaño de letra: {Math.round(factor * 100)} %</div>
-          <div className="acc-row-btns">
+          <div className="acc-row-btns acc-row-tiles">
             <button
               type="button"
-              className="acc-btn-option"
+              className="acc-btn-option acc-btn-tile"
               aria-label="Reducir tamaño de letra"
               disabled={factor <= FACTOR_MINIMO}
               onClick={() => cambiarFuente(-1)}
             >
-              A−
+              <Minus size={23} strokeWidth={2} aria-hidden="true" />
+              <span>Reducir letra</span>
             </button>
             <button
               type="button"
-              className="acc-btn-option"
+              className="acc-btn-option acc-btn-tile"
               aria-label="Aumentar tamaño de letra"
               disabled={factor >= FACTOR_MAXIMO}
               onClick={() => cambiarFuente(1)}
             >
-              A+
-            </button>
-          </div>
-        </div>
-        <div className="acc-row">
-          <div className="acc-row-label">Tipo de letra</div>
-          <div className="acc-row-btns">
-            <button
-              type="button"
-              className={`acc-btn-option${fuente === FUENTES.serif ? ' activa' : ''}`}
-              aria-pressed={fuente === FUENTES.serif}
-              onClick={() => aplicarFuenteSelect(FUENTES.serif)}
-            >
-              Serif
-            </button>
-            <button
-              type="button"
-              className={`acc-btn-option${fuente === FUENTES.sans ? ' activa' : ''}`}
-              aria-pressed={fuente === FUENTES.sans}
-              onClick={() => aplicarFuenteSelect(FUENTES.sans)}
-            >
-              Sans
+              <Plus size={23} strokeWidth={2} aria-hidden="true" />
+              <span>Aumentar letra</span>
             </button>
           </div>
         </div>
         <div className="acc-row">
           <div className="acc-row-label">Herramientas de accesibilidad</div>
           <div className="acc-tools-grid">
-            {AJUSTES.map(({ id, etiqueta }) => (
+            {AJUSTES.filter(({ id }) => id !== 'contraste' && id !== 'movimiento')
+              .map(({ id, etiqueta }) => (
               <button
                 key={id}
                 type="button"
-                className={`acc-btn-option acc-btn-toggle${ajustes[id] ? ' activa' : ''}`}
+                className={`acc-btn-option acc-btn-toggle acc-btn-tile${ajustes[id] ? ' activa' : ''}`}
                 aria-pressed={ajustes[id]}
                 onClick={() => cambiarAjuste(id)}
               >
-                {etiqueta}
+                <IconoAjuste id={id} />
+                <span>{etiqueta}</span>
               </button>
-            ))}
+              ))}
             <button
               type="button"
-              className="acc-btn-option acc-btn-toggle"
-              aria-pressed={leyendo}
-              disabled={!('speechSynthesis' in window)}
-              onClick={alternarLectura}
+              className={`acc-btn-option acc-btn-toggle acc-btn-tile${fuente === FUENTE_LEGIBLE ? ' activa' : ''}`}
+              aria-pressed={fuente === FUENTE_LEGIBLE}
+              onClick={alternarFuenteLegible}
             >
-              {!('speechSynthesis' in window)
-                ? 'Lectura en voz alta no disponible'
-                : leyendo
-                  ? 'Detener lectura en voz alta'
-                  : 'Leer contenido en voz alta'}
+              <CaseSensitive size={23} strokeWidth={2} aria-hidden="true" />
+              <span>Fuente para dislexia</span>
             </button>
           </div>
+          <div className="acc-row acc-lectura-grupo">
+            <div className="acc-row-label" id="acc-velocidad-label">
+              Lectura en voz alta
+            </div>
+            <div className="acc-lectura-controles" role="group" aria-labelledby="acc-velocidad-label">
+              <button
+                type="button"
+                className="acc-btn-option acc-btn-tile"
+                aria-pressed={leyendo}
+                disabled={!('speechSynthesis' in window)}
+                onClick={alternarLectura}
+              >
+                <Volume2 size={23} strokeWidth={2} aria-hidden="true" />
+                {!('speechSynthesis' in window)
+                  ? <span>No disponible</span>
+                  : leyendo
+                    ? <span>Detener lectura</span>
+                    : <span>Leer contenido</span>}
+              </button>
+              {VELOCIDADES_LECTURA.map(({ id, etiqueta }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`acc-btn-option acc-btn-tile${velocidadSeleccionada === id ? ' activa' : ''}`}
+                  aria-pressed={velocidadSeleccionada === id}
+                  onClick={() => cambiarVelocidadLectura(id)}
+                >
+                  {id === 'lento'
+                    ? <Volume1 size={23} strokeWidth={2} aria-hidden="true" />
+                    : <Volume2 size={23} strokeWidth={2} aria-hidden="true" />}
+                  <span>{etiqueta}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-        <button type="button" className="acc-btn-reset" onClick={restablecer}>
-          Restablecer
-        </button>
       </div>
       <button
         type="button"

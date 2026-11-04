@@ -345,15 +345,24 @@ canvas {
 
 @media (max-width: 768px) {
   .acc-panel {
+    top: max(8px, env(safe-area-inset-top));
     left: auto;
     right: 16px;
-    bottom: 72px;
-    width: min(300px, calc(100vw - 32px));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    width: min(420px, calc(100vw - 32px));
     max-width: calc(100vw - 32px);
-    max-height: min(calc(100dvh - 220px), 480px);
+    height: auto;
+    max-height: calc(
+      100dvh
+      - max(8px, env(safe-area-inset-top))
+      - max(8px, env(safe-area-inset-bottom))
+    );
+    min-height: 0;
     padding: 14px;
-    gap: 10px;
+    gap: 9px;
+    z-index: 151;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
   }
 
   .acc-row {
@@ -361,13 +370,24 @@ canvas {
   }
 
   .acc-tools-grid {
-    gap: 5px;
+    gap: 8px;
+  }
+
+  .acc-lectura-controles {
+    gap: 7px;
   }
 
   .acc-btn-toggle {
-    padding: 6px 7px;
+    min-height: 36px;
+    padding: 6px 8px;
     font-size: 11px;
     line-height: 1.25;
+  }
+
+  .acc-btn-tile {
+    height: 74px;
+    min-height: 74px;
+    padding: 8px 5px;
   }
 
   .burgi-dialogo {

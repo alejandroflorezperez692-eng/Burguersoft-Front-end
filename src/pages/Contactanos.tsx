@@ -2,7 +2,6 @@ import { useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
 import HeroCarousel from '../components/HeroCarousel';
 import Footer from '../components/Footer';
-import Accesibilidad from '../components/Accesibilidad';
 import '../styles/public.css';
 import '../styles/contactanos.css';
 
@@ -90,7 +89,6 @@ export default function Contactanos() {
       </section>
 
       <Footer />
-      <Accesibilidad />
     </div>
   );
 }

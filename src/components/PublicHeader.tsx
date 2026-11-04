@@ -60,9 +60,7 @@ export default function PublicHeader() {
     <>
       <header>
         <div className="header-left">
-          <Link to="/" className="logo-link" aria-label="Inicio">
-            <img src={logo} alt="El Oriente" className="logo" />
-          </Link>
+          <img src={logo} alt="El Oriente" className="logo" />
           <hr />
           <span className="nom-local">EL ORIENTE</span>
         </div>
