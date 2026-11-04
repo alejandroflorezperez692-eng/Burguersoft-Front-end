@@ -7,6 +7,15 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/Toast';
 import { mensajeError } from '../utils/errores';
 
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+
+// Tipo para window con reCAPTCHA
+declare global {
+  interface Window {
+    grecaptcha: any;
+  }
+}
+
 const TIPOS_DOCUMENTO = [
   'Cédula de Ciudadanía',
   'Tarjeta de Identidad',
@@ -75,6 +84,33 @@ export default function Registro() {
     };
   }, [tipoOpen]);
 
+  // Cargar el script de reCAPTCHA de Google y renderizar el widget
+  useEffect(() => {
+    if (window.grecaptcha) return;
+    const script = document.createElement('script');
+    script.async = true;
+    script.defer = true;
+    script.src = 'https://www.google.com/recaptcha/api.js?render=' + RECAPTCHA_SITE_KEY;
+    const firstScript = document.getElementsByTagName('script')[0];
+    firstScript.parentNode?.insertBefore(script, firstScript);
+    return () => {
+      firstScript.parentNode?.removeChild(script);
+    };
+  }, [RECAPTCHA_SITE_KEY]);
+
+  // Renderizar el widget de reCAPTCHA después de cargar el script
+  useEffect(() => {
+    if (!window.grecaptcha) return;
+    const container = document.getElementById('recaptcha-container');
+    if (container && !container.dataset.recaptchaRendered) {
+      window.grecaptcha.render(container, {
+        'sitekey': RECAPTCHA_SITE_KEY,
+        'callback': () => { /* widget rendered, can be captured on submit */ }
+      });
+      container.dataset.recaptchaRendered = 'true';
+    }
+  }, [RECAPTCHA_SITE_KEY, window.grecaptcha]);
+
   const requisitos: Requisito[] = [
     { ...TEXTO_REQUISITOS[0], cumple: password.length >= 8 },
     { ...TEXTO_REQUISITOS[1], cumple: /[A-Z]/.test(password) },
@@ -134,8 +170,12 @@ export default function Registro() {
       return;
     }
 
-    // Datos válidos: abrir modal de verificación. La cuenta se crea
-    // solo cuando el código del correo sea confirmado en el modal.
+    // Obtener token de reCAPTCHA - el widget debe estar renderizado primero
+    let recaptchaToken = '';
+    if ((window as any).grecaptcha) {
+      recaptchaToken = await (window as any).grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'registro' });
+    }
+    sessionStorage.setItem('recaptcha_token', recaptchaToken);
     setModalAbierto(true);
   };
 
@@ -143,8 +183,8 @@ export default function Registro() {
     setModalAbierto(false);
     setLoading(true);
 
-
     try {
+      const token = sessionStorage.getItem('recaptcha_token') ?? '';
       await register(
         nombre,
         apellido,
@@ -152,6 +192,7 @@ export default function Registro() {
         password,
         tipoDocumento,
         numeroDocumento,
+        token
       );
       sessionStorage.setItem('aviso_login', 'registro_ok');
       navigate('/login', { replace: true, state: { toast: 'registro_ok' } });
@@ -385,6 +426,8 @@ export default function Registro() {
               He leído y acepto los <Link to="/terminos" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('terminos'); }}>Términos y Condiciones</Link> y autorizo el tratamiento de mis datos personales conforme a la <Link to="/privacidad" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('privacidad'); }}>Política de Privacidad</Link>.
             </label>
           </div>
+
+          <div id="recaptcha-container" style={{ marginTop: 24 }}></div>
 
 
           <button type="submit" className="boton-registro" disabled={loading}>
