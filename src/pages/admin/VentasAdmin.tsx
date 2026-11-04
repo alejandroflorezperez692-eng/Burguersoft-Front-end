@@ -97,6 +97,8 @@ export default function VentasAdmin() {
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [tipoEntrega, setTipoEntrega] = useState(esMesero ? 'Consumir' : 'Domicilio');
   const [clienteNombre, setClienteNombre] = useState('');
+  const [mesa, setMesa] = useState('');
+  const [notas, setNotas] = useState('');
   const [intentado, setIntentado] = useState(false);
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
@@ -191,17 +193,24 @@ export default function VentasAdmin() {
   const save = () => {
     setIntentado(true);
     if (sinNada) return;
+    if (tipoEntrega === 'Consumir' && !mesa) return;
     const body = {
       carrito,
       combos: combos.length ? combos : undefined,
       metodo_pago: metodoPago,
       tipo_entrega: tipoEntrega,
       cliente_nombre: clienteNombre.trim() || undefined,
+      mesa: tipoEntrega === 'Consumir' ? Number(mesa) : undefined,
+      notas: notas.trim() || undefined,
     };
     apiClient.post('/ventas', body).then(() => {
       cerrarFormulario();
       load();
-    }).catch(() => alertar('No se pudo registrar la venta. Revisa el stock y los datos.'));
+    }).catch((e) => {
+      const d = (e as any)?.response?.data;
+      const msg = d?.error || d?.message || (Object.values(d?.errors ?? {}) as string[][])[0]?.[0];
+      alertar(msg || 'No se pudo registrar la venta. Revisa los datos.');
+    });
   };
 
   const cerrarFormulario = () => {
@@ -214,6 +223,8 @@ export default function VentasAdmin() {
     setPromocionId(0);
     setCantidadCombo('1');
     setClienteNombre('');
+    setMesa('');
+    setNotas('');
   };
 
   const buscarProducto = (id: number) => (productos ?? []).find((p) => p?.id === id);
@@ -501,6 +512,29 @@ export default function VentasAdmin() {
                 onChange={(e) => setClienteNombre(e.target.value)}
                 placeholder="Nombre del cliente o dejar vacío"
                 maxLength={150}
+              />
+            </div>
+            {tipoEntrega === 'Consumir' && (
+              <div className="form-group">
+                <label>Mesa *</label>
+                <select
+                  value={mesa}
+                  onChange={(e) => setMesa(e.target.value)}
+                  style={intentado && !mesa ? { borderColor: 'var(--danger)' } : undefined}
+                >
+                  <option value="">Elige la mesa</option>
+                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Mesa {n}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="form-group">
+              <label>Notas para cocina (opcional)</label>
+              <input
+                type="text"
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                placeholder="Ej: sin tomate, extra bacon"
+                maxLength={255}
               />
             </div>
           </div>

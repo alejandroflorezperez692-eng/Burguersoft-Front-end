@@ -38,9 +38,10 @@ import AyudaCliente from './pages/AyudaCliente';
 import { ACCESO } from './utils/roles';
 import { ToastProvider } from './components/Toast';
 import InventarioAdmin from './pages/admin/InventarioAdmin';
+import MesasEnVivo from './pages/staff/MesasEnVivo';
 
 
-function App() {
+export default function App() {
   return (
     <ToastProvider>
       <DemoAccess />
@@ -91,6 +92,7 @@ function App() {
           {/* Admin + cajero + mesero */}
           <Route element={<ProtectedRoute roles={ACCESO.menu} />}>
             <Route path="/menu" element={<MenuAdmin />} />
+            <Route path="/mesas" element={<MesasEnVivo />} />
             <Route path="/promociones" element={<PromocionesAdmin />} />
           </Route>
 
@@ -126,4 +128,5 @@ function App() {
   );
 }
 
-export default App;
+
+

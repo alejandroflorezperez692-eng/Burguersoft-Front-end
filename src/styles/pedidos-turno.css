@@ -1,4 +1,4 @@
-/* Monitor de pedidos en vivo por rol (cocina / meseros / cajero) */
+/* Tablero de pedidos por rol (cocina / meseros / cajero / todos) */
 
 .tv-wrap { padding: 22px 26px 40px; max-width: 1400px; margin: 0 auto; }
 
@@ -33,50 +33,118 @@
 }
 .tv-errorbox button { border: none; background: transparent; color: inherit; cursor: pointer; font-size: 14px; }
 
-.tv-grid {
-  margin-top: 18px;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-  align-items: start;
-}
+/* ---------- Buscador y filtros de entrega ---------- */
 
-.tv-vacio { grid-column: 1 / -1; text-align: center; color: var(--text-400); padding: 40px 0; font-size: 14px; }
+.tv-toolbar { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.tv-buscar {
+  flex: 1; min-width: 220px; max-width: 420px;
+  font-family: inherit; font-size: 13.5px; color: var(--text-900);
+  background: var(--surface, #fff); border: 1.5px solid var(--border); border-radius: 12px;
+  padding: 10px 14px; outline: none;
+}
+.tv-buscar:focus { border-color: var(--brand); }
+
+.tv-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.tv-pill {
+  border: none; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 12.5px;
+  background: transparent; color: var(--text-600); padding: 8px 16px; border-radius: 999px;
+}
+.tv-pill:hover { color: var(--text-900); }
+.tv-pill.activo { background: #1c1411; color: #fff; }
+
+/* ---------- Tablero por columnas ---------- */
+
+.tv-vacio { text-align: center; color: var(--text-400); padding: 40px 0; font-size: 14px; }
+
+.tv-cols { margin-top: 18px; display: grid; gap: 14px; align-items: start; overflow-x: auto; padding-bottom: 10px; scrollbar-width: thin; scrollbar-color: rgba(0,0,0,.18) transparent; }
+.tv-cols::-webkit-scrollbar { height: 6px; }
+.tv-cols::-webkit-scrollbar-track { background: transparent; }
+.tv-cols::-webkit-scrollbar-thumb { background: rgba(0,0,0,.18); border-radius: 999px; }
+
+.tv-col {
+  --c: var(--brand);
+  background: var(--surface-3, #f4f0ec);
+  border: 1px solid var(--border);
+  border-radius: 16px; padding: 12px;
+  display: flex; flex-direction: column; gap: 12px; min-height: 160px;
+}
+.tv-col[data-estado="Registrado"]        { --c: #8a8f98; }
+.tv-col[data-estado="Por verificar"]     { --c: #d99100; }
+.tv-col[data-estado="Recepcionado"]      { --c: #2f6fed; }
+.tv-col[data-estado="En preparación"]    { --c: #e8821a; }
+.tv-col[data-estado="Preparado"]         { --c: #1a7a42; }
+.tv-col[data-estado="Servido"]           { --c: #7a4fd6; }
+.tv-col[data-estado="Pendiente de pago"] { --c: #d33a3a; }
+
+.tv-col-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 800; font-size: 13.5px; color: var(--text-900);
+  padding-bottom: 10px; border-bottom: 2px solid var(--border);
+}
+.tv-col-titulo { display: inline-flex; align-items: center; gap: 8px; }
+.tv-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); display: inline-block; }
+.tv-col-count { background: var(--surface, #fff); border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px; font-size: 12px; color: var(--text-600); }
+.tv-vacio { text-align: left; color: var(--text-400); padding: 8px 0; font-size: 13px; }
+
+/* ---------- Tarjeta ---------- */
 
 .tv-card {
   background: var(--surface, #fff);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px 16px;
+  border-radius: 14px; padding: 14px 16px;
   box-shadow: 0 2px 10px rgba(22, 8, 0, .06);
   display: flex; flex-direction: column; gap: 10px;
 }
-.tv-card.cocinando { border-top: 4px solid var(--brand); }
-.tv-card.listo { border-top: 4px solid #1a7a42; }
 
-.tv-card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tv-card-head { display: flex; align-items: center; gap: 8px; }
 .tv-num { font-weight: 800; font-size: 17px; color: var(--text-900); }
+.tv-tag { font-size: 11px; font-weight: 700; color: var(--text-600); background: rgba(0,0,0,.06); padding: 2px 9px; border-radius: 999px; }
+.tv-tiempo { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-400); }
+.tv-tiempo.urgente { color: #d33a3a; font-weight: 700; }
 
-.tv-card-body { display: flex; flex-direction: column; gap: 6px; }
-.tv-cliente { font-size: 13px; font-weight: 700; color: var(--text-600); }
+.tv-card-body { display: flex; flex-direction: column; gap: 4px; }
+.tv-cliente { font-size: 14px; font-weight: 800; color: var(--text-900); }
+.tv-sub { font-size: 12px; color: var(--text-400); }
 
-.tv-items { margin: 0; padding: 0 0 0 16px; display: flex; flex-direction: column; gap: 3px; }
+.tv-items { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
 .tv-items li { font-size: 13.5px; color: var(--text-900); line-height: 1.35; }
-.tv-promos li { color: var(--brand); font-weight: 600; }
+.tv-items li b { color: var(--text-600); font-weight: 800; margin-right: 2px; }
+.tv-items li.tv-promo { color: var(--brand); font-weight: 600; }
 
-.tv-card-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; border-top: 1px dashed var(--border); padding-top: 10px; }
-.tv-total { font-weight: 800; font-size: 14.5px; color: var(--text-900); margin-right: auto; }
-.tv-tiempo { font-size: 11px; color: var(--text-400); }
+.tv-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.tv-chip {
+  font-size: 10.5px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 6px; background: rgba(0,0,0,.06); color: var(--text-600);
+}
+.tv-chip.sin   { background: #fde8e8; color: #b42318; }
+.tv-chip.extra { background: #e4f6ea; color: #1a7a42; }
+
+.tv-card-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-top: 4px; }
+.tv-total { font-weight: 800; font-size: 15px; color: var(--text-900); margin-right: auto; }
 .tv-espera { font-size: 11.5px; color: var(--text-400); font-style: italic; }
 
 .tv-btn {
   border: none; cursor: pointer; border-radius: 10px;
   font-family: inherit; font-weight: 800; font-size: 13px;
-  background: var(--brand); color: #fff; padding: 10px 16px;
-  box-shadow: 0 4px 14px rgba(232, 130, 26, .3);
+  background: var(--brand); color: #fff; padding: 10px 18px;
 }
 .tv-btn:hover:not(:disabled) { filter: brightness(.95); }
 .tv-btn:disabled { opacity: .55; cursor: wait; }
 
+/* ---------- Modo oscuro ---------- */
+
 body.dark-mode .tv-card { background: var(--surface-2, #2a2320); }
 body.dark-mode .tv-tabs { background: #241d19; }
+body.dark-mode .tv-col { background: #241d19; }
+body.dark-mode .tv-buscar { background: #2a2320; }
+body.dark-mode .tv-pill.activo { background: #f4f0ec; color: #1c1411; }
+body.dark-mode .tv-tag, body.dark-mode .tv-chip { background: rgba(255,255,255,.10); }
+body.dark-mode .tv-chip.sin { background: #4a1f1f; color: #ff9b94; }
+body.dark-mode .tv-chip.extra { background: #1b3a29; color: #7fd6a0; }
+
+
+@keyframes tv-shimmer { to { background-position: -200% 0; } }
+body.dark-mode .tv-skel {
+  background: linear-gradient(90deg, rgba(255,255,255,.05) 25%, rgba(255,255,255,.10) 50%, rgba(255,255,255,.05) 75%);
+  background-size: 200% 100%;
+}

@@ -33,6 +33,8 @@ const todosLosItems = [
   { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.menu },
   { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.ventas },
   { to: '/pedidos-en-vivo', label: 'Pedidos en vivo', icono: cena, roles: ACCESO.ventas },
+
+  { to: '/mesas', label: 'Mesas', icono: cena, roles: ACCESO.menu },
   { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.inventario },
   { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.inventario },
   { to: '/inventario', label: 'Inventario', icono: inventarioIcono, roles: ACCESO.inventario },

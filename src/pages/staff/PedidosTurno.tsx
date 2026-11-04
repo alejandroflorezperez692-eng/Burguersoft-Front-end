@@ -6,12 +6,12 @@ import { useToast } from '../../components/Toast';
 import MotivoModal from '../../components/MotivoModal';
 import { mensajeDeError, type MapaTransiciones } from '../../types/Trazabilidad';
 import '../../styles/pedidos-turno.css';
+import { getEcho } from '../../api/echo';
+import NuevaVentaModal from '../../components/NuevaVentaModal';
+import MesasModal from '../../components/MesasModal';
 
-/* ------------------------------------------------------------------ */
-/* Configuración de las tres vistas del "turno"                        */
-/* ------------------------------------------------------------------ */
 
-type Vista = 'cocina' | 'meseros' | 'cajero';
+type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
 
 interface Accion {
   /** Estado al que se pasa con la acción. */
@@ -23,7 +23,7 @@ interface Accion {
 interface VistaConfig {
   titulo: string;
   subtitulo: string;
-  /** Estados que se muestran en esta vista. */
+  /** Estados que se muestran en esta vista (uno por columna). */
   estados: string[];
   /** Estado actual → acción disponible (si no hay entrada, solo lectura). */
   acciones: Record<string, Accion>;
@@ -41,9 +41,10 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   },
   meseros: {
     titulo: 'Meseros',
-    subtitulo: 'Pedidos recién recepcionados y listos para llevar a la mesa.',
-    estados: ['Recepcionado', 'Preparado'],
+    subtitulo: 'Pedidos de la web por recibir y pedidos listos para llevar a la mesa.',
+    estados: ['Por verificar', 'Preparado'],
     acciones: {
+      'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
       Preparado: { sig: 'Servido', texto: 'Marcar servido' },
     },
   },
@@ -56,11 +57,30 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
       'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
     },
   },
+  todos: {
+    titulo: 'Todos',
+    subtitulo: 'Vista completa del flujo de pedidos.',
+    estados: ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago'],
+    acciones: {
+      Registrado: { sig: 'Por verificar', texto: 'Verificar' },
+      'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
+      Recepcionado: { sig: 'En preparación', texto: 'Empezar a preparar' },
+      'En preparación': { sig: 'Preparado', texto: 'Marcar preparado' },
+      Preparado: { sig: 'Servido', texto: 'Marcar servido' },
+      Servido: { sig: 'Pagado', texto: 'Registrar pago' },
+      'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
+    },
+  },
 };
 
-/** Vista por defecto de cada rol; el admin cambia entre las tres. */
-const VISTA_INICIAL: Record<string, Vista> = { cocinero: 'cocina', mesero: 'meseros', cajero: 'cajero' };
-const INTERVALO = 15000;
+/** Vista por defecto de cada rol; el admin cambia entre todas. */
+const VISTA_INICIAL: Record<string, Vista> = { admin: 'todos', cocinero: 'cocina', mesero: 'meseros', cajero: 'cajero' };
+
+/** Nombre de columna alternativo según la vista. */
+const ETIQUETA: Partial<Record<Vista, Record<string, string>>> = {
+  cocina: { Recepcionado: 'Por tomar' },
+  cajero: { Servido: 'Por cobrar' },
+};
 
 /* ------------------------------------------------------------------ */
 /* Tipos de la respuesta del backend                                    */
@@ -81,6 +101,8 @@ interface Venta {
   metodo_pago?: string | null;
   valor_total?: string | number | null;
   cliente_nombre?: string | null;
+  mesa?: number | null;
+  notas?: string | null;
   usuario?: { nombre?: string; apellido?: string } | null;
   detalles?: ItemVenta[];
   promociones?: PromoVenta[];
@@ -94,16 +116,28 @@ interface CambioConMotivo {
 /** 'YYYY-MM-DD HH:MM:SS' → Date (el espacio en blanco no lo aceptan todos los navegadores). */
 const aFecha = (f: string) => new Date((f || '').replace(' ', 'T'));
 
-const hace = (f: string): string => {
+const minutosDesde = (f: string): number => {
   const t = aFecha(f).getTime();
-  if (!Number.isFinite(t)) return '';
-  const min = Math.max(0, Math.floor((Date.now() - t) / 60000));
-  if (min < 1) return 'hace instantes';
-  if (min === 1) return 'hace 1 minuto';
-  if (min < 60) return `hace ${min} minutos`;
-  const h = Math.floor(min / 60);
-  return h === 1 ? 'hace 1 hora' : `hace ${h} horas`;
+  return Number.isFinite(t) ? Math.max(0, Math.floor((Date.now() - t) / 60000)) : 0;
 };
+
+const duracion = (min: number): string =>
+  min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`;
+
+type Entrega = 'todos' | 'Consumir' | 'Domicilio' | 'Recoger';
+
+const FILTROS_ENTREGA: { valor: Entrega; texto: string }[] = [
+  { valor: 'todos', texto: 'Todos' },
+  { valor: 'Consumir', texto: 'Local' },
+  { valor: 'Domicilio', texto: 'Delivery' },
+  { valor: 'Recoger', texto: 'Retiro' },
+];
+
+const ETIQUETA_ENTREGA: Record<string, string> = { Consumir: 'Local', Domicilio: 'Delivery', Recoger: 'Retiro' };
+
+/** "sin tomate, extra bacon" → ['sin tomate', 'extra bacon'] */
+const separarNotas = (n?: string | null): string[] =>
+  (n ?? '').split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
 
 const nombreCliente = (v: Venta): string =>
   v.cliente_nombre || [v.usuario?.nombre, v.usuario?.apellido].filter(Boolean).join(' ').trim() || 'Cliente';
@@ -114,6 +148,8 @@ export default function PedidosTurno() {
 
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
+  const puedeCrear = rol === 'admin' || rol === 'mesero';
+  const puedeVerMesas = rol === 'admin' || rol === 'mesero' || rol === 'cajero';
   const vistaInicial = VISTA_INICIAL[rol] ?? 'cocina';
 
   const [vista, setVista] = useState<Vista>(vistaInicial);
@@ -123,12 +159,17 @@ export default function PedidosTurno() {
   const [error, setError] = useState<string | null>(null);
   const [ocupadoId, setOcupadoId] = useState<number | null>(null);
   const [cambioConMotivo, setCambioConMotivo] = useState<CambioConMotivo | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroEntrega, setFiltroEntrega] = useState<Entrega>('todos');
+  const [nuevoAbierto, setNuevoAbierto] = useState(false);
+  const [mesaNueva, setMesaNueva] = useState<number | null>(null);
+  const [mesasAbierto, setMesasAbierto] = useState(false);
 
   const config = VISTA_CONFIG[vista];
 
   const load = useCallback(async () => {
     try {
-      const res = await apiClient.get('/ventas');
+      const res = await apiClient.get('/pedidos/tablero');
       const lista: Venta[] = Array.isArray(res.data)
         ? res.data
         : ((res.data as { data?: unknown })?.data as Venta[]) ?? [];
@@ -164,12 +205,20 @@ export default function PedidosTurno() {
     };
   }, []);
 
-  // Auto-refresco mientras la pestaña esté visible
+  // Tiempo real: Reverb avisa al instante; el refresco por tiempo queda solo de respaldo
   useEffect(() => {
+    const echo = getEcho();
+    const alCambiar = () => void load();
+    echo?.channel('cocina').listen('.venta.actualizada', alCambiar);
+
     const t = window.setInterval(() => {
       if (!document.hidden) void load();
-    }, INTERVALO);
-    return () => window.clearInterval(t);
+    }, echo ? 60000 : 8000);
+
+    return () => {
+      window.clearInterval(t);
+      echo?.channel('cocina').stopListening('.venta.actualizada', alCambiar);
+    };
   }, [load]);
 
   /** Decide si el cambio se hace directo o pide motivo según el mapa del backend. */
@@ -192,15 +241,101 @@ export default function PedidosTurno() {
     setOcupadoId(venta.id);
     try {
       await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo });
-      // Se quita de esta vista (ya no corresponde a este turno) y se recarga por si acaso
-      setItems((prev) => prev.filter((v) => v.id !== venta.id));
+      // La tarjeta pasa de inmediato a su nueva columna y luego se recarga por si acaso
+      setItems((prev) =>
+        prev
+          .map((v) => (v.id === venta.id ? { ...v, estado: accion.sig } : v))
+          .filter((v) => config.estados.includes(v.estado ?? '')),
+      );
       showToast(`Pedido #${venta.id}: ${accion.sig.toLowerCase()}`, false);
-      await load();
+      void load();
     } catch (e) {
       setError(mensajeDeError(e, `No se pudo marcar el pedido #${venta.id} como «${accion.sig}».`));
     } finally {
       setOcupadoId(null);
     }
+  };
+
+  /** Pedidos de esta vista que pasan la búsqueda y el filtro de entrega. */
+  const visibles = items.filter((v) => {
+    if (filtroEntrega !== 'todos' && v.tipo_entrega !== filtroEntrega) return false;
+    const q = busqueda.trim().toLowerCase().replace('#', '');
+    if (!q) return true;
+    const texto = [
+      v.id,
+      nombreCliente(v),
+      v.mesa ? `mesa ${v.mesa}` : '',
+      ...(v.detalles ?? []).map((d) => d.producto?.nombre ?? ''),
+    ]
+      .join(' ')
+      .toLowerCase();
+    return texto.includes(q);
+  });
+
+  const tarjeta = (v: Venta) => {
+    const accion = config.acciones[v.estado ?? ''];
+    const esOcupado = ocupadoId === v.id;
+    const min = minutosDesde(v.fecha ?? '');
+    const enMesa = v.tipo_entrega === 'Consumir' && !!v.mesa;
+    const notas = separarNotas(v.notas);
+    return (
+      <div className="tv-card" key={v.id}>
+        <div className="tv-card-head">
+          <span className="tv-num">#{v.id}</span>
+          {v.tipo_entrega && <span className="tv-tag">{ETIQUETA_ENTREGA[v.tipo_entrega] ?? v.tipo_entrega}</span>}
+          <span className={`tv-tiempo${min >= 20 ? ' urgente' : ''}`}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+            {duracion(min)}
+          </span>
+        </div>
+
+        <div className="tv-card-body">
+          <span className="tv-cliente">{enMesa ? `Mesa ${v.mesa}` : nombreCliente(v)}</span>
+          <span className="tv-sub">{enMesa ? nombreCliente(v) : v.metodo_pago ?? ''}</span>
+
+          {((v.detalles ?? []).length > 0 || (v.promociones ?? []).length > 0) && (
+            <ul className="tv-items">
+              {(v.detalles ?? []).map((d, i) => (
+                <li key={`d${i}`}>
+                  <b>{d.cantidad ?? 1}×</b> {d.producto?.nombre ?? 'Producto'}
+                </li>
+              ))}
+              {(v.promociones ?? [])
+                .filter((p) => p?.nombre)
+                .map((p, i) => (
+                  <li key={`p${i}`} className="tv-promo">
+                    {p.nombre}
+                  </li>
+                ))}
+            </ul>
+          )}
+
+          {notas.length > 0 && (
+            <div className="tv-chips">
+              {notas.map((n, i) => (
+                <span key={i} className={`tv-chip${/^sin/i.test(n) ? ' sin' : /^extra/i.test(n) ? ' extra' : ''}`}>
+                  {n}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="tv-card-foot">
+          <span className="tv-total">${Number(v.valor_total || 0).toLocaleString('es-CO')}</span>
+          {accion ? (
+            <button type="button" className="tv-btn" disabled={esOcupado} onClick={() => intentarCambio(v, accion)}>
+              {esOcupado ? 'Guardando…' : accion.texto}
+            </button>
+          ) : (
+            <span className="tv-espera">Sin acción disponible</span>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -233,7 +368,7 @@ export default function PedidosTurno() {
         </div>
       </div>
 
-      <p className="tv-nota">Se refresca automáticamente cada {INTERVALO / 1000} segundos.</p>
+      <p className="tv-nota">Se actualiza en tiempo real.</p>
 
       {error && (
         <div className="tv-errorbox" role="alert">
@@ -242,72 +377,90 @@ export default function PedidosTurno() {
         </div>
       )}
 
-      <div className="tv-grid">
-        {loading ? (
-          <p className="tv-vacio">Cargando pedidos…</p>
-        ) : items.length === 0 ? (
-          <p className="tv-vacio">No hay pedidos en esta sección. Todo al día.</p>
-        ) : (
-          items.map((v) => {
-            const accion = config.acciones[v.estado ?? ''];
-            const esOcupado = ocupadoId === v.id;
-            return (
-              <div
-                className={`tv-card${v.estado === 'En preparación' ? ' cocinando' : ''}${v.estado === 'Preparado' ? ' listo' : ''}`}
-                key={v.id}
-              >
-                <div className="tv-card-head">
-                  <span className="tv-num">#{v.id}</span>
-                  <span className="badge badge-info">{v.estado ?? '—'}</span>
-                  {v.tipo_entrega && <span className="badge badge-warning">{v.tipo_entrega}</span>}
-                </div>
-
-                <div className="tv-card-body">
-                  <span className="tv-cliente">{nombreCliente(v)}</span>
-                  {(v.detalles ?? []).length > 0 && (
-                    <ul className="tv-items">
-                      {(v.detalles ?? []).map((d, i) => (
-                        <li key={i}>
-                          {d.producto?.nombre ?? 'Producto'}
-                          {d.cantidad ? ` ×${d.cantidad}` : ''}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {(v.promociones ?? []).filter((p) => p?.nombre).length > 0 && (
-                    <ul className="tv-items tv-promos">
-                      {(v.promociones ?? []).map((p, i) => (
-                        <li key={i}>{p?.nombre ?? 'Combo'}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <div className="tv-card-foot">
-                  <span className="tv-total">
-                    ${Number(v.valor_total || 0).toLocaleString('es-CO')}
-                  </span>
-                  <span className="tv-tiempo">{hace(v.fecha ?? '')}</span>
-                  {accion ? (
-                    <button
-                      type="button"
-                      className="tv-btn"
-                      disabled={esOcupado}
-                      onClick={() => intentarCambio(v, accion)}
-                    >
-                      {esOcupado ? 'Guardando…' : accion.texto}
-                    </button>
-                  ) : (
-                    <span className="tv-espera">
-                      {v.estado === 'Recepcionado' ? 'Esperando a cocina…' : 'Sin acción disponible'}
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        )}
+      <div className="tv-toolbar">
+        <input
+          className="tv-buscar"
+          type="search"
+          placeholder="Buscar por número, mesa o nombre"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+        <div className="tv-pills">
+          {FILTROS_ENTREGA.map((f) => (
+            <button
+              key={f.valor}
+              type="button"
+              className={`tv-pill${filtroEntrega === f.valor ? ' activo' : ''}`}
+              onClick={() => setFiltroEntrega(f.valor)}
+            >
+              {f.texto}
+            </button>
+          ))}
+        </div>
+        <div className="tv-acciones">
+          {puedeVerMesas && (
+            <button type="button" className="tv-btn-sec" onClick={() => setMesasAbierto(true)}>
+              Mesas
+            </button>
+          )}
+          {puedeCrear && (
+            <button type="button" className="tv-btn-nuevo" onClick={() => setNuevoAbierto(true)}>
+              + Nuevo pedido
+            </button>
+          )}
+        </div>
       </div>
+
+      <div
+        className="tv-cols"
+        style={{ gridTemplateColumns: `repeat(${config.estados.length}, minmax(270px, 1fr))` }}
+      >
+        {config.estados.map((estado) => {
+          const col = visibles.filter((v) => v.estado === estado);
+          return (
+            <section className="tv-col" data-estado={estado} key={estado}>
+              <header className="tv-col-head">
+                <span className="tv-col-titulo">
+                  <i className="tv-dot" />
+                  {ETIQUETA[vista]?.[estado] ?? estado}
+                </span>
+                <span className="tv-col-count">{loading ? '–' : col.length}</span>
+              </header>
+              {loading ? (
+                <p className="tv-col-vacio">Cargando…</p>
+              ) : col.length === 0 ? (
+                <p className="tv-col-vacio">Sin pedidos</p>
+              ) : (
+                col.map(tarjeta)
+              )}
+            </section>
+          );
+        })}
+      </div>
+
+      <NuevaVentaModal
+        abierto={nuevoAbierto}
+        mesaInicial={mesaNueva}
+        onClose={() => {
+          setNuevoAbierto(false);
+          setMesaNueva(null);
+        }}
+        onCreada={() => void load()}
+      />
+
+      <MesasModal
+        abierto={mesasAbierto}
+        onClose={() => setMesasAbierto(false)}
+        onTomarPedido={
+          puedeCrear
+            ? (n) => {
+                setMesasAbierto(false);
+                setMesaNueva(n);
+                setNuevoAbierto(true);
+              }
+            : undefined
+        }
+      />
 
       {cambioConMotivo && (
         <MotivoModal

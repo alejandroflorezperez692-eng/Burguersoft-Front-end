@@ -73,11 +73,12 @@ function obtenerRangoHorario(fechaStr: string): { min: string; max: string } | n
   return { min, max: horario.fin };
 }
 
-function horaValida(fechaStr: string, horaStr: string): boolean {
+/* function horaValida(fechaStr: string, horaStr: string): boolean {
   const rango = obtenerRangoHorario(fechaStr);
   if (!rango || !horaStr) return false;
   return horaStr >= rango.min && horaStr <= rango.max;
 }
+Desactivada temporalmente junto con la validación de horario. */
 
 export default function CartPanel() {
   const {
@@ -140,10 +141,7 @@ export default function CartPanel() {
         showToast('Selecciona la fecha y la hora para tu pedido programado.', 'err');
         return;
       }
-      if (!horaValida(fechaSeleccionada, horaSeleccionada)) {
-        showToast(`Elige una hora entre ${rangoHorario?.min ?? ''} y ${rangoHorario?.max ?? ''} para ese día.`, 'err');
-        return;
-      }
+      // Validación de horario (hora dentro del horario de atención) desactivada temporalmente.
     }
     close();
     navigate('/checkout');
@@ -223,14 +221,14 @@ export default function CartPanel() {
                   type="time"
                   aria-label="Hora del pedido"
                   value={horaSeleccionada}
-                  min={rangoHorario.min}
-                  max={rangoHorario.max}
                   onChange={(e) => setHoraSeleccionada(e.target.value)}
                 />
                 <p className="cart-hora-hint">Horario disponible ese día: {rangoHorario.min} – {rangoHorario.max}</p>
+                {/* Validación de horario desactivada temporalmente:
                 {horaSeleccionada && !horaValida(fechaSeleccionada, horaSeleccionada) && (
                   <p className="cart-hora-error">Esa hora está fuera del horario de atención.</p>
                 )}
+                */}
               </>
             )}
           </div>
