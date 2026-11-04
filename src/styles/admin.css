@@ -5,7 +5,7 @@
 
 .sidebar {
   width: var(--sidebar-w);
-  background: linear-gradient(200deg, #e8821a 0%, #0e0500 100%);
+  background: var(--header-bg);
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 100;
@@ -32,10 +32,10 @@
   height: var(--header-h);
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  gap: 12px;
+  padding: 0 14px;
+  gap: 8px;
   border-bottom: 1px solid rgba(232, 130, 26, 0.12);
-  background: #d07417;
+  background: var(--header-bg);
   flex-shrink: 0;
 }
 
@@ -43,38 +43,45 @@
   width: 70px;
   height: 70px;
   object-fit: contain;
+  flex-shrink: 0;
 }
 
 body.dark-mode .sidebar-header .logo-claro {
   display: none;
 }
 
-.sidebar-header .logo-oscuro {
+.sidebar-header .logo-claro {
   display: none;
 }
 
+.sidebar-header .logo-oscuro {
+  display: block;
+}
 body.dark-mode .sidebar-header .logo-oscuro {
   display: block;
 }
 
 .nom-local {
   font-family: var(--font-sans);
-  font-size: 21px;
+  font-size: 22px;
   font-weight: 900;
-  color: var(--text-900);
-  letter-spacing: -0.3px;
-  line-height: 1.1;
+  color: #f5a623;
+  text-transform: uppercase;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  line-height: 1;
   flex: 1;
-  margin-left: -5px;
+  min-width: 0;
+  margin-left: 0;
 }
 
 .sidebar-divider {
-  width: 3px;
-  height: 50%;
-  background: var(--header-bg);
-  margin: 0 15px;
-  margin-left: 7px;
+  width: 2px;
+  height: 60%;
+  background: rgba(232, 130, 26, 0.35);
+  margin: 0 6px;
   border: none !important;
+  flex-shrink: 0;
 }
 
 .sidebar-footer {
@@ -151,7 +158,6 @@ body.dark-mode .sidebar-header .logo-oscuro {
   opacity: 1;
 }
 
-/* Botón Salir al fondo de la barra lateral */
 .sidebar-salir {
   margin-top: auto;
   padding-top: 12px;
@@ -198,7 +204,7 @@ body.dark-mode .sidebar-header .logo-oscuro {
   left: var(--sidebar-w);
   right: 0;
   height: var(--header-h);
-  background: linear-gradient(to right, #d27211, var(--header-bg));
+  background: linear-gradient(to right, var(--header-bg), #d27211);
   z-index: 90;
   display: flex;
   justify-content: flex-end;
@@ -671,13 +677,11 @@ body.dark-mode .sidebar-header .logo-oscuro {
   color: #fff;
 }
 
-/* Botones de accion con texto: ancho uniforme para alinear la columna */
 .btn-accion {
   min-width: 100px;
   justify-content: center;
 }
 
-/* Encabezado de la columna de acciones, alineado con los botones */
 .data-table thead th.th-acciones {
   text-align: center;
   white-space: nowrap;
@@ -1280,12 +1284,10 @@ body.dark-mode .sidebar-header .logo-oscuro {
   top: 20px;
   left: 50%;
   transform: translateX(-50%) translateY(-20px);
-  /* Icono + texto alineados */
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  /* Verde: movimientos y validaciones correctos */
   background: #1e3b1e;
   color: #7ddc82;
   border: 2.5px solid #2e7d32;
@@ -1307,7 +1309,6 @@ body.dark-mode .sidebar-header .logo-oscuro {
   border-color: #e63946;
 }
 
-/* Amarillo: información y advertencias */
 .toast-marca.toast-aviso {
   background: #2f2b1f;
   color: #e6a817;
@@ -1555,11 +1556,11 @@ body.dark-mode .detalle-box { background: var(--surface); }
 }
 
 body.dark-mode .sidebar {
-  background: linear-gradient(200deg, #3d1a04 0%, #1a0800 100%);
+  background: rgba(232, 130, 26, 0.15);
 }
 
 body.dark-mode .sidebar-header {
-  background: #6b3200;
+  background: #000000;
   border-bottom-color: rgba(232, 130, 26, 0.15);
 }
 
@@ -1583,7 +1584,7 @@ body.dark-mode .sidebar-item a.active {
 }
 
 body.dark-mode .header-nav {
-  background: linear-gradient(to right, #6b3200, var(--surface-3));
+  background: linear-gradient(to right, var(--surface-3), #6b3200);
   box-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
 }
 
@@ -2107,7 +2108,6 @@ body.dark-mode .chip-filtro:hover {
   gap: 4px 10px;
 }
 
-
 .tabla-responsive {
   max-width: 100%;
   overflow-x: auto;
@@ -2138,7 +2138,6 @@ body.dark-mode .chip-filtro:hover {
 }
 
 @media (max-width: 900px) {
-
   html {
     --sidebar-w: 0px;
     --header-h: 60px;
@@ -2201,7 +2200,6 @@ body.dark-mode .chip-filtro:hover {
   .stat-card .stat-val {
     font-size: 26px;
   }
-
 
   .marcas-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -2286,11 +2284,12 @@ body.dark-mode .chip-filtro:hover {
   .marca-img-wrap {
     height: 120px;
   }
+
   .stat-val {
     font-size: 26px;
   }
 }
-/* ---------- Banner de bienvenida (Inicio) ---------- */
+
 .wb {
   position: relative;
   display: flex;
@@ -2564,7 +2563,6 @@ body.dark-mode .cfg-requisito.cumple {
   color: #7bd79a;
 }
 
-/* ===== Encabezado: notificaciones + usuario ===== */
 .header-actions {
   display: flex;
   align-items: center;
@@ -2634,7 +2632,6 @@ body.dark-mode .cfg-requisito.cumple {
   color: rgba(255, 255, 255, 0.72);
 }
 
-/* Botón de notificaciones */
 .notif {
   position: relative;
 }
@@ -2797,7 +2794,6 @@ body.dark-mode .cfg-requisito.cumple {
   }
 }
 
-/* ===== Aviso emergente de notificación (baja desde arriba) ===== */
 .notif-toast {
   position: fixed;
   top: 16px;
@@ -2849,7 +2845,6 @@ body.dark-mode .cfg-requisito.cumple {
   color: var(--brand);
 }
 
-/* ── Tarjetas filtro + barra de stock (Materia Prima) ── */
 .stat-grid.stat-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .stat-card.stat-ok::before { background: var(--success); }
 .stat-card.stat-warn::before { background: var(--warning); }
@@ -2863,7 +2858,6 @@ body.dark-mode .cfg-requisito.cumple {
   box-shadow: 0 0 0 2px var(--brand);
 }
 
-/* Producto agotado */
 .public-body .promo-card-pub.agotado {
   opacity: 0.85;
 }
@@ -2920,7 +2914,6 @@ body.dark-mode .cfg-requisito.cumple {
   to   { transform: translate(-50%, -140%); opacity: 0; }
 }
 
-/* La campanita se sacude cuando llega una notificación */
 .notif-btn.ring svg {
   transform-origin: 50% 10%;
   animation: notifRing 0.9s ease-in-out;
@@ -2941,7 +2934,6 @@ body.dark-mode .cfg-requisito.cumple {
   }
 }
 
-/* ---- Ventas: graficas ---- */
 .ventas-graficas {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3209,7 +3201,6 @@ body.dark-mode .cfg-requisito.cumple {
   justify-content: center;
 }
 
-/* El contenido se queda dentro de la tarjeta, sin cambiar su tamaño */
 .ventas-grafica .ventas-barras {
   flex: 1;
   min-height: 0;
@@ -3241,7 +3232,6 @@ body.dark-mode .cfg-requisito.cumple {
   }
 }
 
-/* Gráficas totalmente estáticas */
 .ventas-grafica,
 .ventas-grafica *,
 .ventas-grafica *::before,
@@ -3249,24 +3239,10 @@ body.dark-mode .cfg-requisito.cumple {
   animation: none !important;
   transition: none !important;
   transform: none !important;
-
-
-/* ── Tarjetas de estado (Materia Prima) ── */
-.stat-grid.stat-grid-4 {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-.stat-card.stat-ok::before { background: var(--success); }
-.stat-card.stat-warn::before { background: var(--warning); }
-.stat-card.stat-danger::before { background: var(--danger); }
+
 .stat-card.stat-warn .stat-val { color: var(--warning); }
 .stat-card.stat-danger .stat-val { color: var(--danger); }
-@media (max-width: 1100px) {
-  .stat-grid.stat-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-@media (max-width: 768px) {
-  .stat-grid.stat-grid-4 { grid-template-columns: 1fr; }
-}
-}
 
 .backups-tablas-header {
   display: flex;
