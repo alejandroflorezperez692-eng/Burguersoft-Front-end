@@ -4,6 +4,7 @@ import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
+import { exportarReporteExcel } from './exportarReporteExcel';
 
 interface DetalleVenta {
   id: number;
@@ -94,28 +95,12 @@ const diasEntre = (desde: string, hasta: string) =>
 const moneda = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
 const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
-const csvCelda = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-
 const nombreCliente = (v: Venta) =>
   v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
 // Normaliza para buscar sin importar mayúsculas ni tildes
 const norm = (s: unknown) =>
   String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-
-// Descarga un CSV (separador ; y BOM para que Excel respete tildes)
-const descargarCSV = (nombre: string, encabezado: string[], filas: unknown[][]) => {
-  const csv = [encabezado, ...filas].map((f) => f.map(csvCelda).join(';')).join('\r\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = nombre;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-};
 
 /* ---------- Componentes auxiliares ---------- */
 interface FilaBarra {
@@ -650,54 +635,6 @@ export default function ReportesAdmin() {
   }, [compras, desde, hasta, dias, rangoValido]);
 
   /* ---------- Exportar (según lo seleccionado en "Mostrar") ---------- */
-  const exportarVentas = () => {
-    if (!reporte) return;
-    descargarCSV(
-      `reporte-ventas_${desde}_a_${hasta}.csv`,
-      ['#', 'Fecha', 'Cliente', 'Productos', 'Combos', 'Método', 'Entrega', 'Estado', 'Total'],
-      reporte.enRango.map((v) => [
-        v.id,
-        fechaLocal(v.fecha),
-        nombreCliente(v),
-        (v.detalles ?? []).map((d) => `${d?.producto?.nombre ?? 'Producto'} x${d?.cantidad ?? 0}`).join(' | '),
-        (v.promociones ?? []).map((p) => p?.nombre).join(' | '),
-        v.metodo_pago,
-        v.tipo_entrega,
-        v.estado,
-        Math.round(Number(v.valor_total) || 0),
-      ])
-    );
-  };
-
-  const exportarProductos = () => {
-    if (!reporte) return;
-    descargarCSV(
-      `reporte-productos_${desde}_a_${hasta}.csv`,
-      ['Producto', 'Unidades vendidas', 'Total vendido'],
-      reporte.productos.map((p) => [p.nombre, p.cantidad, Math.round(p.total)])
-    );
-  };
-
-  const exportarCompras = () => {
-    if (!reporteCompras) return;
-    descargarCSV(
-      `reporte-compras_${desde}_a_${hasta}.csv`,
-      ['#', 'Fecha', 'Método de pago', 'Insumos', 'Total'],
-      reporteCompras.enRango.map((c) => [
-        c.id,
-        diaCompra(c.fecha),
-        c.metodo_pago,
-        (c.detalles ?? [])
-          .map((d) => {
-            const marca = d?.marca?.nombre ? ` (${d.marca.nombre})` : '';
-            return `${d?.materia_prima?.nombre ?? 'Insumo'} x${d?.cantidad ?? 0}${marca}`;
-          })
-          .join(' | '),
-        Math.round(Number(c.valor_total) || 0),
-      ])
-    );
-  };
-
   const hayVentas = !!reporte && reporte.enRango.length > 0;
   const hayProductos = !!reporte && reporte.productos.length > 0;
   const hayCompras = !!reporteCompras && reporteCompras.enRango.length > 0;
@@ -709,12 +646,55 @@ export default function ReportesAdmin() {
     (ver('compras') && hayCompras);
 
   const exportarExcel = () => {
-    // Cada reporte se descarga como archivo independiente.
+    if (!reporte || !reporteCompras) return;
+
+    // Cada reporte se descarga como un archivo Excel independiente.
     // En "Todo" salen los que tengan datos, con una pausa para que el navegador no bloquee las descargas.
+    const base = { desde, hasta };
     const tareas: (() => void)[] = [];
-    if (ver('ventas') && hayVentas) tareas.push(exportarVentas);
-    if (ver('productos') && hayProductos) tareas.push(exportarProductos);
-    if (ver('compras') && hayCompras) tareas.push(exportarCompras);
+
+    if (ver('ventas') && hayVentas) {
+      tareas.push(() =>
+        void exportarReporteExcel({
+          ...base,
+          nombre: 'reporte-ventas',
+          ventas: reporte.enRango.map((v) => ({
+            id: v.id,
+            fecha: fechaLocal(v.fecha),
+            cliente: nombreCliente(v),
+            metodo_pago: v.metodo_pago,
+            tipo_entrega: v.tipo_entrega,
+            estado: v.estado,
+            valor_total: Number(v.valor_total) || 0,
+            detalles: v.detalles ?? [],
+            promociones: v.promociones ?? [],
+          })),
+        })
+      );
+    }
+
+    if (ver('productos') && hayProductos) {
+      tareas.push(() =>
+        void exportarReporteExcel({
+          ...base,
+          nombre: 'reporte-productos',
+          productos: reporte.productos,
+        })
+      );
+    }
+
+    if (ver('compras') && hayCompras) {
+      tareas.push(() =>
+        void exportarReporteExcel({
+          ...base,
+          nombre: 'reporte-compras',
+          compras: {
+            lista: reporteCompras.enRango,
+            totalPrevio: reporteCompras.totalPrevio,
+          },
+        })
+      );
+    }
 
     tareas.forEach((fn, i) => setTimeout(fn, i * 400));
   };
