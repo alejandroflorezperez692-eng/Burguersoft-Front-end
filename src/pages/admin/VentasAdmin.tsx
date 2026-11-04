@@ -8,9 +8,7 @@ import { useToast } from '../../components/Toast';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
-import MotivoModal from '../../components/MotivoModal';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
-import { mensajeDeError, type MapaTransiciones } from '../../types/Trazabilidad';
 
 interface DetalleVenta {
   id: number;
@@ -34,7 +32,18 @@ interface Venta {
   tipo_entrega: string;
   usuario_id: number;
   cliente_nombre?: string | null;
-  usuario?: { nombre: string; apellido: string };
+  mesa?: number | null;
+  notas?: string | null;
+  usuario?: {
+    nombre: string;
+    apellido: string;
+    correo?: string | null;
+    email?: string | null;
+    telefono?: string | null;
+    phone?: string | null;
+    Tdocumento?: string | null;
+    Ndocumento?: string | null;
+  };
   detalles: DetalleVenta[];
   promociones: PromocionVenta[];
 }
@@ -59,16 +68,19 @@ const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
-// Minúsculas y sin tildes, para búsquedas tolerantes
 const normalizar = (s: unknown) =>
   String(s ?? '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-// Fecha local en formato YYYY-MM-DD
 const fechaLocal = (fecha?: string | null) =>
   fecha ? new Date(fecha).toLocaleDateString('en-CA') : '';
+
+const fmtDia = (f?: string | null) =>
+  f ? new Date(f).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtHora = (f?: string | null) =>
+  f ? new Date(f).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : '';
 
 export default function VentasAdmin() {
   const { user } = useAuth();
@@ -82,7 +94,6 @@ export default function VentasAdmin() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   
-  // --- Filtros (Carlos) ---
   const [q, setQ] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroMetodo, setFiltroMetodo] = useState('');
@@ -90,7 +101,6 @@ export default function VentasAdmin() {
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
 
-  // --- Paginación (Develop) ---
   const [pagina, setPagina] = useState(1);
 
   const [showForm, setShowForm] = useState(false);
@@ -107,23 +117,20 @@ export default function VentasAdmin() {
   const [cantidadCombo, setCantidadCombo] = useState('1');
   const [combos, setCombos] = useState<{ promocion_id: number; cantidad: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [transiciones, setTransiciones] = useState<MapaTransiciones | null>(null);
-  const [cambioConMotivo, setCambioConMotivo] = useState<{ venta: Venta; estado: string } | null>(null);
   const [historialId, setHistorialId] = useState<number | null>(null);
+  const [detalleId, setDetalleId] = useState<number | null>(null);
 
   const load = async () => {
     setLoading(true);
     try {
-      const [r1, r2, r3, r4] = await Promise.all([
+      const [r1, r2, r3] = await Promise.all([
         apiClient.get('/ventas'),
         apiClient.get('/productos'),
         apiClient.get('/promociones'),
-        apiClient.get('/pedidos/transiciones').catch(() => null),
       ]);
       setItems(toArray<Venta>(r1.data));
       setProductos(toArray<Producto>(r2.data));
       setPromociones(toArray<Promocion>(r3.data));
-      setTransiciones((r4?.data as MapaTransiciones | undefined) ?? null);
     } catch {
       setItems([]);
       setProductos([]);
@@ -140,7 +147,6 @@ export default function VentasAdmin() {
 
   const textoBusqueda = normalizar(q).trim();
 
-  // --- Lógica de Filtrado (Carlos) ---
   const filtered = (items ?? []).filter((v) => {
     if (textoBusqueda) {
       const haystack = normalizar(
@@ -181,7 +187,6 @@ export default function VentasAdmin() {
 
   const totalFiltrado = filtered.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
-  // --- Paginación (Develop) ---
   const { visibles, paginaActual } = paginar(filtered, pagina);
 
   const sinNada = carrito.length === 0 && combos.length === 0;
@@ -289,37 +294,6 @@ export default function VentasAdmin() {
 
   const totalCarrito = totalProductos + totalCombos;
 
-  const updateEstado = (id: number, estado: string, motivo?: string) => {
-    apiClient.patch(`/ventas/${id}/estado`, { estado, motivo })
-      .then(() => { load(); })
-      .catch((e) => alertar(mensajeDeError(e, 'No se pudo cambiar el estado.')));
-  };
-
-  // "Rechazada" solo la puede marcar el cliente desde "Mis pedidos";
-  // el admin no puede ponerla (excepto verla si el pedido ya la tiene).
-  const opcionesEstado = (v: Venta) => {
-    const t = transiciones?.[v.estado];
-    const base = ESTADOS.filter((e) => e !== 'Rechazada' || v.estado === 'Rechazada');
-    if (!t) return base.map((e) => ({ estado: e, habilitado: true, conMotivo: e === 'Cancelado' }));
-
-    return base
-      .filter((e) => e === v.estado || t.directas.includes(e) || t.con_motivo.includes(e))
-      .map((e) => ({
-        estado: e,
-        habilitado: true,
-        conMotivo: e !== v.estado && (e === 'Cancelado' || t.con_motivo.includes(e)),
-      }));
-  };
-
-  const pedirCambioEstado = (v: Venta, estado: string) => {
-    const op = opcionesEstado(v).find((o) => o.estado === estado);
-    if (op?.conMotivo) {
-      setCambioConMotivo({ venta: v, estado });
-      return;
-    }
-    updateEstado(v.id, estado);
-  };
-
   const verFactura = async (id: number) => {
     const ventana = window.open('', '_blank');
 
@@ -340,7 +314,10 @@ export default function VentasAdmin() {
     }
   };
 
+  const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
+
   useEscape([
+    [detalle !== null, () => setDetalleId(null)],
     [showForm, cerrarFormulario],
   ]);
 
@@ -355,9 +332,6 @@ export default function VentasAdmin() {
           <h1>{esAdmin ? 'Gestión de Ventas' : 'Caja'}</h1>
           <p className="subtitulo">{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancelar' : '+ Nueva venta'}
-        </button>
       </div>
 
       {showForm && (
@@ -635,6 +609,7 @@ export default function VentasAdmin() {
           <thead>
             <tr>
               <th>#</th>
+              <th>Fecha</th>
               <th>Cliente</th>
               <th>Productos</th>
               <th>Total</th>
@@ -642,39 +617,41 @@ export default function VentasAdmin() {
               <th>Estado</th>
               <th>Historial</th>
               <th>Factura</th>
+              <th>Detalle</th>
             </tr>
           </thead>
           <tbody>
             {visibles.map((v) => (
               <tr key={v?.id}>
-                <td>{v?.id}</td>
-                <td style={{ fontWeight: 600 }}>{nombreCliente(v) || '—'}</td>
+                <td className="vt-num">#{v?.id}</td>
+                <td className="vt-fecha">
+                  <span>{fmtDia(v?.fecha)}</span>
+                  <small>{fmtHora(v?.fecha)}</small>
+                </td>
+                <td className="vt-cliente">
+                  <strong>{nombreCliente(v) || '—'}</strong>
+                  <small>
+                    {v?.tipo_entrega === 'Consumir' && v?.mesa ? `Mesa ${v.mesa}` : v?.tipo_entrega ?? ''}
+                  </small>
+                </td>
                 <td>
-                  <div className="venta-detalles">
+                  <ul className="vt-productos">
                     {(v?.detalles ?? []).map((d, i) => (
-                      <span key={`${d?.id}-${i}`} style={{ fontSize: 12, color: 'var(--text-600)' }}>
-                        {d?.producto?.nombre ?? 'Producto'} x{d?.cantidad ?? 0}
-                      </span>
+                      <li key={`${d?.id}-${i}`}>
+                        <b>{d?.cantidad ?? 0}×</b> {d?.producto?.nombre ?? 'Producto'}
+                      </li>
                     ))}
                     {(v?.promociones ?? []).map((p, i) => (
-                      <span key={`${p?.id}-${i}`} className="badge badge-info" style={{ fontSize: 10 }}>{p?.nombre}</span>
+                      <li key={`${p?.id}-${i}`} className="vt-combo">
+                        <span className="badge badge-info">{p?.nombre}</span>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </td>
-                <td style={{ fontWeight: 700 }}>${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
+                <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
                 <td><span className="badge badge-info">{v?.metodo_pago ?? ''}</span></td>
                 <td>
-                  <select
-                    value={v?.estado ?? ''}
-                    onChange={(e) => pedirCambioEstado(v, e.target.value)}
-                    style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                  >
-                    {opcionesEstado(v).map((o) => (
-                      <option key={o.estado} value={o.estado} disabled={!o.habilitado}>
-                        {o.estado}{o.conMotivo ? ' (requiere motivo)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <span className="vt-estado" data-estado={v?.estado ?? ''}>{v?.estado ?? '—'}</span>
                 </td>
                 <td>
                   <button
@@ -696,10 +673,20 @@ export default function VentasAdmin() {
                     Ver factura
                   </button>
                 </td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+                    onClick={() => setDetalleId(v.id)}
+                  >
+                    Ver detalle
+                  </button>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
+              <tr><td colSpan={10} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}
           </tbody>
         </table>
@@ -711,26 +698,76 @@ export default function VentasAdmin() {
         <TrazabilidadModal ventaId={historialId} onClose={() => setHistorialId(null)} />
       )}
 
-      {cambioConMotivo && (
-        <MotivoModal
-          titulo={
-            cambioConMotivo.estado === 'Cancelado'
-              ? `Cancelar el pedido #${cambioConMotivo.venta.id}`
-              : `Cambiar el pedido #${cambioConMotivo.venta.id} a «${cambioConMotivo.estado}»`
-          }
-          descripcion={
-            cambioConMotivo.estado === 'Cancelado'
-              ? 'Indica por qué se cancela. Quedará registrado en el historial del pedido.'
-              : `Este cambio sale del flujo normal (de «${cambioConMotivo.venta.estado}»). Indica el motivo; quedará registrado.`
-          }
-          confirmarTexto={cambioConMotivo.estado === 'Cancelado' ? 'Cancelar pedido' : 'Confirmar cambio'}
-          onClose={() => setCambioConMotivo(null)}
-          onConfirm={(motivo) => {
-            const { venta, estado } = cambioConMotivo;
-            setCambioConMotivo(null);
-            updateEstado(venta.id, estado, motivo);
-          }}
-        />
+      {detalle && (
+        <div className="modal-overlay open" onClick={() => setDetalleId(null)}>
+          <div className="modal-box vt-det" onClick={(e) => e.stopPropagation()}>
+            <div className="vt-det-head">
+              <div>
+                <h3>Venta #{detalle.id}</h3>
+                <p>{fmtDia(detalle.fecha)} · {fmtHora(detalle.fecha)}</p>
+              </div>
+              <span className="vt-estado" data-estado={detalle.estado}>{detalle.estado}</span>
+            </div>
+
+            <section className="vt-det-sec">
+              <h4>Cliente</h4>
+              <dl className="vt-det-grid">
+                <div><dt>Nombre</dt><dd>{nombreCliente(detalle) || '—'}</dd></div>
+                <div><dt>Correo</dt><dd>{detalle.usuario?.correo || detalle.usuario?.email || '—'}</dd></div>
+                <div><dt>Teléfono</dt><dd>{detalle.usuario?.telefono || detalle.usuario?.phone || '—'}</dd></div>
+                <div>
+                  <dt>Documento</dt>
+                  <dd>
+                    {detalle.usuario?.Ndocumento
+                      ? `${detalle.usuario?.Tdocumento ? detalle.usuario.Tdocumento + ' ' : ''}${detalle.usuario.Ndocumento}`
+                      : '—'}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="vt-det-sec">
+              <h4>Pedido</h4>
+              <dl className="vt-det-grid">
+                <div><dt>Entrega</dt><dd>{detalle.tipo_entrega || '—'}</dd></div>
+                {detalle.tipo_entrega === 'Consumir' && detalle.mesa ? (
+                  <div><dt>Mesa</dt><dd>{detalle.mesa}</dd></div>
+                ) : null}
+                <div><dt>Método de pago</dt><dd>{detalle.metodo_pago || '—'}</dd></div>
+                {detalle.notas ? (
+                  <div className="vt-det-full"><dt>Notas</dt><dd>{detalle.notas}</dd></div>
+                ) : null}
+              </dl>
+            </section>
+
+            <section className="vt-det-sec">
+              <h4>Productos</h4>
+              <div className="vt-det-lineas">
+                {(detalle.detalles ?? []).map((d, i) => (
+                  <div className="vt-det-linea" key={`d${i}`}>
+                    <span><b>{d?.cantidad ?? 0}×</b> {d?.producto?.nombre ?? 'Producto'}</span>
+                    <span className="vt-det-pu">${Number(d?.precio_unitario || 0).toLocaleString('es-CO')} c/u</span>
+                    <strong>${Number(d?.subtotal || 0).toLocaleString('es-CO')}</strong>
+                  </div>
+                ))}
+                {(detalle.promociones ?? []).map((p, i) => (
+                  <div className="vt-det-linea" key={`p${i}`}>
+                    <span>{p?.nombre} <span className="badge badge-info">Combo</span></span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <div className="vt-det-total">
+              <span>Total</span>
+              <strong>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</strong>
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="btn-cancel" onClick={() => setDetalleId(null)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

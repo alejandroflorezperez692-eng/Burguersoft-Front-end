@@ -9,23 +9,19 @@ import '../../styles/pedidos-turno.css';
 import { getEcho } from '../../api/echo';
 import NuevaVentaModal from '../../components/NuevaVentaModal';
 import MesasModal from '../../components/MesasModal';
-
+import { useEscape } from '../../hooks/useEscape';
 
 type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
 
 interface Accion {
-  /** Estado al que se pasa con la acción. */
   sig: string;
-  /** Texto del botón. */
   texto: string;
 }
 
 interface VistaConfig {
   titulo: string;
   subtitulo: string;
-  /** Estados que se muestran en esta vista (uno por columna). */
   estados: string[];
-  /** Estado actual → acción disponible (si no hay entrada, solo lectura). */
   acciones: Record<string, Accion>;
 }
 
@@ -73,19 +69,12 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   },
 };
 
-/** Vista por defecto de cada rol; el admin cambia entre todas. */
 const VISTA_INICIAL: Record<string, Vista> = { admin: 'todos', cocinero: 'cocina', mesero: 'meseros', cajero: 'cajero' };
 
-/** Nombre de columna alternativo según la vista. */
 const ETIQUETA: Partial<Record<Vista, Record<string, string>>> = {
   cocina: { Recepcionado: 'Por tomar' },
   cajero: { Servido: 'Por cobrar' },
 };
-
-/* ------------------------------------------------------------------ */
-/* Tipos de la respuesta del backend                                    */
-/* ------------------------------------------------------------------ */
-
 interface ItemVenta {
   cantidad?: number;
   producto?: { nombre?: string } | null;
@@ -113,7 +102,6 @@ interface CambioConMotivo {
   accion: Accion;
 }
 
-/** 'YYYY-MM-DD HH:MM:SS' → Date (el espacio en blanco no lo aceptan todos los navegadores). */
 const aFecha = (f: string) => new Date((f || '').replace(' ', 'T'));
 
 const minutosDesde = (f: string): number => {
@@ -124,16 +112,16 @@ const minutosDesde = (f: string): number => {
 const duracion = (min: number): string =>
   min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`;
 
-type Entrega = 'todos' | 'Consumir' | 'Domicilio' | 'Recoger';
+type Entrega = 'todos' | 'Domicilio' | 'Recoger' | 'Consumir';
 
 const FILTROS_ENTREGA: { valor: Entrega; texto: string }[] = [
   { valor: 'todos', texto: 'Todos' },
-  { valor: 'Consumir', texto: 'Local' },
-  { valor: 'Domicilio', texto: 'Delivery' },
-  { valor: 'Recoger', texto: 'Retiro' },
+  { valor: 'Domicilio', texto: 'Domicilio' },
+  { valor: 'Recoger', texto: 'Para recoger' },
+  { valor: 'Consumir', texto: 'En el local' },
 ];
 
-const ETIQUETA_ENTREGA: Record<string, string> = { Consumir: 'Local', Domicilio: 'Delivery', Recoger: 'Retiro' };
+const ETIQUETA_ENTREGA: Record<string, string> = { Domicilio: 'Domicilio', Recoger: 'Para recoger',Consumir: 'En el local' };
 
 /** "sin tomate, extra bacon" → ['sin tomate', 'extra bacon'] */
 const separarNotas = (n?: string | null): string[] =>
@@ -164,6 +152,9 @@ export default function PedidosTurno() {
   const [nuevoAbierto, setNuevoAbierto] = useState(false);
   const [mesaNueva, setMesaNueva] = useState<number | null>(null);
   const [mesasAbierto, setMesasAbierto] = useState(false);
+  const [detalleId, setDetalleId] = useState<number | null>(null);
+  const [arrastrandoId, setArrastrandoId] = useState<number | null>(null);
+  const [colHover, setColHover] = useState<string | null>(null);
 
   const config = VISTA_CONFIG[vista];
 
@@ -174,7 +165,6 @@ export default function PedidosTurno() {
         ? res.data
         : ((res.data as { data?: unknown })?.data as Venta[]) ?? [];
       const turno = lista.filter((v) => config.estados.includes(v.estado ?? ''));
-      // El más antiguo primero: que no pase tiempo en la cocina sin verlo.
       turno.sort((a, b) => aFecha(a.fecha ?? '').getTime() - aFecha(b.fecha ?? '').getTime());
       setItems(turno);
     } catch {
@@ -198,14 +188,12 @@ export default function PedidosTurno() {
         if (vivo) setTransiciones((data as MapaTransiciones) ?? null);
       })
       .catch(() => {
-        /* sin mapa: los cambios se intentan de igual forma */
       });
     return () => {
       vivo = false;
     };
   }, []);
 
-  // Tiempo real: Reverb avisa al instante; el refresco por tiempo queda solo de respaldo
   useEffect(() => {
     const echo = getEcho();
     const alCambiar = () => void load();
@@ -221,7 +209,6 @@ export default function PedidosTurno() {
     };
   }, [load]);
 
-  /** Decide si el cambio se hace directo o pide motivo según el mapa del backend. */
   const intentarCambio = (venta: Venta, accion: Accion) => {
     setError(null);
     const actual = venta.estado ?? '';
@@ -241,7 +228,6 @@ export default function PedidosTurno() {
     setOcupadoId(venta.id);
     try {
       await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo });
-      // La tarjeta pasa de inmediato a su nueva columna y luego se recarga por si acaso
       setItems((prev) =>
         prev
           .map((v) => (v.id === venta.id ? { ...v, estado: accion.sig } : v))
@@ -256,7 +242,14 @@ export default function PedidosTurno() {
     }
   };
 
-  /** Pedidos de esta vista que pasan la búsqueda y el filtro de entrega. */
+  const soltarEn = (estadoDestino: string) => {
+    const venta = items.find((x) => x.id === arrastrandoId);
+    setArrastrandoId(null);
+    setColHover(null);
+    if (!venta || venta.estado === estadoDestino) return;
+    intentarCambio(venta, { sig: estadoDestino, texto: `Mover a ${estadoDestino}` });
+  };
+
   const visibles = items.filter((v) => {
     if (filtroEntrega !== 'todos' && v.tipo_entrega !== filtroEntrega) return false;
     const q = busqueda.trim().toLowerCase().replace('#', '');
@@ -272,14 +265,29 @@ export default function PedidosTurno() {
     return texto.includes(q);
   });
 
+  const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
+  useEscape([[detalle !== null, () => setDetalleId(null)]]);
+
   const tarjeta = (v: Venta) => {
     const accion = config.acciones[v.estado ?? ''];
     const esOcupado = ocupadoId === v.id;
     const min = minutosDesde(v.fecha ?? '');
     const enMesa = v.tipo_entrega === 'Consumir' && !!v.mesa;
-    const notas = separarNotas(v.notas);
     return (
-      <div className="tv-card" key={v.id}>
+      <div
+        className={`tv-card${accion ? ' arrastrable' : ''}${arrastrandoId === v.id ? ' arrastrando' : ''}`}
+        key={v.id}
+        draggable={!!accion && !esOcupado}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/plain', String(v.id));
+          e.dataTransfer.effectAllowed = 'move';
+          setArrastrandoId(v.id);
+        }}
+        onDragEnd={() => {
+          setArrastrandoId(null);
+          setColHover(null);
+        }}
+      >
         <div className="tv-card-head">
           <span className="tv-num">#{v.id}</span>
           {v.tipo_entrega && <span className="tv-tag">{ETIQUETA_ENTREGA[v.tipo_entrega] ?? v.tipo_entrega}</span>}
@@ -294,34 +302,10 @@ export default function PedidosTurno() {
 
         <div className="tv-card-body">
           <span className="tv-cliente">{enMesa ? `Mesa ${v.mesa}` : nombreCliente(v)}</span>
-          <span className="tv-sub">{enMesa ? nombreCliente(v) : v.metodo_pago ?? ''}</span>
 
-          {((v.detalles ?? []).length > 0 || (v.promociones ?? []).length > 0) && (
-            <ul className="tv-items">
-              {(v.detalles ?? []).map((d, i) => (
-                <li key={`d${i}`}>
-                  <b>{d.cantidad ?? 1}×</b> {d.producto?.nombre ?? 'Producto'}
-                </li>
-              ))}
-              {(v.promociones ?? [])
-                .filter((p) => p?.nombre)
-                .map((p, i) => (
-                  <li key={`p${i}`} className="tv-promo">
-                    {p.nombre}
-                  </li>
-                ))}
-            </ul>
-          )}
-
-          {notas.length > 0 && (
-            <div className="tv-chips">
-              {notas.map((n, i) => (
-                <span key={i} className={`tv-chip${/^sin/i.test(n) ? ' sin' : /^extra/i.test(n) ? ' extra' : ''}`}>
-                  {n}
-                </span>
-              ))}
-            </div>
-          )}
+          <button type="button" className="tv-ver-detalle" onClick={() => setDetalleId(v.id)}>
+            Ver detalle
+          </button>
         </div>
 
         <div className="tv-card-foot">
@@ -348,7 +332,7 @@ export default function PedidosTurno() {
         <div className="tv-lado">
           {esAdmin ? (
             <div className="tv-tabs" role="tablist">
-              {(Object.keys(VISTA_CONFIG) as Vista[]).map((v) => (
+              {(['todos', 'cocina', 'meseros', 'cajero'] as Vista[]).map((v) => (
                 <button
                   key={v}
                   type="button"
@@ -362,9 +346,6 @@ export default function PedidosTurno() {
               ))}
             </div>
           ) : null}
-          <button type="button" className="tv-refrescar" onClick={() => void load()}>
-            Actualizar
-          </button>
         </div>
       </div>
 
@@ -377,7 +358,7 @@ export default function PedidosTurno() {
         </div>
       )}
 
-      <div className="tv-toolbar">
+      <div className="tv-barra">
         <input
           className="tv-buscar"
           type="search"
@@ -385,18 +366,6 @@ export default function PedidosTurno() {
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
         />
-        <div className="tv-pills">
-          {FILTROS_ENTREGA.map((f) => (
-            <button
-              key={f.valor}
-              type="button"
-              className={`tv-pill${filtroEntrega === f.valor ? ' activo' : ''}`}
-              onClick={() => setFiltroEntrega(f.valor)}
-            >
-              {f.texto}
-            </button>
-          ))}
-        </div>
         <div className="tv-acciones">
           {puedeVerMesas && (
             <button type="button" className="tv-btn-sec" onClick={() => setMesasAbierto(true)}>
@@ -411,14 +380,44 @@ export default function PedidosTurno() {
         </div>
       </div>
 
+      <div className="tv-pills">
+        {FILTROS_ENTREGA.map((f) => (
+          <button
+            key={f.valor}
+            type="button"
+            className={`tv-pill${filtroEntrega === f.valor ? ' activo' : ''}`}
+            onClick={() => setFiltroEntrega(f.valor)}
+          >
+            {f.texto}
+          </button>
+        ))}
+      </div>
+
       <div
         className="tv-cols"
-        style={{ gridTemplateColumns: `repeat(${config.estados.length}, minmax(270px, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${config.estados.length}, minmax(320px, 1fr))` }}
       >
         {config.estados.map((estado) => {
           const col = visibles.filter((v) => v.estado === estado);
           return (
-            <section className="tv-col" data-estado={estado} key={estado}>
+            <section
+              className={`tv-col${colHover === estado ? ' soltar' : ''}`}
+              data-estado={estado}
+              key={estado}
+              onDragOver={(e) => {
+                if (arrastrandoId === null) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (colHover !== estado) setColHover(estado);
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setColHover(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                soltarEn(estado);
+              }}
+            >
               <header className="tv-col-head">
                 <span className="tv-col-titulo">
                   <i className="tv-dot" />
@@ -461,6 +460,72 @@ export default function PedidosTurno() {
             : undefined
         }
       />
+
+      {detalle && (
+        <div className="modal-overlay open" onClick={() => setDetalleId(null)}>
+          <div className="modal-box tv-det-box" onClick={(e) => e.stopPropagation()}>
+            <div className="tv-det-head">
+              <div>
+                <h3 className="tv-det-titulo">Pedido #{detalle.id}</h3>
+              </div>
+              <button type="button" className="tv-det-cerrar" onClick={() => setDetalleId(null)} aria-label="Cerrar">
+                ✕
+              </button>
+            </div>
+
+            <dl className="tv-det-info">
+              <div><dt>Cliente</dt><dd>{nombreCliente(detalle)}</dd></div>
+              <div><dt>Estado</dt><dd>{detalle.estado ?? '—'}</dd></div>
+              <div>
+                <dt>Entrega</dt>
+                <dd>{ETIQUETA_ENTREGA[detalle.tipo_entrega ?? ''] ?? detalle.tipo_entrega ?? '—'}</dd>
+              </div>
+              {detalle.tipo_entrega === 'Consumir' && detalle.mesa ? (
+                <div><dt>Mesa</dt><dd>{detalle.mesa}</dd></div>
+              ) : null}
+              <div><dt>Método de pago</dt><dd>{detalle.metodo_pago || '—'}</dd></div>
+              <div>
+                <dt>Hora</dt>
+                <dd>
+                  {Number.isFinite(aFecha(detalle.fecha ?? '').getTime())
+                    ? aFecha(detalle.fecha ?? '').toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+                    : '—'}
+                </dd>
+              </div>
+            </dl>
+
+            <ul className="tv-items">
+              {(detalle.detalles ?? []).map((d, i) => (
+                <li key={`d${i}`}>
+                  <b>{d.cantidad ?? 1}×</b> {d.producto?.nombre ?? 'Producto'}
+                </li>
+              ))}
+              {(detalle.promociones ?? [])
+                .filter((p) => p?.nombre)
+                .map((p, i) => (
+                  <li key={`p${i}`} className="tv-promo">
+                    {p.nombre}
+                  </li>
+                ))}
+            </ul>
+
+            {separarNotas(detalle.notas).length > 0 && (
+              <div className="tv-chips">
+                {separarNotas(detalle.notas).map((n, i) => (
+                  <span key={i} className={`tv-chip${/^sin/i.test(n) ? ' sin' : /^extra/i.test(n) ? ' extra' : ''}`}>
+                    {n}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div className="tv-det-total">
+              <span>Total</span>
+              <strong>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</strong>
+            </div>
+          </div>
+        </div>
+      )}
 
       {cambioConMotivo && (
         <MotivoModal

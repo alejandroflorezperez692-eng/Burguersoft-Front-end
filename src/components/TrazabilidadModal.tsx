@@ -8,7 +8,6 @@ import {
 } from '../types/Trazabilidad';
 
 interface TrazabilidadModalProps {
-  /** Id de la venta/pedido cuyo historial se muestra. */
   ventaId: number;
   onClose: () => void;
 }
@@ -28,7 +27,7 @@ const fmtFecha = (f: string) =>
 const claseEstado = (estado: string) => {
   const e = (estado || '').toLowerCase();
   if (e.includes('cancel')) return 'badge-danger';
-  if (e.includes('entreg')) return 'badge-success';
+  if (e.includes('entreg') || e.includes('pagado') || e.includes('servido')) return 'badge-success';
   if (e.includes('pendi') || e.includes('espera')) return 'badge-warning';
   return 'badge-info';
 };
@@ -98,7 +97,8 @@ export default function TrazabilidadModal({ ventaId, onClose }: TrazabilidadModa
           ) : (
             registros.map((r, i) => {
               const estado = r.a || r.estado || '';
-              const tieneCambio = Boolean(r.de && r.a);
+              const tieneCambio = Boolean(r.de && r.a && r.de !== r.a);
+              const esCreacion = !r.de && !!r.a;
               return (
                 <div
                   key={i}
@@ -107,6 +107,11 @@ export default function TrazabilidadModal({ ventaId, onClose }: TrazabilidadModa
                   <span className={`badge ${claseEstado(estado)}`} style={{ flexShrink: 0, minWidth: 96, textAlign: 'center' }}>
                     {estado || '—'}
                   </span>
+                  {esCreacion && (
+                    <span style={{ display: 'block', fontSize: 13, color: 'var(--text-900)' }}>
+                      Pedido registrado
+                    </span>
+                  )}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     {tieneCambio && (
                       <span style={{ display: 'block', fontSize: 13, color: 'var(--text-900)' }}>

@@ -1,18 +1,10 @@
-/* Tipos de trazabilidad de pedidos/ventas:
-   - MapaTransiciones: qué estados se pueden pasar de uno dado (y cuáles exigen motivo).
-   - mensajeDeError: saca un mensaje legible de una respuesta de error de la API. */
-
 export interface TransicionesEstado {
-  /** Estados a los que se puede pasar sin marcar motivo. */
   directas: string[];
-  /** Estados a los que solo se puede pasar indicando un motivo (quedan en el historial). */
   con_motivo: string[];
 }
 
-/** Respuesta de GET /pedidos/transiciones: estado actual → transiciones permitidas. */
 export type MapaTransiciones = Record<string, TransicionesEstado>;
 
-/** Extrae el mensaje de error de una respuesta axios (string plano, {error} o {message}). */
 export function mensajeDeError(e: unknown, fallback: string): string {
   const data = (e as { response?: { data?: unknown } } | undefined)?.response?.data ?? e;
   let msg = '';
@@ -25,34 +17,35 @@ export function mensajeDeError(e: unknown, fallback: string): string {
   return msg.trim() || fallback;
 }
 
-/* ------------------------------------------------------------ */
-/* Registro de trazabilidad (usado por TrazabilidadModal)        */
-/* ------------------------------------------------------------ */
-
-/** Evento del historial de un pedido. Los campos llegan con nombres variables
- *  según el endpoint, así que se leen de forma tolerante. */
 export interface RegistroTrazabilidad {
   fecha?: string;
-  /** Estado del que pasó el pedido (si aplica). */
-  de?: string;
-  /** Estado al que pasó (si aplica). */
+  de?: string | null;
   a?: string;
-  /** Estado resultante del registro. */
   estado?: string;
-  motivo?: string;
-  /** Quién hizo el cambio (string o objeto usuario). */
+  motivo?: string | null;
+  evento?: string | null;
+  rol?: string | null;
   usuario?: string | { nombre?: string | null; apellido?: string | null } | null;
 }
 
-/** Normaliza la respuesta del historial: [{...}] o { data: [{...}] }. */
 export function registrosDeTrazabilidad(data: unknown): RegistroTrazabilidad[] {
+  const obj = data as { registros?: unknown; data?: unknown } | null;
   const lista = Array.isArray(data)
     ? data
-    : (data as { data?: unknown[] } | null)?.data;
-  return Array.isArray(lista) ? (lista as RegistroTrazabilidad[]) : [];
+    : Array.isArray(obj?.registros)
+      ? obj?.registros
+      : obj?.data;
+  if (!Array.isArray(lista)) return [];
+  return lista.map((r) => {
+    const x = r as Record<string, unknown>;
+    return {
+      ...x,
+      de: (x.de ?? x.estado_anterior ?? undefined) as string | undefined,
+      a: (x.a ?? x.estado_nuevo ?? undefined) as string | undefined,
+    } as RegistroTrazabilidad;
+  });
 }
 
-/** Nombre del usuario que generó el registro, tolerante a formatos. */
 export function nombreUsuario(r: RegistroTrazabilidad): string {
   const u = r.usuario;
   if (typeof u === 'string') return u;

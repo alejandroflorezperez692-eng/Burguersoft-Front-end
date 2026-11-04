@@ -3341,3 +3341,58 @@ body.dark-mode .cfg-requisito.cumple {
     display: none;
   }
 }
+
+/* ===== Ventas: tabla ordenada, estado fijo y ventana de detalle ===== */
+.vt-num { font-weight: 800; color: var(--text-900); white-space: nowrap; }
+.vt-fecha span, .vt-cliente strong { display: block; font-weight: 700; color: var(--text-900); font-size: 13.5px; }
+.vt-fecha small, .vt-cliente small { display: block; margin-top: 2px; font-size: 12px; color: var(--text-400); }
+.vt-productos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.vt-productos li { font-size: 13px; color: var(--text-900); line-height: 1.35; }
+.vt-productos li b { color: var(--text-400); font-weight: 800; margin-right: 2px; }
+.vt-total { font-weight: 800; white-space: nowrap; }
+
+.vt-estado {
+  --c: #6b7280;
+  display: inline-block; padding: 5px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+  color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent);
+}
+.vt-estado[data-estado="Registrado"]        { --c: #6b7280; }
+.vt-estado[data-estado="Por verificar"]     { --c: #c9760d; }
+.vt-estado[data-estado="Recepcionado"]      { --c: #2f6fed; }
+.vt-estado[data-estado="En preparación"]    { --c: #e8821a; }
+.vt-estado[data-estado="Preparado"]         { --c: #1a7a42; }
+.vt-estado[data-estado="Servido"]           { --c: #7a4fd6; }
+.vt-estado[data-estado="Pendiente de pago"] { --c: #d33a3a; }
+.vt-estado[data-estado="Pagado"]            { --c: #1a7a42; }
+.vt-estado[data-estado="Cancelado"],
+.vt-estado[data-estado="Rechazada"]         { --c: #d33a3a; }
+.vt-estado[data-estado="Reembolsada"]       { --c: #6b7280; }
+
+.vt-det { max-width: 520px; width: 100%; padding: 26px; display: flex; flex-direction: column; gap: 16px; }
+.vt-det-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.vt-det-head h3 { margin: 0; font-size: 20px; color: var(--text-900); }
+.vt-det-head p { margin: 4px 0 0; font-size: 13px; color: var(--text-600); }
+.vt-det-sec h4 {
+  margin: 0 0 8px; font-size: 11.5px; font-weight: 800; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text-400);
+}
+.vt-det-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin: 0;
+  padding: 12px 14px; border-radius: 12px;
+  background: color-mix(in srgb, var(--text-900) 5%, transparent);
+}
+.vt-det-grid dt { font-size: 11.5px; font-weight: 700; color: var(--text-400); }
+.vt-det-grid dd { margin: 2px 0 0; font-size: 14px; font-weight: 700; color: var(--text-900); word-break: break-word; }
+.vt-det-full { grid-column: 1 / -1; }
+.vt-det-lineas { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.vt-det-linea {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--text-900);
+}
+.vt-det-linea:last-child { border-bottom: none; }
+.vt-det-linea > span:first-child { flex: 1; }
+.vt-det-linea b { color: var(--text-400); }
+.vt-det-pu { font-size: 12px; color: var(--text-400); }
+.vt-det-total { display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: var(--text-600); }
+.vt-det-total strong { font-size: 20px; color: var(--text-900); }
