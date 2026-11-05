@@ -684,6 +684,11 @@ body.dark-mode .mn-ing-row input {
   font-size: 0.9rem;
 }
 
+body.dark-mode .admin-body .admin-footer {
+  background: #000000;
+  border-top-color: #ffffff;
+}
+
 /* ===== Paginación de usuarios ===== */
 .us-pag {
   display: flex;
