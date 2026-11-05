@@ -246,24 +246,28 @@ export default function CartPanel() {
             </div>
           ) : (
             <div className="cart-item-list">
-              {items.map((it) => (
-                <div key={String(it.id)} className="cart-item-row">
+                            {items.map((it) => (
+                <div key={it.uid ?? String(it.id)} className="cart-item-row">
                   <div className="cart-item-top">
                     {it.imagen && <img src={it.imagen} alt={it.nombre} className="cart-item-img" />}
                     <div className="cart-item-info">
                       <div className="cart-item-name">{it.nombre}</div>
                       {it.descripcion && <div className="cart-item-desc">{it.descripcion}</div>}
+                      {it.sin && it.sin.length > 0 && (
+                        <div className="cart-item-desc">Sin: {it.sin.join(', ')}</div>
+                      )}
+                      {it.nota && <div className="cart-item-desc">Nota: {it.nota}</div>}
                     </div>
                     <div className="cart-item-price">${(it.precio * it.cantidad).toLocaleString('es-CO')}</div>
                   </div>
                   <div className="cart-item-actions">
-                    <button type="button" className="link-action link-eliminar" onClick={() => quitar(it.id)}>Eliminar</button>
+                    <button type="button" className="link-action link-eliminar" onClick={() => quitar(it.uid ?? it.id)}>Eliminar</button>
                     <div className="cart-item-edit">
                       <span className="link-action link-editar">Editar</span>
                       <div className="qty-stepper">
-                        <button type="button" aria-label={`Quitar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.id, it.cantidad - 1)}>−</button>
+                        <button type="button" aria-label={`Quitar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.uid ?? it.id, it.cantidad - 1)}>−</button>
                         <span>{it.cantidad}</span>
-                        <button type="button" aria-label={`Agregar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.id, it.cantidad + 1)}>+</button>
+                        <button type="button" aria-label={`Agregar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.uid ?? it.id, it.cantidad + 1)}>+</button>
                       </div>
                     </div>
                   </div>

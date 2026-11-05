@@ -497,8 +497,28 @@ export default function Checkout() {
     efectivo: 'Efectivo',
   };
 
-  // Convierte el carrito (promos y/o productos) a líneas de producto_id.
-  // Cada promo se expande a 1 unidad de cada uno de sus productos por cantidad.
+const construirNotas = (): string | null => {
+  const partes = items
+    .filter((i) => (i.sin?.length ?? 0) > 0 || (i.extras?.length ?? 0) > 0 || i.nota)
+    .map((i) => {
+      const det = [
+        ...(i.sin ?? []).map((s) => `SIN ${s}`),
+        ...(i.extras ?? []).map((e) => `+${e.cantidad} ${e.nombre}`),
+        i.nota,
+      ].filter(Boolean).join(', ');
+      return `${i.cantidad}x ${i.nombre}: ${det}`;
+    });
+  return partes.length ? partes.join(' | ').slice(0, 255) : null;
+};
+
+const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
+  const mapa = new Map<number, number>();
+  items.forEach((i) =>
+    (i.extras ?? []).forEach((e) => mapa.set(e.id, (mapa.get(e.id) ?? 0) + e.cantidad * i.cantidad)),
+  );
+  return [...mapa.entries()].map(([adicion_id, cantidad]) => ({ adicion_id, cantidad }));
+};
+
   const expandirCarrito = (): { producto_id: number; cantidad: number }[] => {
     const combinado = new Map<number, number>();
     items.forEach((item) => {
@@ -566,6 +586,8 @@ export default function Checkout() {
     try {
       const respuesta = await apiClient.post('/ventas', {
         carrito: expandirCarrito(),
+        notas: construirNotas(),
+        adiciones: construirAdiciones(),
         tipo_entrega: TIPO_ENTREGA_BACKEND[tipoEntrega] ?? 'Domicilio',
         metodo_pago: METODO_PAGO_BACKEND[metodoPago] ?? 'Efectivo',
         // Contexto extra del pedido en línea (el backend lo ignora al validar)

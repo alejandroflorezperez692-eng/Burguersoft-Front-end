@@ -20,6 +20,7 @@ interface Producto {
   categoria: string;
   estado: Estado;
   activo?: boolean;
+  adiciones?: { id: number; nombre: string; precio: number | string }[];
 }
 
 const CATEGORIAS = [
@@ -107,6 +108,7 @@ export default function MenuAdmin() {
   const [archivo, setArchivo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [imgActual, setImgActual] = useState(false);
+  const [adiciones, setAdiciones] = useState<{ id?: number; nombre: string; precio: string }[]>([]);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -236,6 +238,7 @@ export default function MenuAdmin() {
     setArchivo(null);
     setPreview(null);
     setImgActual(false);
+    setAdiciones([]);
     if (fileRef.current) fileRef.current.value = '';
     setMostrarForm(false);
   };
@@ -253,6 +256,7 @@ export default function MenuAdmin() {
     setArchivo(null);
     setPreview(imgValida(p.img) ? p.img : null);
     setImgActual(!!p.img);
+    setAdiciones((p.adiciones ?? []).map((a) => ({ id: a.id, nombre: a.nombre, precio: String(Math.round(Number(a.precio))) })));
     if (fileRef.current) fileRef.current.value = '';
     setMostrarForm(false);
   };
@@ -282,12 +286,19 @@ export default function MenuAdmin() {
     if (!form.descripcion.trim()) { showToast('La descripción es obligatoria', true); return; }
     if (!editId && !archivo) { showToast('La imagen es obligatoria', true); return; }
 
+    const filas = adiciones.filter((a) => a.nombre.trim() || a.precio !== '');
+    if (filas.some((a) => !a.nombre.trim() || a.precio === '' || Number(a.precio) < 0)) {
+      showToast('Completa el nombre y el precio de cada adición', true);
+      return;
+    }
+
     const fd = new FormData();
     fd.append('nombre', form.nombre.trim());
     fd.append('valor', form.valor);
     fd.append('descripcion', form.descripcion.trim());
     fd.append('categoria', form.categoria);
     fd.append('estado', form.estado);
+    fd.append('adiciones', JSON.stringify(filas.map((a) => ({ id: a.id, nombre: a.nombre.trim(), precio: Number(a.precio) }))));
     if (archivo) fd.append('imagen', archivo);
 
     setGuardando(true);
@@ -380,6 +391,43 @@ export default function MenuAdmin() {
                 <textarea id="mn-desc" style={rojo(errores.descripcion)} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
                   value={form.descripcion} onChange={setCampo('descripcion')} />
                 <span className="mn-counter">{form.descripcion.length}/255</span>
+              </div>
+
+              <div className="mn-field">
+                <label>Adiciones del producto <small>(opcional)</small></label>
+                {adiciones.map((a, i) => (
+                  <div key={i} className="mn-adic-row">
+                    <input
+                      type="text"
+                      maxLength={100}
+                      placeholder="Ej: Tocino"
+                      value={a.nombre}
+                      onChange={(e) => setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))}
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="$ Precio"
+                      value={a.precio}
+                      onChange={(e) => setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, precio: e.target.value } : x)))}
+                    />
+                    <button
+                      type="button"
+                      className="mn-adic-del"
+                      aria-label="Quitar adición"
+                      onClick={() => setAdiciones((l) => l.filter((_, j) => j !== i))}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="mn-adic-add"
+                  onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '' }])}
+                >
+                  + Agregar adición
+                </button>
               </div>
             </div>
 

@@ -855,3 +855,8 @@ body.dark-mode .mn-ing-row input {
   background: #e5e7eb;
   color: #374151;
 }
+
+.mn-adic-row{display:grid;grid-template-columns:1fr 130px 36px;gap:8px;margin-bottom:8px}
+.mn-adic-row input{padding:10px 12px;border:1px solid #f0dcc4;border-radius:12px;font:inherit;background:#fff}
+.mn-adic-del{border:0;border-radius:10px;background:#fbe3e0;color:#c0392b;font-size:20px;cursor:pointer}
+.mn-adic-add{border:1.5px dashed #e8851a;background:#fff;color:#e8851a;font-weight:700;border-radius:12px;padding:10px;cursor:pointer;width:100%}
