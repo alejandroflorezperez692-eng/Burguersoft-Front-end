@@ -104,7 +104,7 @@ export default function VentasAdmin() {
   const [cantidadCombo, setCantidadCombo] = useState('1');
   const [combos, setCombos] = useState<{ promocion_id: number; cantidad: number }[]>([]);
   const [loading, setLoading] = useState(true);
-  const [version, setVersion] = useState(0);
+  const [, setVersion] = useState(0);
 
   const load = async () => {
     setLoading(true);

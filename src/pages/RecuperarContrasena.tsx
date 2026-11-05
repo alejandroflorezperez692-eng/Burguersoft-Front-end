@@ -5,16 +5,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
 import { useToast } from '../components/Toast';
+import { mensajeError } from '../utils/errores';
 import iconoBloqueo from '../assets/img/bloquear.png';
-
-function getErrorMessage(error: unknown): string {
-  if (isAxiosError(error)) {
-    if (!error.response) return 'No se pudo conectar con el servidor.';
-    const data = error.response?.data as { message?: string; segundos?: number } | undefined;
-    return data?.message ?? `Error inesperado (${error.response.status}).`;
-  }
-  return 'Ocurrió un error inesperado.';
-}
 
 function segundosRestantesBloqueo(): number {
   const hasta = Number(sessionStorage.getItem('bloqueo_correo_hasta') ?? '0');
@@ -71,7 +63,7 @@ export default function RecuperarContrasena() {
         sessionStorage.setItem('bloqueo_correo_hasta', String(Date.now() + seg * 1000));
         setBloqueo(seg);
       }
-      showToast(getErrorMessage(err), true);
+      showToast(mensajeError(err, 'No se pudo enviar el código'), true);
     } finally {
       setLoading(false);
     }

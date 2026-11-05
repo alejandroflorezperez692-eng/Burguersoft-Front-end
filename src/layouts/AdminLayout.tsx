@@ -78,7 +78,10 @@ export default function AdminLayout() {
   // interceptor de api/client.ts cierra la sesión y manda al login.
   useEffect(() => {
     if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
-    apiClient.get('/me').catch(() => { /* el 401 lo maneja el interceptor */ });
+    apiClient.get('/me').catch((err) => {
+      console.error('[AdminLayout] Error validando sesión:', err.message);
+      // No redirigir aquí; el interceptor de la API maneja el 401.
+    });
   }, [location.pathname]);
 
   const handleSalir = () => {

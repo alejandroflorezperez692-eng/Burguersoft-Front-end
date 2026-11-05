@@ -84,7 +84,7 @@ export default function MenuPublico() {
         <p>Descubre todos nuestros productos, preparados al momento para ti.</p>
 
         {items === null ? (
-          <AdminLoading texto="Cargando menú" subtexto="Preparando nuestros productos" />
+          <AdminLoading texto="Cargando menú" subtexto="Preparando nuestros productos" compact />
         ) : disponibles.length === 0 ? (
           <p className="promo-vacio">No hay productos disponibles en este momento.</p>
         ) : (
