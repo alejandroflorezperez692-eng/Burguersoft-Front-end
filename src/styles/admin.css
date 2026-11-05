@@ -110,6 +110,7 @@ body.dark-mode .sidebar-header .logo-oscuro {
 }
 
 .sidebar-item a {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -3372,3 +3373,28 @@ body.dark-mode .cfg-requisito.cumple {
 .vt-det-pu { font-size: 12px; color: var(--text-400); }
 .vt-det-total { display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: var(--text-600); }
 .vt-det-total strong { font-size: 20px; color: var(--text-900); }
+@property --angulo {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.sidebar-item a.active::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--angulo), transparent 0deg, transparent 300deg, #f97316 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: girar-borde 3s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes girar-borde {
+  to {
+    --angulo: 360deg;
+  }
+}

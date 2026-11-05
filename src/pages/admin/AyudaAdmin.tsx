@@ -16,7 +16,8 @@ import {
   Mail,
 } from "lucide-react";
 import "../../styles/ayuda-admin.css";
-
+import { useAuth } from "../../hooks/useAuth";
+import { normalizarRol } from "../../utils/roles";
 type Articulo = {
   titulo: string;
   contenido: string;
@@ -204,6 +205,8 @@ const normalizar = (texto: string) =>
     .replace(/[\u0300-\u036f]/g, "");
 
 const AyudaAdmin = () => {
+  const { user } = useAuth();
+  const rol = normalizarRol(user?.role);
   const [busqueda, setBusqueda] = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const [preguntaAbierta, setPreguntaAbierta] = useState<string | null>(null);
