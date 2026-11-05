@@ -1,5 +1,9 @@
+
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { isAxiosError } from 'axios';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
@@ -8,12 +12,56 @@ import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
 import { mensajeError } from '../utils/errores';
 
+function getErrorMessage(error: unknown): string {
+  if (isAxiosError(error)) {
+    if (!error.response) {
+      return 'No se pudo conectar con el servidor.';
+    }
+    const data = error.response.data;
+    if (typeof data === 'string') {
+      return `Error del servidor (${error.response.status}).`;
+    }
+    // Si el backend manda el detalle por campo, se muestran TODOS los errores indicando qué campo falla.
+    const errores = (data as { errors?: Record<string, unknown> })?.errors;
+    if (errores && typeof errores === 'object') {
+      const etiquetas: Record<string, string> = {
+        correo: 'correo electrónico',
+        email: 'correo electrónico',
+        contrasena: 'contraseña',
+        password: 'contraseña',
+        turnstileToken: 'verificación de seguridad',
+      };
+      const lista: string[] = [];
+      Object.entries(errores).forEach(([campo, val]) => {
+        const texto = Array.isArray(val) ? String(val[0] ?? '') : String(val ?? '');
+        if (!texto) return;
+        const etiqueta = etiquetas[campo] ?? campo;
+        lista.push(/obligatori|required/i.test(texto) ? `El campo ${etiqueta} es obligatorio.` : texto);
+      });
+      const unicos = Array.from(new Set(lista));
+      if (unicos.length > 0) return unicos.join(' ');
+    }
+    const msg = (data as Record<string, unknown>)?.message ?? (data as Record<string, unknown>)?.error;
+    if (typeof msg === 'string') return msg;
+    return `Error inesperado (${error.response.status}).`;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Ocurrió un error inesperado.';
+}
+
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
+
+  // Cloudflare Turnstile ("No soy un robot")
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const { login, isAuthenticated, user } = useAuth();
   const { showToast } = useToast();
@@ -50,15 +98,39 @@ export default function Login() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // Si faltan credenciales, mostramos el error y NO activamos el loading
+    const faltaCorreo = !email.trim();
+    const faltaPassword = !password.trim();
+
+    if (faltaCorreo || faltaPassword) {
+      if (faltaCorreo && faltaPassword) {
+        showToast('Ingresa tu correo electrónico y tu contraseña.', true);
+      } else if (faltaCorreo) {
+        showToast('El campo correo electrónico es obligatorio.', true);
+      } else {
+        showToast('El campo contraseña es obligatorio.', true);
+      }
+      return;
+    }
+
+    if (!turnstileToken) {
+      showToast('Completa la verificación de seguridad.', true);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, turnstileToken);
       const stored = sessionStorage.getItem('user');
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
-      showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
+showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
+      // El token de Turnstile es de un solo uso: hay que pedir uno nuevo
+      setTurnstileToken('');
+      turnstileRef.current?.reset();
     } finally {
       setLoading(false);
     }
@@ -126,9 +198,19 @@ export default function Login() {
             </button>
           </div>
 
+          {/* Verificación "No soy un robot" (Cloudflare Turnstile) */}
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+              onSuccess={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+              onError={() => setTurnstileToken('')}
+              options={{ language: 'es', theme: 'light' }}
+            />
+          </div>
 
-
-          <button type="submit" className="btn-primario" disabled={loading}>
+          <button type="submit" className="btn-primario" disabled={loading || !turnstileToken}>
             {loading ? 'INGRESANDO…' : 'INICIAR SESIÓN'}
           </button>
 

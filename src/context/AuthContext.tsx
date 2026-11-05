@@ -73,7 +73,7 @@ type AuthContextValue = {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, turnstileToken: string) => Promise<void>;
   loginWithToken: (token: string) => Promise<void>;
   register: (
     nombre: string,
@@ -150,14 +150,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string, turnstileToken: string) => {
     setLoading(true);
     try {
       const { data } = await apiClient.post<LoginResponse>('/login', {
         correo: email,
         contrasena: password,
+        turnstileToken,
       });
-
       if (!data.token) {
         throw new Error('El servidor no devolvió un token válido.');
       }

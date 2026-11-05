@@ -4,6 +4,7 @@ import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
+import { exportarReporteExcel } from './exportarReporteExcel';
 
 interface DetalleVenta {
   id: number;
@@ -93,8 +94,6 @@ const diasEntre = (desde: string, hasta: string) =>
 
 const moneda = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`;
 const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
-
-const csvCelda = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
 
 const nombreCliente = (v: Venta) =>
   v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
@@ -635,31 +634,69 @@ export default function ReportesAdmin() {
     };
   }, [compras, desde, hasta, dias, rangoValido]);
 
-  /* ---------- Exportar CSV (ventas del rango) ---------- */
-  const exportarCSV = () => {
-    if (!reporte) return;
-    const encabezado = ['#', 'Fecha', 'Cliente', 'Productos', 'Combos', 'Método', 'Entrega', 'Estado', 'Total'];
-    const filas = reporte.enRango.map((v) => [
-      v.id,
-      fechaLocal(v.fecha),
-      nombreCliente(v),
-      (v.detalles ?? []).map((d) => `${d?.producto?.nombre ?? 'Producto'} x${d?.cantidad ?? 0}`).join(' | '),
-      (v.promociones ?? []).map((p) => p?.nombre).join(' | '),
-      v.metodo_pago,
-      v.tipo_entrega,
-      v.estado,
-      Math.round(Number(v.valor_total) || 0),
-    ]);
-    const csv = [encabezado, ...filas].map((f) => f.map(csvCelda).join(';')).join('\r\n');
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `reporte-ventas_${desde}_a_${hasta}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  /* ---------- Exportar (según lo seleccionado en "Mostrar") ---------- */
+  const hayVentas = !!reporte && reporte.enRango.length > 0;
+  const hayProductos = !!reporte && reporte.productos.length > 0;
+  const hayCompras = !!reporteCompras && reporteCompras.enRango.length > 0;
+
+  // ¿Hay algo que exportar con la vista actual?
+  const hayDatos =
+    (ver('ventas') && hayVentas) ||
+    (ver('productos') && hayProductos) ||
+    (ver('compras') && hayCompras);
+
+  const exportarExcel = () => {
+    if (!reporte || !reporteCompras) return;
+
+    // Cada reporte se descarga como un archivo Excel independiente.
+    // En "Todo" salen los que tengan datos, con una pausa para que el navegador no bloquee las descargas.
+    const base = { desde, hasta };
+    const tareas: (() => void)[] = [];
+
+    if (ver('ventas') && hayVentas) {
+      tareas.push(() =>
+        void exportarReporteExcel({
+          ...base,
+          nombre: 'reporte-ventas',
+          ventas: reporte.enRango.map((v) => ({
+            id: v.id,
+            fecha: fechaLocal(v.fecha),
+            cliente: nombreCliente(v),
+            metodo_pago: v.metodo_pago,
+            tipo_entrega: v.tipo_entrega,
+            estado: v.estado,
+            valor_total: Number(v.valor_total) || 0,
+            detalles: v.detalles ?? [],
+            promociones: v.promociones ?? [],
+          })),
+        })
+      );
+    }
+
+    if (ver('productos') && hayProductos) {
+      tareas.push(() =>
+        void exportarReporteExcel({
+          ...base,
+          nombre: 'reporte-productos',
+          productos: reporte.productos,
+        })
+      );
+    }
+
+    if (ver('compras') && hayCompras) {
+      tareas.push(() =>
+        void exportarReporteExcel({
+          ...base,
+          nombre: 'reporte-compras',
+          compras: {
+            lista: reporteCompras.enRango,
+            totalPrevio: reporteCompras.totalPrevio,
+          },
+        })
+      );
+    }
+
+    tareas.forEach((fn, i) => setTimeout(fn, i * 400));
   };
 
   if (loading) {
@@ -698,11 +735,11 @@ export default function ReportesAdmin() {
         <button
           type="button"
           className="btn-primary"
-          onClick={exportarCSV}
-          disabled={!reporte || reporte.enRango.length === 0}
-          style={{ opacity: reporte && reporte.enRango.length ? 1 : 0.5, cursor: reporte && reporte.enRango.length ? 'pointer' : 'not-allowed' }}
+          onClick={exportarExcel}
+          disabled={!hayDatos}
+          style={{ opacity: hayDatos ? 1 : 0.5, cursor: hayDatos ? 'pointer' : 'not-allowed' }}
         >
-          Exportar ventas CSV
+          EXCEL
         </button>
       </div>
 

@@ -164,13 +164,6 @@ export default function AdminLayout() {
             </div>
           ))}
         </div>
-
-        <div className="sidebar-item sidebar-salir">
-          <button type="button" onClick={() => { cerrarMenu(); handleSalir(); }}>
-            <img src={cerrarSesion} alt="" className="icono-sidebar" />
-            Cerrar sesión
-          </button>
-        </div>
       </aside>
       <div className={`sidebar-backdrop${menuOpen ? ' show' : ''}`} onClick={cerrarMenu} />
 
