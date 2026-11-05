@@ -7,6 +7,7 @@ import '../styles/public.css';
 import '../styles/checkout.css';
 import PublicHeader from '../components/PublicHeader';
 import { useToast } from '../components/Toast';
+import { mensajeError } from '../utils/errores';
 import Footer from '../components/Footer';
 import logoNequi from '../assets/img/nequi.png';
 import logoDaviplata from '../assets/img/daviplata.png';
@@ -497,8 +498,28 @@ export default function Checkout() {
     efectivo: 'Efectivo',
   };
 
-  // Convierte el carrito (promos y/o productos) a líneas de producto_id.
-  // Cada promo se expande a 1 unidad de cada uno de sus productos por cantidad.
+const construirNotas = (): string | null => {
+  const partes = items
+    .filter((i) => (i.sin?.length ?? 0) > 0 || (i.extras?.length ?? 0) > 0 || i.nota)
+    .map((i) => {
+      const det = [
+        ...(i.sin ?? []).map((s) => `SIN ${s}`),
+        ...(i.extras ?? []).map((e) => `+${e.cantidad} ${e.nombre}`),
+        i.nota,
+      ].filter(Boolean).join(', ');
+      return `${i.cantidad}x ${i.nombre}: ${det}`;
+    });
+  return partes.length ? partes.join(' | ').slice(0, 255) : null;
+};
+
+const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
+  const mapa = new Map<number, number>();
+  items.forEach((i) =>
+    (i.extras ?? []).forEach((e) => mapa.set(e.id, (mapa.get(e.id) ?? 0) + e.cantidad * i.cantidad)),
+  );
+  return [...mapa.entries()].map(([adicion_id, cantidad]) => ({ adicion_id, cantidad }));
+};
+
   const expandirCarrito = (): { producto_id: number; cantidad: number }[] => {
     const combinado = new Map<number, number>();
     items.forEach((item) => {
@@ -515,18 +536,8 @@ export default function Checkout() {
     return [...combinado.entries()].map(([producto_id, cantidad]) => ({ producto_id, cantidad }));
   };
 
-  const mensajeErrorPago = (err: unknown): string => {
-    const data = (err as any)?.response?.data;
-    if (data?.error) return String(data.error); // ej. "Stock insuficiente de..."
-    const errores = data?.errors as Record<string, string[]> | undefined;
-    if (errores) {
-      const primero = Object.values(errores)[0]?.[0];
-      if (primero) return String(primero);
-    }
-    if (data?.message) return String(data.message);
-    if ((err as any)?.response?.status === 401) return 'Tu sesión expiró. Inicia sesión de nuevo.';
-    return 'No se pudo procesar el pago. Intenta de nuevo.';
-  };
+  const mensajeErrorPago = (err: unknown): string =>
+    mensajeError(err, 'No se pudo procesar el pago');
 
   const [enviando, setEnviando] = useState(false);
 
@@ -566,6 +577,8 @@ export default function Checkout() {
     try {
       const respuesta = await apiClient.post('/ventas', {
         carrito: expandirCarrito(),
+        notas: construirNotas(),
+        adiciones: construirAdiciones(),
         tipo_entrega: TIPO_ENTREGA_BACKEND[tipoEntrega] ?? 'Domicilio',
         metodo_pago: METODO_PAGO_BACKEND[metodoPago] ?? 'Efectivo',
         // Contexto extra del pedido en línea (el backend lo ignora al validar)

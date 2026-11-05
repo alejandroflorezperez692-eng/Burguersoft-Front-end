@@ -31,6 +31,7 @@ const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
   { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.menu },
   { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.menu },
+  { to: '/pedidos-en-vivo', label: 'Pedidos', icono: cena, roles: ACCESO.ventas },
   { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.ventas },
   { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.inventario },
   { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.inventario },
@@ -73,19 +74,18 @@ export default function AdminLayout() {
   const esPersonal = rol !== '' && ACCESO.personal.includes(rol);
   const navItems = todosLosItems.filter((item) => rol !== '' && item.roles.includes(rol));
 
-  // Valida la sesión con el backend al abrir el panel y en cada cambio de pantalla.
-  // Si la cuenta fue suspendida/desactivada, el backend responde 401 y el
-  // interceptor de api/client.ts cierra la sesión y manda al login.
   useEffect(() => {
     if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
-    apiClient.get('/me').catch(() => { /* el 401 lo maneja el interceptor */ });
+    apiClient.get('/me').catch((err) => {
+      console.error('[AdminLayout] Error validando sesión:', err.message);
+      // No redirigir aquí; el interceptor de la API maneja el 401.
+    });
   }, [location.pathname]);
 
   const handleSalir = () => {
     setSaliendo(true);
     setTimeout(() => {
       logout();
-      // navigate al login con aviso de sesión cerrada
       navigate('/login', { replace: true, state: { toast: 'logout_ok' } });
       setSaliendo(false);
     }, 500);
@@ -114,7 +114,6 @@ export default function AdminLayout() {
     };
   }, [menuOpen]);
 
-  // Cierra el menú del usuario al hacer clic fuera o presionar Escape
   useEffect(() => {
     if (!userMenuOpen) return;
     const onClickFuera = (e: MouseEvent) => {

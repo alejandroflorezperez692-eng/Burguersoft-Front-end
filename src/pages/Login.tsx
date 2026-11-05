@@ -1,5 +1,7 @@
+
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import AuthLayout from '../layouts/AuthLayout';
@@ -8,7 +10,7 @@ import AdminLoading from '../components/AdminLoading';
 import { IconoToast, useToast } from '../components/Toast';
 import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
-
+import { mensajeError } from '../utils/errores';
 
 function getErrorMessage(error: unknown): string {
   if (isAxiosError(error)) {
@@ -49,6 +51,7 @@ function getErrorMessage(error: unknown): string {
   return 'Ocurrió un error inesperado.';
 }
 
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -67,15 +70,23 @@ export default function Login() {
   const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
 
 
-  // Aviso flotante (estilo toast) en el login: contraseña cambiada o sesión cerrada
+  // Aviso flotante (estilo toast) en el login: contraseña cambiada, sesión
+  // cerrada o sesión expirada. Se lee también de sessionStorage para que el
+  // aviso sobreviva a la redirección (p. ej. al restablecer la contraseña).
   const MENSAJE_AVISO: Record<string, string> = {
     password_ok: 'Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
     logout_ok: 'Has cerrado sesión correctamente.',
+    sesion_expirada: 'Tu sesión expiró. Inicia sesión de nuevo.',
+    registro_ok: 'Tu cuenta fue creada correctamente. Inicia sesión para continuar.',
   };
-  const [aviso, setAviso] = useState<string | null>(MENSAJE_AVISO[tipoToast] ?? null);
+  const [aviso, setAviso] = useState<string | null>(null);
   useEffect(() => {
-    if (!tipoToast) return;
-    setAviso(MENSAJE_AVISO[tipoToast] ?? null);
+    const guardado = sessionStorage.getItem('aviso_login') ?? '';
+    const clave = tipoToast || guardado;
+    if (!clave) return;
+    if (guardado) sessionStorage.removeItem('aviso_login');
+    setAviso(MENSAJE_AVISO[clave] ?? null);
+    // Se mantiene visible 6 segundos para que se alcance a leer.
     const t = setTimeout(() => setAviso(null), 6000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,7 +127,7 @@ export default function Login() {
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
-      showToast(getErrorMessage(err), true);
+showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
       // El token de Turnstile es de un solo uso: hay que pedir uno nuevo
       setTurnstileToken('');
       turnstileRef.current?.reset();
