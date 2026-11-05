@@ -82,6 +82,7 @@ type AuthContextValue = {
     password: string,
     tipoDocumento?: string,
     numeroDocumento?: string,
+    recaptchaToken?: string,
   ) => Promise<void>;
   logout: () => void;
   demoLogin: (role?: string) => void;
@@ -221,6 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string,
       tipoDocumento?: string,
       numeroDocumento?: string,
+      recaptchaToken?: string,
     ) => {
       await apiClient.post('/registro', {
         nombre,
@@ -229,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         tipo_documento: tipoDocumento,
         numero_documento: numeroDocumento,
+        recaptcha_token: recaptchaToken,
       });
     },
     [],

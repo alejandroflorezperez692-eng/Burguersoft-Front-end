@@ -14,6 +14,8 @@ interface Mensaje {
   role: 'user' | 'assistant';
   content: string;
   grafica?: Grafica;
+  /** Mensaje de error local: se muestra, pero NO se envía como historial a la IA */
+  error?: boolean;
 }
 
 /** Gráfica de barras horizontales (sin librerías) para las respuestas de Burgi */
@@ -49,6 +51,33 @@ function GraficaBarras({ g }: { g: Grafica }) {
       ))}
     </div>
   );
+}
+
+/** Convierte las URLs del texto en enlaces clicables. Los de Google Maps se muestran como "📍 Abrir en Google Maps". */
+function renderTexto(texto: string) {
+  return texto.split(/(https?:\/\/[^\s]+)/g).map((parte, i) => {
+    if (!/^https?:\/\//.test(parte)) return parte;
+
+    // La puntuación final (punto, coma, paréntesis...) no hace parte de la URL
+    const m = parte.match(/^(.*?)([).,;:!?]*)$/);
+    const url = m ? m[1] : parte;
+    const resto = m ? m[2] : '';
+    const esMapa = /google\.[a-z.]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps/i.test(url);
+
+    return (
+      <span key={i}>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: 'var(--brand-deep)', fontWeight: 800, textDecoration: 'underline', wordBreak: 'break-all' }}
+        >
+          {esMapa ? '📍 Abrir en Google Maps' : url}
+        </a>
+        {resto}
+      </span>
+    );
+  });
 }
 
 const SUGERENCIAS = [
@@ -249,7 +278,11 @@ export default function AsistenteIA() {
     const mensaje = (pregunta ?? texto).trim();
     if (!mensaje || pensando) return;
 
-    const historial = mensajes.slice(-10);
+    // Los avisos de error no se mandan a la IA: la confunden y la hacen repetir el error
+    const historial = mensajes
+      .filter((m) => !m.error)
+      .slice(-10)
+      .map(({ role, content }) => ({ role, content }));
     setMensajes((m) => [...m, { role: 'user', content: mensaje }]);
     setTexto('');
     setPensando(true);
@@ -259,21 +292,24 @@ export default function AsistenteIA() {
         mensaje,
         pagina: pathname,
         historial,
+      }, {
+        timeout: 60000, // el backend puede consultar la base de datos varias veces antes de responder
       });
       setMensajes((m) => [...m, { role: 'assistant', content: data.respuesta, grafica: data.grafica ?? undefined }]);
     } catch (e) {
       const status = (e as { response?: { status?: number } })?.response?.status;
+      const code = (e as { code?: string })?.code;
       let aviso: string;
-      if (!status)
+      if (!status && code === 'ECONNABORTED')
+        aviso = 'La consulta tardó demasiado. Inténtalo de nuevo o hazla más específica.';
+      else if (!status)
         aviso =
-          'Comidas Rápidas El Oriente\n' +
-          'Cl. 9 # 1A-43, Sogamoso, Boyacá\n' +
-          '📍 Abrir en Google Maps: 5.707974, -72.920502';
+          'No pude completar la respuesta. Verifica tu conexión e inténtalo de nuevo; no cierres la sesión.';
       else if (status === 401) aviso = 'Tu sesión expiró. Cierra sesión y vuelve a entrar.';
       else if (status === 403) aviso = 'No tienes permiso para usar a Burgi.';
       else if (status >= 500) aviso = `El servidor tuvo un error (${status}). El detalle está en storage/logs/laravel.log del backend.`;
       else aviso = `No pude responder (error ${status}).`;
-      setMensajes((m) => [...m, { role: 'assistant', content: aviso }]);
+      setMensajes((m) => [...m, { role: 'assistant', content: aviso, error: true }]);
     } finally {
       setPensando(false);
     }
@@ -449,7 +485,7 @@ export default function AsistenteIA() {
                         wordBreak: 'break-word',
                       }}
                     >
-                {m.content}
+                {renderTexto(m.content)}
                 {m.grafica && <GraficaBarras g={m.grafica} />}
                 </div>
                 </div>

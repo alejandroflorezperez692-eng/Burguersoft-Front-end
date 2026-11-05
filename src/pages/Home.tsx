@@ -113,7 +113,7 @@ export default function Home() {
         <h2>Combos y Promociones</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
         {promos === null ? (
-          <AdminLoading texto="Cargando combos" subtexto="Preparando los mejores combos" />
+          <AdminLoading texto="Cargando combos" subtexto="Preparando los mejores combos" compact />
         ) : (
           <div className="grid-promociones">
             {activas.length === 0 ? (

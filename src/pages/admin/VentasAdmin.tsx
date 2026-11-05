@@ -119,6 +119,7 @@ export default function VentasAdmin() {
   const [loading, setLoading] = useState(true);
   const [historialId, setHistorialId] = useState<number | null>(null);
   const [detalleId, setDetalleId] = useState<number | null>(null);
+  const [, setVersion] = useState(0);
 
   const load = async () => {
     setLoading(true);

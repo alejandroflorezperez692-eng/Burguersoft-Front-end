@@ -7,6 +7,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import { mensajeError as mensajeErrorBase } from '../../utils/errores';
 
 type Estado = 'Disponible' | 'Agotado' | 'Por agotarse';
 
@@ -59,7 +60,7 @@ const mensajeError = (err: unknown, porDefecto: string): string => {
   if (/23503|foreign key|sale_details|llave for[aá]nea/i.test(msg)) {
     return 'No se puede eliminar porque tiene ventas registradas. Puedes desactivarlo.';
   }
-  return msg;
+  return mensajeErrorBase(err, porDefecto);
 };
 
 // Solo acepta URLs de imagen utilizables (absolutas, data/blob o /storage).
