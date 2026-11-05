@@ -8,6 +8,7 @@ import { useToast } from '../../components/Toast';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
+import TrazabilidadModal from '../../components/TrazabilidadModal';
 
 interface DetalleVenta {
   id: number;
@@ -31,7 +32,18 @@ interface Venta {
   tipo_entrega: string;
   usuario_id: number;
   cliente_nombre?: string | null;
-  usuario?: { nombre: string; apellido: string };
+  mesa?: number | null;
+  notas?: string | null;
+  usuario?: {
+    nombre: string;
+    apellido: string;
+    correo?: string | null;
+    email?: string | null;
+    telefono?: string | null;
+    phone?: string | null;
+    Tdocumento?: string | null;
+    Ndocumento?: string | null;
+  };
   detalles: DetalleVenta[];
   promociones: PromocionVenta[];
 }
@@ -51,23 +63,24 @@ interface Promocion {
 
 const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
-const ESTADOS = ['En barra', 'En cocina', 'En camino', 'Listo para recoger', 'Entregado', 'Pagado', 'Cancelado', 'Reembolsada'];
-
-const ESTADOS_MESERO = ['En barra', 'En cocina', 'Entregado', 'Cancelado'];
+const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
 
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
-// Minúsculas y sin tildes, para búsquedas tolerantes
 const normalizar = (s: unknown) =>
   String(s ?? '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-// Fecha local en formato YYYY-MM-DD
 const fechaLocal = (fecha?: string | null) =>
   fecha ? new Date(fecha).toLocaleDateString('en-CA') : '';
+
+const fmtDia = (f?: string | null) =>
+  f ? new Date(f).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtHora = (f?: string | null) =>
+  f ? new Date(f).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : '';
 
 export default function VentasAdmin() {
   const { user } = useAuth();
@@ -81,7 +94,6 @@ export default function VentasAdmin() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
   
-  // --- Filtros (Carlos) ---
   const [q, setQ] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [filtroMetodo, setFiltroMetodo] = useState('');
@@ -89,13 +101,14 @@ export default function VentasAdmin() {
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
 
-  // --- Paginación (Develop) ---
   const [pagina, setPagina] = useState(1);
 
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [tipoEntrega, setTipoEntrega] = useState(esMesero ? 'Consumir' : 'Domicilio');
   const [clienteNombre, setClienteNombre] = useState('');
+  const [mesa, setMesa] = useState('');
+  const [notas, setNotas] = useState('');
   const [intentado, setIntentado] = useState(false);
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
@@ -104,6 +117,8 @@ export default function VentasAdmin() {
   const [cantidadCombo, setCantidadCombo] = useState('1');
   const [combos, setCombos] = useState<{ promocion_id: number; cantidad: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [historialId, setHistorialId] = useState<number | null>(null);
+  const [detalleId, setDetalleId] = useState<number | null>(null);
   const [, setVersion] = useState(0);
 
   const load = async () => {
@@ -133,7 +148,6 @@ export default function VentasAdmin() {
 
   const textoBusqueda = normalizar(q).trim();
 
-  // --- Lógica de Filtrado (Carlos) ---
   const filtered = (items ?? []).filter((v) => {
     if (textoBusqueda) {
       const haystack = normalizar(
@@ -174,7 +188,6 @@ export default function VentasAdmin() {
 
   const totalFiltrado = filtered.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
-  // --- Paginación (Develop) ---
   const { visibles, paginaActual } = paginar(filtered, pagina);
 
   const sinNada = carrito.length === 0 && combos.length === 0;
@@ -186,18 +199,24 @@ export default function VentasAdmin() {
   const save = () => {
     setIntentado(true);
     if (sinNada) return;
+    if (tipoEntrega === 'Consumir' && !mesa) return;
     const body = {
       carrito,
       combos: combos.length ? combos : undefined,
       metodo_pago: metodoPago,
       tipo_entrega: tipoEntrega,
       cliente_nombre: clienteNombre.trim() || undefined,
+      mesa: tipoEntrega === 'Consumir' ? Number(mesa) : undefined,
+      notas: notas.trim() || undefined,
     };
     apiClient.post('/ventas', body).then(() => {
       cerrarFormulario();
-      setVersion((v) => v + 1);
       load();
-    }).catch(() => alertar('No se pudo registrar la venta. Revisa el stock y los datos.'));
+    }).catch((e) => {
+      const d = (e as any)?.response?.data;
+      const msg = d?.error || d?.message || (Object.values(d?.errors ?? {}) as string[][])[0]?.[0];
+      alertar(msg || 'No se pudo registrar la venta. Revisa los datos.');
+    });
   };
 
   const cerrarFormulario = () => {
@@ -210,6 +229,8 @@ export default function VentasAdmin() {
     setPromocionId(0);
     setCantidadCombo('1');
     setClienteNombre('');
+    setMesa('');
+    setNotas('');
   };
 
   const buscarProducto = (id: number) => (productos ?? []).find((p) => p?.id === id);
@@ -274,12 +295,6 @@ export default function VentasAdmin() {
 
   const totalCarrito = totalProductos + totalCombos;
 
-  const updateEstado = (id: number, estado: string) => {
-    apiClient.patch(`/ventas/${id}/estado`, { estado })
-      .then(() => { setVersion((v) => v + 1); load(); })
-      .catch(() => alertar('No se pudo cambiar el estado.'));
-  };
-
   const verFactura = async (id: number) => {
     const ventana = window.open('', '_blank');
 
@@ -300,7 +315,10 @@ export default function VentasAdmin() {
     }
   };
 
+  const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
+
   useEscape([
+    [detalle !== null, () => setDetalleId(null)],
     [showForm, cerrarFormulario],
   ]);
 
@@ -315,9 +333,6 @@ export default function VentasAdmin() {
           <h1>{esAdmin ? 'Gestión de Ventas' : 'Caja'}</h1>
           <p className="subtitulo">{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Cancelar' : '+ Nueva venta'}
-        </button>
       </div>
 
       {showForm && (
@@ -474,6 +489,29 @@ export default function VentasAdmin() {
                 maxLength={150}
               />
             </div>
+            {tipoEntrega === 'Consumir' && (
+              <div className="form-group">
+                <label>Mesa *</label>
+                <select
+                  value={mesa}
+                  onChange={(e) => setMesa(e.target.value)}
+                  style={intentado && !mesa ? { borderColor: 'var(--danger)' } : undefined}
+                >
+                  <option value="">Elige la mesa</option>
+                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Mesa {n}</option>)}
+                </select>
+              </div>
+            )}
+            <div className="form-group">
+              <label>Notas para cocina (opcional)</label>
+              <input
+                type="text"
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                placeholder="Ej: sin tomate, extra bacon"
+                maxLength={255}
+              />
+            </div>
           </div>
 
           {carrito.length > 0 || combos.length > 0 ? (
@@ -572,43 +610,59 @@ export default function VentasAdmin() {
           <thead>
             <tr>
               <th>#</th>
+              <th>Fecha</th>
               <th>Cliente</th>
               <th>Productos</th>
               <th>Total</th>
               <th>Método</th>
               <th>Estado</th>
+              <th>Historial</th>
               <th>Factura</th>
+              <th>Detalle</th>
             </tr>
           </thead>
           <tbody>
             {visibles.map((v) => (
               <tr key={v?.id}>
-                <td>{v?.id}</td>
-                <td style={{ fontWeight: 600 }}>{nombreCliente(v) || '—'}</td>
+                <td className="vt-num">#{v?.id}</td>
+                <td className="vt-fecha">
+                  <span>{fmtDia(v?.fecha)}</span>
+                  <small>{fmtHora(v?.fecha)}</small>
+                </td>
+                <td className="vt-cliente">
+                  <strong>{nombreCliente(v) || '—'}</strong>
+                  <small>
+                    {v?.tipo_entrega === 'Consumir' && v?.mesa ? `Mesa ${v.mesa}` : v?.tipo_entrega ?? ''}
+                  </small>
+                </td>
                 <td>
-                  <div className="venta-detalles">
+                  <ul className="vt-productos">
                     {(v?.detalles ?? []).map((d, i) => (
-                      <span key={`${d?.id}-${i}`} style={{ fontSize: 12, color: 'var(--text-600)' }}>
-                        {d?.producto?.nombre ?? 'Producto'} x{d?.cantidad ?? 0}
-                      </span>
+                      <li key={`${d?.id}-${i}`}>
+                        <b>{d?.cantidad ?? 0}×</b> {d?.producto?.nombre ?? 'Producto'}
+                      </li>
                     ))}
                     {(v?.promociones ?? []).map((p, i) => (
-                      <span key={`${p?.id}-${i}`} className="badge badge-info" style={{ fontSize: 10 }}>{p?.nombre}</span>
+                      <li key={`${p?.id}-${i}`} className="vt-combo">
+                        <span className="badge badge-info">{p?.nombre}</span>
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </td>
-                <td style={{ fontWeight: 700 }}>${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
+                <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
                 <td><span className="badge badge-info">{v?.metodo_pago ?? ''}</span></td>
                 <td>
-                  <select
-                    value={v?.estado ?? ''}
-                    onChange={(e) => updateEstado(v.id, e.target.value)}
-                    style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  <span className="vt-estado" data-estado={v?.estado ?? ''}>{v?.estado ?? '—'}</span>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+                    onClick={() => setHistorialId(v.id)}
                   >
-                    {ESTADOS.map((e) => (
-                      <option key={e} value={e} disabled={(!esAdmin && e === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(e))}>{e}</option>
-                    ))}
-                  </select>
+                    Ver historial
+                  </button>
                 </td>
                 <td>
                   <button
@@ -620,16 +674,102 @@ export default function VentasAdmin() {
                     Ver factura
                   </button>
                 </td>
+                <td>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+                    onClick={() => setDetalleId(v.id)}
+                  >
+                    Ver detalle
+                  </button>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
+              <tr><td colSpan={10} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
       <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
+
+      {historialId !== null && (
+        <TrazabilidadModal ventaId={historialId} onClose={() => setHistorialId(null)} />
+      )}
+
+      {detalle && (
+        <div className="modal-overlay open" onClick={() => setDetalleId(null)}>
+          <div className="modal-box vt-det" onClick={(e) => e.stopPropagation()}>
+            <div className="vt-det-head">
+              <div>
+                <h3>Venta #{detalle.id}</h3>
+                <p>{fmtDia(detalle.fecha)} · {fmtHora(detalle.fecha)}</p>
+              </div>
+              <span className="vt-estado" data-estado={detalle.estado}>{detalle.estado}</span>
+            </div>
+
+            <section className="vt-det-sec">
+              <h4>Cliente</h4>
+              <dl className="vt-det-grid">
+                <div><dt>Nombre</dt><dd>{nombreCliente(detalle) || '—'}</dd></div>
+                <div><dt>Correo</dt><dd>{detalle.usuario?.correo || detalle.usuario?.email || '—'}</dd></div>
+                <div><dt>Teléfono</dt><dd>{detalle.usuario?.telefono || detalle.usuario?.phone || '—'}</dd></div>
+                <div>
+                  <dt>Documento</dt>
+                  <dd>
+                    {detalle.usuario?.Ndocumento
+                      ? `${detalle.usuario?.Tdocumento ? detalle.usuario.Tdocumento + ' ' : ''}${detalle.usuario.Ndocumento}`
+                      : '—'}
+                  </dd>
+                </div>
+              </dl>
+            </section>
+
+            <section className="vt-det-sec">
+              <h4>Pedido</h4>
+              <dl className="vt-det-grid">
+                <div><dt>Entrega</dt><dd>{detalle.tipo_entrega || '—'}</dd></div>
+                {detalle.tipo_entrega === 'Consumir' && detalle.mesa ? (
+                  <div><dt>Mesa</dt><dd>{detalle.mesa}</dd></div>
+                ) : null}
+                <div><dt>Método de pago</dt><dd>{detalle.metodo_pago || '—'}</dd></div>
+                {detalle.notas ? (
+                  <div className="vt-det-full"><dt>Notas</dt><dd>{detalle.notas}</dd></div>
+                ) : null}
+              </dl>
+            </section>
+
+            <section className="vt-det-sec">
+              <h4>Productos</h4>
+              <div className="vt-det-lineas">
+                {(detalle.detalles ?? []).map((d, i) => (
+                  <div className="vt-det-linea" key={`d${i}`}>
+                    <span><b>{d?.cantidad ?? 0}×</b> {d?.producto?.nombre ?? 'Producto'}</span>
+                    <span className="vt-det-pu">${Number(d?.precio_unitario || 0).toLocaleString('es-CO')} c/u</span>
+                    <strong>${Number(d?.subtotal || 0).toLocaleString('es-CO')}</strong>
+                  </div>
+                ))}
+                {(detalle.promociones ?? []).map((p, i) => (
+                  <div className="vt-det-linea" key={`p${i}`}>
+                    <span>{p?.nombre} <span className="badge badge-info">Combo</span></span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <div className="vt-det-total">
+              <span>Total</span>
+              <strong>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</strong>
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="btn-cancel" onClick={() => setDetalleId(null)}>Cerrar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
