@@ -739,9 +739,9 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                     <button
                       type="button"
                       className="btn-ubicacion"
-                      onClick={() => navigate('/mis-pedidos')}
+                      onClick={() => navigate('/mis-compras')}
                     >
-                      Ver mis pedidos
+                      Ver mis compras
                     </button>
                     <button
                       type="button"

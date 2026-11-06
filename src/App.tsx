@@ -14,7 +14,7 @@ import RestablecerContrasena from './pages/RestablecerContrasena';
 import Inicio from './pages/Inicio';
 import Home from './pages/Home';
 import Nosotros from './pages/Nosotros';
-import MisPedidos from './pages/MisPedidos';
+import MisCompras from './pages/MisCompras';
 import MarcasAdmin from './pages/admin/MarcasAdmin';
 import UsuariosAdmin from './pages/admin/UsuariosAdmin';
 import MenuAdmin from './pages/admin/MenuAdmin';
@@ -55,7 +55,7 @@ export default function App() {
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/menu-publico" element={<MenuPublico />} />
           <Route path="/contactanos" element={<Contactanos />} />
-          <Route path="/mis-pedidos" element={<MisPedidos />} />
+          <Route path="/mis-compras" element={<MisCompras />} />
           <Route path="/checkout" element={<Checkout />} />
         </Route>
         <Route path="/" element={<Home />} />
@@ -63,7 +63,7 @@ export default function App() {
         <Route path="/menu-publico" element={<MenuPublico />} />
         <Route path="/contactanos" element={<Contactanos />} />
         <Route path="/terminos-y-condiciones" element={<TerminosPrivacidad />} />
-        <Route path="/mis-pedidos" element={<MisPedidos />} />
+        <Route path="/mis-compras" element={<MisCompras />} />
         <Route path="/checkout" element={<Checkout />} />
       </Route>
 
@@ -123,6 +123,9 @@ export default function App() {
 
         </Route>
       </Route>
+
+      {/* Ruta anterior: se conserva para no romper enlaces o favoritos viejos */}
+      <Route path="/mis-pedidos" element={<Navigate to="/mis-compras" replace />} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
