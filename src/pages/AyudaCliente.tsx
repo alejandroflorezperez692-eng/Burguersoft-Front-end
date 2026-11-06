@@ -137,14 +137,14 @@ export default function AyudaCliente() {
               {temaAbierto === TEMAS[3] && (
                 <div className="ayuda-seccion-contenido" id="ayuda-cliente-pedidos-contenido">
                   <ol className="ayuda-pasos">
-                    <li>Abre tu menú de perfil y selecciona <strong>Mis pedidos</strong> para ver el estado, el tipo de entrega, los productos y el total.</li>
+                    <li>Abre tu menú de perfil y selecciona <strong>Mis compras</strong> para ver el estado, el tipo de entrega, los productos y el total.</li>
                     <li>La lista se actualiza automáticamente y también puedes usar <strong>Actualizar</strong> para consultar el estado más reciente.</li>
                     <li>Si el pedido aún está <strong>En cocina</strong>, <strong>En barra</strong> o <strong>Pendiente de pago</strong>, puedes seleccionar <strong>Cancelar pedido</strong> y confirmar la acción.</li>
                   </ol>
                   <p className="ayuda-nota">
                     Cuando el pedido avance a otro estado, la opción de cancelación puede dejar de estar disponible. En ese caso, comunícate con el local.
                   </p>
-                  <Link className="ayuda-enlace" to="/mis-pedidos">Ver mis pedidos <span aria-hidden="true" /></Link>
+                  <Link className="ayuda-enlace" to="/mis-compras">Ver mis compras <span aria-hidden="true" /></Link>
                 </div>
               )}
             </div>

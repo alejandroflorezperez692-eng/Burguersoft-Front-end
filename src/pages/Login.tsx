@@ -1,10 +1,15 @@
+<<<<<<< Updated upstream
 import { useEffect, useState, type FormEvent } from 'react';
+=======
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+>>>>>>> Stashed changes
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
 import { IconoToast, useToast } from '../components/Toast';
 import '../styles/social-login.css';
+import { API_URL } from '../api/config';
 import { rutaInicio } from '../utils/roles';
 import { mensajeError } from '../utils/errores';
 
@@ -20,7 +25,6 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
-
 
   // Aviso flotante (estilo toast) en el login: contraseña cambiada, sesión
   // cerrada o sesión expirada. Se lee también de sessionStorage para que el
@@ -59,18 +63,24 @@ export default function Login() {
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
       showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
+<<<<<<< Updated upstream
+=======
+      // El token de Turnstile es de un solo uso: hay que pedir uno nuevo
+      setTurnstileToken('');
+      turnstileRef.current?.reset();
+>>>>>>> Stashed changes
     } finally {
       setLoading(false);
     }
   };
 
+  const handleGoogleLogin = () => {
+    window.location.href = `${API_URL}/auth/google`;
+  };
+
   if (loading) {
     return <AdminLoading texto="Iniciando sesión" subtexto="Verificando tus credenciales" />;
   }
-  const handleGoogleLogin = () => {
-    window.location.href = 'http://127.0.0.1:8000/api/auth/google';
-  };
-
 
   return (
     <AuthLayout regresarA="/">
