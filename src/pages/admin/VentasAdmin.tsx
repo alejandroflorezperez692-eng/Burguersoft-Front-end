@@ -66,6 +66,9 @@ const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
 const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
 
+// Estados que un mesero puede asignar (el resto queda deshabilitado)
+const ESTADOS_MESERO = ['Registrado', 'En preparación', 'Preparado', 'Servido', 'Cancelado'];
+
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
@@ -286,6 +289,7 @@ function SelectorFechaVentas({ value, onChange, min, max }: {
     </div>
   );
 }
+
 const fmtDia = (f?: string | null) =>
   f ? new Date(f).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 const fmtHora = (f?: string | null) =>
@@ -900,7 +904,11 @@ export default function VentasAdmin() {
                   </ul>
                 </td>
 
+
                 <td style={{ fontWeight: 700 }}>${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
+
+                <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
+
                 <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
                 <td>
                   <div
@@ -1009,10 +1017,12 @@ export default function VentasAdmin() {
                       document.body,
                     )}
                   </div>
+
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
                 <td><span className="badge badge-info">{v?.metodo_pago ?? ''}</span></td>
                 <td>
                   <span className="vt-estado" data-estado={v?.estado ?? ''}>{v?.estado ?? '—'}</span>
+
                 </td>
                 <td>
                   <button

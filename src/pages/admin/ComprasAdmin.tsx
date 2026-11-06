@@ -1199,19 +1199,25 @@ export default function ComprasAdmin() {
           />
         </label>
         <label style={estiloEtiqueta}>
+
           Marca
+
+          Proveedores
+
           <Desplegable
             className="compras-filter-dropdown"
             value={fMarca}
             onChange={setFMarca}
-            placeholder="Todas"
-            opciones={[{ value: '', label: 'Todas' }, ...marcasOrdenadas.map((m) => ({ value: String(m.id), label: m.nombre }))]}
+            placeholder="Todos"
+            opciones={[{ value: '', label: 'Todos' }, ...marcasOrdenadas.map((m) => ({ value: String(m.id), label: m.nombre }))]}
           />
+
           Proveedores
           <select style={estiloFiltro} value={fMarca} onChange={(e) => setFMarca(e.target.value)}>
             <option value="">Todos</option>
             {marcasOrdenadas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
           </select>
+
         </label>
         {hayFiltros && (
           <button type="button" className="btn-cancel compras-clear-filters-btn" style={{ padding: '9px 18px' }} onClick={limpiarFiltros}>

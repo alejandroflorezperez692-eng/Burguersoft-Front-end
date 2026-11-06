@@ -610,9 +610,15 @@ export default function BackupsAdmin() {
                           <button
                             className="btn-icon btn-icon-edit btn-accion"
 
+
                             onClick={() => abrirModalDescarga(b)}
                             disabled={ocupado}
                             title="Descargar"
+
+                            onClick={() => descargarCifrado(b)}
+                            disabled={ocupado || descargandoId === b.id}
+                            title="Descargar esta copia cifrada a tu PC"
+
 
                             onClick={() => descargarCifrado(b)}
                             disabled={ocupado || descargandoId === b.id}

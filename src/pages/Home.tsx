@@ -6,7 +6,6 @@ import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import promocionFallback from '../assets/img/promocion.png';
 import { useAuth } from '../hooks/useAuth';
-import { useCart } from '../hooks/useCart';
 import AdminLoading from '../components/AdminLoading';
 import { IconoToast } from '../components/Toast';
 import '../styles/public.css';
@@ -44,7 +43,6 @@ function formatFecha(fecha?: string | null): string {
 export default function Home() {
   const [promos, setPromos] = useState<Promocion[] | null>(null);
   const { isAuthenticated } = useAuth();
-  const { agregar } = useCart();
   const [personalizando, setPersonalizando] = useState<ItemPersonalizar | null>(null);
   const location = useLocation();
 
@@ -148,11 +146,14 @@ export default function Home() {
                       </div>
                       {isAuthenticated ? (
 
+
                         <button type="button" className="btn-circular-add" title="Agregar al carrito" data-tooltip="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
+
                         <button
                           type="button"
                           className="btn-circular-add"
                           title="Agregar al carrito"
+                          data-tooltip="Agregar al carrito"
                           onClick={() =>
                             setPersonalizando({
                               id: promo.id,
@@ -186,7 +187,7 @@ export default function Home() {
         <PersonalizarModal item={personalizando} onClose={() => setPersonalizando(null)} />
       )}
 
-      <Footer />
+      <Footer/>
     </div>
   );
 }

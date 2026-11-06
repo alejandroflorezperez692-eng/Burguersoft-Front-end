@@ -651,10 +651,14 @@ export default function MenuAdmin() {
                       {esAdmin && (
                         <div className="mn-table-actions">
 
+
                           <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
                           <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
 
                           <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
+
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
+
                           <button
                             type="button"
                             className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
@@ -662,7 +666,11 @@ export default function MenuAdmin() {
                           >
                             {p.activo === false ? 'Activar' : 'Desactivar'}
                           </button>
+
                           <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+
+
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
 
                         </div>
                       )}
@@ -702,9 +710,13 @@ export default function MenuAdmin() {
                       {esAdmin && (
                         <div className="mn-card-actions">
 
+
                           <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
                           <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
                           <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
+
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
+
                           <button
                             type="button"
                             className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
@@ -712,7 +724,11 @@ export default function MenuAdmin() {
                           >
                             {p.activo === false ? 'Activar' : 'Desactivar'}
                           </button>
+
                           <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+
+
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
 
                         </div>
                       )}

@@ -134,6 +134,7 @@ const handlePassword = async (e: React.FormEvent) => {
   try {
     await apiClient.post('/perfil/password', { actual, nueva, confirmar });
 
+
     sessionStorage.setItem('login_toast', 'password_ok');
     logout();
     window.location.replace('/login');
@@ -142,6 +143,13 @@ const handlePassword = async (e: React.FormEvent) => {
 
     showToast('Contraseña actualizada correctamente.');
     setActual(''); setNueva(''); setConfirmar('');
+  } catch (err) {
+    const msg = mensajeError(err, 'No se pudo actualizar la contraseña');
+
+
+    sessionStorage.setItem('login_toast', 'password_ok');
+    logout();
+    window.location.replace('/login');
   } catch (err) {
     const msg = mensajeError(err, 'No se pudo actualizar la contraseña');
 

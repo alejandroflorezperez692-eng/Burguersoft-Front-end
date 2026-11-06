@@ -128,10 +128,15 @@ export default function MenuPublico() {
                               className="btn-circular-add"
                               title="Agregar al carrito"
 
+
                               data-tooltip="Agregar al carrito"
                               onClick={() =>
                                 agregar({ id: p.id, nombre: p.nombre ?? 'Producto', precio: Number(p.valor || 0), imagen: p.img })
                               }
+                              onClick={() => setEditando(p)}
+
+
+                              data-tooltip="Agregar al carrito"
                               onClick={() => setEditando(p)}
 
                             >
