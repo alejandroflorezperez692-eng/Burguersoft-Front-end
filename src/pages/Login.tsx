@@ -1,7 +1,4 @@
-
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { isAxiosError } from 'axios';
-import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import AuthLayout from '../layouts/AuthLayout';
@@ -9,48 +6,9 @@ import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
 import { IconoToast, useToast } from '../components/Toast';
 import '../styles/social-login.css';
+import { API_URL } from '../api/config';
 import { rutaInicio } from '../utils/roles';
 import { mensajeError } from '../utils/errores';
-
-function getErrorMessage(error: unknown): string {
-  if (isAxiosError(error)) {
-    if (!error.response) {
-      return 'No se pudo conectar con el servidor.';
-    }
-    const data = error.response.data;
-    if (typeof data === 'string') {
-      return `Error del servidor (${error.response.status}).`;
-    }
-    // Si el backend manda el detalle por campo, se muestran TODOS los errores indicando qué campo falla.
-    const errores = (data as { errors?: Record<string, unknown> })?.errors;
-    if (errores && typeof errores === 'object') {
-      const etiquetas: Record<string, string> = {
-        correo: 'correo electrónico',
-        email: 'correo electrónico',
-        contrasena: 'contraseña',
-        password: 'contraseña',
-        turnstileToken: 'verificación de seguridad',
-      };
-      const lista: string[] = [];
-      Object.entries(errores).forEach(([campo, val]) => {
-        const texto = Array.isArray(val) ? String(val[0] ?? '') : String(val ?? '');
-        if (!texto) return;
-        const etiqueta = etiquetas[campo] ?? campo;
-        lista.push(/obligatori|required/i.test(texto) ? `El campo ${etiqueta} es obligatorio.` : texto);
-      });
-      const unicos = Array.from(new Set(lista));
-      if (unicos.length > 0) return unicos.join(' ');
-    }
-    const msg = (data as Record<string, unknown>)?.message ?? (data as Record<string, unknown>)?.error;
-    if (typeof msg === 'string') return msg;
-    return `Error inesperado (${error.response.status}).`;
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return 'Ocurrió un error inesperado.';
-}
-
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -81,10 +39,16 @@ export default function Login() {
   };
   const [aviso, setAviso] = useState<string | null>(null);
   useEffect(() => {
-    const guardado = sessionStorage.getItem('aviso_login') ?? '';
+    // Se aceptan las dos claves que usa el proyecto: 'aviso_login'
+    // (login, registro, restablecer) y 'login_toast' (perfil).
+    const guardado =
+      sessionStorage.getItem('aviso_login') ?? sessionStorage.getItem('login_toast') ?? '';
     const clave = tipoToast || guardado;
     if (!clave) return;
-    if (guardado) sessionStorage.removeItem('aviso_login');
+    if (guardado) {
+      sessionStorage.removeItem('aviso_login');
+      sessionStorage.removeItem('login_toast');
+    }
     setAviso(MENSAJE_AVISO[clave] ?? null);
     // Se mantiene visible 6 segundos para que se alcance a leer.
     const t = setTimeout(() => setAviso(null), 6000);
@@ -127,7 +91,7 @@ export default function Login() {
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
-showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
+      showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
       // El token de Turnstile es de un solo uso: hay que pedir uno nuevo
       setTurnstileToken('');
       turnstileRef.current?.reset();
@@ -140,7 +104,7 @@ showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
     return <AdminLoading texto="Iniciando sesión" subtexto="Verificando tus credenciales" />;
   }
   const handleGoogleLogin = () => {
-    window.location.href = 'http://127.0.0.1:8000/api/auth/google';
+    window.location.href = `${API_URL}/auth/google`;
   };
 
 

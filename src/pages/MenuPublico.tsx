@@ -119,7 +119,7 @@ export default function MenuPublico() {
                             {formatCOP(Number(p.valor || 0))}
                           </div>
                           {agotado ? (
-                            <button type="button" className="btn-circular-add" disabled title="Producto agotado">
+                            <button type="button" className="btn-circular-add" disabled title="Producto agotado" data-tooltip="Producto agotado">
                               +
                             </button>
                           ) : isAuthenticated ? (
@@ -127,12 +127,13 @@ export default function MenuPublico() {
                               type="button"
                               className="btn-circular-add"
                               title="Agregar al carrito"
+                              data-tooltip="Agregar al carrito"
                               onClick={() => setEditando(p)}
                             >
                               +
                             </button>
                           ) : (
-                            <Link to="/login" title="Inicia sesión para pedir">
+                            <Link to="/login" className="link-sesion" data-tooltip="Inicia sesión para pedir">
                               <button type="button" className="btn-circular-add btn-login">
                                 +
                               </button>

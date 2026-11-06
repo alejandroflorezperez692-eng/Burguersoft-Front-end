@@ -603,7 +603,7 @@ export default function BackupsAdmin() {
                             className="btn-icon btn-icon-restore btn-accion"
                             onClick={() => abrirModalRestore(b)}
                             disabled={ocupado}
-                            title="Restaurar esta copia"
+                            title="Restaurar"
                           >
                             Restaurar
                           </button>
@@ -621,7 +621,7 @@ export default function BackupsAdmin() {
                                 className="btn-accion"
                                 onClick={() => subirDrive(b)}
                                 disabled={ocupado || subiendoDrive === b.id}
-                                title="Subir esta copia a Google Drive"
+                                title="A Drive"
                               >
                                 {subiendoDrive === b.id ? 'Subiendo…' : 'A Drive'}
                               </button>
@@ -630,7 +630,7 @@ export default function BackupsAdmin() {
                                 className="btn-accion"
                                 onClick={() => descargarDeDrive(b)}
                                 disabled={ocupado || descargandoId === b.id}
-                                title="Descargar esta copia desde Google Drive"
+                                title="De Drive"
                               >
                                 {descargandoId === b.id ? 'Descargando…' : 'De Drive'}
                               </button>
@@ -640,7 +640,7 @@ export default function BackupsAdmin() {
                             className="btn-icon btn-icon-del btn-accion"
                             onClick={() => del(b)}
                             disabled={ocupado}
-                            title="Eliminar este registro"
+                            title="Eliminar"
                           >
                             Eliminar
                           </button>

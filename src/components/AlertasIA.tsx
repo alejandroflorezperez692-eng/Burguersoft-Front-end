@@ -73,7 +73,7 @@ export default function AlertasIA() {
 
   if (cargando) {
     return (
-      <div style={{ ...tarjeta, display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-400)', fontSize: 14, fontWeight: 600 }} aria-live="polite">
+      <div className="alertas-dashboard" style={{ ...tarjeta, display: 'flex', alignItems: 'center', gap: 10, color: 'var(--text-400)', fontSize: 14, fontWeight: 600 }} aria-live="polite">
         <span aria-hidden="true">✨</span> Burgi está revisando tu negocio…
       </div>
     );
@@ -82,7 +82,7 @@ export default function AlertasIA() {
   if (!datos || (datos.alertas.length === 0 && !datos.resumen)) return null;
 
   return (
-    <section style={tarjeta} aria-label="Alertas inteligentes de Burgi">
+    <section className="alertas-dashboard" style={tarjeta} aria-label="Alertas inteligentes de Burgi">
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <span aria-hidden="true" style={{ fontSize: 18 }}>✨</span>
         <h3 style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 800, color: 'var(--text-900)' }}>
@@ -92,7 +92,7 @@ export default function AlertasIA() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 18, alignItems: 'start' }}>
         {datos.resumen && (
-          <div style={{ padding: 16, borderRadius: 14, background: 'rgba(232, 130, 26, 0.07)', border: '1px solid var(--border)' }}>
+          <div className="alertas-resumen-semanal" style={{ padding: 16, borderRadius: 14, background: 'rgba(232, 130, 26, 0.07)', border: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: 'var(--brand-deep)' }}>
                 {datos.titulo_resumen ?? 'Resumen de la semana'}
@@ -110,6 +110,7 @@ export default function AlertasIA() {
             {datos.alertas.map((a, i) => (
               <li
                 key={`${a.tipo}-${i}`}
+                className={`alerta-dashboard-item alerta-nivel-${a.nivel}${a.tipo === 'stock' ? ' alerta-stock' : ''}`}
                 style={{
                   display: 'flex',
                   gap: 12,

@@ -103,15 +103,150 @@ const estiloEtiqueta: CSSProperties = {
   display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: 'var(--text-400)',
 };
 
-function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...', error = false }: {
+type OpcionDesplegable = string | { value: string; label: string };
+
+function SelectorFechaCompras({ value, onChange, min, max }: {
+  value: string;
+  onChange: (value: string) => void;
+  min?: string;
+  max?: string;
+}) {
+  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [abierto, setAbierto] = useState(false);
+  const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
+  const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setModoOscuro(document.body.classList.contains('dark-mode')));
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrarFuera = (event: MouseEvent) => {
+      if (!contenedorRef.current?.contains(event.target as Node)) setAbierto(false);
+    };
+    const cerrarEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAbierto(false);
+    };
+    document.addEventListener('mousedown', cerrarFuera);
+    document.addEventListener('keydown', cerrarEscape);
+    return () => {
+      document.removeEventListener('mousedown', cerrarFuera);
+      document.removeEventListener('keydown', cerrarEscape);
+    };
+  }, [abierto]);
+
+  if (!modoOscuro) {
+    return (
+      <input
+        type="date"
+        style={estiloFiltro}
+        value={value}
+        min={min}
+        max={max}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    );
+  }
+
+  const anio = mesVisible.getFullYear();
+  const mes = mesVisible.getMonth();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const primerDia = (new Date(anio, mes, 1).getDay() + 6) % 7;
+  const tituloMes = mesVisible.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+  const indiceMes = anio * 12 + mes;
+  const mesMinimo = min ? Number(min.slice(0, 4)) * 12 + Number(min.slice(5, 7)) - 1 : -Infinity;
+  const mesMaximo = max ? Number(max.slice(0, 4)) * 12 + Number(max.slice(5, 7)) - 1 : Infinity;
+  const textoFecha = value
+    ? new Date(`${value}T00:00:00`).toLocaleDateString('es-CO')
+    : 'dd/mm/aaaa';
+
+  return (
+    <div className="compras-date-picker" ref={contenedorRef}>
+      <button
+        type="button"
+        className="compras-date-trigger"
+        aria-haspopup="dialog"
+        aria-expanded={abierto}
+        onClick={() => {
+          if (!abierto) {
+            const fecha = value ? new Date(`${value}T00:00:00`) : new Date();
+            setMesVisible(new Date(fecha.getFullYear(), fecha.getMonth(), 1));
+          }
+          setAbierto(!abierto);
+        }}
+      >
+        <span>{textoFecha}</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M16 3v4M8 3v4M3 10h18" />
+        </svg>
+      </button>
+      {abierto && (
+        <div className="compras-calendar" role="dialog" aria-label="Elegir fecha">
+          <div className="compras-calendar-header">
+            <button type="button" aria-label="Mes anterior" disabled={indiceMes <= mesMinimo} onClick={() => setMesVisible(new Date(anio, mes - 1, 1))}>‹</button>
+            <strong>{tituloMes}</strong>
+            <button type="button" aria-label="Mes siguiente" disabled={indiceMes >= mesMaximo} onClick={() => setMesVisible(new Date(anio, mes + 1, 1))}>›</button>
+          </div>
+          <div className="compras-calendar-grid compras-calendar-weekdays" aria-hidden="true">
+            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((dia) => <span key={dia}>{dia}</span>)}
+          </div>
+          <div className="compras-calendar-grid">
+            {Array.from({ length: primerDia }, (_, index) => <span key={`vacio-${index}`} />)}
+            {Array.from({ length: diasEnMes }, (_, index) => {
+              const dia = index + 1;
+              const fecha = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+              const deshabilitada = (!!min && fecha < min) || (!!max && fecha > max);
+              return (
+                <button
+                  type="button"
+                  key={fecha}
+                  className={value === fecha ? 'selected' : ''}
+                  disabled={deshabilitada}
+                  aria-pressed={value === fecha}
+                  onClick={() => {
+                    onChange(fecha);
+                    setAbierto(false);
+                  }}
+                >
+                  {dia}
+                </button>
+              );
+            })}
+          </div>
+          <div className="compras-calendar-footer">
+            <button type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</button>
+            <button type="button" onClick={() => {
+              const hoy = new Date();
+              const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+              if ((!min || fecha >= min) && (!max || fecha <= max)) onChange(fecha);
+              setAbierto(false);
+            }}>Hoy</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...', error = false, className }: {
   value: string;
   onChange: (v: string) => void;
-  opciones: string[];
+  opciones: OpcionDesplegable[];
   placeholder?: string;
   error?: boolean;
+  className?: string;
 }) {
   const [abierto, setAbierto] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const opcionesNormalizadas = opciones.map((opcion) =>
+    typeof opcion === 'string' ? { value: opcion, label: opcion } : opcion,
+  );
+  const opcionSeleccionada = opcionesNormalizadas.find((opcion) => opcion.value === value);
 
   useEffect(() => {
     const cerrar = (e: MouseEvent) => {
@@ -122,9 +257,10 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
   }, []);
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div ref={ref} className={className} style={{ position: 'relative' }}>
       <button
         type="button"
+        className={className ? `${className}-trigger` : undefined}
         onClick={() => setAbierto(!abierto)}
         style={{
           width: '100%',
@@ -142,7 +278,7 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
           textAlign: 'left',
         }}
       >
-        <span>{value || placeholder}</span>
+        <span>{opcionSeleccionada?.label || value || placeholder}</span>
         <svg
           width="12"
           height="12"
@@ -165,6 +301,8 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
 
       {abierto && (
         <ul
+          className={className ? `${className}-options` : undefined}
+          role={className ? 'listbox' : undefined}
           style={{
             position: 'absolute',
             top: 'calc(100% + 6px)',
@@ -182,23 +320,34 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
             boxShadow: 'var(--shadow-md)',
           }}
         >
-          {opciones.map((o) => (
+          {opcionesNormalizadas.map((o) => (
             <li
-              key={o}
-              onClick={() => { onChange(o); setAbierto(false); }}
+              key={o.value}
+              className={className ? `${className}-option${o.value === value ? ' selected' : ''}` : undefined}
+              role="option"
+              aria-selected={o.value === value}
+              tabIndex={0}
+              onClick={() => { onChange(o.value); setAbierto(false); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onChange(o.value);
+                  setAbierto(false);
+                }
+              }}
               style={{
                 padding: '9px 12px',
                 borderRadius: 8,
                 fontSize: 14,
                 cursor: 'pointer',
-                fontWeight: o === value ? 700 : 500,
-                color: o === value ? 'var(--brand)' : 'var(--text-900)',
-                background: o === value ? 'rgba(232, 130, 26, 0.12)' : 'transparent',
+                fontWeight: o.value === value ? 700 : 500,
+                color: o.value === value ? 'var(--brand)' : 'var(--text-900)',
+                background: o.value === value ? 'rgba(232, 130, 26, 0.12)' : 'transparent',
               }}
-              onMouseEnter={(e) => { if (o !== value) e.currentTarget.style.background = 'rgba(232, 130, 26, 0.08)'; }}
-              onMouseLeave={(e) => { if (o !== value) e.currentTarget.style.background = 'transparent'; }}
+              onMouseEnter={(e) => { if (o.value !== value) e.currentTarget.style.background = 'rgba(232, 130, 26, 0.08)'; }}
+              onMouseLeave={(e) => { if (o.value !== value) e.currentTarget.style.background = 'transparent'; }}
             >
-              {o}
+              {o.label}
             </li>
           ))}
         </ul>
@@ -771,7 +920,7 @@ export default function ComprasAdmin() {
   ]);
 
   return (
-    <div className="page-inner">
+    <div className="page-inner compras-page">
       <div className="page-header">
         <div>
           <h1>Gestión de Compras</h1>
@@ -781,7 +930,7 @@ export default function ComprasAdmin() {
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button
-            className="btn-primary"
+            className="btn-primary compras-outline-btn"
             disabled={escaneando}
             style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
             onClick={() => inputFactura.current?.click()}
@@ -789,7 +938,7 @@ export default function ComprasAdmin() {
             Escanear factura
           </button>
           <button
-            className="btn-primary"
+            className="btn-primary compras-outline-btn"
             style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
             onClick={() => setMostrarDictado((v) => !v)}
           >
@@ -1020,38 +1169,47 @@ export default function ComprasAdmin() {
         <input className="mn-search" type="text" placeholder="Buscar compra..." value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
+      <div className="compras-filtros" style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
         <label style={estiloEtiqueta}>
           Desde
-          <input type="date" style={estiloFiltro} value={fDesde} max={fHasta || undefined} onChange={(e) => setFDesde(e.target.value)} />
+          <SelectorFechaCompras value={fDesde} max={fHasta || undefined} onChange={setFDesde} />
         </label>
         <label style={estiloEtiqueta}>
           Hasta
-          <input type="date" style={estiloFiltro} value={fHasta} min={fDesde || undefined} onChange={(e) => setFHasta(e.target.value)} />
+          <SelectorFechaCompras value={fHasta} min={fDesde || undefined} onChange={setFHasta} />
         </label>
         <label style={estiloEtiqueta}>
           Método de pago
-          <select style={estiloFiltro} value={fMetodo} onChange={(e) => setFMetodo(e.target.value)}>
-            <option value="">Todos</option>
-            {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
+          <Desplegable
+            className="compras-filter-dropdown"
+            value={fMetodo}
+            onChange={setFMetodo}
+            placeholder="Todos"
+            opciones={[{ value: '', label: 'Todos' }, ...METODOS]}
+          />
         </label>
         <label style={estiloEtiqueta}>
           Insumo
-          <select style={estiloFiltro} value={fInsumo} onChange={(e) => setFInsumo(e.target.value)}>
-            <option value="">Todos</option>
-            {materiasOrdenadas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-          </select>
+          <Desplegable
+            className="compras-filter-dropdown"
+            value={fInsumo}
+            onChange={setFInsumo}
+            placeholder="Todos"
+            opciones={[{ value: '', label: 'Todos' }, ...materiasOrdenadas.map((m) => ({ value: String(m.id), label: m.nombre }))]}
+          />
         </label>
         <label style={estiloEtiqueta}>
           Proveedores
-          <select style={estiloFiltro} value={fMarca} onChange={(e) => setFMarca(e.target.value)}>
-            <option value="">Todos</option>
-            {marcasOrdenadas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-          </select>
+          <Desplegable
+            className="compras-filter-dropdown"
+            value={fMarca}
+            onChange={setFMarca}
+            placeholder="Todos"
+            opciones={[{ value: '', label: 'Todos' }, ...marcasOrdenadas.map((m) => ({ value: String(m.id), label: m.nombre }))]}
+          />
         </label>
         {hayFiltros && (
-          <button type="button" className="btn-cancel" style={{ padding: '9px 18px' }} onClick={limpiarFiltros}>
+          <button type="button" className="btn-cancel compras-clear-filters-btn" style={{ padding: '9px 18px' }} onClick={limpiarFiltros}>
             Limpiar filtros
           </button>
         )}
@@ -1061,8 +1219,8 @@ export default function ComprasAdmin() {
         <AdminLoading texto="Cargando compras" subtexto="Reuniendo tus abastecimientos" />
       ) : (
         <>
-          <div className="tabla-responsive">
-            <table className="data-table">
+          <div className="tabla-responsive compras-table-wrap">
+            <table className="data-table compras-table">
               <thead>
                 <tr>
                   <th>Compra</th>
@@ -1092,20 +1250,21 @@ export default function ComprasAdmin() {
                     {lista.map((c) => (
                       <tr key={c.id}>
                         <td><span style={chipNumero}>N.º {c.id}</span></td>
-                        <td><span className="badge badge-info">{c.metodo_pago}</span></td>
+                        <td><span className="badge badge-info compras-metodo-badge">{c.metodo_pago}</span></td>
                         <td>{(c.detalles ?? []).length}</td>
                         <td style={{ fontWeight: 700 }}>${Number(c.valor_total).toLocaleString('es-CO')}</td>
                         <td><span className={`badge ${badgeEstado(c.estado)}`}>{c.estado}</span></td>
                         <td>
                           <div style={{ display: 'flex', gap: 8 }}>
-                            <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)}>Ver detalle</button>
+                            <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)} data-tooltip="Ver detalle">Ver detalle</button>
                             {c.estado !== 'Finalizada' && (
                               <>
                                 <button
                                   type="button"
-                                  className="mn-btn-edit"
+                                  className="mn-btn-edit compras-modificar-btn"
                                   style={{ flex: 'none', padding: '7px 14px' }}
                                   onClick={() => abrirEditar(c)}
+                                  data-tooltip="Modificar"
                                 >
                                   Modificar
                                 </button>
@@ -1114,6 +1273,7 @@ export default function ComprasAdmin() {
                                   className="mn-btn-del"
                                   style={{ flex: 'none', padding: '7px 14px' }}
                                   onClick={() => del(c)}
+                                  data-tooltip="Eliminar"
                                 >
                                   Eliminar
                                 </button>

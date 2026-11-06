@@ -1,4 +1,5 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
@@ -65,6 +66,9 @@ const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
 const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
 
+// Estados que un mesero puede asignar (el resto queda deshabilitado)
+const ESTADOS_MESERO = ['Registrado', 'En preparación', 'Preparado', 'Servido', 'Cancelado'];
+
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
@@ -76,6 +80,214 @@ const normalizar = (s: unknown) =>
 
 const fechaLocal = (fecha?: string | null) =>
   fecha ? new Date(fecha).toLocaleDateString('en-CA') : '';
+
+function FiltroDesplegableVentas({ value, onChange, opciones }: {
+  value: string;
+  onChange: (value: string) => void;
+  opciones: { value: string; label: string }[];
+}) {
+  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [abierto, setAbierto] = useState(false);
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setModoOscuro(document.body.classList.contains('dark-mode')));
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrarFuera = (event: MouseEvent) => {
+      if (!contenedorRef.current?.contains(event.target as Node)) setAbierto(false);
+    };
+    const cerrarEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAbierto(false);
+    };
+    document.addEventListener('mousedown', cerrarFuera);
+    document.addEventListener('keydown', cerrarEscape);
+    return () => {
+      document.removeEventListener('mousedown', cerrarFuera);
+      document.removeEventListener('keydown', cerrarEscape);
+    };
+  }, [abierto]);
+
+  if (!modoOscuro) {
+    return (
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {opciones.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
+      </select>
+    );
+  }
+
+  const seleccionada = opciones.find((opcion) => opcion.value === value);
+  return (
+    <div className="ventas-filter-dropdown" ref={contenedorRef}>
+      <button
+        type="button"
+        className="ventas-filter-dropdown-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={abierto}
+        onClick={() => setAbierto(!abierto)}
+      >
+        <span>{seleccionada?.label ?? ''}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M2 4l4 4 4-4" />
+        </svg>
+      </button>
+      {abierto && (
+        <ul className="ventas-filter-dropdown-options" role="listbox">
+          {opciones.map((opcion) => (
+            <li
+              key={opcion.value}
+              className={`ventas-filter-dropdown-option${opcion.value === value ? ' selected' : ''}`}
+              role="option"
+              aria-selected={opcion.value === value}
+              tabIndex={0}
+              onClick={() => { onChange(opcion.value); setAbierto(false); }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onChange(opcion.value);
+                  setAbierto(false);
+                }
+              }}
+            >
+              {opcion.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function SelectorFechaVentas({ value, onChange, min, max }: {
+  value: string;
+  onChange: (value: string) => void;
+  min?: string;
+  max?: string;
+}) {
+  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [abierto, setAbierto] = useState(false);
+  const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
+  const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setModoOscuro(document.body.classList.contains('dark-mode')));
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrarFuera = (event: MouseEvent) => {
+      if (!contenedorRef.current?.contains(event.target as Node)) setAbierto(false);
+    };
+    const cerrarEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAbierto(false);
+    };
+    document.addEventListener('mousedown', cerrarFuera);
+    document.addEventListener('keydown', cerrarEscape);
+    return () => {
+      document.removeEventListener('mousedown', cerrarFuera);
+      document.removeEventListener('keydown', cerrarEscape);
+    };
+  }, [abierto]);
+
+  if (!modoOscuro) {
+    return (
+      <input
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    );
+  }
+
+  const anio = mesVisible.getFullYear();
+  const mes = mesVisible.getMonth();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const primerDia = (new Date(anio, mes, 1).getDay() + 6) % 7;
+  const tituloMes = mesVisible.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+  const indiceMes = anio * 12 + mes;
+  const mesMinimo = min ? Number(min.slice(0, 4)) * 12 + Number(min.slice(5, 7)) - 1 : -Infinity;
+  const mesMaximo = max ? Number(max.slice(0, 4)) * 12 + Number(max.slice(5, 7)) - 1 : Infinity;
+  const textoFecha = value ? new Date(`${value}T00:00:00`).toLocaleDateString('es-CO') : 'dd/mm/aaaa';
+
+  return (
+    <div className="compras-date-picker ventas-date-picker" ref={contenedorRef}>
+      <button
+        type="button"
+        className="compras-date-trigger ventas-date-trigger"
+        aria-haspopup="dialog"
+        aria-expanded={abierto}
+        onClick={() => {
+          if (!abierto) {
+            const fecha = value ? new Date(`${value}T00:00:00`) : new Date();
+            setMesVisible(new Date(fecha.getFullYear(), fecha.getMonth(), 1));
+          }
+          setAbierto(!abierto);
+        }}
+      >
+        <span>{textoFecha}</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M16 3v4M8 3v4M3 10h18" />
+        </svg>
+      </button>
+      {abierto && (
+        <div className="compras-calendar" role="dialog" aria-label="Elegir fecha">
+          <div className="compras-calendar-header">
+            <button type="button" aria-label="Mes anterior" disabled={indiceMes <= mesMinimo} onClick={() => setMesVisible(new Date(anio, mes - 1, 1))}>‹</button>
+            <strong>{tituloMes}</strong>
+            <button type="button" aria-label="Mes siguiente" disabled={indiceMes >= mesMaximo} onClick={() => setMesVisible(new Date(anio, mes + 1, 1))}>›</button>
+          </div>
+          <div className="compras-calendar-grid compras-calendar-weekdays" aria-hidden="true">
+            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((dia) => <span key={dia}>{dia}</span>)}
+          </div>
+          <div className="compras-calendar-grid">
+            {Array.from({ length: primerDia }, (_, index) => <span key={`vacio-${index}`} />)}
+            {Array.from({ length: diasEnMes }, (_, index) => {
+              const dia = index + 1;
+              const fecha = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+              const deshabilitada = (!!min && fecha < min) || (!!max && fecha > max);
+              return (
+                <button
+                  type="button"
+                  key={fecha}
+                  className={value === fecha ? 'selected' : ''}
+                  disabled={deshabilitada}
+                  aria-pressed={value === fecha}
+                  onClick={() => { onChange(fecha); setAbierto(false); }}
+                >
+                  {dia}
+                </button>
+              );
+            })}
+          </div>
+          <div className="compras-calendar-footer">
+            <button type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</button>
+            <button
+              type="button"
+              onClick={() => {
+                const hoy = new Date();
+                const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+                if ((!min || fecha >= min) && (!max || fecha <= max)) onChange(fecha);
+                setAbierto(false);
+              }}
+            >
+              Hoy
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const fmtDia = (f?: string | null) =>
   f ? new Date(f).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -100,6 +312,10 @@ export default function VentasAdmin() {
   const [filtroEntrega, setFiltroEntrega] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+  const [estadoAbiertoId, setEstadoAbiertoId] = useState<number | null>(null);
+  const [estadoDropdownPos, setEstadoDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const estadoDropdownRefs = useRef(new Map<number, HTMLDivElement>());
+  const estadoOptionsRefs = useRef(new Map<number, HTMLDivElement>());
 
   const [pagina, setPagina] = useState(1);
 
@@ -295,6 +511,40 @@ export default function VentasAdmin() {
 
   const totalCarrito = totalProductos + totalCombos;
 
+  const updateEstado = (id: number, estado: string) => {
+    apiClient.patch(`/ventas/${id}/estado`, { estado })
+      .then(() => { setVersion((v) => v + 1); load(); })
+      .catch(() => alertar('No se pudo cambiar el estado.'));
+  };
+
+  useEffect(() => {
+    if (estadoAbiertoId === null) return;
+    const cerrarAlHacerClickFuera = (event: MouseEvent) => {
+      const root = estadoDropdownRefs.current.get(estadoAbiertoId);
+      const options = estadoOptionsRefs.current.get(estadoAbiertoId);
+      if (!root?.contains(event.target as Node) && !options?.contains(event.target as Node)) {
+        setEstadoAbiertoId(null);
+      }
+    };
+    const cerrarAlDesplazarse = () => setEstadoAbiertoId(null);
+    document.addEventListener('mousedown', cerrarAlHacerClickFuera);
+    window.addEventListener('scroll', cerrarAlDesplazarse, true);
+    window.addEventListener('resize', cerrarAlDesplazarse);
+    return () => {
+      document.removeEventListener('mousedown', cerrarAlHacerClickFuera);
+      window.removeEventListener('scroll', cerrarAlDesplazarse, true);
+      window.removeEventListener('resize', cerrarAlDesplazarse);
+    };
+  }, [estadoAbiertoId]);
+
+  useEffect(() => {
+    if (estadoAbiertoId === null) return;
+    estadoOptionsRefs.current
+      .get(estadoAbiertoId)
+      ?.querySelector<HTMLButtonElement>('[role="option"][aria-selected="true"], [role="option"]:not(:disabled)')
+      ?.focus();
+  }, [estadoAbiertoId]);
+
   const verFactura = async (id: number) => {
     const ventana = window.open('', '_blank');
 
@@ -327,7 +577,7 @@ export default function VentasAdmin() {
   }
 
   return (
-    <div className="page-inner">
+    <div className="page-inner ventas-page">
       <div className="page-header">
         <div>
           <h1>{esAdmin ? 'Gestión de Ventas' : 'Caja'}</h1>
@@ -547,53 +797,54 @@ export default function VentasAdmin() {
         </div>
 
         {/* Fila 2: Filtros (Carlos) */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ margin: 0 }}>
+        <div className="ventas-filtros" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+          <div className="form-group ventas-filter-state" style={{ margin: 0 }}>
             <label>Estado</label>
-            <select value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}>
-              <option value="">Todos</option>
-              {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Método de pago</label>
-            <select value={filtroMetodo} onChange={(e) => { setFiltroMetodo(e.target.value); setPagina(1); }}>
-              <option value="">Todos</option>
-              {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Entrega</label>
-            <select value={filtroEntrega} onChange={(e) => { setFiltroEntrega(e.target.value); setPagina(1); }}>
-              <option value="">Todas</option>
-              {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Desde</label>
-            <input
-              type="date"
-              value={fechaDesde}
-              max={fechaHasta || undefined}
-              onChange={(e) => { setFechaDesde(e.target.value); setPagina(1); }}
+            <FiltroDesplegableVentas
+              value={filtroEstado}
+              onChange={(value) => { setFiltroEstado(value); setPagina(1); }}
+              opciones={[{ value: '', label: 'Todos' }, ...ESTADOS.map((estado) => ({ value: estado, label: estado }))]}
             />
           </div>
 
-          <div className="form-group" style={{ margin: 0 }}>
+          <div className="form-group ventas-filter-method" style={{ margin: 0 }}>
+            <label>Método de pago</label>
+            <FiltroDesplegableVentas
+              value={filtroMetodo}
+              onChange={(value) => { setFiltroMetodo(value); setPagina(1); }}
+              opciones={[{ value: '', label: 'Todos' }, ...METODOS.map((metodo) => ({ value: metodo, label: metodo }))]}
+            />
+          </div>
+
+          <div className="form-group ventas-filter-delivery" style={{ margin: 0 }}>
+            <label>Entrega</label>
+            <FiltroDesplegableVentas
+              value={filtroEntrega}
+              onChange={(value) => { setFiltroEntrega(value); setPagina(1); }}
+              opciones={[{ value: '', label: 'Todas' }, ...TIPOS_ENTREGA.map((entrega) => ({ value: entrega, label: entrega }))]}
+            />
+          </div>
+
+          <div className="form-group ventas-filter-date" style={{ margin: 0 }}>
+            <label>Desde</label>
+            <SelectorFechaVentas
+              value={fechaDesde}
+              max={fechaHasta || undefined}
+              onChange={(fecha) => { setFechaDesde(fecha); setPagina(1); }}
+            />
+          </div>
+
+          <div className="form-group ventas-filter-date" style={{ margin: 0 }}>
             <label>Hasta</label>
-            <input
-              type="date"
+            <SelectorFechaVentas
               value={fechaHasta}
               min={fechaDesde || undefined}
-              onChange={(e) => { setFechaHasta(e.target.value); setPagina(1); }}
+              onChange={(fecha) => { setFechaHasta(fecha); setPagina(1); }}
             />
           </div>
 
           {hayFiltros && (
-            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ padding: '8px 18px', fontSize: 13, height: 42 }}>
+            <button type="button" className="btn-cancel ventas-clear-filters-btn" onClick={limpiarFiltros}>
               Limpiar filtros
             </button>
           )}
@@ -605,8 +856,8 @@ export default function VentasAdmin() {
         </p>
       </div>
 
-      <div className="tabla-responsive">
-        <table className="data-table">
+      <div className="tabla-responsive ventas-table-wrap">
+        <table className="data-table ventas-table">
           <thead>
             <tr>
               <th>#</th>
@@ -650,9 +901,114 @@ export default function VentasAdmin() {
                   </ul>
                 </td>
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
-                <td><span className="badge badge-info">{v?.metodo_pago ?? ''}</span></td>
+                <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
                 <td>
-                  <span className="vt-estado" data-estado={v?.estado ?? ''}>{v?.estado ?? '—'}</span>
+                  <div
+                    className="venta-estado-dropdown"
+                    ref={(element) => {
+                      if (element) estadoDropdownRefs.current.set(v.id, element);
+                      else estadoDropdownRefs.current.delete(v.id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        setEstadoAbiertoId(null);
+                        estadoDropdownRefs.current.get(v.id)
+                          ?.querySelector<HTMLButtonElement>('.venta-estado-trigger')
+                          ?.focus();
+                        return;
+                      }
+                      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+                      event.preventDefault();
+                      if (estadoAbiertoId !== v.id) {
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const menuHeight = ESTADOS.length * 38;
+                        const width = Math.max(rect.width, 180);
+                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
+                          ? rect.bottom + 4
+                          : Math.max(8, rect.top - menuHeight - 4);
+                        setEstadoDropdownPos({
+                          top,
+                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+                          width,
+                        });
+                        setEstadoAbiertoId(v.id);
+                        return;
+                      }
+                      const options = Array.from(
+                        estadoOptionsRefs.current.get(v.id)?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)') ?? [],
+                      );
+                      const currentIndex = options.indexOf(document.activeElement as HTMLButtonElement);
+                      const increment = event.key === 'ArrowDown' ? 1 : -1;
+                      options[(currentIndex + increment + options.length) % options.length]?.focus();
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="venta-estado-trigger"
+                      aria-haspopup="listbox"
+                      aria-expanded={estadoAbiertoId === v.id}
+                      onClick={(event) => {
+                        if (estadoAbiertoId === v.id) {
+                          setEstadoAbiertoId(null);
+                          return;
+                        }
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const menuHeight = ESTADOS.length * 38;
+                        const width = Math.max(rect.width, 180);
+                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
+                          ? rect.bottom + 4
+                          : Math.max(8, rect.top - menuHeight - 4);
+                        setEstadoDropdownPos({
+                          top,
+                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+                          width,
+                        });
+                        setEstadoAbiertoId(v.id);
+                      }}
+                    >
+                      {v?.estado ?? ''}
+                      <span aria-hidden="true">▾</span>
+                    </button>
+                    {estadoAbiertoId === v.id && estadoDropdownPos && createPortal(
+                      <div
+                        className="venta-estado-options"
+                        ref={(element) => {
+                          if (element) estadoOptionsRefs.current.set(v.id, element);
+                          else estadoOptionsRefs.current.delete(v.id);
+                        }}
+                        role="listbox"
+                        aria-label={`Estado de la venta ${v.id}`}
+                        style={{
+                          position: 'fixed',
+                          top: estadoDropdownPos.top,
+                          left: estadoDropdownPos.left,
+                          width: estadoDropdownPos.width,
+                        }}
+                      >
+                        {ESTADOS.map((estado) => {
+                          const seleccionado = estado === v?.estado;
+                          const deshabilitado = (!esAdmin && estado === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(estado));
+                          return (
+                            <button
+                              key={estado}
+                              type="button"
+                              role="option"
+                              aria-selected={seleccionado}
+                              className={`venta-estado-option${seleccionado ? ' selected' : ''}`}
+                              disabled={deshabilitado}
+                              onClick={() => {
+                                updateEstado(v.id, estado);
+                                setEstadoAbiertoId(null);
+                              }}
+                            >
+                              {estado}
+                            </button>
+                          );
+                        })}
+                      </div>,
+                      document.body,
+                    )}
+                  </div>
                 </td>
                 <td>
                   <button

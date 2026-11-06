@@ -394,13 +394,14 @@ export default function MateriaPrimaAdmin() {
                   <td>{marcaNombre(m?.marca_id) || '—'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)}>Editar</button>
+                      <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
                       <button
                         type="button"
                         className={esInactivo(m) ? 'mn-btn-edit' : 'mn-btn-del'}
                         style={{ flex: 'none', padding: '7px 18px' }}
                         disabled={cambiandoId === m?.id}
                         onClick={() => (esInactivo(m) ? alternarEstado(m) : setDesactivar(m))}
+                        data-tooltip={esInactivo(m) ? 'Activar' : 'Desactivar'}
                       >
                         {esInactivo(m) ? 'Activar' : 'Desactivar'}
                       </button>
