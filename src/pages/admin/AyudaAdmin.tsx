@@ -207,7 +207,7 @@ const normalizar = (texto: string) =>
 const AyudaAdmin = () => {
   const { user } = useAuth();
   const rol = normalizarRol(user?.role);
-  const ayudaDelRol = rol === "cajero" ? ayudaPorRol.cajero : undefined;
+ const ayudaDelRol = rol === "cajero" || rol === "cocinero" || rol === "mesero" ? ayudaPorRol[rol] : undefined;
   const categoriasRol = ayudaDelRol ? ayudaDelRol.categorias : categorias;
   const preguntasRol = ayudaDelRol ? ayudaDelRol.preguntas : preguntas;
   const [busqueda, setBusqueda] = useState("");
