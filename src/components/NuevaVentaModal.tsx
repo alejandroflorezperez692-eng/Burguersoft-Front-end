@@ -1,62 +1,86 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import apiClient from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from './Toast';
 import { useEscape } from '../hooks/useEscape';
 import { normalizarRol } from '../utils/roles';
+import '../styles/nu-admin.css';
+import '../styles/nuevo-pedido.css';
 
-interface Producto {
-  id: number;
-  nombre: string;
-  valor: number;
-}
-
-interface Promocion {
-  id: number;
-  nombre: string;
-  precio: number;
-  estado?: string;
-}
+interface Adicion { id: number; nombre: string; precio: number | string; tipo?: string; estado?: string }
+interface Producto { id: number; nombre: string; valor: number; img?: string | null; estado?: string; categoria?: string; adiciones?: Adicion[] }
+interface Promocion { id: number; nombre: string; precio: number; estado?: string }
+interface PedidoMesa { id: number; estado: string; valor_total: number; items: { nombre: string; cantidad: number }[] }
+interface Mesa { numero: number; estado: 'Libre' | 'Ocupada' | 'Por cobrar'; total?: number; pedidos?: PedidoMesa[] }
+type Item = { tipo: 'producto' | 'combo'; id: number; nombre: string; precio: number; img?: string | null; agotado?: boolean; cat: string };
 
 const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
-const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
-
+const TIPOS = [
+  { v: 'Consumir', t: 'En el local' },
+  { v: 'Domicilio', t: 'Domicilio' },
+  { v: 'Recoger', t: 'Para recoger' },
+];
+const money = (n: number) => `$${n.toLocaleString('es-CO')}`;
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
+
+const MESAS_BASE: Mesa[] = [1, 2, 3, 4].map((n) => ({ numero: n, estado: 'Libre' }));
+const imgOk = (s?: string | null) => !!s && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(s);
 
 interface Props {
   abierto: boolean;
   onClose: () => void;
-  /** Se llama cuando el pedido se guardó bien (para recargar el tablero). */
   onCreada?: () => void;
-  /** Mesa que se escoge de entrada (cuando se abre desde el modal de mesas). */
   mesaInicial?: number | null;
 }
 
-/** Formulario para registrar un pedido/venta. Es el mismo que usa Ventas. */
 export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicial }: Props) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const alertar = (m: unknown) => showToast(String(m), true);
-  const esMesero = normalizarRol(user?.role) === 'mesero';
+  const rol = normalizarRol(user?.role);
+  const esMesero = rol === 'mesero';
+  const esAdmin = rol === 'admin';
 
   const [productos, setProductos] = useState<Producto[]>([]);
   const [promociones, setPromociones] = useState<Promocion[]>([]);
+  const [mesas, setMesas] = useState<Mesa[]>([]);
 
-  const [metodoPago, setMetodoPago] = useState('Efectivo');
+  const [cat, setCat] = useState('Todos');
+
   const [tipoEntrega, setTipoEntrega] = useState(esMesero ? 'Consumir' : 'Domicilio');
-  const [clienteNombre, setClienteNombre] = useState('');
-  const [mesa, setMesa] = useState('');
+  const [mesa, setMesa] = useState<number | null>(null);
+  const [cliente, setCliente] = useState('');
+  const [direccion, setDireccion] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [notas, setNotas] = useState('');
-  const [intentado, setIntentado] = useState(false);
-  const [productoId, setProductoId] = useState<number>(0);
-  const [cantidad, setCantidad] = useState('1');
+  const [buscar, setBuscar] = useState('');
+  const [pagina, setPagina] = useState(1);
+  const [vista, setVista] = useState<'tarjetas' | 'lista'>(() => {
+    try { return localStorage.getItem('nuevoPedidoVista') === 'lista' ? 'lista' : 'tarjetas'; } catch { return 'tarjetas'; }
+  });
   const [carrito, setCarrito] = useState<{ producto_id: number; cantidad: number }[]>([]);
-  const [promocionId, setPromocionId] = useState<number>(0);
-  const [cantidadCombo, setCantidadCombo] = useState('1');
   const [combos, setCombos] = useState<{ promocion_id: number; cantidad: number }[]>([]);
+  const [extras, setExtras] = useState<{ adicion_id: number; cantidad: number }[]>([]);
 
-  // Carga el menú y los combos cada vez que se abre el formulario
+  useEffect(() => {
+    try { localStorage.setItem('nuevoPedidoVista', vista); } catch { /* sin storage */ }
+  }, [vista]);
+
+  useEffect(() => { setPagina(1); }, [buscar, vista, cat]);
+
+  const cargarMesas = useCallback(async () => {
+    try {
+      const { data } = await apiClient.get('/mesas');
+      const lista = toArray<Mesa>(data);
+      setMesas(lista.length ? lista : MESAS_BASE);
+    } catch {
+      setMesas(MESAS_BASE);
+    }
+  }, []);
+
   useEffect(() => {
     if (!abierto) return;
     let vivo = true;
@@ -66,323 +90,371 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
         setProductos(toArray<Producto>(r1.data));
         setPromociones(toArray<Promocion>(r2.data));
       })
-      .catch(() => {
-        if (!vivo) return;
-        setProductos([]);
-        setPromociones([]);
-      });
-    if (mesaInicial) {
-      setTipoEntrega('Consumir');
-      setMesa(String(mesaInicial));
-    }
-    return () => {
-      vivo = false;
+      .catch(() => { if (vivo) { setProductos([]); setPromociones([]); } });
+    cargarMesas();
+    if (mesaInicial) { setTipoEntrega('Consumir'); setMesa(mesaInicial); }
+    return () => { vivo = false; };
+  }, [abierto, mesaInicial, cargarMesas]);
+
+  /* ---------- Items (productos + combos activos) ---------- */
+  const todos = useMemo<Item[]>(() => [
+    ...productos.map((p) => ({
+      tipo: 'producto' as const, id: p.id, nombre: p.nombre, precio: Number(p.valor) || 0,
+      img: imgOk(p.img) ? p.img : null, agotado: p.estado === 'Agotado', cat: p.categoria || 'Otros',
+    })),
+    ...promociones.filter((p) => p.estado === 'Activa').map((p) => ({
+      tipo: 'combo' as const, id: p.id, nombre: p.nombre, precio: Number(p.precio) || 0, cat: 'Combos',
+    })),
+  ], [productos, promociones]);
+
+  const categorias = useMemo(() => ['Todos', ...Array.from(new Set(todos.map((i) => i.cat)))], [todos]);
+
+  const filtrados = useMemo(() => {
+    const q = norm(buscar.trim());
+    return todos.filter((i) => (cat === 'Todos' || i.cat === cat) && (!q || norm(i.nombre).includes(q)));
+  }, [todos, buscar, cat]);
+
+  const cantidadDe = (it: Item) =>
+    it.tipo === 'producto'
+      ? carrito.find((l) => l.producto_id === it.id)?.cantidad ?? 0
+      : combos.find((c) => c.promocion_id === it.id)?.cantidad ?? 0;
+
+  const cambiar = (it: Item, delta: number) => {
+    const upd = <T extends { cantidad: number }>(lista: T[], igual: (x: T) => boolean, nuevo: T): T[] => {
+      const i = lista.findIndex(igual);
+      if (i < 0) return delta > 0 ? [...lista, nuevo] : lista;
+      const cant = lista[i].cantidad + delta;
+      return cant <= 0
+        ? lista.filter((_, j) => j !== i)
+        : lista.map((x, j) => (j === i ? { ...x, cantidad: Math.min(cant, 50) } : x));
     };
-  }, [abierto, mesaInicial]);
+    if (it.tipo === 'producto') {
+      setCarrito((l) => upd(l, (x) => x.producto_id === it.id, { producto_id: it.id, cantidad: 1 }));
+    } else {
+      setCombos((l) => upd(l, (x) => x.promocion_id === it.id, { promocion_id: it.id, cantidad: 1 }));
+    }
+  };
 
-  const sinNada = carrito.length === 0 && combos.length === 0;
-  const rojoProducto: CSSProperties | undefined =
-    intentado && sinNada
-      ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
-      : undefined;
+    const lineas = todos.filter((i) => cantidadDe(i) > 0);
 
+  const adicionesDe = (productoId: number) =>
+    (productos.find((p) => p.id === productoId)?.adiciones ?? [])
+      .filter((a) => a.tipo === 'adicion' && (!a.estado || a.estado === 'Activo'));
+  const cantExtra = (id: number) => extras.find((e) => e.adicion_id === id)?.cantidad ?? 0;
+  const cambiarExtra = (id: number, delta: number) =>
+    setExtras((l) => {
+      const cant = (l.find((e) => e.adicion_id === id)?.cantidad ?? 0) + delta;
+      if (cant <= 0) return l.filter((e) => e.adicion_id !== id);
+      const nuevo = Math.min(cant, 50);
+      return l.some((e) => e.adicion_id === id)
+        ? l.map((e) => (e.adicion_id === id ? { ...e, cantidad: nuevo } : e))
+        : [...l, { adicion_id: id, cantidad: nuevo }];
+    });
+
+  // Si quitan un producto del pedido, se van también sus adicionales
+  useEffect(() => {
+    setExtras((l) => l.filter((e) =>
+      productos.some((p) => carrito.some((c) => c.producto_id === p.id) && p.adiciones?.some((a) => a.id === e.adicion_id))
+    ));
+  }, [carrito, productos]);
+
+  const totalExtras = extras.reduce((s, e) => {
+    const a = productos.flatMap((p) => p.adiciones ?? []).find((x) => x.id === e.adicion_id);
+    return s + (Number(a?.precio) || 0) * e.cantidad;
+  }, 0);
+  const total = lineas.reduce((s, i) => s + i.precio * cantidadDe(i), 0) + totalExtras;
+
+  const porPagina = 6;
+  const paginas = Math.max(1, Math.ceil(filtrados.length / porPagina));
+  const visibles = filtrados.slice((pagina - 1) * porPagina, pagina * porPagina);
+  const mesaActual = mesas.find((m) => m.numero === mesa);
+  const tieneCuenta = tipoEntrega === 'Consumir' && (mesaActual?.pedidos?.length ?? 0) > 0;
+  const etiqueta =
+    tipoEntrega === 'Consumir' ? (mesa ? `Mesa ${mesa}` : '—')
+    : tipoEntrega === 'Domicilio' ? 'Domicilio' : 'Para recoger';
+
+  /* ---------- Mesas ---------- */
+  const crearMesa = async () => {
+    try {
+      const { data } = await apiClient.post('/mesas');
+      await cargarMesas();
+      setMesa(data.numero);
+      showToast(`Mesa ${data.numero} creada`);
+    } catch (e) {
+      const d = (e as { response?: { data?: { message?: string } } })?.response?.data;
+      alertar(d?.message || 'No se pudo crear la mesa');
+    }
+  };
+
+  /* ---------- Guardar ---------- */
   const cerrar = () => {
-    setIntentado(false);
-    setCarrito([]);
-    setCombos([]);
-    setProductoId(0);
-    setCantidad('1');
-    setPromocionId(0);
-    setCantidadCombo('1');
-    setClienteNombre('');
-    setMesa('');
-    setNotas('');
+    setCarrito([]); setCombos([]); setExtras([]); setMesa(null); setCliente(''); setDireccion('');
+    setTelefono(''); setNotas(''); setBuscar('');
     onClose();
   };
 
-  const save = () => {
-    setIntentado(true);
-    if (sinNada) return;
-    if (tipoEntrega === 'Consumir' && !mesa) return;
-    const body = {
-      carrito,
-      combos: combos.length ? combos : undefined,
-      metodo_pago: metodoPago,
-      tipo_entrega: tipoEntrega,
-      cliente_nombre: clienteNombre.trim() || undefined,
-      mesa: tipoEntrega === 'Consumir' ? Number(mesa) : undefined,
-      notas: notas.trim() || undefined,
-    };
+  const guardar = () => {
+    if (tipoEntrega === 'Consumir' && !mesa) return alertar('Elige la mesa');
+    if (tipoEntrega === 'Domicilio' && !direccion.trim()) return alertar('Escribe la dirección de entrega');
+    if (lineas.length === 0) return alertar('Agrega al menos un producto');
+
+    const notasFinal = [
+      tipoEntrega === 'Domicilio' ? `Dirección: ${direccion.trim()}` : '',
+      tipoEntrega === 'Domicilio' && telefono.trim() ? `Tel: ${telefono.trim()}` : '',
+      notas.trim(),
+    ].filter(Boolean).join(' · ').slice(0, 255);
+
     apiClient
-      .post('/ventas', body)
-      .then(() => {
-        cerrar();
-        onCreada?.();
+      .post('/ventas', {
+        carrito,
+        combos: combos.length ? combos : undefined,
+        adiciones: extras.length ? extras : undefined,
+        metodo_pago: metodoPago,
+        tipo_entrega: tipoEntrega,
+        cliente_nombre: cliente.trim() || undefined,
+        mesa: tipoEntrega === 'Consumir' ? mesa : undefined,
+        notas: notasFinal || undefined,
       })
+      .then(() => { cerrar(); onCreada?.(); })
       .catch((e) => {
         const d = (e as { response?: { data?: { error?: string; message?: string; errors?: Record<string, string[]> } } })?.response?.data;
-        const msg = d?.error || d?.message || Object.values(d?.errors ?? {})[0]?.[0];
-        alertar(msg || 'No se pudo registrar la venta. Revisa los datos.');
+        alertar(d?.error || d?.message || Object.values(d?.errors ?? {})[0]?.[0] || 'No se pudo registrar el pedido.');
       });
   };
 
-  const buscarProducto = (id: number) => (productos ?? []).find((p) => p?.id === id);
-
-  const agregarAlCarrito = () => {
-    if (!productoId) return;
-    const cant = Math.max(1, Math.floor(Number(cantidad) || 1));
-
-    setCarrito((prev) => {
-      const existente = prev.findIndex((l) => l.producto_id === productoId);
-
-      if (existente >= 0) {
-        const copia = [...prev];
-        copia[existente] = { ...copia[existente], cantidad: copia[existente].cantidad + cant };
-        return copia;
-      }
-
-      return [...prev, { producto_id: productoId, cantidad: cant }];
-    });
-
-    setProductoId(0);
-    setCantidad('1');
-  };
-
-  const quitarDelCarrito = (id: number) =>
-    setCarrito((prev) => prev.filter((l) => l.producto_id !== id));
-
-  const buscarPromocion = (id: number) => (promociones ?? []).find((p) => p?.id === id);
-
-  const agregarCombo = () => {
-    if (!promocionId) return;
-    const cant = Math.max(1, Math.floor(Number(cantidadCombo) || 1));
-
-    setCombos((prev) => {
-      const existente = prev.findIndex((c) => c.promocion_id === promocionId);
-
-      if (existente >= 0) {
-        const copia = [...prev];
-        copia[existente] = { ...copia[existente], cantidad: copia[existente].cantidad + cant };
-        return copia;
-      }
-
-      return [...prev, { promocion_id: promocionId, cantidad: cant }];
-    });
-
-    setPromocionId(0);
-    setCantidadCombo('1');
-  };
-
-  const quitarCombo = (id: number) =>
-    setCombos((prev) => prev.filter((c) => c.promocion_id !== id));
-
-  const totalProductos = carrito.reduce(
-    (acumulado, linea) => acumulado + (Number(buscarProducto(linea.producto_id)?.valor) || 0) * linea.cantidad,
-    0
-  );
-
-  const totalCombos = combos.reduce(
-    (acumulado, combo) => acumulado + (Number(buscarPromocion(combo.promocion_id)?.precio) || 0) * combo.cantidad,
-    0
-  );
-
-  const totalCarrito = totalProductos + totalCombos;
-
-
   useEscape([[abierto, cerrar]]);
-
   if (!abierto) return null;
 
   return (
-        <div className="modal-overlay open" onClick={cerrar}>
-        <div className="modal-box" style={{ maxWidth: 780, width: '95%', padding: 0 }} onClick={(e) => e.stopPropagation()}>
-          <div style={{ background: 'var(--text-900)', padding: '18px 28px' }}>
-            <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--surface)' }}>Registrar Venta</h3>
+    <div className="modal-overlay open" onClick={cerrar}>
+      <div className="modal-box np-modal" onClick={(e) => e.stopPropagation()}>
+        <header className="np-top">
+          <div>
+            <h3>Nuevo pedido</h3>
+            <p>
+              {tipoEntrega === 'Consumir' && !mesa ? 'Elige una mesa para empezar' : `Pedido: ${etiqueta}`}
+            </p>
           </div>
-          <div style={{ padding: 28 }}>
-          <div className="grid-registro">
-            <div className="form-group">
-              <label>Producto</label>
-              <select value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
-                <option value={0}>Seleccionar...</option>
-                {(productos ?? []).map((p) => <option key={p?.id ?? p?.nombre} value={p?.id}>{p?.nombre ?? 'Sin nombre'} — ${Number(p?.valor || 0).toLocaleString('es-CO')}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Cantidad</label>
-              <input
-                type="number"
-                min={1}
-                value={cantidad}
-                onChange={(e) => setCantidad(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') agregarAlCarrito(); }}
-              />
-            </div>
-          </div>
+          <button type="button" className="np-close" onClick={cerrar} aria-label="Cerrar">×</button>
+        </header>
 
-          <button
-            type="button"
-            className="btn-cancel"
-            onClick={agregarAlCarrito}
-            disabled={!productoId}
-            style={{ marginTop: 4, padding: '8px 18px', fontSize: 13, opacity: productoId ? 1 : 0.5, cursor: productoId ? 'pointer' : 'not-allowed' }}
-          >
-            Agregar producto
-          </button>
+        <div className="np-cols">
+          {/* 1. Tipo de pedido y mesas */}
+          <aside className="np-panel">
+            <h4><b>1</b> Tipo de pedido</h4>
+            <select className="np-select" value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
+              {TIPOS.filter((t) => !esMesero || t.v === 'Consumir').map((t) => (
+                <option key={t.v} value={t.v}>{t.t}</option>
+              ))}
+            </select>
 
-          <div className="grid-registro" style={{ marginTop: 18 }}>
-            <div className="form-group">
-              <label>Combo (opcional)</label>
-              <select value={promocionId} onChange={(e) => setPromocionId(Number(e.target.value))}>
-                <option value={0}>Seleccionar combo...</option>
-                {(promociones ?? [])
-                  .filter((p) => p?.estado === 'Activa')
-                  .map((p) => (
-                    <option key={p?.id} value={p?.id}>
-                      {p?.nombre ?? 'Combo'} — ${Number(p?.precio || 0).toLocaleString('es-CO')}
-                    </option>
-                  ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Cantidad de combos</label>
-              <input
-                type="number"
-                min={1}
-                value={cantidadCombo}
-                onChange={(e) => setCantidadCombo(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') agregarCombo(); }}
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="btn-cancel"
-            onClick={agregarCombo}
-            disabled={!promocionId}
-            style={{ marginTop: 4, padding: '8px 18px', fontSize: 13, opacity: promocionId ? 1 : 0.5, cursor: promocionId ? 'pointer' : 'not-allowed' }}
-          >
-            Agregar combo
-          </button>
-
-          <div style={{ marginTop: 18 }}>
-            {carrito.length === 0 && combos.length === 0 ? (
-              <p style={{ fontSize: 13, color: 'var(--text-400)', margin: 0 }}>Aún no has agregado productos ni combos.</p>
+            {tipoEntrega === 'Consumir' ? (
+              <>
+                <h5 className="np-sub">Mesas</h5>
+                <div className="np-scroll">
+                  <div className="np-mesas">
+                    {mesas.map((m) => (
+                      <button
+                        type="button"
+                        key={m.numero}
+                        className={`np-mesa ${m.estado.toLowerCase().replace(' ', '-')}${mesa === m.numero ? ' sel' : ''}`}
+                        onClick={() => setMesa(m.numero)}
+                      >
+                        <strong>Mesa {m.numero}</strong>
+                        <span className="np-pill"><i />{m.estado}</span>
+                        {m.estado !== 'Libre' && <small>{money(Number(m.total) || 0)}</small>}
+                      </button>
+                    ))}
+                    {esAdmin && (
+                      <button type="button" className="np-mesa np-nueva" onClick={crearMesa}>+ Nueva mesa</button>
+                    )}
+                  </div>
+                </div>
+              </>
             ) : (
-              <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--r-md)', overflow: 'hidden' }}>
-                {carrito.map((linea) => {
-                  const prod = buscarProducto(linea.producto_id);
-                  return (
-                    <div
-                      key={linea.producto_id}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 14px', borderBottom: '1px solid var(--border)', fontSize: 13 }}
-                    >
-                      <span style={{ flex: 1, fontWeight: 600, color: 'var(--text-900)' }}>{prod?.nombre ?? 'Producto'}</span>
-                      <span style={{ color: 'var(--text-600)' }}>x{linea.cantidad}</span>
-                      <span style={{ fontWeight: 700, color: 'var(--text-900)', minWidth: 80, textAlign: 'right' }}>
-                        ${((Number(prod?.valor) || 0) * linea.cantidad).toLocaleString('es-CO')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => quitarDelCarrito(linea.producto_id)}
-                        title="Quitar producto"
-                        style={{ border: 'none', background: 'transparent', color: '#c0392b', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0 }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  );
-                })}
-                {combos.map((combo) => {
-                  const promo = buscarPromocion(combo.promocion_id);
-                  return (
-                    <div
-                      key={`combo-${combo.promocion_id}`}
-                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 14px', borderBottom: '1px solid var(--border)', fontSize: 13, background: 'rgba(232, 98, 44, 0.04)' }}
-                    >
-                      <span style={{ flex: 1, fontWeight: 600, color: 'var(--text-900)' }}>
-                        {promo?.nombre ?? 'Combo'}{' '}
-                        <span className="badge badge-info" style={{ fontSize: 10 }}>Combo</span>
-                      </span>
-                      <span style={{ color: 'var(--text-600)' }}>x{combo.cantidad}</span>
-                      <span style={{ fontWeight: 700, color: 'var(--text-900)', minWidth: 80, textAlign: 'right' }}>
-                        ${((Number(promo?.precio) || 0) * combo.cantidad).toLocaleString('es-CO')}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => quitarCombo(combo.promocion_id)}
-                        title="Quitar combo"
-                        style={{ border: 'none', background: 'transparent', color: '#c0392b', cursor: 'pointer', fontSize: 18, lineHeight: 1, padding: 0 }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+              <p className="np-hint" style={{ marginTop: 14 }}>
+                {tipoEntrega === 'Domicilio'
+                  ? 'Completa la dirección de entrega en el paso 2.'
+                  : 'El cliente recoge el pedido en el local.'}
+              </p>
             )}
-          </div>
+          </aside>
 
-          <div className="grid-registro" style={{ marginTop: 8 }}>
-            <div className="form-group">
-              <label>Método de pago</label>
-              <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
-                {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Tipo de entrega</label>
-              <select value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
-                {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Cliente (opcional)</label>
-              <input
-                type="text"
-                value={clienteNombre}
-                onChange={(e) => setClienteNombre(e.target.value)}
-                placeholder="Nombre del cliente o dejar vacío"
-                maxLength={150}
-              />
-            </div>
-            {tipoEntrega === 'Consumir' && (
+          {/* 2. Información del cliente + pedido */}
+          <section className="np-panel">
+            <h4><b>2</b> Información del cliente</h4>
+            <div className="np-scroll">
               <div className="form-group">
-                <label>Mesa *</label>
-                <select
-                  value={mesa}
-                  onChange={(e) => setMesa(e.target.value)}
-                  style={intentado && !mesa ? { borderColor: 'var(--danger)' } : undefined}
-                >
-                  <option value="">Elige la mesa</option>
-                  {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Mesa {n}</option>)}
+                <label>Cliente (opcional)</label>
+                <input type="text" maxLength={150} value={cliente} onChange={(e) => setCliente(e.target.value)} />
+              </div>
+              {tipoEntrega === 'Domicilio' && (
+                <>
+                  <div className="form-group">
+                    <label>Dirección *</label>
+                    <input type="text" maxLength={120} value={direccion} onChange={(e) => setDireccion(e.target.value)} />
+                  </div>
+                  <div className="form-group">
+                    <label>Teléfono</label>
+                    <input type="text" inputMode="numeric" maxLength={15} value={telefono}
+                      onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))} />
+                  </div>
+                </>
+              )}
+              <div className="form-group">
+                <label>Método de pago</label>
+                <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
+                  {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
-            )}
-            <div className="form-group">
-              <label>Notas para cocina (opcional)</label>
-              <input
-                type="text"
-                value={notas}
-                onChange={(e) => setNotas(e.target.value)}
-                placeholder="Ej: sin tomate, extra bacon"
-                maxLength={255}
-              />
-            </div>
-          </div>
+              <div className="form-group">
+                <label>Notas para cocina</label>
+                <input type="text" maxLength={120} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej: sin tomate" />
+              </div>
 
-          {carrito.length > 0 || combos.length > 0 ? (
-            <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-900)', marginBottom: 2 }}>
-              Total: ${totalCarrito.toLocaleString('es-CO')}
-            </p>
-          ) : null}
-          <div className="modal-actions" style={{ marginTop: 8 }}>
-            <button className="btn-cancel" onClick={cerrar}>Cancelar</button>
-            <button className="btn-save" onClick={save}>Registrar</button>
-          </div>
-          </div>
+              {tieneCuenta && mesaActual && (
+                <div className="np-previo">
+                  <h5>Ya pidieron en la mesa {mesa}</h5>
+                  {(mesaActual.pedidos ?? []).map((p) => (
+                    <div key={p.id} className="np-previo-item">
+                      <span className="np-previo-head">#{p.id} · {p.estado}</span>
+                      <span>{p.items.map((i) => `${i.cantidad}× ${i.nombre}`).join(', ')}</span>
+                    </div>
+                  ))}
+                  <div className="np-previo-total">
+                    <span>Cuenta actual</span><b>{money(Number(mesaActual.total) || 0)}</b>
+                  </div>
+                </div>
+              )}
+
+              <h5 className="np-sub">{tieneCuenta ? 'Nuevo pedido para agregar' : 'Pedido'}</h5>
+              {lineas.length === 0 ? (
+                <p className="np-hint">Agrega productos desde el menú.</p>
+              ) : (
+                                lineas.map((it) => (
+                  <div key={`l-${it.tipo}-${it.id}`}>
+                    <div className="np-line">
+                      <span className="np-line-name">{it.nombre}</span>
+                      <div className="np-step">
+                        <button type="button" onClick={() => cambiar(it, -1)}>−</button>
+                        <strong>{cantidadDe(it)}</strong>
+                        <button type="button" onClick={() => cambiar(it, 1)}>+</button>
+                      </div>
+                      <span className="np-line-price">{money(it.precio * cantidadDe(it))}</span>
+                    </div>
+                    {it.tipo === 'producto' && adicionesDe(it.id).length > 0 && (
+                      <div className="np-extras">
+                        <small>Adicionales</small>
+                        {adicionesDe(it.id).map((a) => (
+                          <div key={a.id} className="np-extra">
+                            <span>{a.nombre} <em>+{money(Number(a.precio) || 0)}</em></span>
+                            <div className="np-step">
+                              <button type="button" onClick={() => cambiarExtra(a.id, -1)} disabled={!cantExtra(a.id)}>−</button>
+                              <strong>{cantExtra(a.id)}</strong>
+                              <button type="button" onClick={() => cambiarExtra(a.id, 1)}>+</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="np-bottom">
+              <div className="np-total">
+                <span>{tieneCuenta ? 'Total a agregar' : 'Total'}</span><b>{money(total)}</b>
+              </div>
+              <button type="button" className="np-finalizar" disabled={lineas.length === 0} onClick={guardar}>
+                {tieneCuenta ? `Agregar a la mesa ${mesa}` : 'Finalizar pedido'}
+              </button>
+            </div>
+          </section>
+
+          {/* 3. Productos */}
+          <section className="np-panel">
+            <h4><b>3</b> Productos</h4>
+            <div className="np-tools">
+              <input type="text" placeholder="Buscar producto por nombre..." value={buscar}
+                onChange={(e) => setBuscar(e.target.value)} />
+              <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
+                <button type="button" className={vista === 'lista' ? 'active' : ''} onClick={() => setVista('lista')} title="Lista">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+                  </svg>
+                </button>
+                <button type="button" className={vista === 'tarjetas' ? 'active' : ''} onClick={() => setVista('tarjetas')} title="Tarjetas">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
+                    <rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div className="np-cats">
+              {categorias.map((c) => (
+                <button key={c} type="button" className={c === cat ? 'on' : ''} onClick={() => setCat(c)}>{c}</button>
+              ))}
+            </div>
+
+            <div className={vista === 'lista' ? 'np-list' : 'np-grid'}>
+              {visibles.map((it) => {
+                const cant = cantidadDe(it);
+                return (
+                  <article key={`${it.tipo}-${it.id}`} className={`np-card${cant ? ' in' : ''}`}>
+                    <div className="np-img">
+                      {it.img
+                        ? <img src={it.img} alt={it.nombre} loading="lazy" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                        : <span>{it.nombre.charAt(0).toUpperCase()}</span>}
+                      {cant > 0 && <em className="np-badge">{cant}</em>}
+                    </div>
+                    <div className="np-info">
+                      <strong>{it.nombre}</strong>
+                      {it.tipo === 'combo' && <span className="np-tag">Combo</span>}
+                      <span className="np-precio">{money(it.precio)}</span>
+                    </div>
+                    <div className="np-ctrl">
+                      {cant === 0 ? (
+                        <button type="button" className="np-add" disabled={it.agotado} onClick={() => cambiar(it, 1)}>
+                          {it.agotado ? 'Agotado' : 'Agregar'}
+                        </button>
+                      ) : (
+                        <div className="np-step">
+                          <button type="button" onClick={() => cambiar(it, -1)} aria-label="Quitar uno">−</button>
+                          <strong>{cant}</strong>
+                          <button type="button" onClick={() => cambiar(it, 1)} aria-label="Agregar uno">+</button>
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+              {filtrados.length === 0 && <p className="np-hint">No hay productos.</p>}
+            </div>
+
+            <nav className="np-pager" aria-label="Paginación">
+                {pagina > 1 && (
+                  <button type="button" className="np-pg" onClick={() => setPagina((p) => p - 1)}>‹ Anterior</button>
+                )}
+                {Array.from({ length: paginas }, (_, i) => i + 1)
+                  .filter((n) => n === 1 || n === paginas || Math.abs(n - pagina) <= 1)
+                  .map((n, i, arr) => (
+                    <span key={n} className="np-pg-wrap">
+                      {i > 0 && n - arr[i - 1] > 1 && <span className="np-pg-dots">…</span>}
+                      <button type="button" className={`np-pg${n === pagina ? ' on' : ''}`} onClick={() => setPagina(n)}>
+                        {n}
+                      </button>
+                    </span>
+                  ))}
+                {pagina < paginas && (
+                  <button type="button" className="np-pg" onClick={() => setPagina((p) => p + 1)}>Siguiente ›</button>
+                )}
+              </nav>
+          </section>
         </div>
-        </div>
+      </div>
+    </div>
   );
 }

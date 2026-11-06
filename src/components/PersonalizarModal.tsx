@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useCart } from '../hooks/useCart';
 import cenaFallback from '../assets/img/cena.png';
 
-type Adicion = { id: number; nombre: string; precio: number | string };
+type Adicion = { id: number; nombre: string; precio: number | string; tipo?: string };
 
 export type ItemPersonalizar = {
   id: number | string;
@@ -28,9 +28,14 @@ export default function PersonalizarModal({
   const [nota, setNota] = useState('');
   const [cantidad, setCantidad] = useState(1);
   const [extras, setExtras] = useState<Record<number, number>>({});
-  const adiciones = item.adiciones ?? [];
-
-  const ingredientes = (item.descripcion ?? '').split('+').map((s) => s.trim()).filter(Boolean);
+  
+  const todas = item.adiciones ?? [];
+  const adiciones = todas.filter((a) => a.tipo !== 'quitar');
+  const quitarBD = todas.filter((a) => a.tipo === 'quitar').map((a) => a.nombre.trim());
+  const deDescripcion = (item.descripcion ?? '').split('+').map((s) => s.trim()).filter(Boolean);
+  const ingredientes = Array.from(
+    new Map([...deDescripcion, ...quitarBD].map((s) => [s.toLowerCase(), s])).values(),
+  );
 
   const extrasSel = adiciones
     .filter((a) => (extras[a.id] ?? 0) > 0)
