@@ -484,6 +484,7 @@ export default function CierreInventarioAdmin() {
       {detalle && (
         <div className="modal-overlay open" onClick={() => setDetalle(null)}>
           <div className="modal-box" style={{ maxWidth: 680, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="modal-x" onClick={() => setDetalle(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
             <h2 style={{ marginBottom: 6 }}>Cierre N.º {detalle.id}</h2>
             <p style={{ fontSize: 14, color: 'var(--text-400)', fontWeight: 500, marginBottom: 4 }}>
               {new Date(detalle.created_at).toLocaleDateString('es-CO')} · a las {new Date(detalle.created_at).toLocaleTimeString('es-CO')}

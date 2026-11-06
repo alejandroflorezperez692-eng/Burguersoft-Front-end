@@ -340,6 +340,7 @@ export default function VentasAdmin() {
         <div className="modal-box" style={{ maxWidth: 780, width: '95%', padding: 0 }} onClick={(e) => e.stopPropagation()}>
           <div style={{ background: 'var(--text-900)', padding: '18px 28px' }}>
             <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--surface)' }}>Registrar Venta</h3>
+            <button type="button" className="mn-form-cerrar" onClick={cerrarFormulario} aria-label="Cerrar">×</button>
           </div>
           <div style={{ padding: 28 }}>
           <div className="grid-registro">
@@ -702,7 +703,8 @@ export default function VentasAdmin() {
       {detalle && (
         <div className="modal-overlay open" onClick={() => setDetalleId(null)}>
           <div className="modal-box vt-det" onClick={(e) => e.stopPropagation()}>
-            <div className="vt-det-head">
+          <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
+          <div className="vt-det-head">
               <div>
                 <h3>Venta #{detalle.id}</h3>
                 <p>{fmtDia(detalle.fecha)} · {fmtHora(detalle.fecha)}</p>

@@ -394,6 +394,7 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
           <div className="modal-box" style={{ maxWidth: 560, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ background: 'var(--text-900)', padding: '18px 28px', flexShrink: 0 }}>
               <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--surface)' }}>{editId ? 'Editar Proveedor' : 'Nuevo Proveedor'}</h3>
+              <button type="button" className="mn-form-cerrar" onClick={() => setModal(false)} aria-label="Cerrar">×</button>
             </div>
             <div style={{ padding: '24px 32px 28px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
 

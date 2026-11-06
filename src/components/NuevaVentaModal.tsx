@@ -49,7 +49,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
 
   const [cat, setCat] = useState('Todos');
 
-  const [tipoEntrega, setTipoEntrega] = useState(esMesero ? 'Consumir' : 'Domicilio');
+  const [tipoEntrega, setTipoEntrega] = useState('Consumir');
   const [mesa, setMesa] = useState<number | null>(null);
   const [cliente, setCliente] = useState('');
   const [direccion, setDireccion] = useState('');
@@ -92,7 +92,8 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
       })
       .catch(() => { if (vivo) { setProductos([]); setPromociones([]); } });
     cargarMesas();
-    if (mesaInicial) { setTipoEntrega('Consumir'); setMesa(mesaInicial); }
+    setTipoEntrega('Consumir');
+    if (mesaInicial) setMesa(mesaInicial);
     return () => { vivo = false; };
   }, [abierto, mesaInicial, cargarMesas]);
 

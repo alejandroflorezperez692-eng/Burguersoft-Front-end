@@ -221,6 +221,7 @@ export default function InventarioAdmin() {
             style={{ maxWidth: 460, textAlign: 'left' }}
             onClick={(e) => e.stopPropagation()}
           >
+            <button type="button" className="modal-x" onClick={() => setDetalle(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
             <h3 style={{ margin: '0 0 4px', fontSize: 20 }}>{detalle.nombre}</h3>
             <div style={{ marginBottom: 14 }}>
               <span className={`badge ${claseBadge(detalle.cantidad)}`}>{textoEstado(detalle.cantidad)}</span>

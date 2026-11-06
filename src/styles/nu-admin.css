@@ -889,3 +889,125 @@ body.dark-mode .mn-ing-row input {
   padding: 4px 12px; font-size: .8rem; cursor: pointer; }
 .mn-adic-chip:hover { background: #e8821a; color: #fff; }
 .mn-field > .mn-acc { margin-bottom: 0; }
+
+/* ===== Cabecera de modales unificada (estilo "Nuevo pedido") ===== */
+.mn-modal-box .mn-form-header,
+.modal-box .mm-head {
+  background: linear-gradient(180deg, #fff, #fffaf3);
+  border-bottom: 1px solid #f0e6d6;
+  padding: 16px 28px;
+  align-items: center;
+}
+.mn-modal-box .mn-form-header h3,
+.modal-box .mm-titulo {
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a0f0a;
+  margin: 0;
+}
+.modal-box .mm-resumen { color: #8a7a68; }
+
+/* Botón X */
+.mn-form-cerrar,
+.modal-box .mm-cerrar {
+  width: 36px; height: 36px;
+  border: 1px solid #eadfce; background: #fff; border-radius: 10px;
+  cursor: pointer; font-size: 20px; line-height: 1; color: #1a0f0a;
+}
+.mn-form-cerrar:hover,
+.modal-box .mm-cerrar:hover { background: #fff4e5; }
+
+/* Modales simples del admin (Compras, Usuarios, Marcas, etc.) */
+.modal-overlay .modal-box h2 {
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a0f0a;
+  border-bottom: 1px solid #f0e6d6;
+}
+
+/* Modo oscuro */
+body.dark-mode .mn-modal-box .mn-form-header,
+body.dark-mode .modal-box .mm-head { background: var(--surface); border-bottom-color: var(--border); }
+body.dark-mode .mn-modal-box .mn-form-header h3,
+body.dark-mode .modal-box .mm-titulo,
+body.dark-mode .modal-overlay .modal-box h2 { color: var(--text-900); }
+body.dark-mode .mn-form-cerrar { background: var(--surface); border-color: var(--border); color: var(--text-900); } 
+
+/* ===== Cabeceras oscuras en línea (Registrar venta, Registrar compra, Proveedor, Historial) ===== */
+.modal-overlay [style*="var(--text-900)"][style*="18px 28px"],
+.mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] {
+  background: linear-gradient(180deg, #fff, #fffaf3) !important;
+  border-bottom: 1px solid #f0e6d6;
+  padding: 16px 28px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-overlay [style*="var(--text-900)"][style*="18px 28px"] h3,
+.mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] h3 {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: #1a0f0a !important;
+}
+/* X del Historial (antes era blanca) */
+.modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button {
+  width: 36px; height: 36px;
+  border: 1px solid #eadfce !important;
+  background: #fff !important;
+  color: #1a0f0a !important;
+  border-radius: 10px;
+  font-size: 16px !important;
+}
+
+/* ===== Scroll fino en TODOS los modales ===== */
+.modal-overlay *, .mn-modal-overlay * { scrollbar-width: thin; scrollbar-color: #e0c9a6 transparent; }
+.modal-overlay *::-webkit-scrollbar, .mn-modal-overlay *::-webkit-scrollbar { width: 8px; height: 8px; }
+.modal-overlay *::-webkit-scrollbar-track, .mn-modal-overlay *::-webkit-scrollbar-track { background: transparent; }
+.modal-overlay *::-webkit-scrollbar-thumb, .mn-modal-overlay *::-webkit-scrollbar-thumb { background: #e0c9a6; border-radius: 999px; }
+.modal-overlay *::-webkit-scrollbar-thumb:hover, .mn-modal-overlay *::-webkit-scrollbar-thumb:hover { background: #e8821a; }
+.modal-overlay *::-webkit-scrollbar-button, .mn-modal-overlay *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+/* ===== Formularios de Menú y Promociones: cabecera y botones fijos, scroll solo en el cuerpo ===== */
+.mn-modal-box:has(.mn-form-panel) {
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+}
+.mn-modal-box .mn-form-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border-radius: 20px;
+}
+.mn-modal-box .mn-form-panel > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.mn-modal-box .mn-form-panel .mn-form-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 20px;
+}
+.mn-modal-box .mn-form-panel .mn-form-header,
+.mn-modal-box .mn-form-panel .mn-form-footer {
+  flex: none;
+}
+
+/* X flotante para modales sin cabecera */
+.modal-box, .mn-modal-box { position: relative; }
+.modal-x {
+  position: absolute; top: 14px; right: 14px; z-index: 5;
+  width: 36px; height: 36px; padding: 0;
+  border: 1px solid #eadfce; background: #fff; border-radius: 10px;
+  cursor: pointer; font-size: 20px; line-height: 1; color: #1a0f0a;
+}
+.modal-x:hover { background: #fff4e5; }
+.modal-x:disabled { opacity: .4; cursor: not-allowed; }
+body.dark-mode .modal-x { background: var(--surface); border-color: var(--border); color: var(--text-900); }
+.vt-det-head { padding-right: 48px; }

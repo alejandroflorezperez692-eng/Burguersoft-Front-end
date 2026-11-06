@@ -7,6 +7,21 @@ import './styles/responsive.css';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { CartProvider } from './context/CartContext.tsx';
 
+document.addEventListener(
+  'click',
+  (e) => {
+    const t = e.target as HTMLElement | null;
+    if (
+      t?.classList?.contains('modal-overlay') ||
+      t?.classList?.contains('mn-modal-overlay') ||
+      t?.classList?.contains('confirm-modal-overlay')
+    ) {
+      e.stopPropagation();
+    }
+  },
+  true,
+);
+
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
     <AuthProvider>

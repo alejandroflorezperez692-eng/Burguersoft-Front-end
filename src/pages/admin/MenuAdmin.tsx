@@ -379,10 +379,11 @@ export default function MenuAdmin() {
   };
 
   /* ---------- Formulario (panel para nuevo, modal para editar) ---------- */
-  const panelFormulario = (
+    const panelFormulario = (
     <div className="mn-form-panel" ref={panelRef} style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
       <div className="mn-form-header">
         <h3>{editId ? 'Editar producto' : 'Nuevo producto'}</h3>
+        <button type="button" className="mn-form-cerrar" onClick={limpiarFormulario} aria-label="Cerrar">×</button>
       </div>
 
       <form onSubmit={guardar} noValidate>
