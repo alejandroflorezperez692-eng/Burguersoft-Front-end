@@ -1,12 +1,6 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
-/**
- * Colores del toast según la señal:
- *  - verde  → éxito (movimientos/validaciones correctos)
- *  - rojo   → error (errores, validaciones fallidas, movimientos inválidos)
- *  - amarillo → información / advertencia
- */
 export type ToastPayload = { msg: string; error?: boolean; aviso?: boolean };
 
 export type IconoTipo = 'exito' | 'error' | 'aviso';
@@ -131,11 +125,21 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const resolverConfirm = (valor: boolean) => {
+    const resolverConfirm = (valor: boolean) => {
     const actual = confirmState;
     setConfirmState(null);
     if (actual) actual.resolve(valor);
   };
+
+  // Esc cierra la confirmación (equivale a Cancelar)
+  useEffect(() => {
+    if (!confirmState) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') resolverConfirm(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [confirmState]);
 
   const value: ToastContextValue = { toast, showToast, confirmar };
 

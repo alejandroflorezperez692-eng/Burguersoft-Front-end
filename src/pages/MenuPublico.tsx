@@ -18,7 +18,7 @@ type Producto = {
   img?: string | null;
   categoria?: string | number | null;
   estado?: string | null;
-  adiciones?: { id: number; nombre: string; precio: number | string }[];
+  adiciones?: { id: number; nombre: string; precio: number | string; tipo?: string }[];
 };
 
 const CATEGORIAS = [

@@ -8,7 +8,6 @@ import { mensajeDeError, type MapaTransiciones } from '../../types/Trazabilidad'
 import '../../styles/pedidos-turno.css';
 import { getEcho } from '../../api/echo';
 import NuevaVentaModal from '../../components/NuevaVentaModal';
-import MesasModal from '../../components/MesasModal';
 import { useEscape } from '../../hooks/useEscape';
 
 type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
@@ -137,7 +136,6 @@ export default function PedidosTurno() {
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
   const puedeCrear = rol === 'admin' || rol === 'mesero';
-  const puedeVerMesas = rol === 'admin' || rol === 'mesero' || rol === 'cajero';
   const vistaInicial = VISTA_INICIAL[rol] ?? 'cocina';
 
   const [vista, setVista] = useState<Vista>(vistaInicial);
@@ -151,7 +149,6 @@ export default function PedidosTurno() {
   const [filtroEntrega, setFiltroEntrega] = useState<Entrega>('todos');
   const [nuevoAbierto, setNuevoAbierto] = useState(false);
   const [mesaNueva, setMesaNueva] = useState<number | null>(null);
-  const [mesasAbierto, setMesasAbierto] = useState(false);
   const [detalleId, setDetalleId] = useState<number | null>(null);
   const [arrastrandoId, setArrastrandoId] = useState<number | null>(null);
   const [colHover, setColHover] = useState<string | null>(null);
@@ -367,11 +364,7 @@ export default function PedidosTurno() {
           onChange={(e) => setBusqueda(e.target.value)}
         />
         <div className="tv-acciones">
-          {puedeVerMesas && (
-            <button type="button" className="tv-btn-sec" onClick={() => setMesasAbierto(true)}>
-              Mesas
-            </button>
-          )}
+
           {puedeCrear && (
             <button type="button" className="tv-btn-nuevo" onClick={() => setNuevoAbierto(true)}>
               + Nuevo pedido
@@ -445,20 +438,6 @@ export default function PedidosTurno() {
           setMesaNueva(null);
         }}
         onCreada={() => void load()}
-      />
-
-      <MesasModal
-        abierto={mesasAbierto}
-        onClose={() => setMesasAbierto(false)}
-        onTomarPedido={
-          puedeCrear
-            ? (n) => {
-                setMesasAbierto(false);
-                setMesaNueva(n);
-                setNuevoAbierto(true);
-              }
-            : undefined
-        }
       />
 
       {detalle && (

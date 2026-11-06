@@ -1,3 +1,4 @@
+
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import apiClient from '../../api/client';
@@ -10,6 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
+
 
 interface DetalleVenta {
   id: number;
@@ -336,6 +338,9 @@ export default function VentasAdmin() {
   const [loading, setLoading] = useState(true);
   const [historialId, setHistorialId] = useState<number | null>(null);
   const [detalleId, setDetalleId] = useState<number | null>(null);
+  const [cierreAbierto, setCierreAbierto] = useState(false);
+  const [cierreDesde, setCierreDesde] = useState('');
+  const [cierreHasta, setCierreHasta] = useState('');
   const [, setVersion] = useState(0);
 
   const load = async () => {
@@ -568,9 +573,149 @@ export default function VentasAdmin() {
     }
   };
 
+    /* ===== Días, cierre del día e impresión ===== */
+  const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
+  const esVendida = (v: Venta) => v?.estado === 'Pagado';
+  const hoyStr = new Date().toLocaleDateString('en-CA');
+  const moneda = (n: number) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
+  const escHtml = (t: unknown) =>
+    String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+  const fmtLargo = (clave: string) =>
+    new Date(`${clave}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const etiquetaDia = (clave: string) => {
+    const ayer = new Date();
+    ayer.setDate(ayer.getDate() - 1);
+    if (clave === hoyStr) return `Hoy · ${fmtLargo(clave)}`;
+    if (clave === ayer.toLocaleDateString('en-CA')) return `Ayer · ${fmtLargo(clave)}`;
+    return fmtLargo(clave);
+  };
+
+  const resumenDia = (clave: string) => {
+    const delDia = filtered.filter((v) => fechaLocal(v?.fecha) === clave);
+    const vendidas = delDia.filter(esVendida);
+    return {
+      ventas: delDia.length,
+      total: vendidas.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0),
+    };
+  };
+
+  const abrirCierre = (desde?: string, hasta?: string) => {
+    const d = desde || fechaDesde || hoyStr;
+    setCierreDesde(d);
+    setCierreHasta(hasta || (desde ? desde : fechaHasta) || d);
+    setCierreAbierto(true);
+  };
+
+  const calcularCierre = () => {
+    const desde = cierreDesde || hoyStr;
+    const hasta = cierreHasta || desde;
+
+    const base = (items ?? []).filter((v) => {
+      const f = fechaLocal(v?.fecha);
+      if (f < desde || f > hasta) return false;
+      if (filtroMetodo && v?.metodo_pago !== filtroMetodo) return false;
+      if (filtroEntrega && v?.tipo_entrega !== filtroEntrega) return false;
+      return true;
+    });
+
+    const vendidas = base.filter(esVendida);
+    const pendientes = base.filter((v) => !esVendida(v) && !NO_VENDIDOS.includes(v?.estado));
+    const anuladas = base.filter((v) => NO_VENDIDOS.includes(v?.estado));
+
+    const prod = new Map<string, { cantidad: number; total: number }>();
+    const combos = new Map<string, number>();
+    const metodos = new Map<string, { ventas: number; total: number }>();
+
+    vendidas.forEach((v) => {
+      (v?.detalles ?? []).forEach((d) => {
+        const nombre = d?.producto?.nombre ?? 'Producto';
+        const a = prod.get(nombre) ?? { cantidad: 0, total: 0 };
+        a.cantidad += Number(d?.cantidad) || 0;
+        a.total += Number(d?.subtotal) || (Number(d?.cantidad) || 0) * (Number(d?.precio_unitario) || 0);
+        prod.set(nombre, a);
+      });
+      (v?.promociones ?? []).forEach((p) => {
+        combos.set(p?.nombre, (combos.get(p?.nombre) ?? 0) + 1);
+      });
+      const m = metodos.get(v?.metodo_pago ?? '—') ?? { ventas: 0, total: 0 };
+      m.ventas += 1;
+      m.total += Number(v?.valor_total) || 0;
+      metodos.set(v?.metodo_pago ?? '—', m);
+    });
+
+    const productos = [...prod.entries()]
+      .map(([nombre, x]) => ({ nombre, ...x }))
+      .sort((a, b) => b.cantidad - a.cantidad);
+
+    return {
+      desde,
+      hasta,
+      vendidas: vendidas.length,
+      total: vendidas.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0),
+      unidades: productos.reduce((a, p) => a + p.cantidad, 0),
+      productos,
+      combos: [...combos.entries()].map(([nombre, cantidad]) => ({ nombre, cantidad })),
+      metodos: [...metodos.entries()].map(([nombre, x]) => ({ nombre, ...x })),
+      pendientes: { n: pendientes.length, total: pendientes.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0) },
+      anuladas: anuladas.length,
+    };
+  };
+
+  const imprimirCierre = () => {
+    const c = calcularCierre();
+    const w = window.open('', '_blank', 'width=460,height=720');
+    if (!w) {
+      alertar('Permite las ventanas emergentes para poder imprimir.');
+      return;
+    }
+    const rango = c.desde === c.hasta ? fmtLargo(c.desde) : `${fmtLargo(c.desde)} al ${fmtLargo(c.hasta)}`;
+    const filasProd = c.productos.length
+      ? c.productos.map((p) => `<tr><td>${escHtml(p.nombre)}</td><td class="r">${p.cantidad}</td><td class="r">${moneda(p.total)}</td></tr>`).join('')
+      : '<tr><td colspan="3" class="c">Sin ventas en este periodo</td></tr>';
+    const filasCombos = c.combos.map((p) => `<tr><td>${escHtml(p.nombre)}</td><td class="r">${p.cantidad}</td><td class="r">—</td></tr>`).join('');
+    const filasMetodos = c.metodos.map((m) => `<tr><td>${escHtml(m.nombre)}</td><td class="r">${m.ventas}</td><td class="r">${moneda(m.total)}</td></tr>`).join('');
+
+ w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Cierre del día</title>
+<style>
+body{font-family:Arial,Helvetica,sans-serif;color:#1a0f0a;max-width:380px;margin:0 auto;padding:16px;font-size:13px}
+h1{font-size:19px;margin:0 0 2px;text-align:center}
+.sub{text-align:center;color:#6b4a2b;margin:0 0 4px;text-transform:capitalize}
+.gen{text-align:center;color:#888;font-size:11px;margin:0 0 12px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 2px}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;text-transform:uppercase;text-align:left;border-bottom:2px solid #1a0f0a;padding:4px 0}
+td{padding:4px 0;border-bottom:1px dashed #bbb}
+.r{text-align:right}.c{text-align:center;color:#888}
+th.r{text-align:right}
+.tot{display:flex;justify-content:space-between;font-size:17px;font-weight:700;border-top:2px solid #1a0f0a;margin-top:12px;padding-top:8px}
+.nota{color:#6b4a2b;font-size:12px;margin:6px 0 0}
+</style></head><body>
+<h1>Cierre del día</h1>
+<p class="sub">${escHtml(rango)}</p>
+<p class="gen">Impreso: ${escHtml(new Date().toLocaleString('es-CO'))}</p>
+<h2>Productos vendidos</h2>
+<table><thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Subtotal</th></tr></thead><tbody>${filasProd}</tbody></table>
+${filasCombos ? `<h2>Combos</h2><table><thead><tr><th>Combo</th><th class="r">Cant.</th><th class="r"></th></tr></thead><tbody>${filasCombos}</tbody></table>` : ''}
+<h2>Por método de pago</h2>
+<table><thead><tr><th>Método</th><th class="r">Ventas</th><th class="r">Total</th></tr></thead><tbody>${filasMetodos || '<tr><td colspan="3" class="c">—</td></tr>'}</tbody></table>
+<div class="tot"><span>TOTAL DEL DÍA</span><span>${moneda(c.total)}</span></div>
+<p class="nota">${c.vendidas} ventas pagadas · ${c.unidades} productos</p>
+${c.pendientes.n ? `<p class="nota">Pendientes de cobro: ${c.pendientes.n} (${moneda(c.pendientes.total)}) — no incluidos en el total</p>` : ''}
+${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''}
+</body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => w.print(), 300);
+  };
+
+  const cierre = cierreAbierto ? calcularCierre() : null;
+
   const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
 
   useEscape([
+    [cierreAbierto, () => setCierreAbierto(false)],
     [detalle !== null, () => setDetalleId(null)],
     [showForm, cerrarFormulario],
   ]);
@@ -587,12 +732,14 @@ export default function VentasAdmin() {
           <p className="subtitulo">{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
       </div>
+      
 
       {showForm && (
         <div className="modal-overlay open" onClick={cerrarFormulario}>
         <div className="modal-box" style={{ maxWidth: 780, width: '95%', padding: 0 }} onClick={(e) => e.stopPropagation()}>
           <div style={{ background: 'var(--text-900)', padding: '18px 28px' }}>
             <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--surface)' }}>Registrar Venta</h3>
+            <button type="button" className="mn-form-cerrar" onClick={cerrarFormulario} aria-label="Cerrar">×</button>
           </div>
           <div style={{ padding: 28 }}>
           <div className="grid-registro">
@@ -872,7 +1019,6 @@ export default function VentasAdmin() {
               <th>Estado</th>
               <th>Historial</th>
               <th>Factura</th>
-              <th>Detalle</th>
             </tr>
           </thead>
           <tbody>
@@ -890,18 +1036,14 @@ export default function VentasAdmin() {
                   </small>
                 </td>
                 <td>
-                  <ul className="vt-productos">
-                    {(v?.detalles ?? []).map((d, i) => (
-                      <li key={`${d?.id}-${i}`}>
-                        <b>{d?.cantidad ?? 0}×</b> {d?.producto?.nombre ?? 'Producto'}
-                      </li>
-                    ))}
-                    {(v?.promociones ?? []).map((p, i) => (
-                      <li key={`${p?.id}-${i}`} className="vt-combo">
-                        <span className="badge badge-info">{p?.nombre}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', marginTop: 8 }}
+                    onClick={() => setDetalleId(v.id)}
+                  >
+                    Ver detalle
+                  </button>
                 </td>
 
 
@@ -1044,20 +1186,10 @@ export default function VentasAdmin() {
                     Ver factura
                   </button>
                 </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn-cancel"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
-                    onClick={() => setDetalleId(v.id)}
-                  >
-                    Ver detalle
-                  </button>
-                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={10} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}
           </tbody>
         </table>
@@ -1072,7 +1204,8 @@ export default function VentasAdmin() {
       {detalle && (
         <div className="modal-overlay open" onClick={() => setDetalleId(null)}>
           <div className="modal-box vt-det" onClick={(e) => e.stopPropagation()}>
-            <div className="vt-det-head">
+          <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
+          <div className="vt-det-head">
               <div>
                 <h3>Venta #{detalle.id}</h3>
                 <p>{fmtDia(detalle.fecha)} · {fmtHora(detalle.fecha)}</p>

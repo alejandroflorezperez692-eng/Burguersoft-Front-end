@@ -364,7 +364,7 @@ export default function MateriaPrimaAdmin() {
                 <th>Disponibilidad</th>
                 <th>Estado</th>
                 <th>Proveedor</th>
-                <th>Acciones</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -420,9 +420,10 @@ export default function MateriaPrimaAdmin() {
       {!loading && <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />}
 
       {modal && (
-        <div className="modal-overlay open" onClick={() => setModal(false)}>
-          <div className="modal-box" style={{ maxWidth: 560, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar Materia Prima</h2>
+      <div className="modal-overlay open" onClick={() => setModal(false)}>
+        <div className="modal-box" style={{ maxWidth: 560, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
+          <button type="button" className="modal-x" onClick={() => setModal(false)} aria-label="Cerrar">×</button>
+          <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar Materia Prima</h2>
 
             <div className="form-group" style={{ marginBottom: 14 }}>
               <label>Nombre del insumo<span className="mn-req">*</span></label>

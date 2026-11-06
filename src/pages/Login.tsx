@@ -28,7 +28,6 @@ export default function Login() {
   const location = useLocation();
   const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
 
-
   // Aviso flotante (estilo toast) en el login: contraseña cambiada, sesión
   // cerrada o sesión expirada. Se lee también de sessionStorage para que el
   // aviso sobreviva a la redirección (p. ej. al restablecer la contraseña).
@@ -122,13 +121,13 @@ export default function Login() {
     }
   };
 
-  if (loading) {
-    return <AdminLoading texto="Iniciando sesión" subtexto="Verificando tus credenciales" />;
-  }
   const handleGoogleLogin = () => {
     window.location.href = `${API_URL}/auth/google`;
   };
 
+  if (loading) {
+    return <AdminLoading texto="Iniciando sesión" subtexto="Verificando tus credenciales" />;
+  }
 
   return (
     <AuthLayout regresarA="/">
