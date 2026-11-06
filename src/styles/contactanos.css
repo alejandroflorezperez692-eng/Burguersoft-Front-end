@@ -43,6 +43,7 @@
 
 .icon-box {
   text-align: center;
+  width: 160px;
   max-width: 160px;
   position: relative;
 }

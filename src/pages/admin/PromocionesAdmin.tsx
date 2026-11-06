@@ -397,6 +397,7 @@ export default function PromocionesAdmin() {
     <div className="mn-form-panel" style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
       <div className="mn-form-header">
         <h3>{editId ? 'Editar promoción' : 'Nueva promoción'}</h3>
+        <button type="button" className="mn-form-cerrar" onClick={limpiarFormulario} aria-label="Cerrar">×</button>
       </div>
 
       <form onSubmit={guardar} noValidate>
@@ -608,14 +609,14 @@ export default function PromocionesAdmin() {
 
           <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
             <button type="button" className={vista === 'lista' ? 'active' : ''}
-              onClick={() => setVista('lista')} title="Vista de lista" aria-pressed={vista === 'lista'}>
+              onClick={() => setVista('lista')} title="Vista de lista" data-tooltip="Vista de lista" aria-pressed={vista === 'lista'}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
               </svg>
             </button>
             <button type="button" className={vista === 'tarjetas' ? 'active' : ''}
-              onClick={() => setVista('tarjetas')} title="Vista de tarjetas" aria-pressed={vista === 'tarjetas'}>
+              onClick={() => setVista('tarjetas')} title="Vista de tarjetas" data-tooltip="Vista de tarjeta" aria-pressed={vista === 'tarjetas'}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
@@ -682,7 +683,7 @@ export default function PromocionesAdmin() {
                 <th>Vigencia</th>
                 <th>Precio</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -718,8 +719,8 @@ export default function PromocionesAdmin() {
                     <td>
                       {esAdmin && (
                         <div className="mn-card-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
                         </div>
                       )}
                     </td>
@@ -772,9 +773,9 @@ export default function PromocionesAdmin() {
                         {ahorro > 0 && <div className="pm-save">Ahorras {fmt(ahorro)}</div>}
                       </div>
                       {esAdmin && (
-                        <div className="mn-table-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+                        <div className="mn-card-actions">
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
                         </div>
                       )}
                     </article>

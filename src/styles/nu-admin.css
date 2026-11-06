@@ -561,6 +561,39 @@ body.dark-mode .mn-ing-row input {
   border: 1.5px solid #E8821A;
 }
 
+body.dark-mode .admin-body:has(.mn-page) .main-content {
+  --surface: #000000;
+  --surface-2: #000000;
+  --surface-3: #000000;
+  --bg: #000000;
+  --border: #E8821A;
+  --border-strong: #E8821A;
+  background: #000000;
+}
+
+body.dark-mode .admin-body:has(.mn-page) .mn-card-noimg {
+  background: transparent;
+}
+
+body.dark-mode .admin-body:has(.mn-page) .mn-card-estado {
+  background: #1a7a42;
+  border: 1px solid #1a7a42;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body:has(.mn-page) .mn-card-imgwrap {
+  position: relative;
+}
+
+body.dark-mode .admin-body:has(.mn-page) .mn-card-imgwrap::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: #E8821A;
+  z-index: 1;
+}
+
 /* ===== Promociones (se apoya en las clases mn-* del Menú) ===== */
 
 /* Estado de la promoción en la tarjeta */
@@ -685,6 +718,11 @@ body.dark-mode .mn-ing-row input {
   font-size: 0.9rem;
 }
 
+body.dark-mode .admin-body .admin-footer {
+  background: #000000;
+  border-top-color: #ffffff;
+}
+
 /* ===== Paginación de usuarios ===== */
 .us-pag {
   display: flex;
@@ -798,6 +836,11 @@ body.dark-mode .mn-ing-row input {
 .mn-view-toggle button + button { border-left: 1.5px solid var(--border); }
 .mn-view-toggle button.active { background: rgba(47, 138, 240, 0.15); color: var(--info); }
 
+body.dark-mode .admin-body:has(.mn-page) .mn-view-toggle button.active {
+  background: #E8821A;
+  color: #ffffff;
+}
+
 .mn-table-wrap {
   overflow-x: auto;
   background: var(--surface);
@@ -860,3 +903,336 @@ body.dark-mode .mn-ing-row input {
 .mn-adic-row input{padding:10px 12px;border:1px solid #f0dcc4;border-radius:12px;font:inherit;background:#fff}
 .mn-adic-del{border:0;border-radius:10px;background:#fbe3e0;color:#c0392b;font-size:20px;cursor:pointer}
 .mn-adic-add{border:1.5px dashed #e8851a;background:#fff;color:#e8851a;font-weight:700;border-radius:12px;padding:10px;cursor:pointer;width:100%}
+
+.mn-adic-list{display:flex;flex-direction:column;gap:6px}
+.mn-field .mn-adic-row{display:grid;grid-template-columns:minmax(0,1fr) 112px 32px;gap:6px;align-items:center}
+.mn-field .mn-adic-row input{width:100%;min-width:0;box-sizing:border-box;height:38px;padding:0 10px;border:1px solid #f0dcc4;border-radius:10px;font:inherit;font-size:14px;background:#fff}
+.mn-adic-precio{position:relative}
+.mn-adic-precio span{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9a7b5a;font-size:14px;pointer-events:none}
+.mn-field .mn-adic-precio input{padding-left:22px}
+.mn-adic-del{width:32px;height:32px;border:0;border-radius:8px;background:#fbe3e0;color:#c0392b;font-size:18px;line-height:1;cursor:pointer}
+.mn-adic-add{margin-top:6px;border:1px dashed #e8851a;background:transparent;color:#e8851a;font-weight:700;font-size:13px;border-radius:10px;padding:7px 12px;cursor:pointer}
+.mn-adic-hint{font-size:12px;color:#9a7b5a;margin-top:4px}
+
+.mn-acc { border: 1px solid #e6ddd0; border-radius: 12px; background: #fff; margin-bottom: 12px; overflow: hidden; }
+.mn-acc > summary { cursor: pointer; list-style: none; padding: 12px 16px; font-weight: 700; font-size: .8rem;
+  text-transform: uppercase; letter-spacing: .04em; color: #6b4a2b; display: flex; justify-content: space-between; align-items: center; }
+.mn-acc > summary::-webkit-details-marker { display: none; }
+.mn-acc > summary::after { content: '▾'; transition: transform .2s; }
+.mn-acc[open] > summary::after { transform: rotate(180deg); }
+.mn-acc[open] > summary { border-bottom: 1px solid #f0e8dc; }
+.mn-acc > :not(summary) { margin: 12px 16px; box-sizing: border-box; max-width: calc(100% - 32px); }
+.mn-acc > .mn-adic-add { width: calc(100% - 32px); }
+.mn-acc { min-width: 0; }
+.mn-acc .mn-adic-list { max-height: 260px; overflow-y: auto; padding-right: 4px; }
+
+.mn-adic-sug { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; max-height: 110px; overflow-y: auto; }
+.mn-adic-sug > span { font-size: .8rem; color: #8a7a68; width: 100%; }
+.mn-adic-chip { border: 1px solid #e8821a; background: #fff7ee; color: #b85f0a; border-radius: 999px;
+  padding: 4px 12px; font-size: .8rem; cursor: pointer; }
+.mn-adic-chip:hover { background: #e8821a; color: #fff; }
+.mn-field > .mn-acc { margin-bottom: 0; }
+
+/* ===== Cabecera de modales unificada (estilo "Nuevo pedido") ===== */
+.mn-modal-box .mn-form-header,
+.modal-box .mm-head {
+  background: linear-gradient(180deg, #fff, #fffaf3);
+  border-bottom: 1px solid #f0e6d6;
+  padding: 16px 28px;
+  align-items: center;
+}
+.mn-modal-box .mn-form-header h3,
+.modal-box .mm-titulo {
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a0f0a;
+  margin: 0;
+}
+.modal-box .mm-resumen { color: #8a7a68; }
+
+/* Botón X */
+.mn-form-cerrar,
+.modal-box .mm-cerrar {
+  width: 36px; height: 36px;
+  border: 1px solid #eadfce; background: #fff; border-radius: 10px;
+  cursor: pointer; font-size: 20px; line-height: 1; color: #1a0f0a;
+}
+.mn-form-cerrar:hover,
+.modal-box .mm-cerrar:hover { background: #fff4e5; }
+
+/* Modales simples del admin (Compras, Usuarios, Marcas, etc.) */
+.modal-overlay .modal-box h2 {
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 800;
+  color: #1a0f0a;
+  border-bottom: 1px solid #f0e6d6;
+}
+
+/* Modo oscuro */
+body.dark-mode .mn-modal-box .mn-form-header,
+body.dark-mode .modal-box .mm-head { background: var(--surface); border-bottom-color: var(--border); }
+body.dark-mode .mn-modal-box .mn-form-header h3,
+body.dark-mode .modal-box .mm-titulo,
+body.dark-mode .modal-overlay .modal-box h2 { color: var(--text-900); }
+body.dark-mode .mn-form-cerrar { background: var(--surface); border-color: var(--border); color: var(--text-900); } 
+
+/* ===== Cabeceras oscuras en línea (Registrar venta, Registrar compra, Proveedor, Historial) ===== */
+.modal-overlay [style*="var(--text-900)"][style*="18px 28px"],
+.mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] {
+  background: linear-gradient(180deg, #fff, #fffaf3) !important;
+  border-bottom: 1px solid #f0e6d6;
+  padding: 16px 28px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-overlay [style*="var(--text-900)"][style*="18px 28px"] h3,
+.mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] h3 {
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  color: #1a0f0a !important;
+}
+/* X del Historial (antes era blanca) */
+.modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button {
+  width: 36px; height: 36px;
+  border: 1px solid #eadfce !important;
+  background: #fff !important;
+  color: #1a0f0a !important;
+  border-radius: 10px;
+  font-size: 16px !important;
+}
+
+/* ===== Scroll fino en TODOS los modales ===== */
+.modal-overlay *, .mn-modal-overlay * { scrollbar-width: thin; scrollbar-color: #e0c9a6 transparent; }
+.modal-overlay *::-webkit-scrollbar, .mn-modal-overlay *::-webkit-scrollbar { width: 8px; height: 8px; }
+.modal-overlay *::-webkit-scrollbar-track, .mn-modal-overlay *::-webkit-scrollbar-track { background: transparent; }
+.modal-overlay *::-webkit-scrollbar-thumb, .mn-modal-overlay *::-webkit-scrollbar-thumb { background: #e0c9a6; border-radius: 999px; }
+.modal-overlay *::-webkit-scrollbar-thumb:hover, .mn-modal-overlay *::-webkit-scrollbar-thumb:hover { background: #e8821a; }
+.modal-overlay *::-webkit-scrollbar-button, .mn-modal-overlay *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+/* ===== Formularios de Menú y Promociones: cabecera y botones fijos, scroll solo en el cuerpo ===== */
+.mn-modal-box:has(.mn-form-panel) {
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+}
+.mn-modal-box .mn-form-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  border-radius: 20px;
+}
+.mn-modal-box .mn-form-panel > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.mn-modal-box .mn-form-panel .mn-form-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 20px;
+}
+.mn-modal-box .mn-form-panel .mn-form-header,
+.mn-modal-box .mn-form-panel .mn-form-footer {
+  flex: none;
+}
+
+/* X flotante para modales sin cabecera */
+.modal-box, .mn-modal-box { position: relative; }
+.modal-x {
+  position: absolute; top: 14px; right: 14px; z-index: 5;
+  width: 36px; height: 36px; padding: 0;
+  border: 1px solid #eadfce; background: #fff; border-radius: 10px;
+  cursor: pointer; font-size: 20px; line-height: 1; color: #1a0f0a;
+}
+.modal-x:hover { background: #fff4e5; }
+.modal-x:disabled { opacity: .4; cursor: not-allowed; }
+body.dark-mode .modal-x { background: var(--surface); border-color: var(--border); color: var(--text-900); }
+.vt-det-head { padding-right: 48px; }
+
+/* ===== Requisitos de contraseña (mismo look que el registro) ===== */
+.barra-contrasena { width: 100%; height: 8px; border-radius: 999px; background: rgba(44, 24, 16, 0.12); overflow: hidden; margin-top: 12px; }
+.barra-contrasena-fill { display: block; height: 100%; border-radius: 999px; transition: width .35s ease, background .35s ease; }
+.barra-contrasena.rojo .barra-contrasena-fill { background: linear-gradient(90deg, #d93025, #f77e4f); }
+.barra-contrasena.amarillo .barra-contrasena-fill { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.barra-contrasena.verde .barra-contrasena-fill { background: linear-gradient(90deg, #16a34a, #4ade80); }
+
+.requisitos { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.requisito { font-size: 13.5px; font-weight: 600; color: #a0522d; display: flex; align-items: center; gap: 8px; line-height: 1.3; transition: color .2s; }
+.requisito.cumple { color: #1e8e3e; }
+
+body.dark-mode .barra-contrasena { background: rgba(255, 255, 255, 0.12); }
+body.dark-mode .requisito { color: #e8915a; }
+
+/* ===== Tablas del admin (modo claro): cabecera blanca, cuadrícula y borde cerrado ===== */
+body:not(.dark-mode) .data-table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  border: 1px solid #e3d3bb;               /* borde exterior completo */
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+/* Cabecera blanca */
+body:not(.dark-mode) .data-table thead,
+body:not(.dark-mode) .data-table thead th {
+  background: #fff !important;
+}
+body:not(.dark-mode) .data-table thead th {
+  color: #6b4a2b;
+  font-weight: 800;
+}
+
+/* Líneas verticales y horizontales entre celdas */
+body:not(.dark-mode) .data-table th,
+body:not(.dark-mode) .data-table td {
+  border: none;
+  border-right: 1px solid #eadfce;
+  border-bottom: 1px solid #eadfce;
+}
+body:not(.dark-mode) .data-table thead th {
+  border-bottom: 2px solid #e8821a;        /* línea naranja bajo la cabecera */
+}
+
+/* Sin doble línea junto al borde exterior */
+body:not(.dark-mode) .data-table tr > *:last-child { border-right: none; }
+body:not(.dark-mode) .data-table tbody tr:last-child > * { border-bottom: none; }
+body:not(.dark-mode) .data-table tbody tr { border-bottom: none; }
+
+/* ===== Líneas negras en las tablas (modo claro) ===== */
+body:not(.dark-mode) .data-table {
+  border-color: #1a0f0a;
+}
+body:not(.dark-mode) .data-table th,
+body:not(.dark-mode) .data-table td {
+  border-right-color: #1a0f0a;
+  border-bottom-color: #1a0f0a;
+}
+body:not(.dark-mode) .data-table thead th {
+  border-bottom: 2px solid #1a0f0a;   /* línea bajo la cabecera, también negra */
+}
+
+/* ===== Tablas del admin: cuadrícula suave (recomendado) ===== */
+body:not(.dark-mode) .data-table {
+  border: 1px solid #d9c6a8;
+  border-radius: 16px;
+}
+body:not(.dark-mode) .data-table th,
+body:not(.dark-mode) .data-table td {
+  border-right: 1px solid #eadfce;
+  border-bottom: 1px solid #eadfce;
+}
+
+/* Cabecera crema con línea naranja */
+body:not(.dark-mode) .data-table thead,
+body:not(.dark-mode) .data-table thead th {
+  background: #fffaf3 !important;
+}
+body:not(.dark-mode) .data-table thead th {
+  color: #6b4a2b;
+  border-bottom: 2px solid #e8821a;
+  border-right-color: #eadfce;
+}
+
+/* Fila al pasar el mouse */
+body:not(.dark-mode) .data-table tbody tr:hover > td {
+  background: #fff8ef;
+}
+
+/* ===== Encabezados y celdas con el mismo espaciado en todas las tablas ===== */
+body:not(.dark-mode) .data-table thead th {
+  padding: 16px 22px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  white-space: nowrap;          /* "DISPONIBILIDAD" ya no se pega a la línea */
+  vertical-align: middle;
+}
+body:not(.dark-mode) .data-table tbody td {
+  padding: 14px 22px;           /* el texto de las filas queda alineado con su encabezado */
+  vertical-align: middle;
+}
+
+/* Columna Acciones centrada (encabezado y botones) */
+body:not(.dark-mode) .data-table thead th.th-acciones { text-align: center; }
+body:not(.dark-mode) .data-table:has(th.th-acciones) tbody td:last-child {
+  text-align: center;
+  white-space: nowrap;
+}
+/* Botones Editar / Eliminar centrados en las tarjetas */
+.mn-grid .mn-table-actions {
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px 18px;
+}
+
+/* ===== Tablas de Menú, Promociones y Proveedores (.mn-table), mismo estilo que .data-table ===== */
+body:not(.dark-mode) .mn-table-wrap {
+  border: 1px solid #d9c6a8;
+  border-radius: 16px;
+  background: #fff;
+}
+
+/* Cabecera crema con línea naranja */
+body:not(.dark-mode) .mn-table thead th {
+  background: #fffaf3;
+  color: #6b4a2b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  padding: 16px 22px;
+  white-space: nowrap;
+  vertical-align: middle;
+  border-bottom: 2px solid #e8821a;
+}
+
+/* Cuadrícula (líneas verticales y horizontales) */
+body:not(.dark-mode) .mn-table th,
+body:not(.dark-mode) .mn-table td {
+  border-right: 1px solid #eadfce;
+}
+body:not(.dark-mode) .mn-table tbody td {
+  padding: 14px 22px;
+  border-bottom: 1px solid #eadfce;
+  vertical-align: middle;
+}
+body:not(.dark-mode) .mn-table tr > *:last-child { border-right: none; }
+body:not(.dark-mode) .mn-table tbody tr:last-child td { border-bottom: none; }
+body:not(.dark-mode) .mn-table tbody tr:hover > td { background: #fff8ef; }
+
+/* Columna Acciones centrada */
+body:not(.dark-mode) .mn-table thead th.th-acciones { text-align: center; }
+.mn-table .mn-table-actions { justify-content: center; }
+
+/* ===== Scroll fino en todos los modales, sin tocar las esquinas redondeadas ===== */
+.modal-overlay *::-webkit-scrollbar,
+.mn-modal-overlay *::-webkit-scrollbar { width: 8px; height: 8px; }
+
+.modal-overlay *::-webkit-scrollbar-track,
+.mn-modal-overlay *::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 20px 0;               /* separa la barra de las esquinas redondeadas */
+}
+
+.modal-overlay *::-webkit-scrollbar-thumb,
+.mn-modal-overlay *::-webkit-scrollbar-thumb {
+  background: #e0c9a6;
+  border-radius: 999px;
+}
+.modal-overlay *::-webkit-scrollbar-thumb:hover,
+.mn-modal-overlay *::-webkit-scrollbar-thumb:hover { background: #e8821a; }
+
+.modal-overlay *::-webkit-scrollbar-button,
+.mn-modal-overlay *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+/* Firefox (no entiende ::-webkit-scrollbar) */
+@supports not selector(::-webkit-scrollbar) {
+  .modal-overlay *, .mn-modal-overlay * { scrollbar-width: thin; scrollbar-color: #e0c9a6 transparent; }
+}

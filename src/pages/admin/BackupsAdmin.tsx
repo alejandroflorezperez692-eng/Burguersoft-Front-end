@@ -5,10 +5,8 @@ import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import { useToast } from '../../components/Toast';
 import { MENSAJE_DESCONOCIDO, mensajeSeguro } from '../../utils/errores';
+import { useEscape } from '../../hooks/useEscape';
 
-/* ------------------------------------------------------------------ */
-/* Estilos locales (autocontenidos, mismas variables que el resto)      */
-/* ------------------------------------------------------------------ */
 const BACKUPS_CSS = `
 .bk-pw{position:relative}
 .bk-pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;padding:0;font-family:inherit;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-600)}
@@ -208,6 +206,11 @@ export default function BackupsAdmin() {
 
   // Listado de copias en Google Drive
   const [modalDrive, setModalDrive] = useState(false);
+  useEscape([
+    [modalGen && !generando, () => setModalGen(false)],
+    [!!restoreSel && !restaurando, () => setRestoreSel(null)],
+    [modalDrive, () => setModalDrive(false)],
+  ]);
   const [driveArchivos, setDriveArchivos] = useState<ArchivoDrive[]>([]);
   const [cargandoDrive, setCargandoDrive] = useState(false);
 
@@ -603,7 +606,7 @@ export default function BackupsAdmin() {
                             className="btn-icon btn-icon-restore btn-accion"
                             onClick={() => abrirModalRestore(b)}
                             disabled={ocupado}
-                            title="Restaurar esta copia"
+                            title="Restaurar"
                           >
                             Restaurar
                           </button>
@@ -621,7 +624,7 @@ export default function BackupsAdmin() {
                                 className="btn-accion"
                                 onClick={() => subirDrive(b)}
                                 disabled={ocupado || subiendoDrive === b.id}
-                                title="Subir esta copia a Google Drive"
+                                title="A Drive"
                               >
                                 {subiendoDrive === b.id ? 'Subiendo…' : 'A Drive'}
                               </button>
@@ -630,7 +633,7 @@ export default function BackupsAdmin() {
                                 className="btn-accion"
                                 onClick={() => descargarDeDrive(b)}
                                 disabled={ocupado || descargandoId === b.id}
-                                title="Descargar esta copia desde Google Drive"
+                                title="De Drive"
                               >
                                 {descargandoId === b.id ? 'Descargando…' : 'De Drive'}
                               </button>
@@ -640,7 +643,7 @@ export default function BackupsAdmin() {
                             className="btn-icon btn-icon-del btn-accion"
                             onClick={() => del(b)}
                             disabled={ocupado}
-                            title="Eliminar este registro"
+                            title="Eliminar"
                           >
                             Eliminar
                           </button>
@@ -698,6 +701,7 @@ export default function BackupsAdmin() {
       {modalGen && (
         <div className="modal-overlay open" onClick={() => { if (!generando) setModalGen(false); }}>
           <div className="modal-box" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="modal-x" disabled={generando} onClick={() => setModalGen(false)} aria-label="Cerrar">×</button>   {/* ➕ */}
             <h2>Generar copia de seguridad</h2>
             <p className="bk-desc">
               Se generará una copia <strong>completa de la base de datos</strong> en un archivo SQL cifrado
@@ -735,6 +739,7 @@ export default function BackupsAdmin() {
       {restoreSel && (
         <div className="modal-overlay open" onClick={() => { if (!restaurando) setRestoreSel(null); }}>
           <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="modal-x" disabled={restaurando} onClick={() => setRestoreSel(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
             <h2>Restaurar copia de seguridad</h2>
             <p className="bk-desc">
               Copia <strong>#{restoreSel.id}</strong> — {resumenContenido(restoreSel).texto}, del{' '}
@@ -802,6 +807,7 @@ export default function BackupsAdmin() {
       {modalDrive && (
         <div className="modal-overlay open" onClick={() => setModalDrive(false)}>
           <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="modal-x" onClick={() => setModalDrive(false)} aria-label="Cerrar">×</button>   {/* ➕ */}
             <h2>Copias en Google Drive</h2>
             {driveArchivos.length > 0 ? (
               <div style={{ maxHeight: 340, overflowY: 'auto', marginBottom: 8 }}>

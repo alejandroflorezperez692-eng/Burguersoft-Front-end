@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from './Toast';
 import apiClient from '../api/client';
+import { normalizarRol } from '../utils/roles';
 import {
   formatearTelefono,
   maxLenDocumento,
@@ -16,8 +17,9 @@ import { mensajeError } from '../utils/errores';
 type Tab = 'datos' | 'pwd' | 'info';
 
 export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { showToast } = useToast();
+  const esCliente = normalizarRol(user?.role) === 'cliente';
   // Si el usuario ya editó algo, la respuesta tardía de /me no debe borrarlo.
   const dirtyRef = useRef(false);
   const abiertoRef = useRef(false);
@@ -92,15 +94,31 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
   const handleGuardarDatos = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const err = validarDatos({ nombre, apellido, tdoc, ndoc, telefono });
+    const err = validarDatos(
+      { nombre, apellido, tdoc, ndoc, telefono },
+      { validarNumeroDocumento: !esCliente },
+    );
     if (err) { showToast(err, true); return; }
     const nombreCompleto = `${nombre.trim()} ${apellido.trim()}`.trim();
     try {
-      await apiClient.put('/perfil', { nombre, apellido, Tdocumento: tdoc, Ndocumento: ndoc, telefono });
+      await apiClient.put('/perfil', {
+        nombre,
+        apellido,
+        Tdocumento: tdoc,
+        ...(esCliente ? {} : { Ndocumento: ndoc }),
+        telefono,
+      });
       showToast('Datos actualizados correctamente.');
       // actualizar contexto + local para que no se revierta al reabrir
       updateUser({ name: nombreCompleto });
-      localStorage.setItem('perfil_extra', JSON.stringify({ Tdocumento: tdoc, Ndocumento: ndoc, telefono }));
+      localStorage.setItem(
+        'perfil_extra',
+        JSON.stringify({
+          Tdocumento: tdoc,
+          ...(esCliente ? {} : { Ndocumento: ndoc }),
+          telefono,
+        }),
+      );
     } catch {
       showToast('No se pudieron actualizar los datos. Intenta de nuevo.', true);
     }
@@ -115,8 +133,9 @@ const handlePassword = async (e: React.FormEvent) => {
   setEnviandoPwd(true);
   try {
     await apiClient.post('/perfil/password', { actual, nueva, confirmar });
-    showToast('Contraseña actualizada correctamente.');
-    setActual(''); setNueva(''); setConfirmar('');
+    sessionStorage.setItem('login_toast', 'password_ok');
+    logout();
+    window.location.replace('/login');
   } catch (err) {
     const msg = mensajeError(err, 'No se pudo actualizar la contraseña');
     if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
@@ -156,7 +175,7 @@ const handlePassword = async (e: React.FormEvent) => {
 
 
           <div className="mp-tabs-container">
-            <button type="button" className={`mp-tab ${tab === 'datos' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('datos'); }}>
+            <button type="button" className={`mp-tab ${tab === 'datos' ? 'mp-tab-active' : ''}`} data-tooltip="Mis datos" onClick={() => { setTab('datos'); }}>
               <span className="mp-tab-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="4.5" width="18" height="15" rx="2.5" />
@@ -166,7 +185,7 @@ const handlePassword = async (e: React.FormEvent) => {
                 </svg>
               </span><span className="mp-tab-label">Mis datos</span>
             </button>
-            <button type="button" className={`mp-tab ${tab === 'pwd' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('pwd'); }}>
+            <button type="button" className={`mp-tab ${tab === 'pwd' ? 'mp-tab-active' : ''}`} data-tooltip="Contraseña" onClick={() => { setTab('pwd'); }}>
               <span className="mp-tab-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="8" cy="14" r="4.5" />
@@ -175,7 +194,7 @@ const handlePassword = async (e: React.FormEvent) => {
                 </svg>
               </span><span className="mp-tab-label">Contraseña</span>
             </button>
-            <button type="button" className={`mp-tab ${tab === 'info' ? 'mp-tab-active' : ''}`} onClick={() => { setTab('info'); }}>
+            <button type="button" className={`mp-tab ${tab === 'info' ? 'mp-tab-active' : ''}`} data-tooltip="Cuenta" onClick={() => { setTab('info'); }}>
               <span className="mp-tab-icon" aria-hidden="true">
                 <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6l7-3Z" />
@@ -229,7 +248,17 @@ const handlePassword = async (e: React.FormEvent) => {
                 </div>
                 <div className="mp-field">
                   <label className="mp-label">Número de documento <span className="mp-req">*</span></label>
-                  <input type="text" value={ndoc} onChange={(e) => setNdoc(e.target.value.replace(/[^0-9A-Za-z]/g, ''))} placeholder="Número de documento" maxLength={maxLenDoc} required />
+                  <input
+                    type="text"
+                    value={ndoc}
+                    onChange={(e) => setNdoc(e.target.value.replace(/[^0-9A-Za-z]/g, ''))}
+                    placeholder="Número de documento"
+                    maxLength={maxLenDoc}
+                    required={!esCliente}
+                    disabled={esCliente}
+                    readOnly={esCliente}
+                  />
+                  {esCliente && <span className="mp-hint">El número de documento no se puede cambiar.</span>}
                 </div>
                 <div className="mp-field mp-full">
                   <label className="mp-label">Teléfono <span className="mp-req">*</span></label>

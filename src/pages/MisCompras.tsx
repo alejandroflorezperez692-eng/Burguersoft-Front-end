@@ -3,6 +3,7 @@ import PublicHeader from '../components/PublicHeader';
 import MotivoModal from '../components/MotivoModal';
 import Footer from '../components/Footer';
 import apiClient from '../api/client';
+import { getEcho } from '../api/echo';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 import '../styles/mis-pedidos.css';
@@ -25,7 +26,20 @@ type PedidoUI = {
   metodo_pago?: string;
   total: number;
   items: ItemUI[];
+  telefono?: string;
+  direccion?: string;
+  barrio?: string;
+  referencia?: string;
+  cliente_nombre?: string;
+  notas?: string;
 };
+
+/** Devuelve el texto limpio o undefined si viene vacío/null. */
+function texto(valor: unknown): string | undefined {
+  if (valor === null || valor === undefined) return undefined;
+  const limpio = String(valor).trim();
+  return limpio !== '' ? limpio : undefined;
+}
 
 // Reutiliza los mismos pasos que la vista PHP original
 const PASOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'];
@@ -54,12 +68,12 @@ function pasosPara(tipoEntrega: string): string[] {
   return PASOS_CONSUMIR;
 }
 
-/** Progreso 0-100. Antes era (actual/total)*100 y nunca llegaba al 100%. */
+/** Progreso 0-100 sobre la línea, medido entre el primer y el último paso. */
 function calcularProgreso(pasoActual: number, totalPasos: number): number {
   if (totalPasos <= 1) return 100;
   if (pasoActual <= 0) return 0;
   if (pasoActual >= totalPasos - 1) return 100;
-  return Math.round((pasoActual / (totalPasos - 1)) * 100);
+  return (pasoActual / (totalPasos - 1)) * 100;
 }
 
 function formatearFecha(fecha: string): string {
@@ -77,6 +91,17 @@ function formatearFecha(fecha: string): string {
 
 function formatoMoneda(valor: number): string {
   return `$${Number(valor ?? 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`;
+}
+
+/** Muestra el teléfono en formato legible (300 123 4567) cuando es posible. */
+function formatearTelefono(valor?: string): string | undefined {
+  if (!valor) return undefined;
+  let digitos = valor.replace(/\D/g, '');
+  if (digitos.length === 12 && digitos.startsWith('57')) digitos = digitos.slice(2);
+  if (digitos.length === 10) {
+    return `${digitos.slice(0, 3)} ${digitos.slice(3, 6)} ${digitos.slice(6)}`;
+  }
+  return valor;
 }
 
 // Acepta las formas que puede devolver el backend:
@@ -120,6 +145,12 @@ function normalizarPedidos(raw: any): PedidoUI[] {
           metodo_pago: f.metodo_pago ? String(f.metodo_pago) : undefined,
           total: 0,
           items: [],
+          telefono: texto(f.telefono_contacto ?? f.telefono),
+          direccion: texto(f.direccion),
+          barrio: texto(f.barrio),
+          referencia: texto(f.referencia),
+          cliente_nombre: texto(f.cliente_nombre),
+          notas: texto(f.notas),
           valorTotalBD: f.valor_total !== undefined ? Number(f.valor_total) : undefined,
         });
       }
@@ -207,6 +238,18 @@ function normalizarPedidos(raw: any): PedidoUI[] {
         metodo_pago: v.metodo_pago ? String(v.metodo_pago) : undefined,
         total: Number.isFinite(totalBD) && totalBD > 0 ? totalBD : totalCalculado,
         items: detalles,
+        // Si la venta no guardó el teléfono (compras antiguas), se usa el del
+        // usuario registrado como respaldo.
+        telefono: texto(
+          v.telefono_contacto ?? v.telefono ?? v.usuario?.telefono ?? v.usuario?.phone,
+        ),
+        direccion: texto(v.direccion),
+        barrio: texto(v.barrio),
+        referencia: texto(v.referencia),
+        cliente_nombre:
+          texto(v.cliente_nombre) ??
+          texto(`${v.usuario?.nombre ?? ''} ${v.usuario?.apellido ?? ''}`),
+        notas: texto(v.notas),
       };
     })
     .filter((p): p is PedidoUI => p !== null);
@@ -234,7 +277,7 @@ function asignarSecuenciales(pedidos: PedidoUI[]): PedidoUI[] {
   return ordenados.map((p, i) => ({ ...p, numero_secuencial: total - i }));
 }
 
-export default function MisPedidos() {
+export default function MisCompras() {
   const { isAuthenticated, user } = useAuth();
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoUI | null>(null);
   const [pedidoARechazar, setPedidoARechazar] = useState<PedidoUI | null>(null);
@@ -244,9 +287,11 @@ export default function MisPedidos() {
   const [rechazandoId, setRechazandoId] = useState<number | null>(null);
   const [cargando, setCargando] = useState(false);
 
-  const cargar = useCallback(async () => {
-    setError(null);
-    setCargando(true);
+  const cargar = useCallback(async (silencioso = false) => {
+    if (!silencioso) {
+      setError(null);
+      setCargando(true);
+    }
     try {
       // 1) Ruta dedicada (si el backend Laravel la expone)
       try {
@@ -262,8 +307,10 @@ export default function MisPedidos() {
         const status = (e as { response?: { status?: number } })?.response?.status;
         // 401 sí es definitivo; 404 seguimos al fallback
         if (status === 401) {
-          setError('Tu sesión expiró. Inicia sesión de nuevo para ver tus pedidos.');
-          setPedidos([]);
+          if (!silencioso) {
+            setError('Tu sesión expiró. Inicia sesión de nuevo para ver tus compras.');
+            setPedidos([]);
+          }
           return;
         }
       }
@@ -294,15 +341,18 @@ export default function MisPedidos() {
       }
       setPedidos(lista);
     } catch (e: unknown) {
+      // En un refresco automático no borramos lo que ya se está mostrando
+      // por un fallo puntual de red.
+      if (silencioso) return;
       const err = e as { response?: { status?: number } };
       if (err?.response?.status === 401) {
-        setError('Tu sesión expiró. Inicia sesión de nuevo para ver tus pedidos.');
+        setError('Tu sesión expiró. Inicia sesión de nuevo para ver tus compras.');
       } else {
-        setError('No se pudieron cargar tus pedidos. Intenta de nuevo más tarde.');
+        setError('No se pudieron cargar tus compras. Intenta de nuevo más tarde.');
       }
       setPedidos([]);
     } finally {
-      setCargando(false);
+      if (!silencioso) setCargando(false);
     }
   }, [user?.id]);
 
@@ -313,12 +363,43 @@ export default function MisPedidos() {
       setPedidos([]);
       return;
     }
+
     void cargar();
-    // Auto-refresco cada 30s para ver cambios de estado (cocina/barra/camino)
+
+    // Actualización instantánea: el administrador emite este evento al cambiar
+    // el estado de cualquier pedido (mismo canal que usa el tablero de cocina).
+    const echo = getEcho();
+    const alCambiarEstado = (payload: { id?: number; estado?: string }) => {
+      if (!payload?.id || !payload.estado) return;
+      setPedidos((prev) =>
+        prev === null
+          ? prev
+          : prev.map((p) =>
+              p.id === Number(payload.id) ? { ...p, estado: String(payload.estado) } : p,
+            ),
+      );
+    };
+    echo?.channel('cocina').listen('.venta.actualizada', alCambiarEstado);
+
+    // Respaldo: sin websocket, refrescamos seguido para que el estado que
+    // cambia el administrador se refleje sin recargar la página.
     const t = window.setInterval(() => {
-      void cargar();
-    }, 30000);
-    return () => window.clearInterval(t);
+      if (!document.hidden) void cargar(true);
+    }, echo ? 60000 : 10000);
+
+    // Al volver a la pestaña, refrescamos de inmediato.
+    const alVolver = () => {
+      if (!document.hidden) void cargar(true);
+    };
+    window.addEventListener('focus', alVolver);
+    document.addEventListener('visibilitychange', alVolver);
+
+    return () => {
+      window.clearInterval(t);
+      window.removeEventListener('focus', alVolver);
+      document.removeEventListener('visibilitychange', alVolver);
+      echo?.channel('cocina').stopListening('.venta.actualizada', alCambiarEstado);
+    };
   }, [isAuthenticated, cargar]);
 
   const cancelarPedido = (pedido: PedidoUI) => {
@@ -390,7 +471,7 @@ export default function MisPedidos() {
       <div className="public-body">
         <PublicHeader />
         <div style={{ maxWidth: 800, margin: '60px auto', textAlign: 'center', padding: 24 }}>
-          <h2>Debes iniciar sesión para ver tus pedidos</h2>
+          <h2>Debes iniciar sesión para ver tus compras</h2>
           <Link
             to="/login"
             style={{
@@ -417,9 +498,9 @@ export default function MisPedidos() {
       <PublicHeader />
       <div className="mis-pedidos-page">
         <div className="mis-pedidos-header">
-          <h1>Mis Pedidos</h1>
+          <h1>Mis Compras</h1>
           <p>
-            Hola{user?.name ? `, ${user.name}` : ''}, aquí puedes ver el estado de tus pedidos.
+            Hola{user?.name ? `, ${user.name}` : ''}, aquí puedes ver el estado de tus compras.
           </p>
         </div>
 
@@ -449,7 +530,7 @@ export default function MisPedidos() {
           <p style={{ textAlign: 'center', color: '#888' }}>Cargando…</p>
         ) : pedidos.length === 0 ? (
           <div className="pedidos-empty">
-            <p>Aún no tienes pedidos registrados.</p>
+            <p>Aún no tienes compras registradas.</p>
             <Link to="/menu-publico">Ver el menú</Link>
           </div>
         ) : (
@@ -475,11 +556,24 @@ export default function MisPedidos() {
               }
             }
             const totalPasos = pasos.length;
+            // Centro del primer y último círculo: la línea debe empezar y
+            // terminar exactamente ahí, no en los bordes del contenedor.
             const halfStep = 50 / totalPasos;
-            const fillWidth = sinProgreso ? 0 : calcularProgreso(pasoActual, totalPasos);
+            const anchoDisponible = 100 - 2 * halfStep;
+            const fillWidth = sinProgreso
+              ? 0
+              : (anchoDisponible * calcularProgreso(pasoActual, totalPasos)) / 100;
             const esCancelable = CANCELABLES.includes(estado);
             const esRechazable = RECHAZABLES.includes(estado);
             const estaCancelando = cancelandoId === p.id;
+            const direccionTexto =
+              p.tipo_entrega === 'Domicilio'
+                ? [p.direccion, p.barrio ? `Barrio ${p.barrio}` : undefined, p.referencia]
+                    .filter(Boolean)
+                    .join(' · ') || 'No registrada'
+                : p.tipo_entrega === 'Para recoger'
+                  ? 'Recoge en el local'
+                  : 'Consumo en el restaurante';
 
             return (
               <div className="pedido-card" key={p.id}>
@@ -523,6 +617,33 @@ export default function MisPedidos() {
                   ) : (
                     <div className="progreso-cancelado">
                       <span>{cancelado ? 'Este pedido fue cancelado.' : 'Este pedido fue rechazado.'}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pedido-info">
+                  <div className="pedido-info-item">
+                    <span className="pedido-info-label">Cliente</span>
+                    <span className="pedido-info-valor">
+                      {p.cliente_nombre ?? user?.name ?? '—'}
+                    </span>
+                  </div>
+                  <div className="pedido-info-item">
+                    <span className="pedido-info-label">Teléfono</span>
+                    <span className="pedido-info-valor">
+                      {formatearTelefono(p.telefono) ?? 'No registrado'}
+                    </span>
+                  </div>
+                  <div className="pedido-info-item pedido-info-full">
+                    <span className="pedido-info-label">
+                      {p.tipo_entrega === 'Domicilio' ? 'Dirección de entrega' : 'Entrega'}
+                    </span>
+                    <span className="pedido-info-valor">{direccionTexto}</span>
+                  </div>
+                  {p.notas && (
+                    <div className="pedido-info-item pedido-info-full">
+                      <span className="pedido-info-label">Notas</span>
+                      <span className="pedido-info-valor pedido-info-notas">{p.notas}</span>
                     </div>
                   )}
                 </div>

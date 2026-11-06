@@ -168,8 +168,8 @@ export default function InventarioAdmin() {
                 <th>Nombre del insumo</th>
                 <th>Tipo</th>
                 <th>Cantidad</th>
-                <th>Stock</th>
-                <th>Acciones</th>
+                <th>Cantidad</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -194,6 +194,7 @@ export default function InventarioAdmin() {
                       className="mn-btn-edit"
                       style={{ flex: 'none', padding: '7px 18px' }}
                       onClick={() => setDetalle(m)}
+                      data-tooltip="Ver detalle"
                     >
                       Ver detalle
                     </button>
@@ -221,6 +222,7 @@ export default function InventarioAdmin() {
             style={{ maxWidth: 460, textAlign: 'left' }}
             onClick={(e) => e.stopPropagation()}
           >
+            <button type="button" className="modal-x" onClick={() => setDetalle(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
             <h3 style={{ margin: '0 0 4px', fontSize: 20 }}>{detalle.nombre}</h3>
             <div style={{ marginBottom: 14 }}>
               <span className={`badge ${claseBadge(detalle.cantidad)}`}>{textoEstado(detalle.cantidad)}</span>

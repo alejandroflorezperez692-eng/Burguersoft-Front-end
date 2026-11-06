@@ -364,7 +364,7 @@ export default function MateriaPrimaAdmin() {
                 <th>Disponibilidad</th>
                 <th>Estado</th>
                 <th>Proveedor</th>
-                <th>Acciones</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -394,13 +394,14 @@ export default function MateriaPrimaAdmin() {
                   <td>{marcaNombre(m?.marca_id) || '—'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)}>Editar</button>
+                      <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
                       <button
                         type="button"
                         className={esInactivo(m) ? 'mn-btn-edit' : 'mn-btn-del'}
                         style={{ flex: 'none', padding: '7px 18px' }}
                         disabled={cambiandoId === m?.id}
                         onClick={() => (esInactivo(m) ? alternarEstado(m) : setDesactivar(m))}
+                        data-tooltip={esInactivo(m) ? 'Activar' : 'Desactivar'}
                       >
                         {esInactivo(m) ? 'Activar' : 'Desactivar'}
                       </button>
@@ -419,9 +420,10 @@ export default function MateriaPrimaAdmin() {
       {!loading && <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />}
 
       {modal && (
-        <div className="modal-overlay open" onClick={() => setModal(false)}>
-          <div className="modal-box" style={{ maxWidth: 560, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar Materia Prima</h2>
+      <div className="modal-overlay open" onClick={() => setModal(false)}>
+        <div className="modal-box" style={{ maxWidth: 560, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
+          <button type="button" className="modal-x" onClick={() => setModal(false)} aria-label="Cerrar">×</button>
+          <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar Materia Prima</h2>
 
             <div className="form-group" style={{ marginBottom: 14 }}>
               <label>Nombre del insumo<span className="mn-req">*</span></label>

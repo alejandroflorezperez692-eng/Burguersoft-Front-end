@@ -14,7 +14,7 @@ import RestablecerContrasena from './pages/RestablecerContrasena';
 import Inicio from './pages/Inicio';
 import Home from './pages/Home';
 import Nosotros from './pages/Nosotros';
-import MisPedidos from './pages/MisPedidos';
+import MisCompras from './pages/MisCompras';
 import MarcasAdmin from './pages/admin/MarcasAdmin';
 import UsuariosAdmin from './pages/admin/UsuariosAdmin';
 import MenuAdmin from './pages/admin/MenuAdmin';
@@ -38,11 +38,14 @@ import AyudaCliente from './pages/AyudaCliente';
 import { ACCESO } from './utils/roles';
 import { ToastProvider } from './components/Toast';
 import InventarioAdmin from './pages/admin/InventarioAdmin';
+import TooltipsGlobales from './components/TooltipsGlobales';
+import ScrollToTop from './components/ScrollToTop';
 
 
 export default function App() {
   return (
     <ToastProvider>
+      <TooltipsGlobales />
       <DemoAccess />
       <Routes>
       <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
@@ -52,7 +55,7 @@ export default function App() {
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/menu-publico" element={<MenuPublico />} />
           <Route path="/contactanos" element={<Contactanos />} />
-          <Route path="/mis-pedidos" element={<MisPedidos />} />
+          <Route path="/mis-compras" element={<MisCompras />} />
           <Route path="/checkout" element={<Checkout />} />
         </Route>
         <Route path="/" element={<Home />} />
@@ -60,7 +63,7 @@ export default function App() {
         <Route path="/menu-publico" element={<MenuPublico />} />
         <Route path="/contactanos" element={<Contactanos />} />
         <Route path="/terminos-y-condiciones" element={<TerminosPrivacidad />} />
-        <Route path="/mis-pedidos" element={<MisPedidos />} />
+        <Route path="/mis-compras" element={<MisCompras />} />
         <Route path="/checkout" element={<Checkout />} />
       </Route>
 
@@ -75,7 +78,9 @@ export default function App() {
       <Route path="/ayuda" element={<Ayuda />} />
 
       <Route element={<ProtectedRoute roles={['cliente']} redirect="/" />}>
-        <Route path="/ayuda-cliente" element={<AyudaCliente />} />
+        <Route element={<ConAsistenteCliente />}>
+          <Route path="/ayuda-cliente" element={<AyudaCliente />} />
+        </Route>
       </Route>
 
       {/* Panel interno: admin, cajero, cocinero y mesero comparten el mismo layout */}
@@ -119,8 +124,12 @@ export default function App() {
         </Route>
       </Route>
 
+      {/* Ruta anterior: se conserva para no romper enlaces o favoritos viejos */}
+      <Route path="/mis-pedidos" element={<Navigate to="/mis-compras" replace />} />
+
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <ScrollToTop />
       <Accesibilidad />
     </ToastProvider>
   );

@@ -231,14 +231,14 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
 
           <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
             <button type="button" className={vista === 'lista' ? 'active' : ''}
-              onClick={() => setVista('lista')} title="Vista de lista" aria-pressed={vista === 'lista'}>
+              onClick={() => setVista('lista')} title="Vista de lista" data-tooltip="Vista de lista" aria-pressed={vista === 'lista'}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                 <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
               </svg>
             </button>
             <button type="button" className={vista === 'tarjetas' ? 'active' : ''}
-              onClick={() => setVista('tarjetas')} title="Vista de tarjetas" aria-pressed={vista === 'tarjetas'}>
+              onClick={() => setVista('tarjetas')} title="Vista de tarjetas" data-tooltip="Vista de tarjeta" aria-pressed={vista === 'tarjetas'}>
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
@@ -296,7 +296,7 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
                   <th>NIT</th>
                   <th>Teléfono</th>
                   <th>Correo</th>
-                  <th>Acciones</th>
+                  <th className="th-acciones">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -322,8 +322,8 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
                       {esAdmin && (
                         <td>
                           <div className="mn-table-actions">
-                            <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)}>Editar</button>
-                            <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)}>Eliminar</button>
+                            <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
+                            <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)} data-tooltip="Eliminar">Eliminar</button>
                           </div>
                         </td>
                       )}
@@ -373,8 +373,8 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
               <span className="detalle-estado dot-activo">ID {detalle.id}</span>
               {esAdmin && (
                 <div className="detalle-actions">
-                  <button className="btn-det-editar" onClick={() => openEdit(detalle)}>Editar</button>
-                  <button className="btn-det-eliminar" onClick={() => pedirEliminar(detalle.id)}>Eliminar</button>
+                  <button className="btn-det-editar" onClick={() => openEdit(detalle)} data-tooltip="Editar">Editar</button>
+                  <button className="btn-det-eliminar" onClick={() => pedirEliminar(detalle.id)} data-tooltip="Eliminar">Eliminar</button>
                 </div>
               )}
             </div>
@@ -394,6 +394,7 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
           <div className="modal-box" style={{ maxWidth: 560, padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ background: 'var(--text-900)', padding: '18px 28px', flexShrink: 0 }}>
               <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--surface)' }}>{editId ? 'Editar Proveedor' : 'Nuevo Proveedor'}</h3>
+              <button type="button" className="mn-form-cerrar" onClick={() => setModal(false)} aria-label="Cerrar">×</button>
             </div>
             <div style={{ padding: '24px 32px 28px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
 
