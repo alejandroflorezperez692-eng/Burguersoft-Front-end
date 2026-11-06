@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_URL } from './config';
 import {
   MENSAJE_DESCONOCIDO,
   MENSAJE_SERVIDOR,
@@ -6,7 +7,7 @@ import {
 } from '../utils/errores';
 
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: API_URL,
   timeout: 50000,
   headers: {
     'Content-Type': 'application/json',

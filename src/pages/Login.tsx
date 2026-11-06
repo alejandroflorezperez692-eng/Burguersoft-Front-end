@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
 import { IconoToast, useToast } from '../components/Toast';
 import '../styles/social-login.css';
+import { API_URL } from '../api/config';
 import { rutaInicio } from '../utils/roles';
 import { mensajeError } from '../utils/errores';
 
@@ -37,10 +38,16 @@ export default function Login() {
   };
   const [aviso, setAviso] = useState<string | null>(null);
   useEffect(() => {
-    const guardado = sessionStorage.getItem('aviso_login') ?? '';
+    // Se aceptan las dos claves que usa el proyecto: 'aviso_login'
+    // (login, registro, restablecer) y 'login_toast' (perfil).
+    const guardado =
+      sessionStorage.getItem('aviso_login') ?? sessionStorage.getItem('login_toast') ?? '';
     const clave = tipoToast || guardado;
     if (!clave) return;
-    if (guardado) sessionStorage.removeItem('aviso_login');
+    if (guardado) {
+      sessionStorage.removeItem('aviso_login');
+      sessionStorage.removeItem('login_toast');
+    }
     setAviso(MENSAJE_AVISO[clave] ?? null);
     // Se mantiene visible 6 segundos para que se alcance a leer.
     const t = setTimeout(() => setAviso(null), 6000);
@@ -93,7 +100,7 @@ export default function Login() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://127.0.0.1:8000/api/auth/google';
+    window.location.href = `${API_URL}/auth/google`;
   };
 
   if (loading) {

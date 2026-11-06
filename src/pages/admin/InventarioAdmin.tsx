@@ -194,6 +194,7 @@ export default function InventarioAdmin() {
                       className="mn-btn-edit"
                       style={{ flex: 'none', padding: '7px 18px' }}
                       onClick={() => setDetalle(m)}
+                      data-tooltip="Ver detalle"
                     >
                       Ver detalle
                     </button>

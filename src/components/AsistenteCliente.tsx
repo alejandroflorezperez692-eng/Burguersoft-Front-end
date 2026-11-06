@@ -396,6 +396,7 @@ export default function AsistenteCliente() {
           className="burgi-btn"
           onClick={() => { setAbierto(!abierto); setSaludo(false); }}
           aria-label={abierto ? 'Cerrar a Burgi' : 'Abrir a Burgi, el asistente'}
+          data-tooltip="Asistente Burgi"
           title="Burgi, tu asistente"
           style={{
             position: 'relative',

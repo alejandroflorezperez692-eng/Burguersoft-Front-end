@@ -27,7 +27,7 @@ type UsuarioMe = {
 };
 
 export default function ConfiguracionAdmin() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, logout } = useAuth();
   const { showToast } = useToast();
 
   const [nombre, setNombre] = useState('');
@@ -134,10 +134,9 @@ export default function ConfiguracionAdmin() {
     setActualizandoPwd(true);
     try {
       await apiClient.post('/perfil/password', { actual, nueva, confirmar });
-      showToast('Contraseña actualizada correctamente.');
-      setActual('');
-      setNueva('');
-      setConfirmar('');
+      sessionStorage.setItem('login_toast', 'password_ok');
+      logout();
+      window.location.replace('/login');
     } catch (error: unknown) {
       const msg = mensajeError(error, 'No se pudo actualizar la contraseña');
       if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {

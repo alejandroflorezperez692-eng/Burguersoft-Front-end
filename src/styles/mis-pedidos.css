@@ -101,6 +101,32 @@
 }
 .progreso-cancelado span { color: var(--mp-alerta); font-size: 13px; font-weight: 700; }
 
+/* Datos de contacto y entrega de la compra */
+.pedido-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  padding: 16px 22px;
+  background: #fffdf9;
+  border-bottom: 1px solid var(--mp-border);
+}
+.pedido-info-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.pedido-info-full { grid-column: 1 / -1; }
+.pedido-info-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #8a7b6b;
+  font-weight: 700;
+}
+.pedido-info-valor {
+  font-size: 13px;
+  color: var(--mp-primario);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.pedido-info-notas { font-weight: 400; color: #6b5b4b; }
+
 .pedido-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
 .pedido-table thead tr { background: #fbfbfa; }
 .pedido-table th {
@@ -142,6 +168,7 @@
 @media (max-width: 540px) {
   .pedido-table th:nth-child(2), .pedido-table td:nth-child(2) { display: none; }
   .paso-label { font-size: 9px; }
+  .pedido-info { grid-template-columns: 1fr; gap: 10px; }
 }
 
 .mis-pedidos-header { animation: fadeDown .5s ease both; }
@@ -231,6 +258,15 @@ body.dark-mode .progreso-container {
   background: #000000;
   border-color: #333333;
 }
+
+body.dark-mode .pedido-info {
+  background: #080808;
+  border-color: #333333;
+}
+
+body.dark-mode .pedido-info-label { color: #b9a894; }
+body.dark-mode .pedido-info-valor { color: #f0e6da; }
+body.dark-mode .pedido-info-notas { color: #cfc2b4; }
 
 body.dark-mode .pedido-table,
 body.dark-mode .pedido-table thead tr {
