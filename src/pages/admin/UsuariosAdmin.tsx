@@ -419,7 +419,8 @@ export default function UsuariosAdmin() {
       {modal && sel && (
         <div className="modal-overlay open" onClick={() => setModal(false)}>
           <div className="modal-box" style={{ maxWidth: 560, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar Usuario</h2>
+          <button type="button" className="modal-x" onClick={() => setModal(false)} aria-label="Cerrar">×</button>   {/* ➕ */}
+          <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar Usuario</h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
@@ -493,7 +494,7 @@ export default function UsuariosAdmin() {
                 </button>
               </div>
 
-              {password !== '' && (
+                {true && (
                 <>
                   <div
                     className={`barra-contrasena ${claseBarra}`}

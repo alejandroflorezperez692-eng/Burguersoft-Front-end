@@ -21,7 +21,7 @@ interface Producto {
   categoria: string;
   estado: Estado;
   activo?: boolean;
-  adiciones?: { id: number; nombre: string; precio: number | string }[];
+  adiciones?: { id: number; nombre: string; precio: number | string; tipo?: string }[];
 }
 
 const CATEGORIAS = [
@@ -32,6 +32,12 @@ const CATEGORIAS = [
 const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Por agotarse', 'Agotado'];
 
 const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '' };
+
+const MAX_ADICIONES = 30;
+const MAX_QUITAR = 10;
+const MAX_PRECIO_ADICION = 50000;
+type FilaAdicion = { id?: number; nombre: string; precio: string; tipo: 'adicion' | 'quitar' };
+const miles = (v: string) => (v === '' ? '' : Number(v).toLocaleString('es-CO'));
 
 // Minúsculas y sin tildes, para búsquedas tolerantes
 const normalizar = (s: unknown) =>
@@ -109,7 +115,7 @@ export default function MenuAdmin() {
   const [archivo, setArchivo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [imgActual, setImgActual] = useState(false);
-  const [adiciones, setAdiciones] = useState<{ id?: number; nombre: string; precio: string }[]>([]);
+  const [adiciones, setAdiciones] = useState<FilaAdicion[]>([]);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -257,7 +263,12 @@ export default function MenuAdmin() {
     setArchivo(null);
     setPreview(imgValida(p.img) ? p.img : null);
     setImgActual(!!p.img);
-    setAdiciones((p.adiciones ?? []).map((a) => ({ id: a.id, nombre: a.nombre, precio: String(Math.round(Number(a.precio))) })));
+    setAdiciones((p.adiciones ?? []).map((a) => ({
+      id: a.id,
+      nombre: a.nombre,
+      precio: String(Math.round(Number(a.precio))),
+      tipo: a.tipo === 'quitar' ? 'quitar' : 'adicion',
+    })));
     if (fileRef.current) fileRef.current.value = '';
     setMostrarForm(false);
   };
@@ -276,6 +287,32 @@ export default function MenuAdmin() {
       ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
       : undefined;
 
+  const nAdic = adiciones.filter((a) => a.tipo === 'adicion').length;
+  const nQuitar = adiciones.filter((a) => a.tipo === 'quitar').length;
+
+  // Adiciones y personalizaciones ya creadas en otros productos (para reutilizarlas con un clic)
+  const sugeridas = useMemo(() => {
+    const vistos = new Set<string>();
+    const lista: FilaAdicion[] = [];
+    productos.forEach((p) =>
+      (p.adiciones ?? []).forEach((a) => {
+        const tipo = a.tipo === 'quitar' ? 'quitar' : 'adicion';
+        const precio = String(Math.round(Number(a.precio)));
+        const clave = `${tipo}|${a.nombre.toLowerCase()}|${precio}`;
+        if (vistos.has(clave)) return;
+        vistos.add(clave);
+        lista.push({ nombre: a.nombre, precio, tipo });
+      }),
+    );
+    return lista;
+  }, [productos]);
+
+  const yaEsta = (tipo: string, nombre: string) =>
+    adiciones.some((a) => a.tipo === tipo && a.nombre.trim().toLowerCase() === nombre.toLowerCase());
+
+  const sugAdic = sugeridas.filter((s) => s.tipo === 'adicion' && !yaEsta('adicion', s.nombre));
+  const sugQuitar = sugeridas.filter((s) => s.tipo === 'quitar' && !yaEsta('quitar', s.nombre));
+
   /* ---------- Guardar ---------- */
   const guardar = async (e: FormEvent) => {
     e.preventDefault();
@@ -287,8 +324,8 @@ export default function MenuAdmin() {
     if (!form.descripcion.trim()) { showToast('La descripción es obligatoria', true); return; }
     if (!editId && !archivo) { showToast('La imagen es obligatoria', true); return; }
 
-    const filas = adiciones.filter((a) => a.nombre.trim() || a.precio !== '');
-    if (filas.some((a) => !a.nombre.trim() || a.precio === '' || Number(a.precio) < 0)) {
+    const filas = adiciones.filter((a) => a.nombre.trim() || (a.tipo === 'adicion' && a.precio !== ''));
+    if (filas.some((a) => !a.nombre.trim() || (a.tipo === 'adicion' && (a.precio === '' || Number(a.precio) <= 0)))) {
       showToast('Completa el nombre y el precio de cada adición', true);
       return;
     }
@@ -299,7 +336,12 @@ export default function MenuAdmin() {
     fd.append('descripcion', form.descripcion.trim());
     fd.append('categoria', form.categoria);
     fd.append('estado', form.estado);
-    fd.append('adiciones', JSON.stringify(filas.map((a) => ({ id: a.id, nombre: a.nombre.trim(), precio: Number(a.precio) }))));
+    fd.append('adiciones', JSON.stringify(filas.map((a) => ({
+      id: a.id,
+      nombre: a.nombre.trim(),
+      precio: a.tipo === 'quitar' ? 0 : Number(a.precio),
+      tipo: a.tipo,
+    }))));
     if (archivo) fd.append('imagen', archivo);
 
     setGuardando(true);
@@ -337,10 +379,11 @@ export default function MenuAdmin() {
   };
 
   /* ---------- Formulario (panel para nuevo, modal para editar) ---------- */
-  const panelFormulario = (
+    const panelFormulario = (
     <div className="mn-form-panel" ref={panelRef} style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
       <div className="mn-form-header">
         <h3>{editId ? 'Editar producto' : 'Nuevo producto'}</h3>
+        <button type="button" className="mn-form-cerrar" onClick={limpiarFormulario} aria-label="Cerrar">×</button>
       </div>
 
       <form onSubmit={guardar} noValidate>
@@ -395,40 +438,136 @@ export default function MenuAdmin() {
               </div>
 
               <div className="mn-field">
-                <label>Adiciones del producto <small>(opcional)</small></label>
-                {adiciones.map((a, i) => (
-                  <div key={i} className="mn-adic-row">
-                    <input
-                      type="text"
-                      maxLength={100}
-                      placeholder="Ej: Tocino"
-                      value={a.nombre}
-                      onChange={(e) => setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))}
-                    />
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder="$ Precio"
-                      value={a.precio}
-                      onChange={(e) => setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, precio: e.target.value } : x)))}
-                    />
-                    <button
-                      type="button"
-                      className="mn-adic-del"
-                      aria-label="Quitar adición"
-                      onClick={() => setAdiciones((l) => l.filter((_, j) => j !== i))}
-                    >
-                      &times;
-                    </button>
+                <details className="mn-acc">
+                <summary>
+                  Adiciones con precio <small>(opcional · {nAdic}/{MAX_ADICIONES})</small>
+                </summary>
+                <div className="mn-adic-list">
+                  {adiciones.map((a, i) =>
+                    a.tipo !== 'adicion' ? null : (
+                      <div key={i} className="mn-adic-row">
+                        <input
+                          type="text"
+                          maxLength={40}
+                          placeholder="Ej: Tocino"
+                          value={a.nombre}
+                          onChange={(e) =>
+                            setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
+                          }
+                        />
+                        <div className="mn-adic-precio">
+                          <span>$</span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="2.000"
+                            value={miles(a.precio)}
+                            onChange={(e) => {
+                              const n = e.target.value.replace(/\D/g, '').slice(0, 6);
+                              const valor = n === '' ? '' : String(Math.min(Number(n), MAX_PRECIO_ADICION));
+                              setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, precio: valor } : x)));
+                            }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="mn-adic-del"
+                          aria-label="Quitar adición"
+                          onClick={() => setAdiciones((l) => l.filter((_, j) => j !== i))}
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ),
+                  )}
+                </div>
+                {nAdic < MAX_ADICIONES && sugAdic.length > 0 && (
+                  <div className="mn-adic-sug">
+                    <span>Guardadas:</span>
+                    {sugAdic.map((s) => (
+                      <button
+                        type="button"
+                        key={`${s.nombre}-${s.precio}`}
+                        className="mn-adic-chip"
+                        onClick={() => setAdiciones((l) => [...l, s])}
+                      >
+                        + {s.nombre} · ${miles(s.precio)}
+                      </button>
+                    ))}
                   </div>
-                ))}
-                <button
-                  type="button"
-                  className="mn-adic-add"
-                  onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '' }])}
-                >
-                  + Agregar adición
-                </button>
+                )}
+                {nAdic < MAX_ADICIONES ? (
+                  <button
+                    type="button"
+                    className="mn-adic-add"
+                    onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '', tipo: 'adicion' }])}
+                  >
+                    + Nueva adición
+                  </button>
+                ) : (
+                  <div className="mn-adic-hint">Llegaste al máximo de {MAX_ADICIONES} adiciones.</div>
+                )}
+                <div className="mn-adic-hint">Precio máximo por adición: $50.000</div>
+                </details>
+              </div>
+
+              <div className="mn-field">
+                <details className="mn-acc">
+                <summary>
+                  Personalizaciones <small>(lo que el cliente puede quitar · {nQuitar}/{MAX_QUITAR})</small>
+                </summary>
+                <div className="mn-adic-list">
+                  {adiciones.map((a, i) =>
+                    a.tipo !== 'quitar' ? null : (
+                      <div key={i} className="mn-adic-row quitar">
+                        <input
+                          type="text"
+                          maxLength={40}
+                          placeholder="Ej: Salsa blanca (el cliente verá «Sin Salsa blanca»)"
+                          value={a.nombre}
+                          onChange={(e) =>
+                            setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="mn-adic-del"
+                          aria-label="Quitar personalización"
+                          onClick={() => setAdiciones((l) => l.filter((_, j) => j !== i))}
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ),
+                  )}
+                </div>
+                {nQuitar < MAX_QUITAR && sugQuitar.length > 0 && (
+                  <div className="mn-adic-sug">
+                    <span>Guardadas:</span>
+                    {sugQuitar.map((s) => (
+                      <button
+                        type="button"
+                        key={s.nombre}
+                        className="mn-adic-chip"
+                        onClick={() => setAdiciones((l) => [...l, s])}
+                      >
+                        + {s.nombre}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {nQuitar < MAX_QUITAR ? (
+                  <button
+                    type="button"
+                    className="mn-adic-add"
+                    onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '', tipo: 'quitar' }])}
+                  >
+                    + Nueva personalización
+                  </button>
+                ) : (
+                  <div className="mn-adic-hint">Llegaste al máximo de {MAX_QUITAR} personalizaciones.</div>
+                )}
+                </details>
               </div>
             </div>
 
@@ -623,7 +762,7 @@ export default function MenuAdmin() {
                 <th>Descripción</th>
                 <th>Precio</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>

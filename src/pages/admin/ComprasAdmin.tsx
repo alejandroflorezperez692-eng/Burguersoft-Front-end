@@ -1006,6 +1006,7 @@ export default function ComprasAdmin() {
         <div style={estiloModalCompra} onClick={(e) => e.stopPropagation()}>
           <div style={{ background: 'var(--text-900)', padding: '18px 28px', flexShrink: 0 }}>
             <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--surface)' }}>{editId ? `Modificar compra N.º ${editId}` : 'Registrar Compra'}</h3>
+            <button type="button" className="mn-form-cerrar" onClick={cerrarForm} aria-label="Cerrar">×</button>
           </div>
           <div style={{ padding: '24px 32px 28px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
           {aviso && (
@@ -1228,7 +1229,7 @@ export default function ComprasAdmin() {
                   <th>Insumos</th>
                   <th>Total</th>
                   <th>Estado</th>
-                  <th>Acciones</th>
+                  <th className="th-acciones">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -1313,6 +1314,7 @@ export default function ComprasAdmin() {
         return (
           <div className="modal-overlay open" onClick={() => setModalDetalle(null)}>
             <div className="modal-box" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Factura de compra ${modalDetalle.id}`}>
+              <button type="button" className="modal-x" onClick={() => setModalDetalle(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
               <div style={{ marginBottom: 20 }}>
                 <div>
                   <div style={etiquetaCol}>Factura de compra · N.º {modalDetalle.id}</div>

@@ -397,6 +397,7 @@ export default function PromocionesAdmin() {
     <div className="mn-form-panel" style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
       <div className="mn-form-header">
         <h3>{editId ? 'Editar promoción' : 'Nueva promoción'}</h3>
+        <button type="button" className="mn-form-cerrar" onClick={limpiarFormulario} aria-label="Cerrar">×</button>
       </div>
 
       <form onSubmit={guardar} noValidate>
@@ -682,7 +683,7 @@ export default function PromocionesAdmin() {
                 <th>Vigencia</th>
                 <th>Precio</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>
