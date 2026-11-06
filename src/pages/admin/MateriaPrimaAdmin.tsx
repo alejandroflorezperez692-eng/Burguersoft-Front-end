@@ -6,6 +6,7 @@ import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
+import { mensajeError } from '../../utils/errores';
 
 interface MateriaPrima {
   id: number;
@@ -43,14 +44,6 @@ const textoEstado = (stock: unknown) => {
 const claseBadge = (stock: unknown) => {
   const k = estadoKey(stock);
   return k === 'agotado' ? 'badge-danger' : k === 'bajo' ? 'badge-warning' : 'badge-success';
-};
-
-const mensajeError = (e: unknown, base: string): string => {
-  const r = (e as { response?: { status?: number; data?: { message?: string; error?: string; errors?: Record<string, string[]> } } })?.response;
-  if (!r) return `${base}: no hay conexión con el servidor`;
-  const primerError = r.data?.errors ? Object.values(r.data.errors)[0]?.[0] : undefined;
-  const detalle = primerError || r.data?.error || r.data?.message || '';
-  return `${base} (${r.status})${detalle ? `: ${detalle}` : ''}`;
 };
 
 // Deja solo dígitos y un punto decimal (acepta coma como punto)
@@ -104,7 +97,7 @@ export default function MateriaPrimaAdmin() {
   const [filtroUnidad, setFiltroUnidad] = useState('');
   const [orden, setOrden] = useState<Orden>('nombre');
 
-  const { toast, showToast } = useToast();
+  const { showToast } = useToast();
 
   const toArray = <T,>(v: unknown): T[] =>
     Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
@@ -368,7 +361,7 @@ export default function MateriaPrimaAdmin() {
                 <th>Tipo</th>
                 <th>Cantidad</th>
                 <th style={{ textAlign: 'right' }}>Precio total</th>
-                <th>Stock</th>
+                <th>Disponibilidad</th>
                 <th>Estado</th>
                 <th>Proveedor</th>
                 <th>Acciones</th>

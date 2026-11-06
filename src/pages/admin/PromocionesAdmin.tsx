@@ -7,6 +7,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import { mensajeError as mensajeErrorBase } from '../../utils/errores';
 
 interface Producto {
   id: number;
@@ -86,11 +87,7 @@ const estadoPromo = (p: Promocion): EstadoPromo => {
   return 'Activa';
 };
 
-const mensajeError = (err: unknown, porDefecto: string): string => {
-  const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
-  const primero = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined;
-  return primero || data?.message || porDefecto;
-};
+const mensajeError = (err: unknown, porDefecto: string): string => mensajeErrorBase(err, porDefecto);
 
 function CardImg({ img, nombre }: { img: string | null; nombre: string }) {
   const [error, setError] = useState(false);

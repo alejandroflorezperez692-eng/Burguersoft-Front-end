@@ -7,6 +7,10 @@ export type CartItem = {
   imagen?: string | null;
   cantidad: number;
   descripcion?: string;
+  uid?: string;
+  sin?: string[];
+  nota?: string;
+  extras?: { id: number; nombre: string; precio: number; cantidad: number }[];
 };
 
 export type TipoEntrega = 'Domicilio' | 'Para recoger' | 'En restaurante';
@@ -21,8 +25,8 @@ type CartContextValue = {
   close: () => void;
   toggle: () => void;
   agregar: (item: Omit<CartItem, 'cantidad'> & { cantidad?: number }) => void;
-  quitar: (id: string | number) => void;
-  actualizarCantidad: (id: string | number, cantidad: number) => void;
+  quitar: (uid: string | number) => void;
+  actualizarCantidad: (uid: string | number, cantidad: number) => void;
   vaciar: () => void;
 
   // Datos de entrega, compartidos entre el carrito y el checkout
@@ -85,7 +89,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
-    useEffect(() => {
+  useEffect(() => {
     localStorage.setItem(
       ENTREGA_KEY,
       JSON.stringify({ tipoEntrega, cuando, fechaProgramada, horaProgramada }),
@@ -96,28 +100,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const total = useMemo(() => items.reduce((a, b) => a + b.precio * b.cantidad, 0), [items]);
 
   const agregar = useCallback((item: Omit<CartItem, 'cantidad'> & { cantidad?: number }) => {
+    const personalizado = (item.sin?.length ?? 0) > 0 || (item.extras?.length ?? 0) > 0 || !!item.nota;
+    const uid = personalizado
+      ? [
+          item.id,
+          (item.sin ?? []).join(','),
+          (item.extras ?? []).map((e) => `${e.id}x${e.cantidad}`).join(','),
+          item.nota ?? '',
+        ].join('|')
+      : String(item.id);
     setItems((prev) => {
-      const idx = prev.findIndex((p) => String(p.id) === String(item.id));
+      const idx = prev.findIndex((p) => (p.uid ?? String(p.id)) === uid);
       if (idx >= 0) {
         const copy = [...prev];
         copy[idx] = { ...copy[idx], cantidad: copy[idx].cantidad + (item.cantidad ?? 1) };
         return copy;
       }
-      return [...prev, { ...item, cantidad: item.cantidad ?? 1 }];
+      return [...prev, { ...item, uid, cantidad: item.cantidad ?? 1 }];
     });
     setIsOpen(true);
   }, []);
 
-  const quitar = useCallback((id: string | number) => {
-    setItems((prev) => prev.filter((p) => String(p.id) !== String(id)));
+  const quitar = useCallback((uid: string | number) => {
+    setItems((prev) => prev.filter((p) => (p.uid ?? String(p.id)) !== String(uid)));
   }, []);
 
-  const actualizarCantidad = useCallback((id: string | number, cantidad: number) => {
+  const actualizarCantidad = useCallback((uid: string | number, cantidad: number) => {
     if (cantidad <= 0) {
-      setItems((prev) => prev.filter((p) => String(p.id) !== String(id)));
+      setItems((prev) => prev.filter((p) => (p.uid ?? String(p.id)) !== String(uid)));
       return;
     }
-    setItems((prev) => prev.map((p) => (String(p.id) === String(id) ? { ...p, cantidad } : p)));
+    setItems((prev) =>
+      prev.map((p) => ((p.uid ?? String(p.id)) === String(uid) ? { ...p, cantidad } : p)),
+    );
   }, []);
 
   const vaciar = useCallback(() => setItems([]), []);

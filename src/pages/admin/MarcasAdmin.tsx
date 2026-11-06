@@ -251,7 +251,7 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
         {/* Fila 2: Filtros */}
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
-            <label>Marca</label>
+            <label>Proveedores</label>
             <select value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
               <option value="">Todos los provedores</option>
               {marcasOrdenadas.map((m) => (

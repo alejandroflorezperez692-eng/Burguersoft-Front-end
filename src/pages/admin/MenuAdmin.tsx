@@ -7,6 +7,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import { mensajeError as mensajeErrorBase } from '../../utils/errores';
 
 type Estado = 'Disponible' | 'Agotado' | 'Por agotarse';
 
@@ -19,6 +20,8 @@ interface Producto {
   cantidad: number | string | null;
   categoria: string;
   estado: Estado;
+  activo?: boolean;
+  adiciones?: { id: number; nombre: string; precio: number | string }[];
 }
 
 const CATEGORIAS = [
@@ -55,9 +58,9 @@ const mensajeError = (err: unknown, porDefecto: string): string => {
   const primero = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined;
   const msg = primero || data?.message || porDefecto;
   if (/23503|foreign key|sale_details|llave for[aá]nea/i.test(msg)) {
-    return 'No se puede eliminar porque tiene ventas registradas. Edítalo y cambia su estado a Agotado.';
+    return 'No se puede eliminar porque tiene ventas registradas. Puedes desactivarlo.';
   }
-  return msg;
+  return mensajeErrorBase(err, porDefecto);
 };
 
 // Solo acepta URLs de imagen utilizables (absolutas, data/blob o /storage).
@@ -90,7 +93,7 @@ export default function MenuAdmin() {
   const [guardando, setGuardando] = useState(false);
   const [intentado, setIntentado] = useState(false);
   const [buscar, setBuscar] = useState('');
-  
+
   // --- Filtros (Carlos) ---
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
@@ -98,6 +101,7 @@ export default function MenuAdmin() {
   const [precioMax, setPrecioMax] = useState('');
 
   const [eliminar, setEliminar] = useState<Producto | null>(null);
+  const [cambiarEstado, setCambiarEstado] = useState<Producto | null>(null);
   const [mostrarForm, setMostrarForm] = useState(false);
 
   const [editId, setEditId] = useState<number | null>(null);
@@ -105,6 +109,7 @@ export default function MenuAdmin() {
   const [archivo, setArchivo] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [imgActual, setImgActual] = useState(false);
+  const [adiciones, setAdiciones] = useState<{ id?: number; nombre: string; precio: string }[]>([]);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -113,7 +118,7 @@ export default function MenuAdmin() {
   /* ---------- Carga de datos ---------- */
   const cargarProductos = useCallback(async () => {
     try {
-      const r = await apiClient.get<Producto[]>('/productos');
+      const r = await apiClient.get<Producto[]>('/productos', { params: { todos: 1 } });
       setProductos(Array.isArray(r.data) ? r.data : []);
     } catch {
       showToast('Error al cargar productos', true);
@@ -196,6 +201,25 @@ export default function MenuAdmin() {
 
   const totalVisibles = grupos.reduce((acc, [, lista]) => acc + lista.length, 0);
 
+  /* ---------- Activar / desactivar ---------- */
+  const alternarActivo = async (p: Producto) => {
+    const nuevo = p.activo === false;
+    try {
+      await apiClient.patch(`/productos/${p.id}/activo`, { activo: nuevo });
+      showToast(nuevo ? 'Producto activado' : 'Producto desactivado');
+      await cargarProductos();
+    } catch (err) {
+      showToast(mensajeError(err, 'No se pudo cambiar el estado del producto'), true);
+    }
+  };
+
+  const confirmarCambioActivo = async () => {
+    if (!cambiarEstado) return;
+    const p = cambiarEstado;
+    setCambiarEstado(null);
+    await alternarActivo(p);
+  };
+
   /* ---------- Formulario ---------- */
   const setCampo = (campo: keyof typeof emptyForm) =>
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
@@ -215,6 +239,7 @@ export default function MenuAdmin() {
     setArchivo(null);
     setPreview(null);
     setImgActual(false);
+    setAdiciones([]);
     if (fileRef.current) fileRef.current.value = '';
     setMostrarForm(false);
   };
@@ -232,6 +257,7 @@ export default function MenuAdmin() {
     setArchivo(null);
     setPreview(imgValida(p.img) ? p.img : null);
     setImgActual(!!p.img);
+    setAdiciones((p.adiciones ?? []).map((a) => ({ id: a.id, nombre: a.nombre, precio: String(Math.round(Number(a.precio))) })));
     if (fileRef.current) fileRef.current.value = '';
     setMostrarForm(false);
   };
@@ -261,12 +287,19 @@ export default function MenuAdmin() {
     if (!form.descripcion.trim()) { showToast('La descripción es obligatoria', true); return; }
     if (!editId && !archivo) { showToast('La imagen es obligatoria', true); return; }
 
+    const filas = adiciones.filter((a) => a.nombre.trim() || a.precio !== '');
+    if (filas.some((a) => !a.nombre.trim() || a.precio === '' || Number(a.precio) < 0)) {
+      showToast('Completa el nombre y el precio de cada adición', true);
+      return;
+    }
+
     const fd = new FormData();
     fd.append('nombre', form.nombre.trim());
     fd.append('valor', form.valor);
     fd.append('descripcion', form.descripcion.trim());
     fd.append('categoria', form.categoria);
     fd.append('estado', form.estado);
+    fd.append('adiciones', JSON.stringify(filas.map((a) => ({ id: a.id, nombre: a.nombre.trim(), precio: Number(a.precio) }))));
     if (archivo) fd.append('imagen', archivo);
 
     setGuardando(true);
@@ -360,6 +393,43 @@ export default function MenuAdmin() {
                   value={form.descripcion} onChange={setCampo('descripcion')} />
                 <span className="mn-counter">{form.descripcion.length}/255</span>
               </div>
+
+              <div className="mn-field">
+                <label>Adiciones del producto <small>(opcional)</small></label>
+                {adiciones.map((a, i) => (
+                  <div key={i} className="mn-adic-row">
+                    <input
+                      type="text"
+                      maxLength={100}
+                      placeholder="Ej: Tocino"
+                      value={a.nombre}
+                      onChange={(e) => setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))}
+                    />
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="$ Precio"
+                      value={a.precio}
+                      onChange={(e) => setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, precio: e.target.value } : x)))}
+                    />
+                    <button
+                      type="button"
+                      className="mn-adic-del"
+                      aria-label="Quitar adición"
+                      onClick={() => setAdiciones((l) => l.filter((_, j) => j !== i))}
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="mn-adic-add"
+                  onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '' }])}
+                >
+                  + Agregar adición
+                </button>
+              </div>
             </div>
 
             {/* Columna derecha: imagen */}
@@ -409,6 +479,7 @@ export default function MenuAdmin() {
 
   useEscape([
     [!!eliminar, () => setEliminar(null)],
+    [!!cambiarEstado, () => setCambiarEstado(null)],
     [mostrarForm || editId !== null, limpiarFormulario],
   ]);
 
@@ -443,7 +514,7 @@ export default function MenuAdmin() {
       )}
 
       <div className="mn-toolbar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
-        
+
         {/* Fila 1: Búsqueda y Vista */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
@@ -559,7 +630,10 @@ export default function MenuAdmin() {
               {grupos.flatMap(([, lista]) => lista).map((p) => {
                 const est = estadoVisible(p);
                 return (
-                  <tr key={p.id} className={est === 'Agotado' ? 'agotado' : ''}>
+                  <tr
+                    key={p.id}
+                    className={`${est === 'Agotado' ? 'agotado' : ''}${p.activo === false ? ' inactivo' : ''}`.trim()}
+                  >
                     <td>
                       <div className="mn-table-prod">
                         <div className="mn-table-img"><CardImg img={p.img} nombre={p.nombre} /></div>
@@ -569,12 +643,27 @@ export default function MenuAdmin() {
                     <td>{p.categoria}</td>
                     <td className="mn-table-desc">{p.descripcion || '—'}</td>
                     <td className="mn-table-price">${Number(p.valor).toLocaleString('es-CO')}</td>
-                    <td><span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span></td>
+                    <td>
+                      <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
+                      {p.activo === false && <span className="mn-badge-inactivo">Inactivo</span>}
+                    </td>
                     <td>
                       {esAdmin && (
                         <div className="mn-table-actions">
+
                           <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
                           <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
+                          <button
+                            type="button"
+                            className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
+                            onClick={() => setCambiarEstado(p)}
+                          >
+                            {p.activo === false ? 'Activar' : 'Desactivar'}
+                          </button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+
                         </div>
                       )}
                     </td>
@@ -596,7 +685,10 @@ export default function MenuAdmin() {
                 {lista.map((p) => {
                   const est = estadoVisible(p);
                   return (
-                    <article key={p.id} className={`mn-card${est === 'Agotado' ? ' agotado' : ''}`}>
+                    <article
+                      key={p.id}
+                      className={`mn-card${est === 'Agotado' ? ' agotado' : ''}${p.activo === false ? ' inactivo' : ''}`}
+                    >
                       <div className="mn-card-imgwrap"><CardImg img={p.img} nombre={p.nombre} /></div>
                       <div className="mn-card-body">
                         <div className="mn-card-name">{p.nombre}</div>
@@ -604,12 +696,24 @@ export default function MenuAdmin() {
                         <div className="mn-card-meta">
                           <div className="mn-card-price">${Number(p.valor).toLocaleString('es-CO')}</div>
                           <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
+                          {p.activo === false && <span className="mn-badge-inactivo">Inactivo</span>}
                         </div>
                       </div>
                       {esAdmin && (
                         <div className="mn-card-actions">
+
                           <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
                           <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
+                          <button
+                            type="button"
+                            className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
+                            onClick={() => setCambiarEstado(p)}
+                          >
+                            {p.activo === false ? 'Activar' : 'Desactivar'}
+                          </button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
+
                         </div>
                       )}
                     </article>
@@ -621,6 +725,33 @@ export default function MenuAdmin() {
         </div>
       )}
 
+      {/* Alerta de confirmación: activar / desactivar */}
+      {cambiarEstado && (
+        <div className="mn-modal-overlay" onClick={() => setCambiarEstado(null)}>
+          <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
+            <p>
+              {cambiarEstado.activo === false
+                ? `¿Activar "${cambiarEstado.nombre}"? Volverá a aparecer en el menú y se podrá vender.`
+                : `¿Desactivar "${cambiarEstado.nombre}"? Dejará de aparecer en el menú y no se podrá vender.`}
+            </p>
+            <div className="mn-modal-actions">
+              <button type="button" className="mn-btn-cancel" onClick={() => setCambiarEstado(null)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="mn-btn-confirm"
+                style={cambiarEstado.activo === false ? { background: '#16a34a', boxShadow: '0 4px 14px rgba(22,163,74,.3)' } : undefined}
+                onClick={confirmarCambioActivo}
+              >
+                {cambiarEstado.activo === false ? 'Sí, activar' : 'Sí, desactivar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alerta de confirmación: eliminar */}
       {eliminar && (
         <div className="mn-modal-overlay" onClick={() => setEliminar(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>

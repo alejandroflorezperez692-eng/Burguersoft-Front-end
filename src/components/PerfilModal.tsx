@@ -11,6 +11,7 @@ import {
   validarDatos,
   validarPassword,
 } from '../utils/perfil';
+import { mensajeError } from '../utils/errores';
 
 
 type Tab = 'datos' | 'pwd' | 'info';
@@ -132,17 +133,22 @@ const handlePassword = async (e: React.FormEvent) => {
   setEnviandoPwd(true);
   try {
     await apiClient.post('/perfil/password', { actual, nueva, confirmar });
+
     sessionStorage.setItem('login_toast', 'password_ok');
     logout();
     window.location.replace('/login');
   } catch (err: any) {
     const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? '';
+
+    showToast('Contraseña actualizada correctamente.');
+    setActual(''); setNueva(''); setConfirmar('');
+  } catch (err) {
+    const msg = mensajeError(err, 'No se pudo actualizar la contraseña');
+
     if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
       showToast('La contraseña actual es incorrecta.', true);
-    } else if (msg) {
-      showToast(msg, true);
     } else {
-      showToast('No se pudo actualizar la contraseña. Intenta de nuevo más tarde.', true);
+      showToast(msg, true);
     }
   } finally {
     setEnviandoPwd(false);

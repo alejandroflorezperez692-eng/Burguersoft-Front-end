@@ -73,11 +73,12 @@ function obtenerRangoHorario(fechaStr: string): { min: string; max: string } | n
   return { min, max: horario.fin };
 }
 
-function horaValida(fechaStr: string, horaStr: string): boolean {
+/* function horaValida(fechaStr: string, horaStr: string): boolean {
   const rango = obtenerRangoHorario(fechaStr);
   if (!rango || !horaStr) return false;
   return horaStr >= rango.min && horaStr <= rango.max;
 }
+Desactivada temporalmente junto con la validación de horario. */
 
 export default function CartPanel() {
   const {
@@ -140,10 +141,7 @@ export default function CartPanel() {
         showToast('Selecciona la fecha y la hora para tu pedido programado.', 'err');
         return;
       }
-      if (!horaValida(fechaSeleccionada, horaSeleccionada)) {
-        showToast(`Elige una hora entre ${rangoHorario?.min ?? ''} y ${rangoHorario?.max ?? ''} para ese día.`, 'err');
-        return;
-      }
+      // Validación de horario (hora dentro del horario de atención) desactivada temporalmente.
     }
     close();
     navigate('/checkout');
@@ -223,14 +221,14 @@ export default function CartPanel() {
                   type="time"
                   aria-label="Hora del pedido"
                   value={horaSeleccionada}
-                  min={rangoHorario.min}
-                  max={rangoHorario.max}
                   onChange={(e) => setHoraSeleccionada(e.target.value)}
                 />
                 <p className="cart-hora-hint">Horario disponible ese día: {rangoHorario.min} – {rangoHorario.max}</p>
+                {/* Validación de horario desactivada temporalmente:
                 {horaSeleccionada && !horaValida(fechaSeleccionada, horaSeleccionada) && (
                   <p className="cart-hora-error">Esa hora está fuera del horario de atención.</p>
                 )}
+                */}
               </>
             )}
           </div>
@@ -248,24 +246,28 @@ export default function CartPanel() {
             </div>
           ) : (
             <div className="cart-item-list">
-              {items.map((it) => (
-                <div key={String(it.id)} className="cart-item-row">
+                            {items.map((it) => (
+                <div key={it.uid ?? String(it.id)} className="cart-item-row">
                   <div className="cart-item-top">
                     {it.imagen && <img src={it.imagen} alt={it.nombre} className="cart-item-img" />}
                     <div className="cart-item-info">
                       <div className="cart-item-name">{it.nombre}</div>
                       {it.descripcion && <div className="cart-item-desc">{it.descripcion}</div>}
+                      {it.sin && it.sin.length > 0 && (
+                        <div className="cart-item-desc">Sin: {it.sin.join(', ')}</div>
+                      )}
+                      {it.nota && <div className="cart-item-desc">Nota: {it.nota}</div>}
                     </div>
                     <div className="cart-item-price">${(it.precio * it.cantidad).toLocaleString('es-CO')}</div>
                   </div>
                   <div className="cart-item-actions">
-                    <button type="button" className="link-action link-eliminar" onClick={() => quitar(it.id)}>Eliminar</button>
+                    <button type="button" className="link-action link-eliminar" onClick={() => quitar(it.uid ?? it.id)}>Eliminar</button>
                     <div className="cart-item-edit">
                       <span className="link-action link-editar">Editar</span>
                       <div className="qty-stepper">
-                        <button type="button" aria-label={`Quitar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.id, it.cantidad - 1)}>−</button>
+                        <button type="button" aria-label={`Quitar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.uid ?? it.id, it.cantidad - 1)}>−</button>
                         <span>{it.cantidad}</span>
-                        <button type="button" aria-label={`Agregar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.id, it.cantidad + 1)}>+</button>
+                        <button type="button" aria-label={`Agregar una unidad de ${it.nombre}`} onClick={() => actualizarCantidad(it.uid ?? it.id, it.cantidad + 1)}>+</button>
                       </div>
                     </div>
                   </div>
