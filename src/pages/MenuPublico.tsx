@@ -6,8 +6,8 @@ import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import cenaFallback from '../assets/img/cena.png';
 import { useAuth } from '../hooks/useAuth';
-import { useCart } from '../hooks/useCart';
 import AdminLoading from '../components/AdminLoading';
+import PersonalizarModal from '../components/PersonalizarModal';
 import '../styles/public.css';
 
 type Producto = {
@@ -18,6 +18,7 @@ type Producto = {
   img?: string | null;
   categoria?: string | number | null;
   estado?: string | null;
+  adiciones?: { id: number; nombre: string; precio: number | string }[];
 };
 
 const CATEGORIAS = [
@@ -43,8 +44,8 @@ function formatCOP(valor: number): string {
 
 export default function MenuPublico() {
   const [items, setItems] = useState<Producto[] | null>(null);
+  const [editando, setEditando] = useState<Producto | null>(null);
   const { isAuthenticated } = useAuth();
-  const { agregar } = useCart();
 
   useEffect(() => {
     let cancelado = false;
@@ -84,7 +85,7 @@ export default function MenuPublico() {
         <p>Descubre todos nuestros productos, preparados al momento para ti.</p>
 
         {items === null ? (
-          <AdminLoading texto="Cargando menú" subtexto="Preparando nuestros productos" />
+          <AdminLoading texto="Cargando menú" subtexto="Preparando nuestros productos" compact />
         ) : disponibles.length === 0 ? (
           <p className="promo-vacio">No hay productos disponibles en este momento.</p>
         ) : (
@@ -104,7 +105,6 @@ export default function MenuPublico() {
                             e.currentTarget.src = cenaFallback;
                           }}
                         />
-                        <span className="promo-badge-pub">{cat.toUpperCase()}</span>
                         {agotado && (
                           <div className="promo-agotado-overlay">
                             <span>AGOTADO</span>
@@ -128,9 +128,7 @@ export default function MenuPublico() {
                               className="btn-circular-add"
                               title="Agregar al carrito"
                               data-tooltip="Agregar al carrito"
-                              onClick={() =>
-                                agregar({ id: p.id, nombre: p.nombre ?? 'Producto', precio: Number(p.valor || 0), imagen: p.img })
-                              }
+                              onClick={() => setEditando(p)}
                             >
                               +
                             </button>
@@ -151,6 +149,20 @@ export default function MenuPublico() {
           ))
         )}
       </section>
+
+      {editando && (
+        <PersonalizarModal
+          item={{
+            id: editando.id,
+            nombre: editando.nombre ?? 'Producto',
+            precio: Number(editando.valor || 0),
+            imagen: editando.img,
+            descripcion: editando.descripcion,
+            adiciones: editando.adiciones,
+          }}
+          onClose={() => setEditando(null)}
+        />
+      )}
 
       <Footer />
     </div>

@@ -7,6 +7,7 @@ import Paginacion, { paginar } from '../../components/Paginacion';
 import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
+import { mensajeError } from '../../utils/errores';
 
 interface DetalleCompra {
   id: number;
@@ -655,8 +656,7 @@ export default function ComprasAdmin() {
       setAviso({ texto: partes.join(' '), alerta: !!data.observaciones });
       showToast('Listo: revisa los datos y registra', false, true);
     } catch (e) {
-      const err = e as { response?: { data?: { message?: string } } };
-      showToast(err?.response?.data?.message || 'No se pudo interpretar la compra', true);
+      showToast(mensajeError(e, 'No se pudo interpretar la compra'), true);
     } finally {
       setInterpretando(false);
     }
@@ -722,8 +722,7 @@ export default function ComprasAdmin() {
       setAviso({ texto: partes.join(' '), alerta: data.cuadra === false || !!data.observaciones });
       showToast('Factura leída por Burgi: revisa los datos y registra', false, true);
     } catch (e) {
-      const err = e as { response?: { data?: { message?: string } } };
-      showToast(err?.response?.data?.message || 'No se pudo leer la factura', true);
+      showToast(mensajeError(e, 'No se pudo leer la factura'), true);
     } finally {
       setEscaneando(false);
     }
@@ -834,8 +833,7 @@ export default function ComprasAdmin() {
         showToast('Sin conexión: tu compra quedó guardada en este equipo y se enviará como borrador cuando vuelva el internet', true);
         return;
       }
-      const d = e.response.data;
-      showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || 'No se pudo guardar el borrador', true);
+      showToast(mensajeError(e, 'No se pudo guardar el borrador'), true);
     }).finally(() => setGuardando(false));
   };
   guardarBorradorRef.current = guardarBorrador;
@@ -866,7 +864,7 @@ export default function ComprasAdmin() {
       ? apiClient.put(`/compras/${editId}`, payload)
       : apiClient.post('/compras', payload);
     peticion.then(() => {
-      showToast('Compra registrada: el stock se sumó a Materia Prima');
+      showToast('Compra registrada: la cantidad se sumó a Materia Prima');
       sinRed.current = false;
       borrarLocal();
       setPagina(1);
@@ -888,8 +886,7 @@ export default function ComprasAdmin() {
         showToast('Sin conexión: tu compra quedó guardada en este equipo y se enviará como borrador cuando vuelva el internet', true);
         return;
       }
-      const d = e?.response?.data;
-      showToast(d?.errors ? (Object.values(d.errors) as string[][])[0][0] : d?.message || (editId ? 'No se pudo modificar la compra' : 'No se pudo registrar la compra'), true);
+      showToast(mensajeError(e, editId ? 'No se pudo modificar la compra' : 'No se pudo registrar la compra'), true);
     }).finally(() => setGuardando(false));
   };
 
@@ -902,7 +899,7 @@ export default function ComprasAdmin() {
     apiClient.delete(`/compras/${c.id}`)
       .then(() => { showToast('Compra eliminada'); load(); })
       .catch((e) => {
-        showToast(e?.response?.data?.message || 'No se pudo eliminar la compra', true);
+        showToast(mensajeError(e, 'No se pudo eliminar la compra'), true);
         load();
       });
   };
@@ -1202,13 +1199,13 @@ export default function ComprasAdmin() {
           />
         </label>
         <label style={estiloEtiqueta}>
-          Marca
+          Proveedores
           <Desplegable
             className="compras-filter-dropdown"
             value={fMarca}
             onChange={setFMarca}
-            placeholder="Todas"
-            opciones={[{ value: '', label: 'Todas' }, ...marcasOrdenadas.map((m) => ({ value: String(m.id), label: m.nombre }))]}
+            placeholder="Todos"
+            opciones={[{ value: '', label: 'Todos' }, ...marcasOrdenadas.map((m) => ({ value: String(m.id), label: m.nombre }))]}
           />
         </label>
         {hayFiltros && (

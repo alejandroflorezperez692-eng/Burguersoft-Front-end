@@ -6,10 +6,10 @@ import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import promocionFallback from '../assets/img/promocion.png';
 import { useAuth } from '../hooks/useAuth';
-import { useCart } from '../hooks/useCart';
 import AdminLoading from '../components/AdminLoading';
 import { IconoToast } from '../components/Toast';
 import '../styles/public.css';
+import PersonalizarModal, { type ItemPersonalizar } from '../components/PersonalizarModal';
 
 type Promocion = {
   id: number;
@@ -43,7 +43,7 @@ function formatFecha(fecha?: string | null): string {
 export default function Home() {
   const [promos, setPromos] = useState<Promocion[] | null>(null);
   const { isAuthenticated } = useAuth();
-  const { agregar } = useCart();
+  const [personalizando, setPersonalizando] = useState<ItemPersonalizar | null>(null);
   const location = useLocation();
 
   // Aviso flotante al cerrar sesión (vuelve a la Home con toast: 'logout_ok')
@@ -111,7 +111,7 @@ export default function Home() {
         <h2>Combos y Promociones</h2>
         <p>Disfruta de nuestros combos exclusivos por tiempo limitado.</p>
         {promos === null ? (
-          <AdminLoading texto="Cargando combos" subtexto="Preparando los mejores combos" />
+          <AdminLoading texto="Cargando combos" subtexto="Preparando los mejores combos" compact />
         ) : (
           <div className="grid-promociones">
             {activas.length === 0 ? (
@@ -127,7 +127,6 @@ export default function Home() {
                         e.currentTarget.src = promocionFallback;
                       }}
                     />
-                    <span className="promo-badge-pub">PROMO</span>
                   </div>
                   <div className="promo-info-pub">
                     <h3>{promo.nombre}</h3>
@@ -146,9 +145,22 @@ export default function Home() {
                         )}
                       </div>
                       {isAuthenticated ? (
-                        <button type="button" className="btn-circular-add" title="Agregar al carrito" data-tooltip="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
+                        <button
+                          type="button"
+                          className="btn-circular-add"
+                          title="Agregar al carrito"
+                          data-tooltip="Agregar al carrito"
+                          onClick={() =>
+                            setPersonalizando({
+                              id: promo.id,
+                              nombre: promo.nombre,
+                              precio: Number(promo.precio),
+                              imagen: promo.imagen,
+                              descripcion: promo.descripcion,
+                            })
+                          }
+                        >
                           +
-
                         </button>
                       ) : (
                         <Link to="/login" className="link-sesion" data-tooltip="Inicia sesión para pedir">
@@ -166,7 +178,11 @@ export default function Home() {
         )}
       </section>
 
-      <Footer />
+      {personalizando && (
+        <PersonalizarModal item={personalizando} onClose={() => setPersonalizando(null)} />
+      )}
+
+      <Footer/>
     </div>
   );
 }

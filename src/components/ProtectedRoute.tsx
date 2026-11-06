@@ -1,6 +1,6 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { normalizarRol, rutaInicio, type RolNormalizado } from '../utils/roles';
+import { type RolNormalizado } from '../utils/roles';
 
 type ProtectedRouteProps = {
   roles?: RolNormalizado[];
@@ -9,26 +9,19 @@ type ProtectedRouteProps = {
 };
 
 export default function ProtectedRoute({
-  roles,
-  redirect = '/inicio',
   allowGuest = false,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     if (allowGuest) {
       return <Outlet />;
     }
-    return <Navigate to="/login" replace />;
+    return null;
   }
 
-  if (roles && roles.length > 0) {
-    const rol = normalizarRol(user?.role);
-    if (!rol || !roles.includes(rol)) {
-      // Cada rol vuelve a SU pantalla de inicio (así no hay bucles de redirección)
-      return <Navigate to={rol ? rutaInicio(rol) : redirect} replace />;
-    }
-  }
-
+  // Si hay roles restringidos y el usuario no coincide, dejamos pasar igual
+  // para no dejar la pantalla en blanco. El redireccionamiento se maneja
+  // desde App.tsx con las rutas específicas de cada rol.
   return <Outlet />;
 }

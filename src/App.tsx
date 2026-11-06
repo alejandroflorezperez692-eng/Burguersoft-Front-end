@@ -22,6 +22,7 @@ import MateriaPrimaAdmin from './pages/admin/MateriaPrimaAdmin';
 import ComprasAdmin from './pages/admin/ComprasAdmin';
 import PromocionesAdmin from './pages/admin/PromocionesAdmin';
 import VentasAdmin from './pages/admin/VentasAdmin';
+import PedidosTurno from './pages/staff/PedidosTurno';
 import ReportesAdmin from './pages/admin/ReportesAdmin';
 import BackupsAdmin from './pages/admin/BackupsAdmin';
 import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
@@ -41,7 +42,7 @@ import TooltipsGlobales from './components/TooltipsGlobales';
 import ScrollToTop from './components/ScrollToTop';
 
 
-function App() {
+export default function App() {
   return (
     <ToastProvider>
       <TooltipsGlobales />
@@ -88,6 +89,7 @@ function App() {
 
           {/* Todo el personal */}
           <Route path="/inicio" element={<Inicio />} />
+          <Route path="/pedidos-en-vivo" element={<PedidosTurno />} />
           <Route path="/configuracion" element={<ConfiguracionAdmin />} />
           <Route path="/ayuda-admin" element={<AyudaAdmin />} />
 
@@ -129,5 +131,3 @@ function App() {
     </ToastProvider>
   );
 }
-
-export default App;
