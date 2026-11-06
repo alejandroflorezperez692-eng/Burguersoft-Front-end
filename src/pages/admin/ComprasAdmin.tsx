@@ -1071,7 +1071,7 @@ export default function ComprasAdmin() {
                   <th>Insumos</th>
                   <th>Total</th>
                   <th>Estado</th>
-                  <th>Acciones</th>
+                  <th className="th-acciones">Acciones</th>
                 </tr>
               </thead>
               <tbody>

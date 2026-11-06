@@ -619,7 +619,6 @@ export default function VentasAdmin() {
               <th>Estado</th>
               <th>Historial</th>
               <th>Factura</th>
-              <th>Detalle</th>
             </tr>
           </thead>
           <tbody>
@@ -637,18 +636,14 @@ export default function VentasAdmin() {
                   </small>
                 </td>
                 <td>
-                  <ul className="vt-productos">
-                    {(v?.detalles ?? []).map((d, i) => (
-                      <li key={`${d?.id}-${i}`}>
-                        <b>{d?.cantidad ?? 0}×</b> {d?.producto?.nombre ?? 'Producto'}
-                      </li>
-                    ))}
-                    {(v?.promociones ?? []).map((p, i) => (
-                      <li key={`${p?.id}-${i}`} className="vt-combo">
-                        <span className="badge badge-info">{p?.nombre}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', marginTop: 8 }}
+                    onClick={() => setDetalleId(v.id)}
+                  >
+                    Ver detalle
+                  </button>
                 </td>
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
                 <td><span className="badge badge-info">{v?.metodo_pago ?? ''}</span></td>
@@ -675,20 +670,10 @@ export default function VentasAdmin() {
                     Ver factura
                   </button>
                 </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn-cancel"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
-                    onClick={() => setDetalleId(v.id)}
-                  >
-                    Ver detalle
-                  </button>
-                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={10} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
+              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}
           </tbody>
         </table>

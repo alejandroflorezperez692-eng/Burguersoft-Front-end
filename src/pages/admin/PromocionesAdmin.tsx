@@ -683,7 +683,7 @@ export default function PromocionesAdmin() {
                 <th>Vigencia</th>
                 <th>Precio</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>

@@ -364,7 +364,7 @@ export default function MateriaPrimaAdmin() {
                 <th>Disponibilidad</th>
                 <th>Estado</th>
                 <th>Proveedor</th>
-                <th>Acciones</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>

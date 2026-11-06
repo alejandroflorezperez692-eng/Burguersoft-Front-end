@@ -494,7 +494,7 @@ export default function UsuariosAdmin() {
                 </button>
               </div>
 
-              {password !== '' && (
+                {true && (
                 <>
                   <div
                     className={`barra-contrasena ${claseBarra}`}

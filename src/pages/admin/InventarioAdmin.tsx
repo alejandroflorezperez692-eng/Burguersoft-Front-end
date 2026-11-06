@@ -168,8 +168,8 @@ export default function InventarioAdmin() {
                 <th>Nombre del insumo</th>
                 <th>Tipo</th>
                 <th>Cantidad</th>
-                <th>Stock</th>
-                <th>Acciones</th>
+                <th>Cantidad</th>
+                <th className="th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>

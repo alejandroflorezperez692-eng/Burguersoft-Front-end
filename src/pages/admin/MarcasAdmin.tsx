@@ -296,7 +296,7 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
                   <th>NIT</th>
                   <th>Teléfono</th>
                   <th>Correo</th>
-                  <th>Acciones</th>
+                  <th className="th-acciones">Acciones</th>
                 </tr>
               </thead>
               <tbody>

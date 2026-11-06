@@ -1011,3 +1011,185 @@ body.dark-mode .mn-form-cerrar { background: var(--surface); border-color: var(-
 .modal-x:disabled { opacity: .4; cursor: not-allowed; }
 body.dark-mode .modal-x { background: var(--surface); border-color: var(--border); color: var(--text-900); }
 .vt-det-head { padding-right: 48px; }
+
+/* ===== Requisitos de contraseña (mismo look que el registro) ===== */
+.barra-contrasena { width: 100%; height: 8px; border-radius: 999px; background: rgba(44, 24, 16, 0.12); overflow: hidden; margin-top: 12px; }
+.barra-contrasena-fill { display: block; height: 100%; border-radius: 999px; transition: width .35s ease, background .35s ease; }
+.barra-contrasena.rojo .barra-contrasena-fill { background: linear-gradient(90deg, #d93025, #f77e4f); }
+.barra-contrasena.amarillo .barra-contrasena-fill { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.barra-contrasena.verde .barra-contrasena-fill { background: linear-gradient(90deg, #16a34a, #4ade80); }
+
+.requisitos { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.requisito { font-size: 13.5px; font-weight: 600; color: #a0522d; display: flex; align-items: center; gap: 8px; line-height: 1.3; transition: color .2s; }
+.requisito.cumple { color: #1e8e3e; }
+
+body.dark-mode .barra-contrasena { background: rgba(255, 255, 255, 0.12); }
+body.dark-mode .requisito { color: #e8915a; }
+
+/* ===== Tablas del admin (modo claro): cabecera blanca, cuadrícula y borde cerrado ===== */
+body:not(.dark-mode) .data-table {
+  border-collapse: separate !important;
+  border-spacing: 0;
+  border: 1px solid #e3d3bb;               /* borde exterior completo */
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+/* Cabecera blanca */
+body:not(.dark-mode) .data-table thead,
+body:not(.dark-mode) .data-table thead th {
+  background: #fff !important;
+}
+body:not(.dark-mode) .data-table thead th {
+  color: #6b4a2b;
+  font-weight: 800;
+}
+
+/* Líneas verticales y horizontales entre celdas */
+body:not(.dark-mode) .data-table th,
+body:not(.dark-mode) .data-table td {
+  border: none;
+  border-right: 1px solid #eadfce;
+  border-bottom: 1px solid #eadfce;
+}
+body:not(.dark-mode) .data-table thead th {
+  border-bottom: 2px solid #e8821a;        /* línea naranja bajo la cabecera */
+}
+
+/* Sin doble línea junto al borde exterior */
+body:not(.dark-mode) .data-table tr > *:last-child { border-right: none; }
+body:not(.dark-mode) .data-table tbody tr:last-child > * { border-bottom: none; }
+body:not(.dark-mode) .data-table tbody tr { border-bottom: none; }
+
+/* ===== Líneas negras en las tablas (modo claro) ===== */
+body:not(.dark-mode) .data-table {
+  border-color: #1a0f0a;
+}
+body:not(.dark-mode) .data-table th,
+body:not(.dark-mode) .data-table td {
+  border-right-color: #1a0f0a;
+  border-bottom-color: #1a0f0a;
+}
+body:not(.dark-mode) .data-table thead th {
+  border-bottom: 2px solid #1a0f0a;   /* línea bajo la cabecera, también negra */
+}
+
+/* ===== Tablas del admin: cuadrícula suave (recomendado) ===== */
+body:not(.dark-mode) .data-table {
+  border: 1px solid #d9c6a8;
+  border-radius: 16px;
+}
+body:not(.dark-mode) .data-table th,
+body:not(.dark-mode) .data-table td {
+  border-right: 1px solid #eadfce;
+  border-bottom: 1px solid #eadfce;
+}
+
+/* Cabecera crema con línea naranja */
+body:not(.dark-mode) .data-table thead,
+body:not(.dark-mode) .data-table thead th {
+  background: #fffaf3 !important;
+}
+body:not(.dark-mode) .data-table thead th {
+  color: #6b4a2b;
+  border-bottom: 2px solid #e8821a;
+  border-right-color: #eadfce;
+}
+
+/* Fila al pasar el mouse */
+body:not(.dark-mode) .data-table tbody tr:hover > td {
+  background: #fff8ef;
+}
+
+/* ===== Encabezados y celdas con el mismo espaciado en todas las tablas ===== */
+body:not(.dark-mode) .data-table thead th {
+  padding: 16px 22px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  white-space: nowrap;          /* "DISPONIBILIDAD" ya no se pega a la línea */
+  vertical-align: middle;
+}
+body:not(.dark-mode) .data-table tbody td {
+  padding: 14px 22px;           /* el texto de las filas queda alineado con su encabezado */
+  vertical-align: middle;
+}
+
+/* Columna Acciones centrada (encabezado y botones) */
+body:not(.dark-mode) .data-table thead th.th-acciones { text-align: center; }
+body:not(.dark-mode) .data-table:has(th.th-acciones) tbody td:last-child {
+  text-align: center;
+  white-space: nowrap;
+}
+/* Botones Editar / Eliminar centrados en las tarjetas */
+.mn-grid .mn-table-actions {
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 16px 18px;
+}
+
+/* ===== Tablas de Menú, Promociones y Proveedores (.mn-table), mismo estilo que .data-table ===== */
+body:not(.dark-mode) .mn-table-wrap {
+  border: 1px solid #d9c6a8;
+  border-radius: 16px;
+  background: #fff;
+}
+
+/* Cabecera crema con línea naranja */
+body:not(.dark-mode) .mn-table thead th {
+  background: #fffaf3;
+  color: #6b4a2b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  padding: 16px 22px;
+  white-space: nowrap;
+  vertical-align: middle;
+  border-bottom: 2px solid #e8821a;
+}
+
+/* Cuadrícula (líneas verticales y horizontales) */
+body:not(.dark-mode) .mn-table th,
+body:not(.dark-mode) .mn-table td {
+  border-right: 1px solid #eadfce;
+}
+body:not(.dark-mode) .mn-table tbody td {
+  padding: 14px 22px;
+  border-bottom: 1px solid #eadfce;
+  vertical-align: middle;
+}
+body:not(.dark-mode) .mn-table tr > *:last-child { border-right: none; }
+body:not(.dark-mode) .mn-table tbody tr:last-child td { border-bottom: none; }
+body:not(.dark-mode) .mn-table tbody tr:hover > td { background: #fff8ef; }
+
+/* Columna Acciones centrada */
+body:not(.dark-mode) .mn-table thead th.th-acciones { text-align: center; }
+.mn-table .mn-table-actions { justify-content: center; }
+
+/* ===== Scroll fino en todos los modales, sin tocar las esquinas redondeadas ===== */
+.modal-overlay *::-webkit-scrollbar,
+.mn-modal-overlay *::-webkit-scrollbar { width: 8px; height: 8px; }
+
+.modal-overlay *::-webkit-scrollbar-track,
+.mn-modal-overlay *::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 20px 0;               /* separa la barra de las esquinas redondeadas */
+}
+
+.modal-overlay *::-webkit-scrollbar-thumb,
+.mn-modal-overlay *::-webkit-scrollbar-thumb {
+  background: #e0c9a6;
+  border-radius: 999px;
+}
+.modal-overlay *::-webkit-scrollbar-thumb:hover,
+.mn-modal-overlay *::-webkit-scrollbar-thumb:hover { background: #e8821a; }
+
+.modal-overlay *::-webkit-scrollbar-button,
+.mn-modal-overlay *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+/* Firefox (no entiende ::-webkit-scrollbar) */
+@supports not selector(::-webkit-scrollbar) {
+  .modal-overlay *, .mn-modal-overlay * { scrollbar-width: thin; scrollbar-color: #e0c9a6 transparent; }
+}
