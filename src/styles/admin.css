@@ -1649,6 +1649,133 @@ body.dark-mode .data-table thead {
   background: #3d1a04;
 }
 
+body.dark-mode .admin-body .data-table.ventas-table thead {
+  background: transparent !important;
+}
+
+body.dark-mode .admin-body .data-table.ventas-table {
+  border: 1px solid #E8821A;
+}
+
+body.dark-mode .admin-body .ventas-table-wrap {
+  border: 1px solid #E8821A;
+  border-radius: var(--r-lg);
+  box-sizing: border-box;
+}
+
+body.dark-mode .admin-body .data-table.ventas-table thead th,
+body.dark-mode .admin-body .data-table.ventas-table tbody td {
+  border-bottom: 1px solid #E8821A !important;
+}
+
+.venta-estado-dropdown { position: relative; }
+
+.venta-estado-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: max-content;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text-900);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.venta-estado-options {
+  z-index: 1200;
+  max-height: min(320px, 60vh);
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.venta-estado-option {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-900);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.venta-estado-option:last-child { border-bottom: 0; }
+.venta-estado-option:hover:not(:disabled) {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+.venta-estado-option:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+body.dark-mode .admin-body .data-table.ventas-table .venta-estado-trigger,
+body.dark-mode .venta-estado-options {
+  background-color: #000000;
+  color: #ffffff;
+  border-color: #E8821A;
+}
+
+body.dark-mode .venta-estado-option {
+  background-color: #000000;
+  color: #ffffff;
+  border-bottom-color: #E8821A;
+}
+
+body.dark-mode .venta-estado-option:hover:not(:disabled) {
+  background-color: #E8821A;
+  color: #ffffff;
+}
+
+body.dark-mode .venta-estado-option.selected {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .data-table.ventas-table .venta-metodo-badge {
+  background: #000000;
+  border: 1px solid #E8821A;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .data-table.ventas-table tbody tr:hover {
+  background: #000000 !important;
+}
+
+body.dark-mode .admin-body .data-table.ventas-table tbody tr:hover td {
+  background: #000000 !important;
+  border-bottom-color: #E8821A !important;
+}
+
+body.dark-mode .admin-body .ventas-page .pag-btn:hover:not(:disabled) {
+  background: #E8821A;
+  border-color: #E8821A;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .ventas-page .pag-btn.activa {
+  background: #E8821A;
+  border-color: #E8821A;
+  color: #ffffff;
+}
+
 body.dark-mode .data-table tbody tr {
   border-bottom-color: rgba(232, 130, 26, 0.16);
 }

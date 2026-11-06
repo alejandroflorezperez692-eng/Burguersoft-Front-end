@@ -1,4 +1,5 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
@@ -88,6 +89,10 @@ export default function VentasAdmin() {
   const [filtroEntrega, setFiltroEntrega] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+  const [estadoAbiertoId, setEstadoAbiertoId] = useState<number | null>(null);
+  const [estadoDropdownPos, setEstadoDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const estadoDropdownRefs = useRef(new Map<number, HTMLDivElement>());
+  const estadoOptionsRefs = useRef(new Map<number, HTMLDivElement>());
 
   // --- Paginación (Develop) ---
   const [pagina, setPagina] = useState(1);
@@ -280,6 +285,34 @@ export default function VentasAdmin() {
       .catch(() => alertar('No se pudo cambiar el estado.'));
   };
 
+  useEffect(() => {
+    if (estadoAbiertoId === null) return;
+    const cerrarAlHacerClickFuera = (event: MouseEvent) => {
+      const root = estadoDropdownRefs.current.get(estadoAbiertoId);
+      const options = estadoOptionsRefs.current.get(estadoAbiertoId);
+      if (!root?.contains(event.target as Node) && !options?.contains(event.target as Node)) {
+        setEstadoAbiertoId(null);
+      }
+    };
+    const cerrarAlDesplazarse = () => setEstadoAbiertoId(null);
+    document.addEventListener('mousedown', cerrarAlHacerClickFuera);
+    window.addEventListener('scroll', cerrarAlDesplazarse, true);
+    window.addEventListener('resize', cerrarAlDesplazarse);
+    return () => {
+      document.removeEventListener('mousedown', cerrarAlHacerClickFuera);
+      window.removeEventListener('scroll', cerrarAlDesplazarse, true);
+      window.removeEventListener('resize', cerrarAlDesplazarse);
+    };
+  }, [estadoAbiertoId]);
+
+  useEffect(() => {
+    if (estadoAbiertoId === null) return;
+    estadoOptionsRefs.current
+      .get(estadoAbiertoId)
+      ?.querySelector<HTMLButtonElement>('[role="option"][aria-selected="true"], [role="option"]:not(:disabled)')
+      ?.focus();
+  }, [estadoAbiertoId]);
+
   const verFactura = async (id: number) => {
     const ventana = window.open('', '_blank');
 
@@ -309,7 +342,7 @@ export default function VentasAdmin() {
   }
 
   return (
-    <div className="page-inner">
+    <div className="page-inner ventas-page">
       <div className="page-header">
         <div>
           <h1>{esAdmin ? 'Gestión de Ventas' : 'Caja'}</h1>
@@ -567,8 +600,8 @@ export default function VentasAdmin() {
         </p>
       </div>
 
-      <div className="tabla-responsive">
-        <table className="data-table">
+      <div className="tabla-responsive ventas-table-wrap">
+        <table className="data-table ventas-table">
           <thead>
             <tr>
               <th>#</th>
@@ -598,17 +631,114 @@ export default function VentasAdmin() {
                   </div>
                 </td>
                 <td style={{ fontWeight: 700 }}>${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
-                <td><span className="badge badge-info">{v?.metodo_pago ?? ''}</span></td>
+                <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
                 <td>
-                  <select
-                    value={v?.estado ?? ''}
-                    onChange={(e) => updateEstado(v.id, e.target.value)}
-                    style={{ padding: '4px 8px', borderRadius: 'var(--r-sm)', border: '1px solid var(--border)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                  <div
+                    className="venta-estado-dropdown"
+                    ref={(element) => {
+                      if (element) estadoDropdownRefs.current.set(v.id, element);
+                      else estadoDropdownRefs.current.delete(v.id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        setEstadoAbiertoId(null);
+                        estadoDropdownRefs.current.get(v.id)
+                          ?.querySelector<HTMLButtonElement>('.venta-estado-trigger')
+                          ?.focus();
+                        return;
+                      }
+                      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+                      event.preventDefault();
+                      if (estadoAbiertoId !== v.id) {
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const menuHeight = ESTADOS.length * 38;
+                        const width = Math.max(rect.width, 180);
+                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
+                          ? rect.bottom + 4
+                          : Math.max(8, rect.top - menuHeight - 4);
+                        setEstadoDropdownPos({
+                          top,
+                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+                          width,
+                        });
+                        setEstadoAbiertoId(v.id);
+                        return;
+                      }
+                      const options = Array.from(
+                        estadoOptionsRefs.current.get(v.id)?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)') ?? [],
+                      );
+                      const currentIndex = options.indexOf(document.activeElement as HTMLButtonElement);
+                      const increment = event.key === 'ArrowDown' ? 1 : -1;
+                      options[(currentIndex + increment + options.length) % options.length]?.focus();
+                    }}
                   >
-                    {ESTADOS.map((e) => (
-                      <option key={e} value={e} disabled={(!esAdmin && e === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(e))}>{e}</option>
-                    ))}
-                  </select>
+                    <button
+                      type="button"
+                      className="venta-estado-trigger"
+                      aria-haspopup="listbox"
+                      aria-expanded={estadoAbiertoId === v.id}
+                      onClick={(event) => {
+                        if (estadoAbiertoId === v.id) {
+                          setEstadoAbiertoId(null);
+                          return;
+                        }
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const menuHeight = ESTADOS.length * 38;
+                        const width = Math.max(rect.width, 180);
+                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
+                          ? rect.bottom + 4
+                          : Math.max(8, rect.top - menuHeight - 4);
+                        setEstadoDropdownPos({
+                          top,
+                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+                          width,
+                        });
+                        setEstadoAbiertoId(v.id);
+                      }}
+                    >
+                      {v?.estado ?? ''}
+                      <span aria-hidden="true">▾</span>
+                    </button>
+                    {estadoAbiertoId === v.id && estadoDropdownPos && createPortal(
+                      <div
+                        className="venta-estado-options"
+                        ref={(element) => {
+                          if (element) estadoOptionsRefs.current.set(v.id, element);
+                          else estadoOptionsRefs.current.delete(v.id);
+                        }}
+                        role="listbox"
+                        aria-label={`Estado de la venta ${v.id}`}
+                        style={{
+                          position: 'fixed',
+                          top: estadoDropdownPos.top,
+                          left: estadoDropdownPos.left,
+                          width: estadoDropdownPos.width,
+                        }}
+                      >
+                        {ESTADOS.map((estado) => {
+                          const seleccionado = estado === v?.estado;
+                          const deshabilitado = (!esAdmin && estado === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(estado));
+                          return (
+                            <button
+                              key={estado}
+                              type="button"
+                              role="option"
+                              aria-selected={seleccionado}
+                              className={`venta-estado-option${seleccionado ? ' selected' : ''}`}
+                              disabled={deshabilitado}
+                              onClick={() => {
+                                updateEstado(v.id, estado);
+                                setEstadoAbiertoId(null);
+                              }}
+                            >
+                              {estado}
+                            </button>
+                          );
+                        })}
+                      </div>,
+                      document.body,
+                    )}
+                  </div>
                 </td>
                 <td>
                   <button
