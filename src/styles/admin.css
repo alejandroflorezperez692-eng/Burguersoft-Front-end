@@ -1575,38 +1575,81 @@ body.dark-mode .detalle-box { background: var(--surface); }
   margin-top: 4px;
 }
 
+/* ===== MODO OSCURO: menú izquierdo y barra superior (negro con línea naranja) ===== */
+
+/* Barra superior más alta en modo claro y oscuro (solo escritorio). Cambia 92px para ajustar. */
+@media (min-width: 901px) {
+  body {
+    --header-h: 92px;
+  }
+}
+
 body.dark-mode .sidebar {
-  background: rgba(232, 130, 26, 0.15);
+  background: #0B0B0B;
+  border-right: 1px solid #E8821A;
 }
 
 body.dark-mode .sidebar-header {
-  background: #000000;
-  border-bottom-color: rgba(232, 130, 26, 0.15);
+  background: #0B0B0B;
+  border-bottom: 1px solid #E8821A;
 }
 
 body.dark-mode .sidebar-divider {
-  background: rgba(232, 130, 26, 0.15);
+  background: rgba(232, 130, 26, 0.35);
 }
 
 body.dark-mode .nom-local {
-  color: var(--text-900);
+  color: #E8821A;
+}
+
+body.dark-mode .sidebar-item a {
+  color: #BDBDBD;
 }
 
 body.dark-mode .sidebar-item:hover a {
-  background: rgba(232, 130, 26, 0.14);
-  color: #fff;
+  background: rgba(232, 130, 26, 0.12);
+  color: #FFFFFF;
 }
 
 body.dark-mode .sidebar-item a.active {
-  background: linear-gradient(90deg, rgba(232, 130, 26, 0.32), rgba(232, 130, 26, 0.16));
-  box-shadow: inset 0 0 0 1.5px rgba(232, 130, 26, 0.5);
-  color: #fff;
+  background: rgba(232, 130, 26, 0.16);
+  box-shadow: inset 0 0 0 1px #E8821A;
+  color: #E8821A;
+}
+
+body.dark-mode .sidebar-salir::before {
+  background: rgba(232, 130, 26, 0.35);
 }
 
 body.dark-mode .header-nav {
-  background: linear-gradient(to right, var(--surface-3), #6b3200);
-  box-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+  background: #0B0B0B;
+  border-bottom: 1px solid #E8821A;
+  box-shadow: none;
 }
+
+body.dark-mode .header-sep {
+  background: rgba(232, 130, 26, 0.35);
+}
+
+body.dark-mode .notif-btn,
+body.dark-mode .header-user {
+  background: rgba(232, 130, 26, 0.12);
+  border-color: #E8821A;
+}
+
+body.dark-mode .notif-btn:hover,
+body.dark-mode .notif-btn.open,
+body.dark-mode .header-user:hover,
+body.dark-mode .header-user.active {
+  background: rgba(232, 130, 26, 0.24);
+  border-color: #E8821A;
+}
+
+body.dark-mode .notif-badge {
+  border-color: #0B0B0B;
+}
+
+/* ===== FIN MODO OSCURO: menú izquierdo y barra superior ===== */
 
 body.dark-mode .main-content {
   background: var(--bg);
@@ -4055,7 +4098,7 @@ body.dark-mode .cfg-requisito.cumple {
     background-size: calc(100% - (var(--sidebar-w-open, 240px) - 72px)) 100%;
   }
   body.dark-mode .admin-body.sidebar-collapsed .header-nav {
-    background-color: var(--surface-3);
+    background-color: #0B0B0B;
   }
 
   .admin-body.sidebar-collapsed .sidebar-collapse-btn {
