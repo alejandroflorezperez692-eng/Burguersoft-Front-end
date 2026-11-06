@@ -70,6 +70,214 @@ const normalizar = (s: unknown) =>
 const fechaLocal = (fecha?: string | null) =>
   fecha ? new Date(fecha).toLocaleDateString('en-CA') : '';
 
+function FiltroDesplegableVentas({ value, onChange, opciones }: {
+  value: string;
+  onChange: (value: string) => void;
+  opciones: { value: string; label: string }[];
+}) {
+  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [abierto, setAbierto] = useState(false);
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setModoOscuro(document.body.classList.contains('dark-mode')));
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrarFuera = (event: MouseEvent) => {
+      if (!contenedorRef.current?.contains(event.target as Node)) setAbierto(false);
+    };
+    const cerrarEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAbierto(false);
+    };
+    document.addEventListener('mousedown', cerrarFuera);
+    document.addEventListener('keydown', cerrarEscape);
+    return () => {
+      document.removeEventListener('mousedown', cerrarFuera);
+      document.removeEventListener('keydown', cerrarEscape);
+    };
+  }, [abierto]);
+
+  if (!modoOscuro) {
+    return (
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {opciones.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
+      </select>
+    );
+  }
+
+  const seleccionada = opciones.find((opcion) => opcion.value === value);
+  return (
+    <div className="ventas-filter-dropdown" ref={contenedorRef}>
+      <button
+        type="button"
+        className="ventas-filter-dropdown-trigger"
+        aria-haspopup="listbox"
+        aria-expanded={abierto}
+        onClick={() => setAbierto(!abierto)}
+      >
+        <span>{seleccionada?.label ?? ''}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M2 4l4 4 4-4" />
+        </svg>
+      </button>
+      {abierto && (
+        <ul className="ventas-filter-dropdown-options" role="listbox">
+          {opciones.map((opcion) => (
+            <li
+              key={opcion.value}
+              className={`ventas-filter-dropdown-option${opcion.value === value ? ' selected' : ''}`}
+              role="option"
+              aria-selected={opcion.value === value}
+              tabIndex={0}
+              onClick={() => { onChange(opcion.value); setAbierto(false); }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onChange(opcion.value);
+                  setAbierto(false);
+                }
+              }}
+            >
+              {opcion.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function SelectorFechaVentas({ value, onChange, min, max }: {
+  value: string;
+  onChange: (value: string) => void;
+  min?: string;
+  max?: string;
+}) {
+  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [abierto, setAbierto] = useState(false);
+  const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
+  const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => setModoOscuro(document.body.classList.contains('dark-mode')));
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrarFuera = (event: MouseEvent) => {
+      if (!contenedorRef.current?.contains(event.target as Node)) setAbierto(false);
+    };
+    const cerrarEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAbierto(false);
+    };
+    document.addEventListener('mousedown', cerrarFuera);
+    document.addEventListener('keydown', cerrarEscape);
+    return () => {
+      document.removeEventListener('mousedown', cerrarFuera);
+      document.removeEventListener('keydown', cerrarEscape);
+    };
+  }, [abierto]);
+
+  if (!modoOscuro) {
+    return (
+      <input
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    );
+  }
+
+  const anio = mesVisible.getFullYear();
+  const mes = mesVisible.getMonth();
+  const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+  const primerDia = (new Date(anio, mes, 1).getDay() + 6) % 7;
+  const tituloMes = mesVisible.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' });
+  const indiceMes = anio * 12 + mes;
+  const mesMinimo = min ? Number(min.slice(0, 4)) * 12 + Number(min.slice(5, 7)) - 1 : -Infinity;
+  const mesMaximo = max ? Number(max.slice(0, 4)) * 12 + Number(max.slice(5, 7)) - 1 : Infinity;
+  const textoFecha = value ? new Date(`${value}T00:00:00`).toLocaleDateString('es-CO') : 'dd/mm/aaaa';
+
+  return (
+    <div className="compras-date-picker ventas-date-picker" ref={contenedorRef}>
+      <button
+        type="button"
+        className="compras-date-trigger ventas-date-trigger"
+        aria-haspopup="dialog"
+        aria-expanded={abierto}
+        onClick={() => {
+          if (!abierto) {
+            const fecha = value ? new Date(`${value}T00:00:00`) : new Date();
+            setMesVisible(new Date(fecha.getFullYear(), fecha.getMonth(), 1));
+          }
+          setAbierto(!abierto);
+        }}
+      >
+        <span>{textoFecha}</span>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="2" />
+          <path d="M16 3v4M8 3v4M3 10h18" />
+        </svg>
+      </button>
+      {abierto && (
+        <div className="compras-calendar" role="dialog" aria-label="Elegir fecha">
+          <div className="compras-calendar-header">
+            <button type="button" aria-label="Mes anterior" disabled={indiceMes <= mesMinimo} onClick={() => setMesVisible(new Date(anio, mes - 1, 1))}>‹</button>
+            <strong>{tituloMes}</strong>
+            <button type="button" aria-label="Mes siguiente" disabled={indiceMes >= mesMaximo} onClick={() => setMesVisible(new Date(anio, mes + 1, 1))}>›</button>
+          </div>
+          <div className="compras-calendar-grid compras-calendar-weekdays" aria-hidden="true">
+            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((dia) => <span key={dia}>{dia}</span>)}
+          </div>
+          <div className="compras-calendar-grid">
+            {Array.from({ length: primerDia }, (_, index) => <span key={`vacio-${index}`} />)}
+            {Array.from({ length: diasEnMes }, (_, index) => {
+              const dia = index + 1;
+              const fecha = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+              const deshabilitada = (!!min && fecha < min) || (!!max && fecha > max);
+              return (
+                <button
+                  type="button"
+                  key={fecha}
+                  className={value === fecha ? 'selected' : ''}
+                  disabled={deshabilitada}
+                  aria-pressed={value === fecha}
+                  onClick={() => { onChange(fecha); setAbierto(false); }}
+                >
+                  {dia}
+                </button>
+              );
+            })}
+          </div>
+          <div className="compras-calendar-footer">
+            <button type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</button>
+            <button
+              type="button"
+              onClick={() => {
+                const hoy = new Date();
+                const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+                if ((!min || fecha >= min) && (!max || fecha <= max)) onChange(fecha);
+                setAbierto(false);
+              }}
+            >
+              Hoy
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function VentasAdmin() {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -542,53 +750,54 @@ export default function VentasAdmin() {
         </div>
 
         {/* Fila 2: Filtros (Carlos) */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ margin: 0 }}>
+        <div className="ventas-filtros" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+          <div className="form-group ventas-filter-state" style={{ margin: 0 }}>
             <label>Estado</label>
-            <select value={filtroEstado} onChange={(e) => { setFiltroEstado(e.target.value); setPagina(1); }}>
-              <option value="">Todos</option>
-              {ESTADOS.map((e) => <option key={e} value={e}>{e}</option>)}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Método de pago</label>
-            <select value={filtroMetodo} onChange={(e) => { setFiltroMetodo(e.target.value); setPagina(1); }}>
-              <option value="">Todos</option>
-              {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Entrega</label>
-            <select value={filtroEntrega} onChange={(e) => { setFiltroEntrega(e.target.value); setPagina(1); }}>
-              <option value="">Todas</option>
-              {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-
-          <div className="form-group" style={{ margin: 0 }}>
-            <label>Desde</label>
-            <input
-              type="date"
-              value={fechaDesde}
-              max={fechaHasta || undefined}
-              onChange={(e) => { setFechaDesde(e.target.value); setPagina(1); }}
+            <FiltroDesplegableVentas
+              value={filtroEstado}
+              onChange={(value) => { setFiltroEstado(value); setPagina(1); }}
+              opciones={[{ value: '', label: 'Todos' }, ...ESTADOS.map((estado) => ({ value: estado, label: estado }))]}
             />
           </div>
 
-          <div className="form-group" style={{ margin: 0 }}>
+          <div className="form-group ventas-filter-method" style={{ margin: 0 }}>
+            <label>Método de pago</label>
+            <FiltroDesplegableVentas
+              value={filtroMetodo}
+              onChange={(value) => { setFiltroMetodo(value); setPagina(1); }}
+              opciones={[{ value: '', label: 'Todos' }, ...METODOS.map((metodo) => ({ value: metodo, label: metodo }))]}
+            />
+          </div>
+
+          <div className="form-group ventas-filter-delivery" style={{ margin: 0 }}>
+            <label>Entrega</label>
+            <FiltroDesplegableVentas
+              value={filtroEntrega}
+              onChange={(value) => { setFiltroEntrega(value); setPagina(1); }}
+              opciones={[{ value: '', label: 'Todas' }, ...TIPOS_ENTREGA.map((entrega) => ({ value: entrega, label: entrega }))]}
+            />
+          </div>
+
+          <div className="form-group ventas-filter-date" style={{ margin: 0 }}>
+            <label>Desde</label>
+            <SelectorFechaVentas
+              value={fechaDesde}
+              max={fechaHasta || undefined}
+              onChange={(fecha) => { setFechaDesde(fecha); setPagina(1); }}
+            />
+          </div>
+
+          <div className="form-group ventas-filter-date" style={{ margin: 0 }}>
             <label>Hasta</label>
-            <input
-              type="date"
+            <SelectorFechaVentas
               value={fechaHasta}
               min={fechaDesde || undefined}
-              onChange={(e) => { setFechaHasta(e.target.value); setPagina(1); }}
+              onChange={(fecha) => { setFechaHasta(fecha); setPagina(1); }}
             />
           </div>
 
           {hayFiltros && (
-            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ padding: '8px 18px', fontSize: 13, height: 42 }}>
+            <button type="button" className="btn-cancel ventas-clear-filters-btn" onClick={limpiarFiltros}>
               Limpiar filtros
             </button>
           )}
