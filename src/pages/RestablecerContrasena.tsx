@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
@@ -13,6 +13,7 @@ export default function RestablecerContrasena() {
   const { logout } = useAuth();
   const correo = sessionStorage.getItem('correo_recuperacion') ?? '';
   const codigo = sessionStorage.getItem('codigo_verificado') ?? '';
+  const cambioCompletado = useRef(false);
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [show1, setShow1] = useState(false);
@@ -21,7 +22,9 @@ export default function RestablecerContrasena() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!correo || !codigo) navigate('/recuperar-contrasena', { replace: true });
+    if (!cambioCompletado.current && (!correo || !codigo)) {
+      navigate('/recuperar-contrasena', { replace: true });
+    }
   }, [correo, codigo, navigate]);
 
   const reqs = [
@@ -53,6 +56,7 @@ export default function RestablecerContrasena() {
         password,
         password_confirmation: confirm,
       });
+      cambioCompletado.current = true;
       sessionStorage.removeItem('correo_recuperacion');
       sessionStorage.removeItem('codigo_verificado');
       // Este cambio viene del login: se cierra cualquier sesión previa y el

@@ -31,6 +31,7 @@ const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
   { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.menu },
   { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.menu },
+  { to: '/pedidos-en-vivo', label: 'Pedidos', icono: cena, roles: ACCESO.ventas },
   { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.ventas },
   { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.inventario },
   { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.inventario },
@@ -73,9 +74,6 @@ export default function AdminLayout() {
   const esPersonal = rol !== '' && ACCESO.personal.includes(rol);
   const navItems = todosLosItems.filter((item) => rol !== '' && item.roles.includes(rol));
 
-  // Valida la sesión con el backend al abrir el panel y en cada cambio de pantalla.
-  // Si la cuenta fue suspendida/desactivada, el backend responde 401 y el
-  // interceptor de api/client.ts cierra la sesión y manda al login.
   useEffect(() => {
     if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
     apiClient.get('/me').catch((err) => {
@@ -88,7 +86,6 @@ export default function AdminLayout() {
     setSaliendo(true);
     setTimeout(() => {
       logout();
-      // navigate al login con aviso de sesión cerrada
       navigate('/login', { replace: true, state: { toast: 'logout_ok' } });
       setSaliendo(false);
     }, 500);
@@ -117,7 +114,6 @@ export default function AdminLayout() {
     };
   }, [menuOpen]);
 
-  // Cierra el menú del usuario al hacer clic fuera o presionar Escape
   useEffect(() => {
     if (!userMenuOpen) return;
     const onClickFuera = (e: MouseEvent) => {
@@ -168,13 +164,6 @@ export default function AdminLayout() {
             </div>
           ))}
         </div>
-
-        <div className="sidebar-item sidebar-salir">
-          <button type="button" onClick={() => { cerrarMenu(); handleSalir(); }}>
-            <img src={cerrarSesion} alt="" className="icono-sidebar" />
-            Cerrar sesión
-          </button>
-        </div>
       </aside>
       <div className={`sidebar-backdrop${menuOpen ? ' show' : ''}`} onClick={cerrarMenu} />
 
@@ -193,6 +182,7 @@ export default function AdminLayout() {
               aria-haspopup="menu"
               aria-expanded={userMenuOpen}
               title="Cuenta"
+              data-tooltip="Abrir menú de cuenta"
               style={{ cursor: 'pointer', font: 'inherit', textAlign: 'left' }}
             >
               <img src={usuarioPerfil} alt="" className="header-avatar" />
@@ -224,6 +214,7 @@ export default function AdminLayout() {
                 <button
                   type="button"
                   role="menuitem"
+                  data-tooltip="Ver mi perfil"
                   style={estiloItemMenu}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3, #f3ece4)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
@@ -235,6 +226,7 @@ export default function AdminLayout() {
                 <button
                   type="button"
                   role="menuitem"
+                  data-tooltip="Cerrar sesión"
                   style={{ ...estiloItemMenu, color: 'var(--danger, #d32f2f)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(211, 47, 47, 0.1)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}

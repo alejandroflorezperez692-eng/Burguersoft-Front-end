@@ -363,6 +363,7 @@
   flex: 1;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -560,6 +561,39 @@ body.dark-mode .mn-ing-row input {
   border: 1.5px solid #E8821A;
 }
 
+body.dark-mode .admin-body:has(.mn-page) .main-content {
+  --surface: #000000;
+  --surface-2: #000000;
+  --surface-3: #000000;
+  --bg: #000000;
+  --border: #E8821A;
+  --border-strong: #E8821A;
+  background: #000000;
+}
+
+body.dark-mode .admin-body:has(.mn-page) .mn-card-noimg {
+  background: transparent;
+}
+
+body.dark-mode .admin-body:has(.mn-page) .mn-card-estado {
+  background: #1a7a42;
+  border: 1px solid #1a7a42;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body:has(.mn-page) .mn-card-imgwrap {
+  position: relative;
+}
+
+body.dark-mode .admin-body:has(.mn-page) .mn-card-imgwrap::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: #E8821A;
+  z-index: 1;
+}
+
 /* ===== Promociones (se apoya en las clases mn-* del Menú) ===== */
 
 /* Estado de la promoción en la tarjeta */
@@ -684,6 +718,11 @@ body.dark-mode .mn-ing-row input {
   font-size: 0.9rem;
 }
 
+body.dark-mode .admin-body .admin-footer {
+  background: #000000;
+  border-top-color: #ffffff;
+}
+
 /* ===== Paginación de usuarios ===== */
 .us-pag {
   display: flex;
@@ -797,6 +836,11 @@ body.dark-mode .mn-ing-row input {
 .mn-view-toggle button + button { border-left: 1.5px solid var(--border); }
 .mn-view-toggle button.active { background: rgba(47, 138, 240, 0.15); color: var(--info); }
 
+body.dark-mode .admin-body:has(.mn-page) .mn-view-toggle button.active {
+  background: #E8821A;
+  color: #ffffff;
+}
+
 .mn-table-wrap {
   overflow-x: auto;
   background: var(--surface);
@@ -825,3 +869,37 @@ body.dark-mode .mn-ing-row input {
 .mn-table-actions { display: flex; gap: 8px; }
 .mn-table-actions .mn-btn-edit,
 .mn-table-actions .mn-btn-del { flex: none; padding: 7px 14px; }
+.mn-btn-toggle {
+  flex: 1;
+  padding: 7px;
+  border: none;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  color: #fff;
+}
+.mn-btn-toggle.desactivar { background: #6b7280; }
+.mn-btn-toggle.activar { background: #16a34a; }
+.mn-btn-toggle:hover { filter: brightness(0.87); }
+.mn-table-actions .mn-btn-toggle { flex: none; padding: 7px 14px; }
+
+.mn-table tr.inactivo { opacity: .5; }
+.mn-card.inactivo .mn-card-imgwrap,
+.mn-card.inactivo .mn-card-body { filter: grayscale(1); opacity: .45; }
+
+.mn-badge-inactivo {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.mn-adic-row{display:grid;grid-template-columns:1fr 130px 36px;gap:8px;margin-bottom:8px}
+.mn-adic-row input{padding:10px 12px;border:1px solid #f0dcc4;border-radius:12px;font:inherit;background:#fff}
+.mn-adic-del{border:0;border-radius:10px;background:#fbe3e0;color:#c0392b;font-size:20px;cursor:pointer}
+.mn-adic-add{border:1.5px dashed #e8851a;background:#fff;color:#e8851a;font-weight:700;border-radius:12px;padding:10px;cursor:pointer;width:100%}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
-import { useToast } from '../components/Toast';
+import MotivoModal from '../components/MotivoModal';
 import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import { getEcho } from '../api/echo';
@@ -42,22 +42,17 @@ function texto(valor: unknown): string | undefined {
 }
 
 // Reutiliza los mismos pasos que la vista PHP original
-const PASOS_DOMICILIO = ['En cocina', 'En barra', 'En camino', 'Entregado', 'Pagado'];
-const PASOS_RECOGER = ['En cocina', 'Listo para recoger', 'Entregado', 'Pagado'];
-const PASOS_CONSUMIR = ['En cocina', 'En barra', 'Entregado', 'Pendiente de pago', 'Pagado'];
-const CANCELABLES = ['En cocina', 'En barra', 'Pendiente de pago'];
+const PASOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'];
+const PASOS_DOMICILIO = PASOS;
+const PASOS_RECOGER = PASOS;
+const PASOS_CONSUMIR = PASOS;
+const CANCELABLES = ['Registrado', 'Por verificar', 'Recepcionado'];
+// Estados en los que el cliente puede rechazar el pedido (ej. pago pendiente que no hizo).
+const RECHAZABLES = ['Pendiente de pago'];
 
 // Orden global para estimar progreso cuando el estado no pertenece al flujo actual
 // (el backend permite cualquier estado en cualquier tipo de entrega).
-const ORDEN_GLOBAL = [
-  'En cocina',
-  'En barra',
-  'Listo para recoger',
-  'En camino',
-  'Entregado',
-  'Pendiente de pago',
-  'Pagado',
-];
+const ORDEN_GLOBAL = PASOS;
 
 function normalizarTipoEntrega(tipo?: string): string {
   const t = (tipo ?? '').trim().toLowerCase();
@@ -145,7 +140,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
           id: vid,
           numero_secuencial: 0,
           fecha: String(f.fecha ?? f.created_at ?? ''),
-          estado: String(f.estado_venta ?? f.estado ?? 'En cocina'),
+          estado: String(f.estado_venta ?? f.estado ?? 'Registrado'),
           tipo_entrega: normalizarTipoEntrega(f.tipo_entrega),
           metodo_pago: f.metodo_pago ? String(f.metodo_pago) : undefined,
           total: 0,
@@ -238,7 +233,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
         id,
         numero_secuencial: 0,
         fecha: String(v.fecha ?? v.created_at ?? ''),
-        estado: String(v.estado ?? v.estado_venta ?? 'En cocina'),
+        estado: String(v.estado ?? v.estado_venta ?? 'Registrado'),
         tipo_entrega: normalizarTipoEntrega(v.tipo_entrega),
         metodo_pago: v.metodo_pago ? String(v.metodo_pago) : undefined,
         total: Number.isFinite(totalBD) && totalBD > 0 ? totalBD : totalCalculado,
@@ -284,10 +279,12 @@ function asignarSecuenciales(pedidos: PedidoUI[]): PedidoUI[] {
 
 export default function MisCompras() {
   const { isAuthenticated, user } = useAuth();
-  const { confirmar } = useToast();
+  const [pedidoACancelar, setPedidoACancelar] = useState<PedidoUI | null>(null);
+  const [pedidoARechazar, setPedidoARechazar] = useState<PedidoUI | null>(null);
   const [pedidos, setPedidos] = useState<PedidoUI[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelandoId, setCancelandoId] = useState<number | null>(null);
+  const [rechazandoId, setRechazandoId] = useState<number | null>(null);
   const [cargando, setCargando] = useState(false);
 
   const cargar = useCallback(async (silencioso = false) => {
@@ -405,16 +402,20 @@ export default function MisCompras() {
     };
   }, [isAuthenticated, cargar]);
 
-  const cancelarPedido = async (pedido: PedidoUI) => {
+  const cancelarPedido = (pedido: PedidoUI) => {
     if (!CANCELABLES.includes(pedido.estado)) {
       setError('Este pedido ya no se puede cancelar. Contáctanos por WhatsApp.');
       return;
     }
-    if (!(await confirmar(`¿Seguro que deseas cancelar el pedido #${pedido.numero_secuencial}?`, 'Sí, cancelar'))) return;
+    setPedidoACancelar(pedido);
+  };
+
+  const confirmarCancelacion = async (pedido: PedidoUI, motivo: string) => {
+    setPedidoACancelar(null);
     setCancelandoId(pedido.id);
     setError(null);
     try {
-      const { data } = await apiClient.put(`/pedidos/${pedido.id}`, { estado: 'Cancelado' });
+      const { data } = await apiClient.put(`/pedidos/${pedido.id}`, { estado: 'Cancelado', motivo });
       // El backend puede devolver { success: true } o la venta actualizada
       if (data && data.success === false) {
         throw new Error(String(data.error ?? data.message ?? 'No se pudo cancelar el pedido.'));
@@ -428,6 +429,40 @@ export default function MisCompras() {
       setError(mensajeError(e, 'No se pudo cancelar el pedido'));
     } finally {
       setCancelandoId(null);
+    }
+  };
+
+  const rechazarPedido = (pedido: PedidoUI) => {
+    if (!RECHAZABLES.includes(pedido.estado)) {
+      setError('Este pedido ya no se puede rechazar. Contáctanos por WhatsApp.');
+      return;
+    }
+    setPedidoARechazar(pedido);
+  };
+
+  const confirmarRechazo = async (pedido: PedidoUI, motivo: string) => {
+    setPedidoARechazar(null);
+    setRechazandoId(pedido.id);
+    setError(null);
+    try {
+      const { data } = await apiClient.put(`/pedidos/${pedido.id}`, { estado: 'Rechazada', motivo });
+      if (data && data.success === false) {
+        throw new Error(String(data.error ?? data.message ?? 'No se pudo rechazar el pedido.'));
+      }
+      // Actualización optimista inmediata + recarga de confirmación
+      setPedidos((prev) =>
+        prev === null ? prev : prev.map((p) => (p.id === pedido.id ? { ...p, estado: 'Rechazada' } : p)),
+      );
+      await cargar();
+    } catch (e: unknown) {
+      let mensaje = 'No se pudo rechazar el pedido.';
+      if (typeof e === 'object' && e !== null) {
+        const err = e as { response?: { data?: { error?: string; message?: string } }; message?: string };
+        mensaje = err.response?.data?.error ?? err.response?.data?.message ?? err.message ?? mensaje;
+      }
+      setError(mensaje);
+    } finally {
+      setRechazandoId(null);
     }
   };
 
@@ -500,8 +535,10 @@ export default function MisCompras() {
           </div>
         ) : (
           pedidos.map((p) => {
-            const estado = p.estado ?? 'En cocina';
+            const estado = p.estado ?? 'Registrado';
             const cancelado = estado.trim().toLowerCase() === 'cancelado';
+            const rechazado = estado.trim().toLowerCase() === 'rechazada';
+            const sinProgreso = cancelado || rechazado;
             const pasos = pasosPara(p.tipo_entrega);
             let pasoActual = pasos.indexOf(estado);
             if (pasoActual === -1) {
@@ -522,15 +559,12 @@ export default function MisCompras() {
             // Centro del primer y último círculo: la línea debe empezar y
             // terminar exactamente ahí, no en los bordes del contenedor.
             const halfStep = 50 / totalPasos;
-<<<<<<< Updated upstream:src/pages/MisPedidos.tsx
-            const fillWidth = cancelado ? 0 : calcularProgreso(pasoActual, totalPasos);
-=======
             const anchoDisponible = 100 - 2 * halfStep;
             const fillWidth = sinProgreso
               ? 0
               : (anchoDisponible * calcularProgreso(pasoActual, totalPasos)) / 100;
->>>>>>> Stashed changes:src/pages/MisCompras.tsx
             const esCancelable = CANCELABLES.includes(estado);
+            const esRechazable = RECHAZABLES.includes(estado);
             const estaCancelando = cancelandoId === p.id;
             const direccionTexto =
               p.tipo_entrega === 'Domicilio'
@@ -552,12 +586,12 @@ export default function MisCompras() {
                 </div>
 
                 <div className="progreso-container">
-                  <div className={`progreso-estado-label${cancelado ? ' cancelado' : ''}`}>
-                    {cancelado ? '✗ Pedido cancelado' : estado}
+                  <div className={`progreso-estado-label${sinProgreso ? ' cancelado' : ''}`}>
+                    {cancelado ? '✗ Pedido cancelado' : rechazado ? '✗ Pedido rechazado' : estado}
                   </div>
                   <div className="progreso-tipo">Entrega: {p.tipo_entrega}</div>
 
-                  {!cancelado ? (
+                  {!sinProgreso ? (
                     <div className="progreso-barra-wrapper">
                       <div
                         className="progreso-linea-bg"
@@ -582,7 +616,7 @@ export default function MisCompras() {
                     </div>
                   ) : (
                     <div className="progreso-cancelado">
-                      <span>Este pedido fue cancelado.</span>
+                      <span>{cancelado ? 'Este pedido fue cancelado.' : 'Este pedido fue rechazado.'}</span>
                     </div>
                   )}
                 </div>
@@ -645,10 +679,19 @@ export default function MisCompras() {
                   {esCancelable && (
                     <button
                       className="btn-cancelar-pedido"
-                      onClick={() => void cancelarPedido(p)}
+                      onClick={() => cancelarPedido(p)}
                       disabled={estaCancelando}
                     >
                       {estaCancelando ? 'Cancelando…' : 'Cancelar pedido'}
+                    </button>
+                  )}
+                  {esRechazable && (
+                    <button
+                      className="btn-cancelar-pedido"
+                      onClick={() => rechazarPedido(p)}
+                      disabled={rechazandoId === p.id}
+                    >
+                      {rechazandoId === p.id ? 'Rechazando…' : 'Rechazar pedido'}
                     </button>
                   )}
                   <span className="label">Total del pedido:</span>
@@ -660,6 +703,28 @@ export default function MisCompras() {
         )}
       </div>
       <Footer />
+
+      {pedidoACancelar && (
+        <MotivoModal
+          titulo={`Cancelar el pedido #${pedidoACancelar.numero_secuencial}`}
+          descripcion="Cuéntanos por qué lo cancelas. Esto nos ayuda a mejorar."
+          confirmarTexto="Sí, cancelar pedido"
+          peligro
+          onClose={() => setPedidoACancelar(null)}
+          onConfirm={(motivo) => void confirmarCancelacion(pedidoACancelar, motivo)}
+        />
+      )}
+      {pedidoARechazar && (
+        <MotivoModal
+          titulo={`Rechazar el pedido #${pedidoARechazar.numero_secuencial}`}
+          descripcion="Indica por qué rechazas este pedido (por ejemplo, si nunca hiciste el pago). Quedará registrado."
+          confirmarTexto="Sí, rechazar pedido"
+          placeholder="Escribe el motivo del rechazo..."
+          peligro
+          onClose={() => setPedidoARechazar(null)}
+          onConfirm={(motivo) => void confirmarRechazo(pedidoARechazar, motivo)}
+        />
+      )}
     </div>
   );
 }

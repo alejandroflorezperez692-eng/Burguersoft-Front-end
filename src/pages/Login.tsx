@@ -1,9 +1,6 @@
-<<<<<<< Updated upstream
-import { useEffect, useState, type FormEvent } from 'react';
-=======
 import { useEffect, useRef, useState, type FormEvent } from 'react';
->>>>>>> Stashed changes
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
@@ -19,6 +16,10 @@ export default function Login() {
   const [mostrarPassword, setMostrarPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
+
+  // Cloudflare Turnstile ("No soy un robot")
+  const [turnstileToken, setTurnstileToken] = useState('');
+  const turnstileRef = useRef<TurnstileInstance>(null);
 
   const { login, isAuthenticated, user } = useAuth();
   const { showToast } = useToast();
@@ -37,10 +38,16 @@ export default function Login() {
   };
   const [aviso, setAviso] = useState<string | null>(null);
   useEffect(() => {
-    const guardado = sessionStorage.getItem('aviso_login') ?? '';
+    // Se aceptan las dos claves que usa el proyecto: 'aviso_login'
+    // (login, registro, restablecer) y 'login_toast' (perfil).
+    const guardado =
+      sessionStorage.getItem('aviso_login') ?? sessionStorage.getItem('login_toast') ?? '';
     const clave = tipoToast || guardado;
     if (!clave) return;
-    if (guardado) sessionStorage.removeItem('aviso_login');
+    if (guardado) {
+      sessionStorage.removeItem('aviso_login');
+      sessionStorage.removeItem('login_toast');
+    }
     setAviso(MENSAJE_AVISO[clave] ?? null);
     // Se mantiene visible 6 segundos para que se alcance a leer.
     const t = setTimeout(() => setAviso(null), 6000);
@@ -54,21 +61,39 @@ export default function Login() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    // Si faltan credenciales, mostramos el error y NO activamos el loading
+    const faltaCorreo = !email.trim();
+    const faltaPassword = !password.trim();
+
+    if (faltaCorreo || faltaPassword) {
+      if (faltaCorreo && faltaPassword) {
+        showToast('Ingresa tu correo electrónico y tu contraseña.', true);
+      } else if (faltaCorreo) {
+        showToast('El campo correo electrónico es obligatorio.', true);
+      } else {
+        showToast('El campo contraseña es obligatorio.', true);
+      }
+      return;
+    }
+
+    if (!turnstileToken) {
+      showToast('Completa la verificación de seguridad.', true);
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(email, password, turnstileToken);
       const stored = sessionStorage.getItem('user');
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
       showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
-<<<<<<< Updated upstream
-=======
       // El token de Turnstile es de un solo uso: hay que pedir uno nuevo
       setTurnstileToken('');
       turnstileRef.current?.reset();
->>>>>>> Stashed changes
     } finally {
       setLoading(false);
     }
@@ -136,9 +161,19 @@ export default function Login() {
             </button>
           </div>
 
+          {/* Verificación "No soy un robot" (Cloudflare Turnstile) */}
+          <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
+            <Turnstile
+              ref={turnstileRef}
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+              onSuccess={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+              onError={() => setTurnstileToken('')}
+              options={{ language: 'es', theme: 'light' }}
+            />
+          </div>
 
-
-          <button type="submit" className="btn-primario" disabled={loading}>
+          <button type="submit" className="btn-primario" disabled={loading || !turnstileToken}>
             {loading ? 'INGRESANDO…' : 'INICIAR SESIÓN'}
           </button>
 

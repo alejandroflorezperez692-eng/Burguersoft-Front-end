@@ -22,6 +22,7 @@ import MateriaPrimaAdmin from './pages/admin/MateriaPrimaAdmin';
 import ComprasAdmin from './pages/admin/ComprasAdmin';
 import PromocionesAdmin from './pages/admin/PromocionesAdmin';
 import VentasAdmin from './pages/admin/VentasAdmin';
+import PedidosTurno from './pages/staff/PedidosTurno';
 import ReportesAdmin from './pages/admin/ReportesAdmin';
 import BackupsAdmin from './pages/admin/BackupsAdmin';
 import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
@@ -37,11 +38,14 @@ import AyudaCliente from './pages/AyudaCliente';
 import { ACCESO } from './utils/roles';
 import { ToastProvider } from './components/Toast';
 import InventarioAdmin from './pages/admin/InventarioAdmin';
+import TooltipsGlobales from './components/TooltipsGlobales';
+import ScrollToTop from './components/ScrollToTop';
 
 
-function App() {
+export default function App() {
   return (
     <ToastProvider>
+      <TooltipsGlobales />
       <DemoAccess />
       <Routes>
       <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
@@ -74,7 +78,9 @@ function App() {
       <Route path="/ayuda" element={<Ayuda />} />
 
       <Route element={<ProtectedRoute roles={['cliente']} redirect="/" />}>
-        <Route path="/ayuda-cliente" element={<AyudaCliente />} />
+        <Route element={<ConAsistenteCliente />}>
+          <Route path="/ayuda-cliente" element={<AyudaCliente />} />
+        </Route>
       </Route>
 
       {/* Panel interno: admin, cajero, cocinero y mesero comparten el mismo layout */}
@@ -83,6 +89,7 @@ function App() {
 
           {/* Todo el personal */}
           <Route path="/inicio" element={<Inicio />} />
+          <Route path="/pedidos-en-vivo" element={<PedidosTurno />} />
           <Route path="/configuracion" element={<ConfiguracionAdmin />} />
           <Route path="/ayuda-admin" element={<AyudaAdmin />} />
 
@@ -122,9 +129,8 @@ function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <ScrollToTop />
       <Accesibilidad />
     </ToastProvider>
   );
 }
-
-export default App;
