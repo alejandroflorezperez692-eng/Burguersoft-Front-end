@@ -3397,4 +3397,80 @@ body.dark-mode .cfg-requisito.cumple {
   to {
     --angulo: 360deg;
   }
+}.sidebar-collapse-btn { display: none; }
+
+@media (min-width: 901px) {
+
+  .sidebar-collapse-btn {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    position: absolute;
+    top: calc(var(--header-h) + 6px);
+    left: 10px;
+    right: 10px;
+    height: 34px;
+    padding: 0 16px;
+    z-index: 2;
+    background: transparent;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .sidebar-collapse-btn:hover { background: rgba(232, 130, 26, 0.1); }
+
+  .sidebar,
+  .header-nav,
+  .main-content { transition: none !important; }
+
+  body { --sidebar-w-open: var(--sidebar-w); }
+
+  .admin-body.sidebar-collapsed { --sidebar-w: 72px; }
+
+  .sidebar-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    width: var(--sidebar-w-open, 240px);
+    z-index: 101;
+  }
+  .sidebar-header,
+  .sidebar-header * {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .sidebar { padding-top: var(--header-h); }
+
+  .admin-body.sidebar-collapsed .header-nav {
+    background-color: var(--header-bg);
+    background-repeat: no-repeat;
+    background-position: right top;
+    background-size: calc(100% - (var(--sidebar-w-open, 240px) - 72px)) 100%;
+  }
+  body.dark-mode .admin-body.sidebar-collapsed .header-nav {
+    background-color: var(--surface-3);
+  }
+
+  .admin-body.sidebar-collapsed .sidebar-collapse-btn {
+    left: 8px;
+    right: 8px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .admin-body.sidebar-collapsed .sidebar-item { padding: 0 8px; }
+  .admin-body.sidebar-collapsed .sidebar-item a {
+    font-size: 0;
+    gap: 0;
+    justify-content: center;
+    padding: 10px 0;
+  }
+  .admin-body.sidebar-collapsed .icono-sidebar {
+    width: 16px;
+    height: 16px;
+    opacity: 0.85;
+  }
 }
