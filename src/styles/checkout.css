@@ -491,3 +491,93 @@ a.btn-pagar-ahora {
   .checkout-grid-2 { grid-template-columns: 1fr; }
   .pago-opciones { grid-template-columns: 1fr; }
 }
+
+/* ---- Comprobante de pago (checkout) ---- */
+.checkout-comprobante {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1.5px dashed #eee2d0;
+}
+.checkout-comprobante-texto {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #6b5d4c;
+}
+.checkout-comprobante-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 20px 16px;
+  border: 2px dashed #e8c9a8;
+  border-radius: 12px;
+  background: #fffaf4;
+  color: #7a4a1e;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+.checkout-comprobante-label:hover {
+  border-color: #E8821A;
+  background: #fff3e6;
+}
+.checkout-comprobante-label small {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #9a8169;
+}
+.checkout-comprobante-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1.5px solid #f0dcc4;
+  border-radius: 12px;
+  background: #fffaf4;
+}
+.checkout-comprobante-preview img {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ead6bf;
+  flex-shrink: 0;
+}
+.checkout-comprobante-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.checkout-comprobante-preview-info strong {
+  font-size: 13px;
+  color: #3d2111;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.checkout-comprobante-preview-info span {
+  font-size: 11.5px;
+  color: #8a735c;
+}
+.checkout-comprobante-preview-info button {
+  align-self: flex-start;
+  margin-top: 4px;
+  border: none;
+  background: transparent;
+  color: #c3402a;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+@media (max-width: 720px) {
+  .checkout-comprobante-preview { align-items: flex-start; }
+  .checkout-comprobante-preview img { width: 68px; height: 68px; }
+}

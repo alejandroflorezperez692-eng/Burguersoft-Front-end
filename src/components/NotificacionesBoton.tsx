@@ -5,10 +5,12 @@ import apiClient from '../api/client';
 import { conectarAlertas, desconectarAlertas } from '../api/echo';
 
 interface Alerta {
-  tipo: 'stock' | 'precio';
+  tipo: 'stock' | 'precio' | 'pedido' | 'comprobante' | 'pago';
   nivel: 'alta' | 'media' | 'info';
   titulo: string;
   detalle: string;
+  pedido_id?: number | null;
+  enlace?: string | null;
 }
 
 interface AvisoEmergente {
@@ -17,11 +19,17 @@ interface AvisoEmergente {
 }
 
 const CLAVE_LEIDAS = 'notificaciones_leidas';
-const CADA_MS = 180_000; // cada 3 minutos
+const CADA_MS = 60_000; // cada minuto
 const DURACION_AVISO = 3000; // el aviso se queda 3 segundos
 const DURACION_SALIDA = 300; // animación de subida
 
-const ICONO: Record<Alerta['tipo'], string> = { stock: '📦', precio: '💲' };
+const ICONO: Record<string, string> = {
+  stock: '📦',
+  precio: '💲',
+  pedido: '🧾',
+  comprobante: '📄',
+  pago: '💳',
+};
 
 const claveAlerta = (a: Alerta) => `${a.tipo}|${a.titulo}`;
 
@@ -149,7 +157,8 @@ export default function NotificacionesBoton() {
       limpiarTimers();
       setAvisoSaliendo(false);
       setAviso({ alerta: nuevas[0], extra: nuevas.length - 1 });
-      sonarCampanita();
+      // Los avisos informativos (por ejemplo, una bajada de precio) no suenan.
+      if (nuevas.some((a) => a.nivel !== 'info')) sonarCampanita();
       sacudirCampana();
       timers.current.push(window.setTimeout(cerrarAviso, DURACION_AVISO));
     },
@@ -328,9 +337,26 @@ export default function NotificacionesBoton() {
                 ) : (
                 visibles.map((a) => {
                 const nueva = !leidas.includes(claveAlerta(a));
+                const abrir = () => {
+                  if (!a.enlace) return;
+                  setAbierto(false);
+                  navigate(a.enlace);
+                };
                 return (
-                  <div key={claveAlerta(a)} className={`notif-item nivel-${a.nivel}${nueva ? ' nueva' : ''}`}>
-                    <span className="notif-ico" aria-hidden="true">{ICONO[a.tipo]}</span>
+                  <div
+                    key={claveAlerta(a)}
+                    className={`notif-item nivel-${a.nivel}${nueva ? ' nueva' : ''}${a.enlace ? ' con-enlace' : ''}`}
+                    role={a.enlace ? 'button' : undefined}
+                    tabIndex={a.enlace ? 0 : undefined}
+                    onClick={abrir}
+                    onKeyDown={(e) => {
+                      if (a.enlace && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        abrir();
+                      }
+                    }}
+                  >
+                    <span className="notif-ico" aria-hidden="true">{ICONO[a.tipo] ?? '🔔'}</span>
                     <div>
                       <p className="notif-titulo">{a.titulo}</p>
                       <p className="notif-detalle">{a.detalle}</p>
@@ -364,7 +390,7 @@ export default function NotificacionesBoton() {
               setAbierto(true);
             }}
           >
-            <span className="notif-toast-ico" aria-hidden="true">{ICONO[aviso.alerta.tipo]}</span>
+            <span className="notif-toast-ico" aria-hidden="true">{ICONO[aviso.alerta.tipo] ?? '🔔'}</span>
             <div className="notif-toast-txt">
               <p className="notif-toast-titulo">{aviso.alerta.titulo}</p>
               <p className="notif-toast-detalle">{aviso.alerta.detalle}</p>

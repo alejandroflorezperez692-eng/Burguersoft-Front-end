@@ -459,13 +459,46 @@ export default function Checkout() {
   const [qrNoDisponible, setQrNoDisponible] = useState<Record<string, boolean>>({});
 
   // Pedido ya registrado: se muestra el panel de confirmacion con el boton
-  // para abrir el chat de WhatsApp (por si el navegador bloqueo la ventana).
+  // para abrir el chat de WhatsApp y el acceso al estado del pedido.
   const [pedidoConfirmado, setPedidoConfirmado] = useState<{
     id: number | null;
     total: number;
     url: string;
     correo: string | null;
+    comprobanteCargado: boolean;
+    metodoPago: string;
   } | null>(null);
+
+  // ---- Comprobante de pago (se valida con IA en el backend) ----
+  const [comprobante, setComprobante] = useState<File | null>(null);
+  const [comprobantePreview, setComprobantePreview] = useState<string | null>(null);
+  const refComprobante = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!comprobante) {
+      setComprobantePreview(null);
+      return;
+    }
+    const url = URL.createObjectURL(comprobante);
+    setComprobantePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [comprobante]);
+
+  const seleccionarComprobante = (file: File | null) => {
+    if (!file) {
+      setComprobante(null);
+      return;
+    }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      alertar('El comprobante debe ser una imagen JPG, PNG o WEBP.');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      alertar('El comprobante no puede superar los 8 MB.');
+      return;
+    }
+    setComprobante(file);
+  };
 
   // Mapa promoción -> productos (el backend solo acepta producto_id en el
   // carrito y aplica el precio de la promo automáticamente).
@@ -554,6 +587,9 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     if (!numeroDocumento || !nombre || !apellido || !correo || !telefono) {
       return 'Completa todos los datos de la compra.';
     }
+    if (metodoPago !== 'efectivo' && !comprobante) {
+      return 'Adjunta una imagen del comprobante de pago. La IA verificará que sea un comprobante real.';
+    }
     return null;
   };
 
@@ -569,27 +605,49 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       return;
     }
 
-    // Se abre la pestaña de forma sincrónica (dentro del gesto del clic)
-    // para que el navegador no la bloquee como ventana emergente.
-    const ventanaWsp = window.open('', '_blank');
-
     setEnviando(true);
     try {
-      const respuesta = await apiClient.post('/ventas', {
-        carrito: expandirCarrito(),
-        notas: construirNotas(),
-        adiciones: construirAdiciones(),
-        tipo_entrega: TIPO_ENTREGA_BACKEND[tipoEntrega] ?? 'Domicilio',
-        metodo_pago: METODO_PAGO_BACKEND[metodoPago] ?? 'Efectivo',
-        // Contexto extra del pedido en línea (el backend lo ignora al validar)
-        total,
-        cuando,
-        fecha_programada: cuando === 'Programar para más tarde' ? `${fechaProgramada}T${horaProgramada}` : null,
-        direccion: requiereDireccion ? direccion : null,
-        cliente: { tipoDocumento, numeroDocumento, nombre, apellido, correo, telefono },
-        facturacion: usarMismosDatos
-          ? { tipoDocumento, numeroDocumento, nombre, apellido }
-          : { nombre: facturaNombre, apellido: facturaApellido, numeroDocumento: facturaDocumento },
+      // Se envía como multipart porque incluye la imagen del comprobante.
+      const form = new FormData();
+      expandirCarrito().forEach((item, i) => {
+        form.append(`carrito[${i}][producto_id]`, String(item.producto_id));
+        form.append(`carrito[${i}][cantidad]`, String(item.cantidad));
+      });
+      construirAdiciones().forEach((adicion, i) => {
+        form.append(`adiciones[${i}][adicion_id]`, String(adicion.adicion_id));
+        form.append(`adiciones[${i}][cantidad]`, String(adicion.cantidad));
+      });
+
+      form.append('tipo_entrega', TIPO_ENTREGA_BACKEND[tipoEntrega] ?? 'Domicilio');
+      form.append('metodo_pago', METODO_PAGO_BACKEND[metodoPago] ?? 'Efectivo');
+      form.append('notas', construirNotas() ?? '');
+      form.append('total', String(total));
+      form.append('cuando', cuando);
+      if (cuando === 'Programar para más tarde') {
+        form.append('fecha_programada', `${fechaProgramada}T${horaProgramada}`);
+      }
+
+      if (requiereDireccion) {
+        form.append('direccion[linea1]', direccion.linea1);
+        form.append('direccion[barrio]', direccion.barrio);
+        form.append('direccion[referencia]', direccion.referencia);
+      }
+
+      form.append('cliente[tipoDocumento]', tipoDocumento);
+      form.append('cliente[numeroDocumento]', numeroDocumento);
+      form.append('cliente[nombre]', nombre);
+      form.append('cliente[apellido]', apellido);
+      form.append('cliente[correo]', correo);
+      form.append('cliente[telefono]', telefono);
+
+      if (comprobante) {
+        form.append('comprobante', comprobante);
+      }
+
+      const respuesta = await apiClient.post('/ventas', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        // La IA puede tardar en analizar la imagen del comprobante.
+        timeout: 90000,
       });
 
       // Numero del pedido registrado en el backend, va en el mensaje.
@@ -597,22 +655,18 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       const urlWsp = `https://wa.me/${WHATSAPP_LOCAL}?text=${encodeURIComponent(construirFacturaWhatsApp(idVenta))}`;
 
       vaciar();
+      setComprobante(null);
 
-      // Queda el panel de confirmacion en pantalla: si el navegador bloqueo la
-      // ventana emergente, el cliente pulsa el boton y se abre igual (un clic
-      // si cuenta como gesto del usuario y no lo bloquea el navegador).
       setPedidoConfirmado({
         id: idVenta,
         total,
         url: urlWsp,
         correo: respuesta.data?.recibo_correo ?? null,
+        comprobanteCargado: Boolean(respuesta.data?.tiene_comprobante),
+        metodoPago,
       });
-
-      if (ventanaWsp) {
-        ventanaWsp.location.href = urlWsp;
-      }
+      window.scrollTo(0, 0);
     } catch (err) {
-      ventanaWsp?.close();
       alertar(mensajeErrorPago(err));
     } finally {
       setEnviando(false);
@@ -706,8 +760,11 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
               <div className="checkout-encabezado">
                 <h2>¡Pedido realizado con éxito!</h2>
                 <p>
-                  Te abrimos el chat de WhatsApp del local para que envíes el comprobante de pago
-                  y el detalle del pedido.
+                  {pedidoConfirmado.comprobanteCargado
+                    ? 'La IA verificó tu comprobante de pago y quedó en revisión. El administrador lo aprobará o te pedirá subir uno nuevo desde el estado de tu pedido.'
+                    : pedidoConfirmado.metodoPago === 'efectivo'
+                      ? 'Tu pedido quedó registrado. Puedes pagar en efectivo al recibirlo y seguir su estado desde Mis compras.'
+                      : 'Tu pedido quedó registrado. Puedes seguir su estado desde Mis compras y enviar cualquier detalle por el WhatsApp del local.'}
                 </p>
                 {pedidoConfirmado.correo && (
                   <p>
@@ -732,25 +789,26 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    Enviar comprobante por WhatsApp
+                    {pedidoConfirmado.metodoPago === 'efectivo'
+                      ? 'Escribir por WhatsApp'
+                      : 'Enviar comprobante por WhatsApp'}
                   </a>
 
-                  <div className="checkout-grid-2">
-                    <button
-                      type="button"
-                      className="btn-ubicacion"
-                      onClick={() => navigate('/mis-compras')}
-                    >
-                      Ver mis compras
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-ubicacion"
-                      onClick={() => navigate('/menu-publico')}
-                    >
-                      Hacer otro pedido
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    className="btn-ubicacion"
+                    onClick={() => navigate('/mis-compras')}
+                  >
+                    Ver el estado de mi pedido
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-ubicacion"
+                    onClick={() => navigate('/menu-publico')}
+                  >
+                    Hacer otro pedido
+                  </button>
                 </div>
               </div>
             </section>
@@ -920,10 +978,62 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                     <div className="pago-qr-texto">
                       Escanea este código <strong>Bre-B</strong> desde la app de tu banco o billetera
                       (Nequi, Daviplata, Bancolombia, Davivienda...) y digita el total a pagar.
-                      Al finalizar tu compra se abrirá WhatsApp para que envíes el comprobante de pago.
+                      Al finalizar, sube aquí tu comprobante para que la IA lo verifique.
                     </div>
                   </div>
                 )}
+
+                <div className="checkout-comprobante">
+                  <div className="checkout-seccion-titulo" style={{ marginBottom: 8 }}>
+                    <span className="checkout-paso">4</span>
+                    <h3>
+                      Comprobante de pago{' '}
+                      {metodoPago !== 'efectivo' ? (
+                        <span className="checkout-required">*</span>
+                      ) : (
+                        <small style={{ fontWeight: 500, color: '#888' }}>(opcional)</small>
+                      )}
+                    </h3>
+                  </div>
+                  <p className="checkout-comprobante-texto">
+                    Sube una foto o captura del comprobante de tu pago. La IA verificará que la imagen
+                    sea realmente un comprobante de pago antes de registrar el pedido. Si no lo es, no
+                    se aceptará.
+                  </p>
+
+                  <input
+                    ref={refComprobante}
+                    id="comprobante-pago"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    style={{ display: 'none' }}
+                    onChange={(e) => seleccionarComprobante(e.target.files?.[0] ?? null)}
+                  />
+
+                  {comprobantePreview ? (
+                    <div className="checkout-comprobante-preview">
+                      <img src={comprobantePreview} alt="Vista previa del comprobante de pago" />
+                      <div className="checkout-comprobante-preview-info">
+                        <strong>{comprobante?.name}</strong>
+                        <span>{((comprobante?.size ?? 0) / 1024 / 1024).toFixed(2)} MB</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setComprobante(null);
+                            if (refComprobante.current) refComprobante.current.value = '';
+                          }}
+                        >
+                          Quitar y elegir otra
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <label htmlFor="comprobante-pago" className="checkout-comprobante-label">
+                      <span>📎 Adjuntar imagen del comprobante</span>
+                      <small>JPG, PNG o WEBP · máximo 8 MB</small>
+                    </label>
+                  )}
+                </div>
               </div>
             </div>
           </section>

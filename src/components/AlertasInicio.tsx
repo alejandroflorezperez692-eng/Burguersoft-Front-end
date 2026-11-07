@@ -4,7 +4,7 @@ import { conectarAlertas, desconectarAlertas } from '../api/echo';
 import { peso } from '../utils/variacion';
 
 interface Alerta {
-  tipo: 'stock' | 'precio';
+  tipo: 'stock' | 'precio' | 'pedido' | 'comprobante' | 'pago';
   nivel: 'alta' | 'media' | 'info';
   titulo: string;
   detalle: string;
@@ -34,6 +34,9 @@ const COLOR_NIVEL: Record<Alerta['nivel'], string> = {
 const ICONO: Record<Alerta['tipo'], string> = {
   stock: '📦',
   precio: '💲',
+  pedido: '🧾',
+  comprobante: '📄',
+  pago: '💳',
 };
 
 /** Alertas inteligentes y resumen semanal del Inicio (solo admin). */
@@ -97,7 +100,7 @@ export default function AlertasInicio() {
       </h3>
       {alertas.length === 0 ? (
         <div style={{ fontSize: 13, color: 'var(--text-400)' }}>
-          Todo en orden: no hay insumos por agotarse ni cambios de precio relevantes.
+          Todo en orden: no hay pedidos pendientes, comprobantes por aprobar ni insumos por agotarse.
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

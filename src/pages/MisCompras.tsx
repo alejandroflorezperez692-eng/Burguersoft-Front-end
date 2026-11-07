@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
 import MotivoModal from '../components/MotivoModal';
+import ComprobanteModal from '../components/ComprobanteModal';
 import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import { getEcho } from '../api/echo';
@@ -32,6 +33,12 @@ type PedidoUI = {
   referencia?: string;
   cliente_nombre?: string;
   notas?: string;
+  tiene_comprobante?: boolean;
+  comprobante_estado?: string;
+  comprobante_motivo?: string;
+  comprobante_valor?: number;
+  comprobante_coincide?: boolean;
+  comprobante_subido_en?: string;
 };
 
 /** Devuelve el texto limpio o undefined si viene vacío/null. */
@@ -39,6 +46,21 @@ function texto(valor: unknown): string | undefined {
   if (valor === null || valor === undefined) return undefined;
   const limpio = String(valor).trim();
   return limpio !== '' ? limpio : undefined;
+}
+
+/** Convierte valores de Laravel (0/1, "true"/"false") a booleano o undefined. */
+function booleano(valor: unknown): boolean | undefined {
+  if (valor === null || valor === undefined || valor === '') return undefined;
+  if (typeof valor === 'boolean') return valor;
+  if (valor === 1 || valor === '1' || valor === 'true') return true;
+  if (valor === 0 || valor === '0' || valor === 'false') return false;
+  return undefined;
+}
+
+function numero(valor: unknown): number | undefined {
+  if (valor === null || valor === undefined || valor === '') return undefined;
+  const n = Number(valor);
+  return Number.isFinite(n) ? n : undefined;
 }
 
 // Reutiliza los mismos pasos que la vista PHP original
@@ -151,6 +173,12 @@ function normalizarPedidos(raw: any): PedidoUI[] {
           referencia: texto(f.referencia),
           cliente_nombre: texto(f.cliente_nombre),
           notas: texto(f.notas),
+          tiene_comprobante: booleano(f.tiene_comprobante) ?? Boolean(f.comprobante_pago),
+          comprobante_estado: texto(f.comprobante_estado),
+          comprobante_motivo: texto(f.comprobante_motivo),
+          comprobante_valor: numero(f.comprobante_valor),
+          comprobante_coincide: booleano(f.comprobante_coincide),
+          comprobante_subido_en: texto(f.comprobante_subido_en),
           valorTotalBD: f.valor_total !== undefined ? Number(f.valor_total) : undefined,
         });
       }
@@ -250,6 +278,12 @@ function normalizarPedidos(raw: any): PedidoUI[] {
           texto(v.cliente_nombre) ??
           texto(`${v.usuario?.nombre ?? ''} ${v.usuario?.apellido ?? ''}`),
         notas: texto(v.notas),
+        tiene_comprobante: booleano(v.tiene_comprobante) ?? Boolean(v.comprobante_pago),
+        comprobante_estado: texto(v.comprobante_estado),
+        comprobante_motivo: texto(v.comprobante_motivo),
+        comprobante_valor: numero(v.comprobante_valor),
+        comprobante_coincide: booleano(v.comprobante_coincide),
+        comprobante_subido_en: texto(v.comprobante_subido_en),
       };
     })
     .filter((p): p is PedidoUI => p !== null);
@@ -281,6 +315,8 @@ export default function MisCompras() {
   const { isAuthenticated, user } = useAuth();
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoUI | null>(null);
   const [pedidoARechazar, setPedidoARechazar] = useState<PedidoUI | null>(null);
+  const [pedidoComprobante, setPedidoComprobante] = useState<PedidoUI | null>(null);
+  const [avisoComprobante, setAvisoComprobante] = useState<string | null>(null);
   const [pedidos, setPedidos] = useState<PedidoUI[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelandoId, setCancelandoId] = useState<number | null>(null);
@@ -369,13 +405,32 @@ export default function MisCompras() {
     // Actualización instantánea: el administrador emite este evento al cambiar
     // el estado de cualquier pedido (mismo canal que usa el tablero de cocina).
     const echo = getEcho();
-    const alCambiarEstado = (payload: { id?: number; estado?: string }) => {
+    const alCambiarEstado = (payload: {
+      id?: number;
+      estado?: string;
+      comprobante_estado?: string | null;
+      comprobante_motivo?: string | null;
+      comprobante_subido_en?: string | null;
+    }) => {
       if (!payload?.id || !payload.estado) return;
       setPedidos((prev) =>
         prev === null
           ? prev
           : prev.map((p) =>
-              p.id === Number(payload.id) ? { ...p, estado: String(payload.estado) } : p,
+              p.id === Number(payload.id)
+                ? {
+                    ...p,
+                    estado: String(payload.estado),
+                    ...(payload.comprobante_estado !== undefined && payload.comprobante_estado !== null
+                      ? {
+                          comprobante_estado: String(payload.comprobante_estado),
+                          comprobante_motivo: payload.comprobante_motivo ?? undefined,
+                          comprobante_subido_en: payload.comprobante_subido_en ?? undefined,
+                          tiene_comprobante: true,
+                        }
+                      : {}),
+                  }
+                : p,
             ),
       );
     };
@@ -505,6 +560,7 @@ export default function MisCompras() {
         </div>
 
         {error && <div className="mis-pedidos-error">{error}</div>}
+        {avisoComprobante && <div className="mis-pedidos-aviso">{avisoComprobante}</div>}
 
         <div style={{ textAlign: 'right', marginBottom: 16 }}>
           <button
@@ -575,6 +631,20 @@ export default function MisCompras() {
                   ? 'Recoge en el local'
                   : 'Consumo en el restaurante';
 
+            const estadoComprobante = (p.comprobante_estado ?? '').trim().toLowerCase();
+            const pagoElectronico =
+              Boolean(p.metodo_pago) &&
+              String(p.metodo_pago).trim().toLowerCase() !== 'efectivo';
+            const mostrarComprobante =
+              Boolean(p.tiene_comprobante) ||
+              (pagoElectronico && !cancelado && !rechazado && estado !== 'Pagado');
+            const puedeRecargarComprobante =
+              !cancelado &&
+              !rechazado &&
+              estado !== 'Pagado' &&
+              (estadoComprobante === 'rechazado' ||
+                (!p.tiene_comprobante && pagoElectronico));
+
             return (
               <div className="pedido-card" key={p.id}>
                 <div className="pedido-head">
@@ -607,7 +677,7 @@ export default function MisCompras() {
                             i < pasoActual ? 'completado' : i === pasoActual ? 'activo' : '';
                           return (
                             <div className="progreso-paso" key={paso}>
-                              <div className={`paso-circulo ${clase}`} />
+                              <div className={`paso-circulo ${clase}`}>{clase ? i + 1 : ''}</div>
                               <span className={`paso-label ${clase}`}>{paso}</span>
                             </div>
                           );
@@ -620,6 +690,64 @@ export default function MisCompras() {
                     </div>
                   )}
                 </div>
+
+                {mostrarComprobante && (
+                  <div
+                    className={`pedido-comprobante ${
+                      !p.tiene_comprobante
+                        ? 'pedido-comprobante-sin-cargar'
+                        : estadoComprobante === 'aprobado'
+                          ? 'pedido-comprobante-aprobado'
+                          : estadoComprobante === 'rechazado'
+                            ? 'pedido-comprobante-rechazado'
+                            : 'pedido-comprobante-pendiente'
+                    }`}
+                  >
+                    <div className="pedido-comprobante-texto">
+                      <strong>
+                        {!p.tiene_comprobante
+                          ? 'Comprobante de pago pendiente'
+                          : estadoComprobante === 'aprobado'
+                            ? '✓ Pago verificado por el administrador'
+                            : estadoComprobante === 'rechazado'
+                              ? '✗ Comprobante devuelto'
+                              : 'Comprobante de pago en revisión'}
+                      </strong>
+                      <span>
+                        {!p.tiene_comprobante
+                          ? 'Aún no has subido el comprobante de este pedido. Súbelo para que el administrador pueda verificar tu pago.'
+                          : estadoComprobante === 'aprobado'
+                            ? 'El administrador revisó la imagen y confirmó tu pago.'
+                            : estadoComprobante === 'rechazado'
+                              ? p.comprobante_motivo ||
+                                'El comprobante no fue aceptado. Sube uno nuevo para continuar.'
+                              : 'La IA confirmó que la imagen es un comprobante de pago. El administrador está verificando que coincida con el total del pedido.'}
+                      </span>
+                      {p.tiene_comprobante &&
+                        estadoComprobante !== 'aprobado' &&
+                        p.comprobante_valor !== undefined && (
+                          <span className="pedido-comprobante-dato">
+                            Valor detectado por la IA: {formatoMoneda(p.comprobante_valor)}
+                            {p.comprobante_coincide === false
+                              ? ' · No coincide con el total, el administrador lo revisará.'
+                              : ''}
+                          </span>
+                        )}
+                    </div>
+                    {puedeRecargarComprobante && (
+                      <button
+                        type="button"
+                        className="btn-comprobante"
+                        onClick={() => {
+                          setAvisoComprobante(null);
+                          setPedidoComprobante(p);
+                        }}
+                      >
+                        {p.tiene_comprobante ? 'Volver a subir comprobante' : 'Subir comprobante'}
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <div className="pedido-info">
                   <div className="pedido-info-item">
@@ -723,6 +851,19 @@ export default function MisCompras() {
           peligro
           onClose={() => setPedidoARechazar(null)}
           onConfirm={(motivo) => void confirmarRechazo(pedidoARechazar, motivo)}
+        />
+      )}
+      {pedidoComprobante && (
+        <ComprobanteModal
+          ventaId={pedidoComprobante.id}
+          numero={pedidoComprobante.numero_secuencial}
+          onClose={() => setPedidoComprobante(null)}
+          onSubido={() => {
+            setAvisoComprobante(
+              'Comprobante subido. La IA confirmó que es un comprobante de pago y quedó en revisión del administrador.',
+            );
+            void cargar();
+          }}
         />
       )}
     </div>

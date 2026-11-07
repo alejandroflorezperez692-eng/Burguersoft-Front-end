@@ -11,6 +11,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
+import MotivoModal from '../../components/MotivoModal';
+import ComprobanteImagen from '../../components/ComprobanteImagen';
+import { mensajeDeError } from '../../types/Trazabilidad';
 
 
 interface DetalleVenta {
@@ -49,6 +52,24 @@ interface Venta {
   };
   detalles: DetalleVenta[];
   promociones: PromocionVenta[];
+  tiene_comprobante?: boolean;
+  comprobante_estado?: string | null;
+  comprobante_motivo?: string | null;
+  comprobante_datos?: {
+    es_comprobante?: boolean;
+    valor?: number | null;
+    moneda?: string | null;
+    fecha?: string | null;
+    referencia?: string | null;
+    entidad?: string | null;
+    estado_transaccion?: string | null;
+    valor_coincide?: boolean | null;
+    observaciones?: string | null;
+  } | null;
+  comprobante_valor?: number | null;
+  comprobante_coincide?: boolean | null;
+  comprobante_subido_en?: string | null;
+  comprobante_revisado_en?: string | null;
 }
 
 interface Producto {
@@ -337,9 +358,8 @@ export default function VentasAdmin() {
   const [loading, setLoading] = useState(true);
   const [historialId, setHistorialId] = useState<number | null>(null);
   const [detalleId, setDetalleId] = useState<number | null>(null);
-  const [cierreAbierto, setCierreAbierto] = useState(false);
-  const [cierreDesde, setCierreDesde] = useState('');
-  const [cierreHasta, setCierreHasta] = useState('');
+  const [comprobanteARechazar, setComprobanteARechazar] = useState<Venta | null>(null);
+  const [procesandoComprobante, setProcesandoComprobante] = useState(false);
   const [, setVersion] = useState(0);
 
   const load = async () => {
@@ -519,7 +539,49 @@ export default function VentasAdmin() {
   const updateEstado = (id: number, estado: string) => {
     apiClient.patch(`/ventas/${id}/estado`, { estado })
       .then(() => { setVersion((v) => v + 1); load(); })
-      .catch(() => alertar('No se pudo cambiar el estado.'));
+      .catch((e: unknown) =>
+        alertar(mensajeDeError(e, 'No se pudo cambiar el estado.')),
+      );
+  };
+
+  const revisarComprobante = async (
+    venta: Venta,
+    estado: 'Aprobado' | 'Rechazado',
+    motivo?: string,
+  ) => {
+    setProcesandoComprobante(true);
+    try {
+      const { data } = await apiClient.patch(`/ventas/${venta.id}/comprobante/revisar`, {
+        estado,
+        motivo,
+      });
+      showToast(
+        data?.message ??
+          (estado === 'Aprobado'
+            ? 'Comprobante aprobado.'
+            : 'Comprobante devuelto al cliente.'),
+        false,
+      );
+      setComprobanteARechazar(null);
+      await load();
+    } catch (e: unknown) {
+      const mensaje =
+        (e as { response?: { data?: { message?: string; error?: string } } })?.response?.data
+          ?.message ??
+        (e as { response?: { data?: { error?: string } } })?.response?.data?.error ??
+        'No se pudo revisar el comprobante de pago.';
+      alertar(mensaje);
+    } finally {
+      setProcesandoComprobante(false);
+    }
+  };
+
+  const claseComprobante = (estado?: string | null) => {
+    const e = (estado ?? '').trim().toLowerCase();
+    if (e === 'aprobado') return 'badge-success';
+    if (e === 'rechazado') return 'badge-danger';
+    if (e === 'pendiente') return 'badge-warning';
+    return 'badge-info';
   };
 
   useEffect(() => {
@@ -570,149 +632,9 @@ export default function VentasAdmin() {
     }
   };
 
-    /* ===== Días, cierre del día e impresión ===== */
-  const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
-  const esVendida = (v: Venta) => v?.estado === 'Pagado';
-  const hoyStr = new Date().toLocaleDateString('en-CA');
-  const moneda = (n: number) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
-  const escHtml = (t: unknown) =>
-    String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
-
-  const fmtLargo = (clave: string) =>
-    new Date(`${clave}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
-  const etiquetaDia = (clave: string) => {
-    const ayer = new Date();
-    ayer.setDate(ayer.getDate() - 1);
-    if (clave === hoyStr) return `Hoy · ${fmtLargo(clave)}`;
-    if (clave === ayer.toLocaleDateString('en-CA')) return `Ayer · ${fmtLargo(clave)}`;
-    return fmtLargo(clave);
-  };
-
-  const resumenDia = (clave: string) => {
-    const delDia = filtered.filter((v) => fechaLocal(v?.fecha) === clave);
-    const vendidas = delDia.filter(esVendida);
-    return {
-      ventas: delDia.length,
-      total: vendidas.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0),
-    };
-  };
-
-  const abrirCierre = (desde?: string, hasta?: string) => {
-    const d = desde || fechaDesde || hoyStr;
-    setCierreDesde(d);
-    setCierreHasta(hasta || (desde ? desde : fechaHasta) || d);
-    setCierreAbierto(true);
-  };
-
-  const calcularCierre = () => {
-    const desde = cierreDesde || hoyStr;
-    const hasta = cierreHasta || desde;
-
-    const base = (items ?? []).filter((v) => {
-      const f = fechaLocal(v?.fecha);
-      if (f < desde || f > hasta) return false;
-      if (filtroMetodo && v?.metodo_pago !== filtroMetodo) return false;
-      if (filtroEntrega && v?.tipo_entrega !== filtroEntrega) return false;
-      return true;
-    });
-
-    const vendidas = base.filter(esVendida);
-    const pendientes = base.filter((v) => !esVendida(v) && !NO_VENDIDOS.includes(v?.estado));
-    const anuladas = base.filter((v) => NO_VENDIDOS.includes(v?.estado));
-
-    const prod = new Map<string, { cantidad: number; total: number }>();
-    const combos = new Map<string, number>();
-    const metodos = new Map<string, { ventas: number; total: number }>();
-
-    vendidas.forEach((v) => {
-      (v?.detalles ?? []).forEach((d) => {
-        const nombre = d?.producto?.nombre ?? 'Producto';
-        const a = prod.get(nombre) ?? { cantidad: 0, total: 0 };
-        a.cantidad += Number(d?.cantidad) || 0;
-        a.total += Number(d?.subtotal) || (Number(d?.cantidad) || 0) * (Number(d?.precio_unitario) || 0);
-        prod.set(nombre, a);
-      });
-      (v?.promociones ?? []).forEach((p) => {
-        combos.set(p?.nombre, (combos.get(p?.nombre) ?? 0) + 1);
-      });
-      const m = metodos.get(v?.metodo_pago ?? '—') ?? { ventas: 0, total: 0 };
-      m.ventas += 1;
-      m.total += Number(v?.valor_total) || 0;
-      metodos.set(v?.metodo_pago ?? '—', m);
-    });
-
-    const productos = [...prod.entries()]
-      .map(([nombre, x]) => ({ nombre, ...x }))
-      .sort((a, b) => b.cantidad - a.cantidad);
-
-    return {
-      desde,
-      hasta,
-      vendidas: vendidas.length,
-      total: vendidas.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0),
-      unidades: productos.reduce((a, p) => a + p.cantidad, 0),
-      productos,
-      combos: [...combos.entries()].map(([nombre, cantidad]) => ({ nombre, cantidad })),
-      metodos: [...metodos.entries()].map(([nombre, x]) => ({ nombre, ...x })),
-      pendientes: { n: pendientes.length, total: pendientes.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0) },
-      anuladas: anuladas.length,
-    };
-  };
-
-  const imprimirCierre = () => {
-    const c = calcularCierre();
-    const w = window.open('', '_blank', 'width=460,height=720');
-    if (!w) {
-      alertar('Permite las ventanas emergentes para poder imprimir.');
-      return;
-    }
-    const rango = c.desde === c.hasta ? fmtLargo(c.desde) : `${fmtLargo(c.desde)} al ${fmtLargo(c.hasta)}`;
-    const filasProd = c.productos.length
-      ? c.productos.map((p) => `<tr><td>${escHtml(p.nombre)}</td><td class="r">${p.cantidad}</td><td class="r">${moneda(p.total)}</td></tr>`).join('')
-      : '<tr><td colspan="3" class="c">Sin ventas en este periodo</td></tr>';
-    const filasCombos = c.combos.map((p) => `<tr><td>${escHtml(p.nombre)}</td><td class="r">${p.cantidad}</td><td class="r">—</td></tr>`).join('');
-    const filasMetodos = c.metodos.map((m) => `<tr><td>${escHtml(m.nombre)}</td><td class="r">${m.ventas}</td><td class="r">${moneda(m.total)}</td></tr>`).join('');
-
- w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Cierre del día</title>
-<style>
-body{font-family:Arial,Helvetica,sans-serif;color:#1a0f0a;max-width:380px;margin:0 auto;padding:16px;font-size:13px}
-h1{font-size:19px;margin:0 0 2px;text-align:center}
-.sub{text-align:center;color:#6b4a2b;margin:0 0 4px;text-transform:capitalize}
-.gen{text-align:center;color:#888;font-size:11px;margin:0 0 12px}
-h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 2px}
-table{width:100%;border-collapse:collapse}
-th{font-size:11px;text-transform:uppercase;text-align:left;border-bottom:2px solid #1a0f0a;padding:4px 0}
-td{padding:4px 0;border-bottom:1px dashed #bbb}
-.r{text-align:right}.c{text-align:center;color:#888}
-th.r{text-align:right}
-.tot{display:flex;justify-content:space-between;font-size:17px;font-weight:700;border-top:2px solid #1a0f0a;margin-top:12px;padding-top:8px}
-.nota{color:#6b4a2b;font-size:12px;margin:6px 0 0}
-</style></head><body>
-<h1>Cierre del día</h1>
-<p class="sub">${escHtml(rango)}</p>
-<p class="gen">Impreso: ${escHtml(new Date().toLocaleString('es-CO'))}</p>
-<h2>Productos vendidos</h2>
-<table><thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Subtotal</th></tr></thead><tbody>${filasProd}</tbody></table>
-${filasCombos ? `<h2>Combos</h2><table><thead><tr><th>Combo</th><th class="r">Cant.</th><th class="r"></th></tr></thead><tbody>${filasCombos}</tbody></table>` : ''}
-<h2>Por método de pago</h2>
-<table><thead><tr><th>Método</th><th class="r">Ventas</th><th class="r">Total</th></tr></thead><tbody>${filasMetodos || '<tr><td colspan="3" class="c">—</td></tr>'}</tbody></table>
-<div class="tot"><span>TOTAL DEL DÍA</span><span>${moneda(c.total)}</span></div>
-<p class="nota">${c.vendidas} ventas pagadas · ${c.unidades} productos</p>
-${c.pendientes.n ? `<p class="nota">Pendientes de cobro: ${c.pendientes.n} (${moneda(c.pendientes.total)}) — no incluidos en el total</p>` : ''}
-${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''}
-</body></html>`);
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 300);
-  };
-
-  const cierre = cierreAbierto ? calcularCierre() : null;
-
   const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
 
   useEscape([
-    [cierreAbierto, () => setCierreAbierto(false)],
     [detalle !== null, () => setDetalleId(null)],
     [showForm, cerrarFormulario],
   ]);
@@ -1041,6 +963,18 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   >
                     Ver detalle
                   </button>
+                  {v?.tiene_comprobante && (
+                    <span
+                      className={`badge ${claseComprobante(v.comprobante_estado)}`}
+                      style={{ display: 'block', marginTop: 6, fontSize: 10, textAlign: 'center' }}
+                    >
+                      {v.comprobante_estado === 'Aprobado'
+                        ? 'Pago aprobado'
+                        : v.comprobante_estado === 'Rechazado'
+                          ? 'Comprobante devuelto'
+                          : 'Comprobante pendiente'}
+                    </span>
+                  )}
                 </td>
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
                 <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
@@ -1231,6 +1165,108 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </section>
 
             <section className="vt-det-sec">
+              <h4>Comprobante de pago</h4>
+
+              {!detalle.tiene_comprobante ? (
+                <p className="vt-comprobante-vacio">
+                  Este pedido no tiene comprobante de pago cargado.
+                </p>
+              ) : (
+                <>
+                  <div className="vt-comprobante-cabecera">
+                    <span className={`badge ${claseComprobante(detalle.comprobante_estado)}`}>
+                      {detalle.comprobante_estado || 'Pendiente'}
+                    </span>
+                    {detalle.comprobante_subido_en && (
+                      <span className="vt-comprobante-fecha">
+                        Subido: {fmtDia(detalle.comprobante_subido_en)} {fmtHora(detalle.comprobante_subido_en)}
+                      </span>
+                    )}
+                  </div>
+
+                  {detalle.comprobante_estado === 'Rechazado' && detalle.comprobante_motivo && (
+                    <p className="vt-comprobante-motivo">
+                      Motivo enviado al cliente: {detalle.comprobante_motivo}
+                    </p>
+                  )}
+
+                  <dl className="vt-det-grid vt-comprobante-datos">
+                    <div>
+                      <dt>Valor detectado por la IA</dt>
+                      <dd>
+                        {detalle.comprobante_valor !== null && detalle.comprobante_valor !== undefined
+                          ? `$${Number(detalle.comprobante_valor).toLocaleString('es-CO')}`
+                          : 'No identificado'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Total del pedido</dt>
+                      <dd>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</dd>
+                    </div>
+                    <div>
+                      <dt>¿Coincide con el total?</dt>
+                      <dd>
+                        {detalle.comprobante_coincide === true
+                          ? 'Sí'
+                          : detalle.comprobante_coincide === false
+                            ? 'No — revisar antes de aprobar'
+                            : 'No se pudo determinar'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Entidad</dt>
+                      <dd>{detalle.comprobante_datos?.entidad || 'No identificada'}</dd>
+                    </div>
+                    <div>
+                      <dt>Referencia</dt>
+                      <dd>{detalle.comprobante_datos?.referencia || 'No identificada'}</dd>
+                    </div>
+                    <div>
+                      <dt>Estado en el comprobante</dt>
+                      <dd>{detalle.comprobante_datos?.estado_transaccion || 'No identificado'}</dd>
+                    </div>
+                    {detalle.comprobante_datos?.observaciones && (
+                      <div className="vt-det-full">
+                        <dt>Observaciones de la IA</dt>
+                        <dd>{detalle.comprobante_datos.observaciones}</dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  <ComprobanteImagen
+                    ventaId={detalle.id}
+                    version={detalle.comprobante_subido_en}
+                    alt={`Comprobante de pago del pedido ${detalle.id}`}
+                  />
+
+                  <div className="vt-comprobante-acciones">
+                    {detalle.comprobante_estado !== 'Aprobado' && (
+                      <button
+                        type="button"
+                        className="btn-save"
+                        disabled={procesandoComprobante}
+                        onClick={() => void revisarComprobante(detalle, 'Aprobado')}
+                      >
+                        {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
+                      </button>
+                    )}
+                    {detalle.comprobante_estado !== 'Rechazado' && (
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                        disabled={procesandoComprobante}
+                        onClick={() => setComprobanteARechazar(detalle)}
+                      >
+                        Devolver comprobante
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+            </section>
+
+            <section className="vt-det-sec">
               <h4>Productos</h4>
               <div className="vt-det-lineas">
                 {(detalle.detalles ?? []).map((d, i) => (
@@ -1258,6 +1294,20 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </div>
           </div>
         </div>
+      )}
+
+      {comprobanteARechazar && (
+        <MotivoModal
+          titulo={`Devolver el comprobante del pedido #${comprobanteARechazar.id}`}
+          descripcion="Explica al cliente por qué no se acepta el comprobante (por ejemplo, porque el valor no coincide con el total). El cliente verá este motivo en Mis compras y podrá subir uno nuevo."
+          confirmarTexto="Devolver comprobante"
+          placeholder="Ej: el comprobante muestra $20.000 y el total del pedido es $35.000..."
+          peligro
+          onClose={() => setComprobanteARechazar(null)}
+          onConfirm={(motivo) =>
+            void revisarComprobante(comprobanteARechazar, 'Rechazado', motivo)
+          }
+        />
       )}
     </div>
   );
