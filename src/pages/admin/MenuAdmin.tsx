@@ -86,6 +86,8 @@ function CardImg({ img, nombre }: { img: string | null; nombre: string }) {
       className={`mn-card-img${alta ? ' alta' : ''}`}
       src={img ?? ''}
       alt={nombre}
+      loading="lazy"
+      decoding="async"
       onLoad={(e) => {
         const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
         setAlta(h > 0 && w / h < 0.85);

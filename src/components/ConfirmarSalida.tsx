@@ -3,9 +3,11 @@ import { useEffect } from 'react';
 export default function ConfirmarSalida({
   onConfirmar,
   onCancelar,
+  mensaje = '¿Cerrar sesión? Tendrás que iniciar sesión de nuevo para hacer pedidos.',
 }: {
   onConfirmar: () => void;
   onCancelar: () => void;
+  mensaje?: string;
 }) {
   useEffect(() => {
     const alTeclear = (e: KeyboardEvent) => {
@@ -53,7 +55,7 @@ export default function ConfirmarSalida({
           </svg>
         </div>
 
-        <p>¿Cerrar sesión? Tendrás que iniciar sesión de nuevo para hacer pedidos.</p>
+        <p>{mensaje}</p>
 
         <div className="mn-modal-actions">
           <button type="button" className="mn-btn-cancel" onClick={onCancelar}>

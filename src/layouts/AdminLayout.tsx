@@ -81,7 +81,7 @@ export default function AdminLayout() {
       console.error('[AdminLayout] Error validando sesión:', err.message);
       // No redirigir aquí; el interceptor de la API maneja el 401.
     });
-  }, [location.pathname]);
+    }, []);
 
   const handleSalir = () => {
   setSaliendo(true);
@@ -260,8 +260,9 @@ const salirDesdeMenuUsuario = () => {
 
       {confirmarSalida && (
         <ConfirmarSalida
-          onCancelar={() => setConfirmarSalida(false)}
-          onConfirmar={() => { setConfirmarSalida(false); handleSalir(); }}
+        mensaje="¿Cerrar sesión? Tendrás que iniciar sesión de nuevo para volver al panel."
+        onCancelar={() => setConfirmarSalida(false)}
+        onConfirmar={() => { setConfirmarSalida(false); handleSalir(); }}
         />
       )}
 

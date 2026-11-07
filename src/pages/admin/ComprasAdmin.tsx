@@ -468,18 +468,22 @@ export default function ComprasAdmin() {
   const vozRef = useRef<{ stop: () => void } | null>(null);
   const inputFactura = useRef<HTMLInputElement>(null);
 
-  const load = () => {
-    Promise.all([
-      apiClient.get<Compra[]>('/compras'),
-      apiClient.get<MateriaPrima[]>('/materias-primas'),
-      apiClient.get<Marca[]>('/marcas'),
-    ]).then(([r1, r2, r3]) => {
-      setItems(r1.data);
+const load = () => {
+  apiClient.get<Compra[]>('/compras')
+    .then((r) => setItems(r.data))
+    .catch(() => {})
+    .finally(() => setLoading(false));
+
+  Promise.all([
+    apiClient.get<MateriaPrima[]>('/materias-primas'),
+    apiClient.get<Marca[]>('/marcas'),
+  ])
+    .then(([r2, r3]) => {
       setMaterias(r2.data);
       setMarcas(r3.data);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  };
+    })
+    .catch(() => {});
+};
 
   useEffect(() => {
     if (cargado.current) return;

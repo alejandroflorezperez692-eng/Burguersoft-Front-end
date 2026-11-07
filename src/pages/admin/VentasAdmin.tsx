@@ -335,25 +335,31 @@ export default function VentasAdmin() {
   const [cierreDesde, setCierreDesde] = useState('');
   const [cierreHasta, setCierreHasta] = useState('');
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [r1, r2, r3] = await Promise.all([
-        apiClient.get('/ventas'),
-        apiClient.get('/productos'),
-        apiClient.get('/promociones'),
-      ]);
-      setItems(toArray<Venta>(r1.data));
+const load = async (silencioso = false) => {
+  if (!silencioso) setLoading(true);
+
+  // Se piden a la vez, pero el loader solo espera las ventas
+  const extras = Promise.all([apiClient.get('/productos'), apiClient.get('/promociones')])
+    .then(([r2, r3]) => {
       setProductos(toArray<Producto>(r2.data));
       setPromociones(toArray<Promocion>(r3.data));
-    } catch {
-      setItems([]);
+    })
+    .catch(() => {
       setProductos([]);
       setPromociones([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
+
+  try {
+    const r1 = await apiClient.get('/ventas');
+    setItems(toArray<Venta>(r1.data));
+  } catch {
+    setItems([]);
+  } finally {
+    setLoading(false);
+  }
+
+  await extras;
+};
 
   useEffect(() => { load(); }, []);
 
@@ -425,7 +431,7 @@ export default function VentasAdmin() {
     };
     apiClient.post('/ventas', body).then(() => {
       cerrarFormulario();
-      load();
+      load(true);
     }).catch((e) => {
       const d = (e as any)?.response?.data;
       const msg = d?.error || d?.message || (Object.values(d?.errors ?? {}) as string[][])[0]?.[0];

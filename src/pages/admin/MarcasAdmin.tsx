@@ -57,17 +57,17 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
   const [eliminando, setEliminando] = useState(false);
   const { showToast } = useToast();
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const r = await apiClient.get<Marca[]>('/marcas');
-      setItems(r.data);
-    } catch {
-      showToast('No se pudieron cargar los proveedores', true);
-    } finally {
-      setLoading(false);
-    }
-  };
+const load = async (silencioso = false) => {
+  if (!silencioso) setLoading(true);
+  try {
+    const r = await apiClient.get<Marca[]>('/marcas');
+    setItems(r.data);
+  } catch {
+    showToast('No se pudieron cargar los proveedores', true);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => { load(); }, []);
 
@@ -154,7 +154,7 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
         showToast('Proveedor creado correctamente');
       }
       setModal(false);
-      load();
+      load(true);
     } catch {
       showToast('No se pudo guardar el proveedor', true);
     }
@@ -308,6 +308,8 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
                           <img
                             src={m.img || marcaFallback}
                             alt={m.nombre}
+                            loading="lazy"
+                            decoding="async"
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                             onError={(e) => { (e.target as HTMLImageElement).src = marcaFallback; }}
                           />
@@ -340,6 +342,8 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
                 <img
                   src={m.img || marcaFallback}
                   alt={m.nombre}
+                  loading="lazy"
+                  decoding="async"
                   onError={(e) => { (e.target as HTMLImageElement).src = marcaFallback; }}
                 />
               </div>

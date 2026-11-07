@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 import { API_URL } from './config';
 import {
   MENSAJE_DESCONOCIDO,
@@ -107,5 +107,45 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+const TTL_CATALOGO_MS = 15_000;
+const CATALOGO = ['/productos', '/promociones', '/marcas', '/materias-primas'];
+const COMPARTIR = [...CATALOGO, '/me', '/mesas']; // /me y /mesas: solo se unen las simultáneas
+
+type Entrada = { promesa: Promise<AxiosResponse>; expira: number };
+const memoria = new Map<string, Entrada>();
+const adaptadorReal = axios.getAdapter(apiClient.defaults.adapter);
+const clonar = (r: AxiosResponse): AxiosResponse => ({ ...r, data: structuredClone(r.data) });
+
+apiClient.defaults.adapter = (config) => {
+  const metodo = (config.method ?? 'get').toLowerCase();
+  if (metodo !== 'get') {
+    memoria.clear();
+    return adaptadorReal(config);
+  }
+
+  const url = config.url ?? '';
+  const ruta = url.split('?')[0];
+  if (!COMPARTIR.includes(ruta) || config.responseType === 'blob') {
+    return adaptadorReal(config);
+  }
+
+  const clave = `${String(config.headers?.Authorization ?? '')}|${url}|${JSON.stringify(config.params ?? {})}`;
+  const previa = memoria.get(clave);
+  if (previa && previa.expira > Date.now()) return previa.promesa.then(clonar);
+
+  const ttl = CATALOGO.includes(ruta) ? TTL_CATALOGO_MS : 0;
+  const promesa = adaptadorReal(config) as Promise<AxiosResponse>;
+  const entrada: Entrada = { promesa, expira: Infinity };
+  memoria.set(clave, entrada);
+  promesa.then(
+    () => {
+      if (ttl) entrada.expira = Date.now() + ttl;
+      else memoria.delete(clave);
+    },
+    () => memoria.delete(clave),
+  );
+  return promesa.then(clonar);
+};
 
 export default apiClient;

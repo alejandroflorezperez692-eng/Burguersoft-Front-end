@@ -2,29 +2,21 @@ import { useEffect } from 'react';
 import { DotLottieReact } from '@lottiefiles/dotlottie-react';
 import loadingAnimation from '../assets/hamburguesa.json';
 
-// Bloqueo de scroll compartido: si hay varios loaders montados a la vez se
-// cuenta cuántos hay y solo se restaura el scroll cuando se desmonta el último.
 let bloqueosScroll = 0;
 let overflowOriginal = '';
 
-/**
- * Loading de la aplicación.
- *
- * Por defecto ocupa TODA la pantalla (incluido el sidebar y el header del
- * admin), para que al entrar o recargar una página no se vea el contenido a
- * medio cargar. Con `compact` se muestra en línea, dentro de un contenedor.
- */
 export default function AdminLoading({
   texto = 'Cargando',
   subtexto = 'Preparando tus datos',
   compact = false,
+  progreso,
 }: {
   texto?: string;
   subtexto?: string;
   compact?: boolean;
+  progreso?: number;
 }) {
-  // Mientras el loading de pantalla completa está visible no se puede hacer
-  // scroll de la página que hay detrás.
+
   useEffect(() => {
     if (compact) return;
     if (bloqueosScroll === 0) overflowOriginal = document.body.style.overflow;
@@ -101,11 +93,13 @@ export default function AdminLoading({
         <div style={{ width: compact ? 240 : 'min(220px, 70vw)', height: 5, borderRadius: 999, background: 'var(--border, #f0e6d8)', overflow: 'hidden', marginTop: compact ? 0 : 8 }}>
           <div
             style={{
-              width: 0,
+              width: progreso === undefined ? 0 : `${progreso}%`,
               height: '100%',
               borderRadius: 999,
               background: 'linear-gradient(90deg, #e8821a, #ffb347)',
-              animation: 'burguerFill 3s ease-in forwards',
+              ...(progreso === undefined
+                ? { animation: 'burguerFill 3s ease-in forwards' }
+                : { transition: 'width .3s ease' }),
             }}
           />
         </div>

@@ -123,6 +123,8 @@ export default function MenuPublico() {
                         <img
                           src={p.img || cenaFallback}
                           alt={p.nombre ?? 'Producto'}
+                          loading="lazy"
+                          decoding="async"
                           onError={(e) => {
                             e.currentTarget.src = cenaFallback;
                           }}

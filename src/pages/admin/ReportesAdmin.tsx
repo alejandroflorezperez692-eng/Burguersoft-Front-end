@@ -377,7 +377,7 @@ export default function ReportesAdmin() {
   useEffect(() => {
     let activo = true;
     Promise.allSettled([
-      apiClient.get('/ventas'),
+      apiClient.get('/ventas', { params: { todas: 1 } }),
       apiClient.get('/compras'),
     ]).then(([rVentas, rCompras]) => {
       if (!activo) return;

@@ -136,6 +136,8 @@ export default function Home() {
                     <img
                       src={promo.imagen || promocionFallback}
                       alt={promo.nombre}
+                      loading="lazy"
+                      decoding="async"
                       onError={(e) => {
                         e.currentTarget.src = promocionFallback;
                       }}

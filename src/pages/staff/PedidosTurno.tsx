@@ -9,6 +9,7 @@ import '../../styles/pedidos-turno.css';
 import { getEcho } from '../../api/echo';
 import NuevaVentaModal, { precargarNuevaVenta } from '../../components/NuevaVentaModal';
 import { useEscape } from '../../hooks/useEscape';
+import AdminLoading from '../../components/AdminLoading';
 
 
 type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
@@ -165,7 +166,6 @@ export default function PedidosTurno() {
     const miVersion = version.current;
     try {
       const res = await apiClient.get('/pedidos/tablero');
-      // Si hubo un cambio mientras esta petición viajaba, sus datos ya son viejos
       if (miVersion !== version.current || pendientes.current > 0) return;
       const lista: Venta[] = Array.isArray(res.data)
         ? res.data
@@ -176,15 +176,15 @@ export default function PedidosTurno() {
     } catch {
       setError('No se pudo cargar la lista de pedidos.');
     } finally {
-      setLoading(false);
-    }
+  setLoading(false);
+}
   }, [config.estados]);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    void load();
-  }, [load]);
+  setLoading(true);
+  setError(null);
+  void load();
+}, [load]);
 
   useEffect(() => {
     precargarNuevaVenta();
@@ -449,6 +449,9 @@ export default function PedidosTurno() {
         })}
       </div>
 
+      {loading && (
+        <AdminLoading texto="Cargando pedidos" subtexto="Preparando el tablero" />
+      )}
       <NuevaVentaModal
         abierto={nuevoAbierto}
         mesaInicial={mesaNueva}
