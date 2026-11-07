@@ -18,8 +18,6 @@ export type ItemPersonalizar = {
 
 const formatCOP = (v: number) => `$${v.toLocaleString('es-CO')}`;
 
-const SIN_EXTRAS = ['Fritos', 'Arepas', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza'];
-
 export default function PersonalizarModal({
   item,
   onClose,

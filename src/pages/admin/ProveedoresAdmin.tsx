@@ -39,7 +39,7 @@ export default function ProveedoresAdmin() {
   const [form, setForm] = useState(empty);
   const [editId, setEditId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const [detalle, setDetalle] = useState<Marca | null>(null);
+  const [detalle, setDetalle] = useState<Proveedor | null>(null);
   const [intentado, setIntentado] = useState(false);
   const [vista, setVista] = useState<'tarjetas' | 'lista'>(() => {
     try {
@@ -60,7 +60,7 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
 const load = async (silencioso = false) => {
   if (!silencioso) setLoading(true);
   try {
-    const r = await apiClient.get<Marca[]>('/marcas');
+    const r = await apiClient.get<Proveedor[]>('/marcas');
     setItems(r.data);
   } catch {
     showToast('No se pudieron cargar los proveedores', true);

@@ -136,7 +136,7 @@ export default function PromocionesAdmin() {
   const [promos, setPromos] = useState<Promocion[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [progreso, setProgreso] = useState(10);
+  const [, setProgreso] = useState(10);
   const [vista, setVista] = useState<'tarjetas' | 'lista'>(() => {
     try {
       return localStorage.getItem('promosAdminVista') === 'lista' ? 'lista' : 'tarjetas';
