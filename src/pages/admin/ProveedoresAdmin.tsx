@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../../api/client';
-import marcaFallback from '../../assets/img/marca-comercial.png';
+import proveedorFallback from '../../assets/img/marca-comercial.png';
 import AdminLoading from '../../components/AdminLoading';
 import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
@@ -8,7 +8,7 @@ import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 
-interface Marca {
+interface Proveedor {
   id: number;
   nombre: string;
   img: string;
@@ -17,7 +17,7 @@ interface Marca {
   nit: string;
 }
 
-const empty: Omit<Marca, 'id'> = {
+const empty: Omit<Proveedor, 'id'> = {
   nombre: '',
   img: '',
   telefono: '',
@@ -25,14 +25,14 @@ const empty: Omit<Marca, 'id'> = {
   nit: '',
 };
 
-export default function MarcasAdmin() {
-  const [items, setItems] = useState<Marca[]>([]);
+export default function ProveedoresAdmin() {
+  const [items, setItems] = useState<Proveedor[]>([]);
 
   // Filtro de búsqueda de texto (Develop)
   const [q, setQ] = useState('');
 
   // Filtros avanzados
-  const [filtroMarca, setFiltroMarca] = useState('');
+  const [filtroProveedor, setFiltroProveedor] = useState('');
   const [filtroNombre, setFiltroNombre] = useState('');
 
   const [modal, setModal] = useState(false);
@@ -43,7 +43,7 @@ export default function MarcasAdmin() {
   const [intentado, setIntentado] = useState(false);
   const [vista, setVista] = useState<'tarjetas' | 'lista'>(() => {
     try {
-      return localStorage.getItem('marcasAdminVista') === 'lista' ? 'lista' : 'tarjetas';
+      return localStorage.getItem('proveedoresAdminVista') === 'lista' ? 'lista' : 'tarjetas';
     } catch {
       return 'tarjetas';
     }
@@ -53,7 +53,7 @@ const { user } = useAuth();
 const esAdmin = normalizarRol(user?.role) === 'admin';
 
   const [closing, setClosing] = useState(false);
-  const [confirmDel, setConfirmDel] = useState<Marca | null>(null);
+  const [confirmDel, setConfirmDel] = useState<Proveedor | null>(null);
   const [eliminando, setEliminando] = useState(false);
   const { showToast } = useToast();
 
@@ -73,20 +73,20 @@ const load = async (silencioso = false) => {
 
   useEffect(() => {
     try {
-      localStorage.setItem('marcasAdminVista', vista);
+      localStorage.setItem('proveedoresAdminVista', vista);
     } catch {
       /* si el navegador bloquea localStorage, simplemente no se guarda */
     }
   }, [vista]);
 
   // --- Lógica de Filtros Combinada ---
-  const marcasOrdenadas = [...items].sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'));
+  const proveedoresOrdenados = [...items].sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'));
 
-  const hayFiltros = q !== '' || filtroMarca !== '' || filtroNombre !== '';
+  const hayFiltros = q !== '' || filtroProveedor !== '' || filtroNombre !== '';
 
   const limpiarFiltros = () => {
     setQ('');
-    setFiltroMarca('');
+    setFiltroProveedor('');
     setFiltroNombre('');
   };
 
@@ -97,7 +97,7 @@ const load = async (silencioso = false) => {
       if (!coincideTexto) return false;
     }
     // 2. Filtros avanzados
-    if (filtroMarca && String(m.id) !== filtroMarca) return false;
+    if (filtroProveedor && String(m.id) !== filtroProveedor) return false;
     if (filtroNombre && !(m.nombre ?? '').toLowerCase().includes(filtroNombre.trim().toLowerCase())) return false;
 
     return true;
@@ -105,7 +105,7 @@ const load = async (silencioso = false) => {
 
   const openNew = () => { setForm(empty); setEditId(null); setIntentado(false); setModal(true); };
 
-  const openEdit = (m: Marca) => {
+  const openEdit = (m: Proveedor) => {
     setForm({
       nombre: m.nombre,
       img: m.img,
@@ -183,7 +183,7 @@ const load = async (silencioso = false) => {
     }
   };
 
-  const verDetalle = (m: Marca) => { setClosing(false); setDetalle(m); };
+  const verDetalle = (m: Proveedor) => { setClosing(false); setDetalle(m); };
 
   const closeDetail = () => {
     if (!detalle || closing) return;
@@ -252,9 +252,9 @@ const load = async (silencioso = false) => {
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
             <label>Proveedores</label>
-            <select value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
-              <option value="">Todos los provedores</option>
-              {marcasOrdenadas.map((m) => (
+            <select value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)}>
+              <option value="">Todos los proveedores</option>
+              {proveedoresOrdenados.map((m) => (
                 <option key={m.id} value={String(m.id)}>{m.nombre}</option>
               ))}
             </select>
@@ -306,12 +306,12 @@ const load = async (silencioso = false) => {
                       <div className="mn-table-prod">
                         <div className="mn-table-img">
                           <img
-                            src={m.img || marcaFallback}
+                            src={m.img || proveedorFallback}
                             alt={m.nombre}
                             loading="lazy"
                             decoding="async"
                             style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                            onError={(e) => { (e.target as HTMLImageElement).src = marcaFallback; }}
+                            onError={(e) => { (e.target as HTMLImageElement).src = proveedorFallback; }}
                           />
                         </div>
                         <strong>{m.nombre}</strong>
@@ -340,11 +340,11 @@ const load = async (silencioso = false) => {
             <article className="marca-card" key={m.id} onClick={() => verDetalle(m)}>
               <div className="marca-img-wrap">
                 <img
-                  src={m.img || marcaFallback}
+                  src={m.img || proveedorFallback}
                   alt={m.nombre}
                   loading="lazy"
                   decoding="async"
-                  onError={(e) => { (e.target as HTMLImageElement).src = marcaFallback; }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = proveedorFallback; }}
                 />
               </div>
               <div className="marca-body">
@@ -383,9 +383,9 @@ const load = async (silencioso = false) => {
             <div className="detalle-logo-bg" />
             <img
               className="detalle-logo-flotante"
-              src={detalle.img || marcaFallback}
+              src={detalle.img || proveedorFallback}
               alt={detalle.nombre}
-              onError={(e) => { (e.target as HTMLImageElement).src = marcaFallback; }}
+              onError={(e) => { (e.target as HTMLImageElement).src = proveedorFallback; }}
             />
           </div>
         )}
@@ -415,7 +415,7 @@ const load = async (silencioso = false) => {
                     src={form.img}
                     alt="Vista previa"
                     style={{ maxHeight: 70 }}
-                    onError={(e) => { (e.target as HTMLImageElement).src = marcaFallback; }}
+                    onError={(e) => { (e.target as HTMLImageElement).src = proveedorFallback; }}
                   />
                 ) : (
                   <span style={{ color: 'var(--text-400)', fontSize: 11 }}>Sin logo</span>

@@ -8,6 +8,7 @@ import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
+import ComprasSugeridas, { type ItemSugerido } from '../../components/ComprasSugeridas';
 
 interface DetalleCompra {
   id: number;
@@ -611,6 +612,27 @@ const load = () => {
     setShowForm(true);
   };
 
+  // Precarga el formulario de compra con la lista sugerida ("Qué comprar esta semana")
+  const agregarSugeridas = (sugeridas: ItemSugerido[]) => {
+    if (!sugeridas.length) {
+      showToast('No hay sugerencias para agregar', true);
+      return;
+    }
+    setIntentado(false);
+    setEditId(null);
+    setAviso(null);
+    setLineas(sugeridas.map((s) => ({
+      materia_prima_id: s.materia_id,
+      cantidad: String(s.comprar),
+      precio_unitario: String(Math.round(s.costo_estimado)),
+      marca_id: 0,
+      nombre_nuevo: '',
+      tipo: '',
+      unidad_medida: '',
+    })));
+    setShowForm(true);
+  };
+
   const abrirEditar = (c: Compra) => {
     setIntentado(false);
     setEditId(c.id);
@@ -964,6 +986,7 @@ const load = () => {
           />
         </div>
       </div>
+      <ComprasSugeridas onAgregar={agregarSugeridas} />
 
       {mostrarDictado && (
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 24, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>

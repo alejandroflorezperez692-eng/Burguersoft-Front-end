@@ -11,6 +11,7 @@ import { useEscape } from '../../hooks/useEscape';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
 import logoImg from '../../assets/img/logo-burguersoft.png';
 import { imprimirEnPagina } from '../../utils/imprimirEnPagina';
+import ArqueoCaja from '../../components/ArqueoCaja';
 
 
 interface DetalleVenta {
@@ -889,6 +890,8 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             {cierre.pendientes.n > 0 && (
               <p className="cierre-nota">Pendientes de cobro: {cierre.pendientes.n} ({moneda(cierre.pendientes.total)}), no incluidos en el total.</p>
             )}
+
+            <ArqueoCaja />
 
             <div className="modal-actions" style={{ marginTop: 16 }}>
               <button type="button" className="btn-cancel" onClick={() => setCierreAbierto(false)}>Cerrar</button>

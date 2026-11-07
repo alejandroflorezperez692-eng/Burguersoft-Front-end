@@ -15,7 +15,7 @@ import Inicio from './pages/Inicio';
 import Home from './pages/Home';
 import Nosotros from './pages/Nosotros';
 import MisCompras from './pages/MisCompras';
-import MarcasAdmin from './pages/admin/MarcasAdmin';
+import ProveedoresAdmin from './pages/admin/ProveedoresAdmin';
 import UsuariosAdmin from './pages/admin/UsuariosAdmin';
 import MenuAdmin from './pages/admin/MenuAdmin';
 import MateriaPrimaAdmin from './pages/admin/MateriaPrimaAdmin';
@@ -110,7 +110,7 @@ export default function App() {
             <Route path="/inventario" element={<InventarioAdmin />} />
             <Route path="/compras" element={<ComprasAdmin />} />
             <Route path="/cierre-inventario" element={<CierreInventarioAdmin />} />
-            <Route path="/gestion-marca" element={<MarcasAdmin />} />
+            <Route path="/gestion-proveedores" element={<ProveedoresAdmin />} />
           </Route>
 
           {/* Solo admin */}
