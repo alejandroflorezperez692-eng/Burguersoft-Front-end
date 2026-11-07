@@ -9,6 +9,8 @@ import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
 import PersonalizarModal from '../components/PersonalizarModal';
 import '../styles/public.css';
+import { useCart } from '../hooks/useCart';
+import { categoriaSinExtras } from '../utils/categorias';
 
 type Producto = {
   id: number;
@@ -46,6 +48,26 @@ export default function MenuPublico() {
   const [items, setItems] = useState<Producto[] | null>(null);
   const [editando, setEditando] = useState<Producto | null>(null);
   const { isAuthenticated } = useAuth();
+
+  const { agregar } = useCart();
+
+  const handleAgregar = (p: Producto) => {
+    const sinOpciones =
+      categoriaSinExtras(catNombre(p.categoria)) ||
+      ((p.adiciones?.length ?? 0) === 0 && !(p.descripcion ?? '').includes('+'));
+
+    if (sinOpciones) {
+      agregar({
+        id: p.id,
+        nombre: p.nombre ?? 'Producto',
+        precio: Number(p.valor || 0),
+        imagen: p.img,
+        cantidad: 1,
+      });
+    } else {
+      setEditando(p);
+    }
+  };
 
   useEffect(() => {
     let cancelado = false;
@@ -128,7 +150,7 @@ export default function MenuPublico() {
                               className="btn-circular-add"
                               title="Agregar al carrito"
                               data-tooltip="Agregar al carrito"
-                              onClick={() => setEditando(p)}
+                              onClick={() => handleAgregar(p)}
                             >
                               +
                             </button>
@@ -159,6 +181,7 @@ export default function MenuPublico() {
             imagen: editando.img,
             descripcion: editando.descripcion,
             adiciones: editando.adiciones,
+            categoria: catNombre(editando.categoria),   // ← NUEVA
           }}
           onClose={() => setEditando(null)}
         />

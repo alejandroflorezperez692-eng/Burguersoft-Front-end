@@ -1,6 +1,4 @@
-
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { createPortal } from 'react-dom';
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
@@ -11,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
+import logoImg from '../../assets/img/logo-burguersoft.png';
 
 
 interface DetalleVenta {
@@ -67,9 +66,6 @@ interface Promocion {
 const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
 const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
-
-// Estados que un mesero puede asignar (el resto queda deshabilitado)
-const ESTADOS_MESERO = ['Registrado', 'En preparación', 'Preparado', 'Servido', 'Cancelado'];
 
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
@@ -314,10 +310,6 @@ export default function VentasAdmin() {
   const [filtroEntrega, setFiltroEntrega] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
-  const [estadoAbiertoId, setEstadoAbiertoId] = useState<number | null>(null);
-  const [estadoDropdownPos, setEstadoDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
-  const estadoDropdownRefs = useRef(new Map<number, HTMLDivElement>());
-  const estadoOptionsRefs = useRef(new Map<number, HTMLDivElement>());
 
   const [pagina, setPagina] = useState(1);
 
@@ -340,7 +332,6 @@ export default function VentasAdmin() {
   const [cierreAbierto, setCierreAbierto] = useState(false);
   const [cierreDesde, setCierreDesde] = useState('');
   const [cierreHasta, setCierreHasta] = useState('');
-  const [, setVersion] = useState(0);
 
   const load = async () => {
     setLoading(true);
@@ -516,40 +507,6 @@ export default function VentasAdmin() {
 
   const totalCarrito = totalProductos + totalCombos;
 
-  const updateEstado = (id: number, estado: string) => {
-    apiClient.patch(`/ventas/${id}/estado`, { estado })
-      .then(() => { setVersion((v) => v + 1); load(); })
-      .catch(() => alertar('No se pudo cambiar el estado.'));
-  };
-
-  useEffect(() => {
-    if (estadoAbiertoId === null) return;
-    const cerrarAlHacerClickFuera = (event: MouseEvent) => {
-      const root = estadoDropdownRefs.current.get(estadoAbiertoId);
-      const options = estadoOptionsRefs.current.get(estadoAbiertoId);
-      if (!root?.contains(event.target as Node) && !options?.contains(event.target as Node)) {
-        setEstadoAbiertoId(null);
-      }
-    };
-    const cerrarAlDesplazarse = () => setEstadoAbiertoId(null);
-    document.addEventListener('mousedown', cerrarAlHacerClickFuera);
-    window.addEventListener('scroll', cerrarAlDesplazarse, true);
-    window.addEventListener('resize', cerrarAlDesplazarse);
-    return () => {
-      document.removeEventListener('mousedown', cerrarAlHacerClickFuera);
-      window.removeEventListener('scroll', cerrarAlDesplazarse, true);
-      window.removeEventListener('resize', cerrarAlDesplazarse);
-    };
-  }, [estadoAbiertoId]);
-
-  useEffect(() => {
-    if (estadoAbiertoId === null) return;
-    estadoOptionsRefs.current
-      .get(estadoAbiertoId)
-      ?.querySelector<HTMLButtonElement>('[role="option"][aria-selected="true"], [role="option"]:not(:disabled)')
-      ?.focus();
-  }, [estadoAbiertoId]);
-
   const verFactura = async (id: number) => {
     const ventana = window.open('', '_blank');
 
@@ -670,41 +627,97 @@ export default function VentasAdmin() {
     const rango = c.desde === c.hasta ? fmtLargo(c.desde) : `${fmtLargo(c.desde)} al ${fmtLargo(c.hasta)}`;
     const filasProd = c.productos.length
       ? c.productos.map((p) => `<tr><td>${escHtml(p.nombre)}</td><td class="r">${p.cantidad}</td><td class="r">${moneda(p.total)}</td></tr>`).join('')
-      : '<tr><td colspan="3" class="c">Sin ventas en este periodo</td></tr>';
+      : '<tr><td colspan="3" class="vacio">Sin ventas en este periodo</td></tr>';
     const filasCombos = c.combos.map((p) => `<tr><td>${escHtml(p.nombre)}</td><td class="r">${p.cantidad}</td><td class="r">—</td></tr>`).join('');
     const filasMetodos = c.metodos.map((m) => `<tr><td>${escHtml(m.nombre)}</td><td class="r">${m.ventas}</td><td class="r">${moneda(m.total)}</td></tr>`).join('');
 
- w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Cierre del día</title>
+    const filtrosTxt = [filtroMetodo, filtroEntrega].filter(Boolean).join(', ');
+    const logoUrl = new URL(logoImg, window.location.origin).href;
+
+    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cierre del día</title>
 <style>
-body{font-family:Arial,Helvetica,sans-serif;color:#1a0f0a;max-width:380px;margin:0 auto;padding:16px;font-size:13px}
-h1{font-size:19px;margin:0 0 2px;text-align:center}
-.sub{text-align:center;color:#6b4a2b;margin:0 0 4px;text-transform:capitalize}
-.gen{text-align:center;color:#888;font-size:11px;margin:0 0 12px}
-h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 2px}
-table{width:100%;border-collapse:collapse}
-th{font-size:11px;text-transform:uppercase;text-align:left;border-bottom:2px solid #1a0f0a;padding:4px 0}
-td{padding:4px 0;border-bottom:1px dashed #bbb}
-.r{text-align:right}.c{text-align:center;color:#888}
-th.r{text-align:right}
-.tot{display:flex;justify-content:space-between;font-size:17px;font-weight:700;border-top:2px solid #1a0f0a;margin-top:12px;padding-top:8px}
-.nota{color:#6b4a2b;font-size:12px;margin:6px 0 0}
+*{box-sizing:border-box}
+@page{margin:0}
+body{margin:0 auto;padding:16px 14px 20px;max-width:380px;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#000}
+.centro{text-align:center}
+.logo{width:90px;height:auto;margin-bottom:6px}
+.negocio{font-size:22px;font-weight:bold;letter-spacing:1px}
+.eslogan{font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-top:3px}
+.dato{font-size:11.5px;color:#333;margin-top:2px}
+.sep{border-top:1px dashed #000;margin:14px 0}
+.titulo{font-size:16px;font-weight:bold;letter-spacing:2px;text-transform:uppercase}
+.rango{font-size:12.5px;margin-top:3px;text-transform:capitalize}
+.fila{width:100%;border-collapse:collapse}
+.fila td{padding:3px 0;vertical-align:top;font-size:13px}
+.fila td.etq{width:34%;color:#444}
+.items{width:100%;border-collapse:collapse;margin-top:2px}
+.items th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;text-align:left;border-bottom:2px solid #000;padding:5px 0}
+.items td{padding:6px 0;vertical-align:top;border-bottom:1px dotted #ccc;font-size:13px}
+.items .c{text-align:center}
+.items .r{text-align:right;white-space:nowrap}
+.items th.c{text-align:center}
+.items th.r{text-align:right}
+.vacio{text-align:center;color:#777;padding:10px 0}
+.sec{font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin:14px 0 2px}
+.tot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.tot-etq{font-size:15px;font-weight:bold;text-transform:uppercase;letter-spacing:1px}
+.tot-val{font-size:22px;font-weight:bold}
+.nota{font-size:11.5px;color:#333;margin:5px 0 0}
+.pie{text-align:center;font-size:11.5px;color:#333}
+.gracias{font-size:14px;font-weight:bold;color:#000;margin-bottom:3px}
+@media print{body{padding:4mm 3mm 5mm;max-width:none}}
 </style></head><body>
-<h1>Cierre del día</h1>
-<p class="sub">${escHtml(rango)}</p>
-<p class="gen">Impreso: ${escHtml(new Date().toLocaleString('es-CO'))}</p>
-<h2>Productos vendidos</h2>
-<table><thead><tr><th>Producto</th><th class="r">Cant.</th><th class="r">Subtotal</th></tr></thead><tbody>${filasProd}</tbody></table>
-${filasCombos ? `<h2>Combos</h2><table><thead><tr><th>Combo</th><th class="r">Cant.</th><th class="r"></th></tr></thead><tbody>${filasCombos}</tbody></table>` : ''}
-<h2>Por método de pago</h2>
-<table><thead><tr><th>Método</th><th class="r">Ventas</th><th class="r">Total</th></tr></thead><tbody>${filasMetodos || '<tr><td colspan="3" class="c">—</td></tr>'}</tbody></table>
-<div class="tot"><span>TOTAL DEL DÍA</span><span>${moneda(c.total)}</span></div>
-<p class="nota">${c.vendidas} ventas pagadas · ${c.unidades} productos</p>
-${c.pendientes.n ? `<p class="nota">Pendientes de cobro: ${c.pendientes.n} (${moneda(c.pendientes.total)}) — no incluidos en el total</p>` : ''}
+<div class="centro">
+  <img class="logo" src="${logoUrl}" alt="Burguersoft" onerror="this.style.display='none'">
+  <div class="negocio">Burguersoft</div>
+  <div class="eslogan">El Oriente</div>
+  <div class="dato">Calle 9 # 1A-43, Barrio El Oriente</div>
+  <div class="dato">Sogamoso, Boyacá</div>
+  <div class="dato">Tel. 314 2208706</div>
+</div>
+<div class="sep"></div>
+<div class="centro titulo">Cierre del día</div>
+<div class="centro rango">${escHtml(rango)}</div>
+<div class="sep"></div>
+<table class="fila">
+  <tr><td class="etq">Impreso</td><td>${escHtml(new Date().toLocaleString('es-CO'))}</td></tr>
+  <tr><td class="etq">Ventas</td><td>${c.vendidas} pagadas</td></tr>
+  <tr><td class="etq">Productos</td><td>${c.unidades} unidades</td></tr>
+  ${filtrosTxt ? `<tr><td class="etq">Filtros</td><td>${escHtml(filtrosTxt)}</td></tr>` : ''}
+</table>
+<div class="sep"></div>
+<table class="items">
+  <thead><tr><th>Producto</th><th class="c" style="width:14%">Cant</th><th class="r" style="width:32%">Subtotal</th></tr></thead>
+  <tbody>${filasProd}${filasCombos}</tbody>
+</table>
+<div class="sep"></div>
+<div class="sec" style="margin-top:0">Por método de pago</div>
+<table class="items">
+  <thead><tr><th>Método</th><th class="c" style="width:14%">Ventas</th><th class="r" style="width:32%">Total</th></tr></thead>
+  <tbody>${filasMetodos || '<tr><td colspan="3" class="vacio">—</td></tr>'}</tbody>
+</table>
+<div class="sep"></div>
+<div class="tot"><span class="tot-etq">Total del día</span><span class="tot-val">${moneda(c.total)}</span></div>
+${c.pendientes.n ? `<p class="nota">Pendientes de cobro: ${c.pendientes.n} (${moneda(c.pendientes.total)}), no incluidos en el total.</p>` : ''}
 ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''}
+<div class="sep"></div>
+<div class="pie">
+  <div class="gracias">Burguersoft · Cierre de caja</div>
+  <div>burguersoft@gmail.com</div>
+</div>
 </body></html>`);
     w.document.close();
     w.focus();
-    setTimeout(() => w.print(), 300);
+    const img = w.document.querySelector('img');
+    let impreso = false;
+    const lanzar = () => { if (!impreso) { impreso = true; w.print(); } };
+    if (img && !img.complete) {
+      img.onload = lanzar;
+      img.onerror = lanzar;
+      setTimeout(lanzar, 1500);
+    } else {
+      setTimeout(lanzar, 300);
+    }
   };
 
   const cierre = cierreAbierto ? calcularCierre() : null;
@@ -728,8 +741,76 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <h1>{esAdmin ? 'Gestión de Ventas' : 'Caja'}</h1>
           <p className="subtitulo">{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
+        <button type="button" className="btn-save" onClick={() => abrirCierre()}>
+          Cierre del día
+        </button>
       </div>
       
+
+      {cierre && (
+        <div className="modal-overlay open">
+          <div className="modal-box cierre-box" style={{ maxWidth: 680, width: '95%' }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="modal-x" onClick={() => setCierreAbierto(false)} aria-label="Cerrar">×</button>
+            <h2>Cierre del día</h2>
+
+            <div className="cierre-filtros">
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Desde</label>
+                <input type="date" value={cierre.desde} max={cierre.hasta} onChange={(e) => setCierreDesde(e.target.value)} />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Hasta</label>
+                <input type="date" value={cierre.hasta} min={cierre.desde} onChange={(e) => setCierreHasta(e.target.value)} />
+              </div>
+              <p className="cierre-nota">
+                Solo cuenta ventas <b>Pagadas</b>
+                {(filtroMetodo || filtroEntrega) && ` · Filtros: ${[filtroMetodo, filtroEntrega].filter(Boolean).join(', ')}`}
+              </p>
+            </div>
+
+            <div className="cierre-resumen">
+              <div><small>Total del día</small><strong>{moneda(cierre.total)}</strong></div>
+              <div><small>Ventas</small><strong>{cierre.vendidas}</strong></div>
+              <div><small>Productos</small><strong>{cierre.unidades}</strong></div>
+            </div>
+
+            <h4 className="cierre-sub">Productos vendidos</h4>
+            <div className="cierre-scroll">
+              <table className="cierre-tabla">
+                <thead><tr><th>Producto</th><th className="r">Cant.</th><th className="r">Subtotal</th></tr></thead>
+                <tbody>
+                  {cierre.productos.map((p) => (
+                    <tr key={p.nombre}><td>{p.nombre}</td><td className="r">{p.cantidad}</td><td className="r">{moneda(p.total)}</td></tr>
+                  ))}
+                  {cierre.combos.map((p) => (
+                    <tr key={`c-${p.nombre}`}><td>{p.nombre} <small>(combo)</small></td><td className="r">{p.cantidad}</td><td className="r">—</td></tr>
+                  ))}
+                  {cierre.productos.length === 0 && cierre.combos.length === 0 && (
+                    <tr><td colSpan={3} className="c">No hay ventas pagadas en este periodo</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <h4 className="cierre-sub">Por método de pago</h4>
+            <div className="cierre-metodos">
+              {cierre.metodos.map((m) => (
+                <span key={m.nombre}><b>{m.nombre}</b> {moneda(m.total)} <small>({m.ventas})</small></span>
+              ))}
+              {cierre.metodos.length === 0 && <span>—</span>}
+            </div>
+
+            {cierre.pendientes.n > 0 && (
+              <p className="cierre-nota">Pendientes de cobro: {cierre.pendientes.n} ({moneda(cierre.pendientes.total)}), no incluidos en el total.</p>
+            )}
+
+            <div className="modal-actions" style={{ marginTop: 16 }}>
+              <button type="button" className="btn-cancel" onClick={() => setCierreAbierto(false)}>Cerrar</button>
+              <button type="button" className="btn-save" onClick={imprimirCierre}>Imprimir</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="modal-overlay open" onClick={cerrarFormulario}>
@@ -1019,8 +1100,26 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </tr>
           </thead>
           <tbody>
-            {visibles.map((v) => (
-              <tr key={v?.id}>
+            {visibles.map((v, i) => {
+              const clave = fechaLocal(v?.fecha);
+              const nuevoDia = i === 0 || clave !== fechaLocal(visibles[i - 1]?.fecha);
+              const r = nuevoDia ? resumenDia(clave) : null;
+              return (
+              <Fragment key={v?.id}>
+              {r && (
+                <tr className="vt-dia">
+                  <td colSpan={9}>
+                    <div className="vt-dia-bar">
+                      <span className="vt-dia-label">{etiquetaDia(clave)}</span>
+                      <span className="vt-dia-info">{r.ventas} ventas · Vendido: <b>{moneda(r.total)}</b></span>
+                      <button type="button" className="btn-save vt-dia-btn" onClick={() => abrirCierre(clave, clave)}>
+                        Cierre del día
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              <tr>
                 <td className="vt-num">#{v?.id}</td>
                 <td className="vt-fecha">
                   <span>{fmtDia(v?.fecha)}</span>
@@ -1045,112 +1144,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
                 <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
                 <td>
-                  <div
-                    className="venta-estado-dropdown"
-                    ref={(element) => {
-                      if (element) estadoDropdownRefs.current.set(v.id, element);
-                      else estadoDropdownRefs.current.delete(v.id);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Escape') {
-                        setEstadoAbiertoId(null);
-                        estadoDropdownRefs.current.get(v.id)
-                          ?.querySelector<HTMLButtonElement>('.venta-estado-trigger')
-                          ?.focus();
-                        return;
-                      }
-                      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-                      event.preventDefault();
-                      if (estadoAbiertoId !== v.id) {
-                        const rect = event.currentTarget.getBoundingClientRect();
-                        const menuHeight = ESTADOS.length * 38;
-                        const width = Math.max(rect.width, 180);
-                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
-                          ? rect.bottom + 4
-                          : Math.max(8, rect.top - menuHeight - 4);
-                        setEstadoDropdownPos({
-                          top,
-                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
-                          width,
-                        });
-                        setEstadoAbiertoId(v.id);
-                        return;
-                      }
-                      const options = Array.from(
-                        estadoOptionsRefs.current.get(v.id)?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)') ?? [],
-                      );
-                      const currentIndex = options.indexOf(document.activeElement as HTMLButtonElement);
-                      const increment = event.key === 'ArrowDown' ? 1 : -1;
-                      options[(currentIndex + increment + options.length) % options.length]?.focus();
-                    }}
-                  >
-                    <button
-                      type="button"
-                      className="venta-estado-trigger"
-                      aria-haspopup="listbox"
-                      aria-expanded={estadoAbiertoId === v.id}
-                      onClick={(event) => {
-                        if (estadoAbiertoId === v.id) {
-                          setEstadoAbiertoId(null);
-                          return;
-                        }
-                        const rect = event.currentTarget.getBoundingClientRect();
-                        const menuHeight = ESTADOS.length * 38;
-                        const width = Math.max(rect.width, 180);
-                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
-                          ? rect.bottom + 4
-                          : Math.max(8, rect.top - menuHeight - 4);
-                        setEstadoDropdownPos({
-                          top,
-                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
-                          width,
-                        });
-                        setEstadoAbiertoId(v.id);
-                      }}
-                    >
-                      {v?.estado ?? ''}
-                      <span aria-hidden="true">▾</span>
-                    </button>
-                    {estadoAbiertoId === v.id && estadoDropdownPos && createPortal(
-                      <div
-                        className="venta-estado-options"
-                        ref={(element) => {
-                          if (element) estadoOptionsRefs.current.set(v.id, element);
-                          else estadoOptionsRefs.current.delete(v.id);
-                        }}
-                        role="listbox"
-                        aria-label={`Estado de la venta ${v.id}`}
-                        style={{
-                          position: 'fixed',
-                          top: estadoDropdownPos.top,
-                          left: estadoDropdownPos.left,
-                          width: estadoDropdownPos.width,
-                        }}
-                      >
-                        {ESTADOS.map((estado) => {
-                          const seleccionado = estado === v?.estado;
-                          const deshabilitado = (!esAdmin && estado === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(estado));
-                          return (
-                            <button
-                              key={estado}
-                              type="button"
-                              role="option"
-                              aria-selected={seleccionado}
-                              className={`venta-estado-option${seleccionado ? ' selected' : ''}`}
-                              disabled={deshabilitado}
-                              onClick={() => {
-                                updateEstado(v.id, estado);
-                                setEstadoAbiertoId(null);
-                              }}
-                            >
-                              {estado}
-                            </button>
-                          );
-                        })}
-                      </div>,
-                      document.body,
-                    )}
-                  </div>
+                  <span className="vt-estado" data-estado={v?.estado}>{v?.estado ?? ''}</span>
                 </td>
                 <td>
                   <button
@@ -1173,7 +1167,9 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   </button>
                 </td>
               </tr>
-            ))}
+              </Fragment>
+              );
+            })}
             {filtered.length === 0 && (
               <tr><td colSpan={9} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}

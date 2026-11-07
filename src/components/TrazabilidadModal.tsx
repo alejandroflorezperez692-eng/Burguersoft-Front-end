@@ -12,16 +12,10 @@ interface TrazabilidadModalProps {
   onClose: () => void;
 }
 
-const fmtFecha = (f: string) =>
-  f
-    ? new Date(f).toLocaleString('es-CO', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : '';
+const fmtDia = (f: string) =>
+  f ? new Date(f).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+const fmtHora = (f: string) =>
+  f ? new Date(f).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : '';
 
 /** Color del badge según el estado del pedido. */
 const claseEstado = (estado: string) => {
@@ -71,73 +65,49 @@ export default function TrazabilidadModal({ ventaId, onClose }: TrazabilidadModa
 
   return (
     <div className="modal-overlay open" onClick={onClose}>
-      <div
-        className="modal-box"
-        style={{ maxWidth: 640, width: '96%', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 16, fontWeight: 800, margin: 0, color: 'var(--text-900)', flexShrink: 0 }}>
-          Trazabilidad del pedido #{ventaId}
-        </h3>
-        <p style={{ fontSize: 12.5, color: 'var(--text-400)', margin: '6px 0 14px', flexShrink: 0 }}>
-          Todos los cambios de estado registrados, con su fecha y motivo cuando aplica.
-        </p>
+      <div className="modal-box tz-box" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="modal-x" onClick={onClose} aria-label="Cerrar">×</button>
 
-        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+        <h3 className="tz-title">Trazabilidad del pedido #{ventaId}</h3>
+        <p className="tz-sub">Todos los cambios de estado registrados, con su fecha y motivo cuando aplica.</p>
+
+        <div className="tz-list">
           {loading ? (
-            <p style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>Cargando historial...</p>
+            <p className="tz-msg">Cargando historial...</p>
           ) : error ? (
-            <p style={{ textAlign: 'center', padding: 30, color: 'var(--danger)' }}>
-              No se pudo cargar la trazabilidad del pedido.
-            </p>
+            <p className="tz-msg tz-msg-error">No se pudo cargar la trazabilidad del pedido.</p>
           ) : registros.length === 0 ? (
-            <p style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
-              No hay registros de trazabilidad para este pedido.
-            </p>
+            <p className="tz-msg">No hay registros de trazabilidad para este pedido.</p>
           ) : (
             registros.map((r, i) => {
               const estado = r.a || r.estado || '';
               const tieneCambio = Boolean(r.de && r.a && r.de !== r.a);
               const esCreacion = !r.de && !!r.a;
               return (
-                <div
-                  key={i}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 2px', borderBottom: '1px solid var(--border)' }}
-                >
-                  <span className={`badge ${claseEstado(estado)}`} style={{ flexShrink: 0, minWidth: 96, textAlign: 'center' }}>
-                    {estado || '—'}
-                  </span>
-                  {esCreacion && (
-                    <span style={{ display: 'block', fontSize: 13, color: 'var(--text-900)' }}>
-                      Pedido registrado
-                    </span>
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="tz-item" key={i}>
+                  <span className={`badge ${claseEstado(estado)}`}>{estado || '—'}</span>
+                  <div className="tz-desc">
+                    {esCreacion && <span className="tz-linea">Pedido registrado</span>}
                     {tieneCambio && (
-                      <span style={{ display: 'block', fontSize: 13, color: 'var(--text-900)' }}>
+                      <span className="tz-linea">
                         Cambió de <strong>{r.de}</strong> a <strong>{r.a}</strong>
                       </span>
                     )}
-                    {r.motivo && (
-                      <span style={{ display: 'block', fontSize: 12.5, color: 'var(--text-600)', fontStyle: 'italic', marginTop: 2 }}>
-                        Motivo: {r.motivo}
-                      </span>
-                    )}
-                    <span style={{ display: 'block', fontSize: 11.5, color: 'var(--text-400)', marginTop: 2 }}>
-                      {nombreUsuario(r)}
-                    </span>
+                    {r.motivo && <span className="tz-motivo">Motivo: {r.motivo}</span>}
+                    <span className="tz-user">{nombreUsuario(r)}</span>
                   </div>
-                  <span style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-400)' }}>{fmtFecha(r.fecha || '')}</span>
+                  <div className="tz-fecha">
+                    <span>{fmtDia(r.fecha || '')}</span>
+                    <small>{fmtHora(r.fecha || '')}</small>
+                  </div>
                 </div>
               );
             })
           )}
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14, flexShrink: 0 }}>
-          <button type="button" className="btn-cancel" onClick={onClose}>
-            Cerrar
-          </button>
+        <div className="tz-footer">
+          <button type="button" className="btn-save" onClick={onClose}>Cerrar</button>
         </div>
       </div>
     </div>

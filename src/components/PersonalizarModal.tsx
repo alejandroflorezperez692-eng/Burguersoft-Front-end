@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useCart } from '../hooks/useCart';
 import cenaFallback from '../assets/img/cena.png';
+import { categoriaSinExtras } from '../utils/categorias';
 
 type Adicion = { id: number; nombre: string; precio: number | string; tipo?: string };
 
@@ -11,9 +12,12 @@ export type ItemPersonalizar = {
   imagen?: string | null;
   descripcion?: string | null;
   adiciones?: Adicion[];
+  categoria?: string | null;   
 };
 
 const formatCOP = (v: number) => `$${v.toLocaleString('es-CO')}`;
+
+const SIN_EXTRAS = ['Fritos', 'Arepas', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza'];
 
 export default function PersonalizarModal({
   item,
@@ -23,6 +27,7 @@ export default function PersonalizarModal({
   onClose: () => void;
 }) {
   const { agregar } = useCart();
+  const sinExtras = categoriaSinExtras(item.categoria);
   const [abierta, setAbierta] = useState<'quitar' | 'extras' | 'nota' | null>('quitar');
   const [sin, setSin] = useState<string[]>([]);
   const [nota, setNota] = useState('');
@@ -87,7 +92,7 @@ export default function PersonalizarModal({
           </div>
 
           <div className="pers-der">
-            {ingredientes.length > 0 && (
+            {!sinExtras && ingredientes.length > 0 && (
               <div className="pers-acc">
                 <button
                   type="button"
@@ -124,7 +129,7 @@ export default function PersonalizarModal({
               </div>
             )}
 
-            {adiciones.length > 0 && (
+            {!sinExtras && adiciones.length > 0 && (
               <div className="pers-acc">
                 <button
                   type="button"
@@ -160,6 +165,7 @@ export default function PersonalizarModal({
               </div>
             )}
 
+            {!sinExtras && (
             <div className="pers-acc">
               <button
                 type="button"
@@ -187,6 +193,7 @@ export default function PersonalizarModal({
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
 
