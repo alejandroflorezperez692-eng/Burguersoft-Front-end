@@ -6,6 +6,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { mensajeError } from '../../utils/errores';
+import SelectOscuro from '../../components/SelectOscuro';
 
 interface Usuario {
   id: number;
@@ -289,7 +290,7 @@ export default function UsuariosAdmin() {
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
             <label>Rol</label>
-            <select
+            <SelectOscuro
               value={filtroRol}
               onChange={(e) => { setFiltroRol(e.target.value); setPagina(1); }}
             >
@@ -299,7 +300,7 @@ export default function UsuariosAdmin() {
               <option value="Cocinero">Cocinero</option>
               <option value="Mesero">Mesero</option>
               <option value="Cliente">Cliente</option>
-            </select>
+            </SelectOscuro>
           </div>
 
           <div className="form-group" style={{ marginBottom: 0, minWidth: 220 }}>
@@ -314,14 +315,14 @@ export default function UsuariosAdmin() {
 
           <div className="form-group" style={{ marginBottom: 0, minWidth: 150 }}>
             <label>Mostrar</label>
-            <select
+            <SelectOscuro
               value={porPagina}
               onChange={(e) => { setPorPagina(Number(e.target.value)); setPagina(1); }}
             >
               {OPCIONES_POR_PAGINA.map((n) => (
                 <option key={n} value={n}>{n} por página</option>
               ))}
-            </select>
+            </SelectOscuro>
           </div>
 
           {hayFiltros && (
@@ -523,23 +524,23 @@ export default function UsuariosAdmin() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Rol <span className="mn-req">*</span></label>
-                <select style={bordeError(errores.rol)} value={rol} onChange={(e) => setRol(e.target.value)}>
+                <SelectOscuro style={bordeError(errores.rol)} value={rol} onChange={(e) => setRol(e.target.value)}>
                   <option value="">Seleccionar rol...</option>
                   <option value="Administrador">Administrador</option>
                   <option value="Cajero">Cajero</option>
                   <option value="Cocinero">Cocinero</option>
                   <option value="Mesero">Mesero</option>
                   <option value="Cliente">Cliente</option>
-                </select>
+                </SelectOscuro>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Estado <span className="mn-req">*</span></label>
-                <select style={bordeError(errores.estado)} value={estado} onChange={(e) => setEstado(e.target.value)}>
+                <SelectOscuro style={bordeError(errores.estado)} value={estado} onChange={(e) => setEstado(e.target.value)}>
                   <option value="">Seleccionar estado...</option>
                   <option value="Activo">Activo</option>
                   <option value="Inactivo">Inactivo</option>
                   <option value="Suspendido">Suspendido</option>
-                </select>
+                </SelectOscuro>
               </div>
             </div>
 

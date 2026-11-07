@@ -7,6 +7,7 @@ import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
+import SelectOscuro from '../../components/SelectOscuro';
 
 interface FilaCierre {
   id: number;
@@ -297,11 +298,11 @@ export default function CierreInventarioAdmin() {
             </label>
             <label style={estiloEtiqueta}>
               Estado
-              <select style={estiloFiltro} value={estadoConteo} onChange={(e) => setEstadoConteo(e.target.value as EstadoConteo)}>
+              <SelectOscuro style={estiloFiltro} value={estadoConteo} onChange={(e) => setEstadoConteo(e.target.value as EstadoConteo)}>
                 <option value="todos">Todas</option>
                 <option value="sin_contar">Sin contar</option>
                 <option value="contados">Ya contadas</option>
-              </select>
+              </SelectOscuro>
             </label>
             {hayFiltroConteo && (
               <button type="button" className="btn-cancel" style={{ padding: '9px 18px' }} onClick={limpiarFiltrosConteo}>
@@ -411,10 +412,10 @@ export default function CierreInventarioAdmin() {
             </label>
             <label style={estiloEtiqueta}>
               Responsable
-              <select style={estiloFiltro} value={fResponsable} onChange={(e) => setFResponsable(e.target.value)}>
+              <SelectOscuro style={estiloFiltro} value={fResponsable} onChange={(e) => setFResponsable(e.target.value)}>
                 <option value="">Todos</option>
                 {responsables.map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
+              </SelectOscuro>
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-400)', padding: '8px 0', cursor: 'pointer' }}>
               <input type="checkbox" checked={fSoloDiferencias} onChange={(e) => setFSoloDiferencias(e.target.checked)} />

@@ -8,6 +8,7 @@ import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { mensajeError as mensajeErrorBase } from '../../utils/errores';
+import SelectOscuro from '../../components/SelectOscuro';
 
 type Estado = 'Disponible' | 'Agotado' | 'Por agotarse';
 
@@ -792,19 +793,19 @@ export default function MenuAdmin() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
           <div className="mn-field" style={{ margin: 0 }}>
             <label htmlFor="mn-f-categoria">Categoría</label>
-            <select id="mn-f-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+            <SelectOscuro id="mn-f-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
               <option value="">Todas</option>
               {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
               <option value="Otras">Otras</option>
-            </select>
+            </SelectOscuro>
           </div>
 
           <div className="mn-field" style={{ margin: 0 }}>
             <label htmlFor="mn-f-estado">Estado</label>
-            <select id="mn-f-estado" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+            <SelectOscuro id="mn-f-estado" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
               <option value="">Todos</option>
               {ESTADOS_FILTRO.map((e) => <option key={e} value={e}>{e}</option>)}
-            </select>
+            </SelectOscuro>
           </div>
 
           <div className="mn-field" style={{ margin: 0 }}>

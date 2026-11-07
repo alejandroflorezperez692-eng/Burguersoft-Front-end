@@ -11,6 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
+import SelectOscuro from '../../components/SelectOscuro';
 
 
 interface DetalleVenta {
@@ -745,10 +746,10 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro">
             <div className="form-group">
               <label>Producto</label>
-              <select value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
+              <SelectOscuro value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
                 <option value={0}>Seleccionar...</option>
                 {(productos ?? []).map((p) => <option key={p?.id ?? p?.nombre} value={p?.id}>{p?.nombre ?? 'Sin nombre'} — ${Number(p?.valor || 0).toLocaleString('es-CO')}</option>)}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Cantidad</label>
@@ -775,7 +776,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro" style={{ marginTop: 18 }}>
             <div className="form-group">
               <label>Combo (opcional)</label>
-              <select value={promocionId} onChange={(e) => setPromocionId(Number(e.target.value))}>
+              <SelectOscuro value={promocionId} onChange={(e) => setPromocionId(Number(e.target.value))}>
                 <option value={0}>Seleccionar combo...</option>
                 {(promociones ?? [])
                   .filter((p) => p?.estado === 'Activa')
@@ -784,7 +785,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                       {p?.nombre ?? 'Combo'} — ${Number(p?.precio || 0).toLocaleString('es-CO')}
                     </option>
                   ))}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Cantidad de combos</label>
@@ -869,15 +870,15 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro" style={{ marginTop: 8 }}>
             <div className="form-group">
               <label>Método de pago</label>
-              <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
+              <SelectOscuro value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
                 {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Tipo de entrega</label>
-              <select value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
+              <SelectOscuro value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
                 {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Cliente (opcional)</label>
@@ -892,14 +893,14 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             {tipoEntrega === 'Consumir' && (
               <div className="form-group">
                 <label>Mesa *</label>
-                <select
+                <SelectOscuro
                   value={mesa}
                   onChange={(e) => setMesa(e.target.value)}
                   style={intentado && !mesa ? { borderColor: 'var(--danger)' } : undefined}
                 >
                   <option value="">Elige la mesa</option>
                   {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Mesa {n}</option>)}
-                </select>
+                </SelectOscuro>
               </div>
             )}
             <div className="form-group">

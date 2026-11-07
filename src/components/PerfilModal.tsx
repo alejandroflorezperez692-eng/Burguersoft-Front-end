@@ -12,6 +12,7 @@ import {
   validarPassword,
 } from '../utils/perfil';
 import { mensajeError } from '../utils/errores';
+import SelectOscuro from './SelectOscuro';
 
 
 type Tab = 'datos' | 'pwd' | 'info';
@@ -243,10 +244,10 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 <div className="mp-field">
                   <label className="mp-label">Tipo de documento <span className="mp-req">*</span></label>
                   <div className="mp-select-wrap">
-                    <select value={tdoc} onChange={(e) => { marcarEditado(); setTdoc(e.target.value); }} required>
+                    <SelectOscuro value={tdoc} onChange={(e) => { marcarEditado(); setTdoc(e.target.value); }} required>
                       <option value="">Seleccione...</option>
                       {tiposDoc.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select>
+                    </SelectOscuro>
                   </div>
                 </div>
                 <div className="mp-field">
