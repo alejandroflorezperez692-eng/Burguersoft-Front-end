@@ -122,10 +122,10 @@ body {
 }
 
 body.dark-mode {
-  --bg: #1a0e06;
-  --surface: #251a10;
-  --surface-2: #2e2115;
-  --surface-3: #3d2818;
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #000000;
+  --surface-3: #000000;
   --text-900: #f0ebe3;
   --text-600: #c4a88a;
   --text-400: #9a7d62;

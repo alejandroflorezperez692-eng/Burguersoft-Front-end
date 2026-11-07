@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import apiClient from '../../api/client';
+import AdminDatePicker from '../../components/AdminDatePicker';
 import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
@@ -402,11 +403,11 @@ export default function CierreInventarioAdmin() {
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
             <label style={estiloEtiqueta}>
               Desde
-              <input type="date" style={estiloFiltro} value={fDesde} max={fHasta || undefined} onChange={(e) => setFDesde(e.target.value)} />
+              <AdminDatePicker label="Desde" style={estiloFiltro} value={fDesde} max={fHasta || undefined} onChange={setFDesde} />
             </label>
             <label style={estiloEtiqueta}>
               Hasta
-              <input type="date" style={estiloFiltro} value={fHasta} min={fDesde || undefined} onChange={(e) => setFHasta(e.target.value)} />
+              <AdminDatePicker label="Hasta" style={estiloFiltro} value={fHasta} min={fDesde || undefined} onChange={setFHasta} />
             </label>
             <label style={estiloEtiqueta}>
               Responsable

@@ -100,7 +100,7 @@ export default function Home() {
           }}
         >
           <IconoToast tipo="exito" />
-          <span>Has cerrado sesión correctamente.</span>
+          <span>{avisoSesion}</span>
         </div>
       )}
       <PublicHeader />
@@ -145,10 +145,6 @@ export default function Home() {
                         )}
                       </div>
                       {isAuthenticated ? (
-
-
-                        <button type="button" className="btn-circular-add" title="Agregar al carrito" data-tooltip="Agregar al carrito" onClick={() => agregar({ id: promo.id, nombre: promo.nombre, precio: Number(promo.precio), imagen: promo.imagen })}>
-
                         <button
                           type="button"
                           className="btn-circular-add"
@@ -164,7 +160,6 @@ export default function Home() {
                             })
                           }
                         >
-
                           +
                         </button>
                       ) : (
@@ -187,7 +182,7 @@ export default function Home() {
         <PersonalizarModal item={personalizando} onClose={() => setPersonalizando(null)} />
       )}
 
-      <Footer/>
+      <Footer />
     </div>
   );
 }

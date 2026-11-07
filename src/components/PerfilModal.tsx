@@ -124,44 +124,32 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     }
   };
 
-const handlePassword = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!actual) { showToast('La contraseña actual es obligatoria.', true); return; }
-  const errPwd = validarPassword(nueva, actual);
-  if (errPwd) { showToast(errPwd, true); return; }
-  if (nueva !== confirmar) { showToast('Las contraseñas no coinciden.', true); return; }
-  setEnviandoPwd(true);
-  try {
-    await apiClient.post('/perfil/password', { actual, nueva, confirmar });
+  const handlePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!actual) { showToast('La contraseña actual es obligatoria.', true); return; }
+    const errPwd = validarPassword(nueva, actual);
+    if (errPwd) { showToast(errPwd, true); return; }
+    if (nueva !== confirmar) { showToast('Las contraseñas no coinciden.', true); return; }
+    setEnviandoPwd(true);
+    try {
+      await apiClient.post('/perfil/password', { actual, nueva, confirmar });
 
+      // Contraseña cambiada: cerrar sesión y pedir login de nuevo
+      sessionStorage.setItem('login_toast', 'password_ok');
+      logout();
+      window.location.replace('/login');
+    } catch (err) {
+      const msg = mensajeError(err, 'No se pudo actualizar la contraseña');
 
-    sessionStorage.setItem('login_toast', 'password_ok');
-    logout();
-    window.location.replace('/login');
-  } catch (err: any) {
-    const msg = err?.response?.data?.message ?? err?.response?.data?.error ?? '';
-
-    showToast('Contraseña actualizada correctamente.');
-    setActual(''); setNueva(''); setConfirmar('');
-  } catch (err) {
-    const msg = mensajeError(err, 'No se pudo actualizar la contraseña');
-
-
-    sessionStorage.setItem('login_toast', 'password_ok');
-    logout();
-    window.location.replace('/login');
-  } catch (err) {
-    const msg = mensajeError(err, 'No se pudo actualizar la contraseña');
-
-    if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
-      showToast('La contraseña actual es incorrecta.', true);
-    } else {
-      showToast(msg, true);
+      if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
+        showToast('La contraseña actual es incorrecta.', true);
+      } else {
+        showToast(msg, true);
+      }
+    } finally {
+      setEnviandoPwd(false);
     }
-  } finally {
-    setEnviandoPwd(false);
-  }
-};
+  };
 
   // fuerza de contraseña
   const reglas = reglasPassword(nueva);

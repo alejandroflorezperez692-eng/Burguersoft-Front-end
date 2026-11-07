@@ -369,8 +369,6 @@ export default function UsuariosAdmin() {
                   <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
                   <td className="td-acciones">
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-
-
                       <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar" data-tooltip="Editar">Editar</button>
                       <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar" data-tooltip="Eliminar">Eliminar</button>
 
@@ -381,13 +379,6 @@ export default function UsuariosAdmin() {
                       >
                         {u.estado === 'Activo' ? 'Inactivar' : 'Activar'}
                       </button>
-
-                      <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar">Editar</button>
-                      <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar">Eliminar</button>
-
-                      <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar" data-tooltip="Editar">Editar</button>
-                      <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar" data-tooltip="Eliminar">Eliminar</button>
-
                     </div>
                   </td>
                 </tr>

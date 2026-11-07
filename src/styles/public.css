@@ -1296,8 +1296,8 @@ body.dark-mode .public-body {
   --color-acento: #f5a623;
   --color-texto: #f0ebe3;
   --color-texto-suave: #a89888;
-  --color-fondo: #111;
-  --color-fondo-alt: #1a0800;
+  --color-fondo: #000000 !important;
+  --color-fondo-alt: #000000 !important;
   --color-borde: rgba(232, 130, 26, 0.2);
 }
 
@@ -1408,7 +1408,8 @@ body.dark-mode .section-text {
 }
 
 body.dark-mode .promo-card-pub {
-  background: #1e1e1e;
+  background: #000000 !important;
+  background-color: #000000 !important;
   border-color: var(--color-borde);
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.3);
@@ -1523,7 +1524,8 @@ body.dark-mode .promo-vacio {
 /* ============================================= */
 
 body.dark-mode .perfil-dropdown {
-  background: #1e1e1e;
+  background: #000000 !important;
+  background-color: #000000 !important;
   border-color: var(--color-borde);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.4);

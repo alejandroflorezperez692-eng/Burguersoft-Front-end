@@ -3,10 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 
-import { useEffect, useState, type FormEvent } from 'react';
 
-
-import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
@@ -19,7 +16,6 @@ import { useAuth } from '../hooks/useAuth';
 import { mensajeError } from '../utils/errores';
 
 
-import { mensajeError } from '../utils/errores';
 
 import iconoBloqueo from '../assets/img/bloquear.png';
 

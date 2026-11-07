@@ -1052,7 +1052,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
 
                 <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
-                <td>
+                
                   <div
                     className="venta-estado-dropdown"
                     ref={(element) => {

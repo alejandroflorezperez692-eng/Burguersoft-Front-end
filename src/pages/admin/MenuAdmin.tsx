@@ -39,6 +39,101 @@ const MAX_PRECIO_ADICION = 50000;
 type FilaAdicion = { id?: number; nombre: string; precio: string; tipo: 'adicion' | 'quitar' };
 const miles = (v: string) => (v === '' ? '' : Number(v).toLocaleString('es-CO'));
 
+function MnFormSelect({
+  id,
+  label,
+  value,
+  onChange,
+  options,
+  style,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  style?: CSSProperties;
+}) {
+  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [abierto, setAbierto] = useState(false);
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setModoOscuro(document.body.classList.contains('dark-mode'));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrarFuera = (event: MouseEvent) => {
+      if (!contenedorRef.current?.contains(event.target as Node)) setAbierto(false);
+    };
+    const cerrarEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAbierto(false);
+    };
+    document.addEventListener('mousedown', cerrarFuera);
+    document.addEventListener('keydown', cerrarEscape);
+    return () => {
+      document.removeEventListener('mousedown', cerrarFuera);
+      document.removeEventListener('keydown', cerrarEscape);
+    };
+  }, [abierto]);
+
+  if (!modoOscuro) {
+    return (
+      <select id={id} value={value} onChange={(event) => onChange(event.target.value)} style={style}>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </select>
+    );
+  }
+
+  const seleccionada = options.find((option) => option.value === value);
+  return (
+    <div className="mn-form-select" ref={contenedorRef}>
+      <button
+        type="button"
+        id={id}
+        className="mn-form-select-trigger"
+        style={style}
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={abierto}
+        aria-controls={`${id}-options`}
+        onClick={() => setAbierto((actual) => !actual)}
+      >
+        <span>{seleccionada?.label ?? ''}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M2 4l4 4 4-4" />
+        </svg>
+      </button>
+      {abierto && (
+        <div id={`${id}-options`} className="mn-form-select-options" role="listbox" aria-label={label}>
+          {options.map((option) => (
+            <button
+              type="button"
+              key={option.value}
+              className="mn-form-select-option"
+              role="option"
+              aria-selected={option.value === value}
+              onClick={() => {
+                onChange(option.value);
+                setAbierto(false);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Minúsculas y sin tildes, para búsquedas tolerantes
 const normalizar = (s: unknown) =>
   String(s ?? '')
@@ -409,24 +504,32 @@ export default function MenuAdmin() {
                 </div>
                 <div className="mn-field">
                   <label htmlFor="mn-categoria">Categoría <span className="mn-req">*</span></label>
-                  <select id="mn-categoria" style={rojo(errores.categoria)} value={form.categoria} onChange={setCampo('categoria')}>
-                    <option value="">Selecciona...</option>
-                    {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
+                  <MnFormSelect
+                    id="mn-categoria"
+                    label="Categoría"
+                    style={rojo(errores.categoria)}
+                    value={form.categoria}
+                    onChange={(value) => setForm((actual) => ({ ...actual, categoria: value }))}
+                    options={[
+                      { value: '', label: 'Selecciona...' },
+                      ...CATEGORIAS.map((categoria) => ({ value: categoria, label: categoria })),
+                    ]}
+                  />
                 </div>
                 <div className="mn-field">
                   <label htmlFor="mn-estado">Estado <span className="mn-req">*</span></label>
-                  <select
+                  <MnFormSelect
                     id="mn-estado"
+                    label="Estado"
                     style={rojo(errores.estado)}
-                    className={form.estado ? `est-${form.estado}` : ''}
                     value={form.estado}
-                    onChange={setCampo('estado')}
-                  >
-                    <option value="">Selecciona...</option>
-                    <option value="Disponible">Disponible</option>
-                    <option value="Agotado">Agotado</option>
-                  </select>
+                    onChange={(value) => setForm((actual) => ({ ...actual, estado: value }))}
+                    options={[
+                      { value: '', label: 'Selecciona...' },
+                      { value: 'Disponible', label: 'Disponible' },
+                      { value: 'Agotado', label: 'Agotado' },
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -789,14 +892,8 @@ export default function MenuAdmin() {
                     <td>
                       {esAdmin && (
                         <div className="mn-table-actions">
-
-
                           <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
                           <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
-
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
-
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
 
                           <button
                             type="button"
@@ -805,12 +902,6 @@ export default function MenuAdmin() {
                           >
                             {p.activo === false ? 'Activar' : 'Desactivar'}
                           </button>
-
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
-
-
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
-
                         </div>
                       )}
                     </td>
@@ -848,13 +939,8 @@ export default function MenuAdmin() {
                       </div>
                       {esAdmin && (
                         <div className="mn-card-actions">
-
-
                           <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
                           <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)}>Editar</button>
-
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
 
                           <button
                             type="button"
@@ -863,12 +949,6 @@ export default function MenuAdmin() {
                           >
                             {p.activo === false ? 'Activar' : 'Desactivar'}
                           </button>
-
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)}>Eliminar</button>
-
-
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
-
                         </div>
                       )}
                     </article>
