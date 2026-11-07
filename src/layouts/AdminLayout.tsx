@@ -25,8 +25,8 @@ import AdminLoading from '../components/AdminLoading';
 import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
+import ConfirmarSalida from '../components/ConfirmarSalida';
 
-// Cada opción dice qué roles la ven (ver ACCESO en utils/roles.ts)
 const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
   { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.menu },
@@ -68,6 +68,7 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
+  const [confirmarSalida, setConfirmarSalida] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const cerrarMenu = () => setMenuOpen(false);
   const rol = normalizarRol(user?.role);
@@ -83,23 +84,23 @@ export default function AdminLayout() {
   }, [location.pathname]);
 
   const handleSalir = () => {
-    setSaliendo(true);
-    setTimeout(() => {
-      logout();
-      navigate('/login', { replace: true, state: { toast: 'logout_ok' } });
-      setSaliendo(false);
-    }, 500);
-  };
+  setSaliendo(true);
+  setTimeout(() => {
+    logout();
+    navigate('/', { replace: true, state: { toast: 'logout_ok' } }); // ← antes era '/login'
+    setSaliendo(false);
+  }, 500);
+};
 
   const irAMiPerfil = () => {
-    setUserMenuOpen(false);
-    navigate('/configuracion');
-  };
+  setUserMenuOpen(false);
+  navigate('/configuracion');
+};
 
-  const salirDesdeMenuUsuario = () => {
-    setUserMenuOpen(false);
-    handleSalir();
-  };
+const salirDesdeMenuUsuario = () => {
+  setUserMenuOpen(false);
+  setConfirmarSalida(true);
+};
 
   useEffect(() => {
     setMenuOpen(false);
@@ -256,6 +257,13 @@ export default function AdminLayout() {
         <Outlet />
         <AdminFooter />
       </div>
+
+      {confirmarSalida && (
+        <ConfirmarSalida
+          onCancelar={() => setConfirmarSalida(false)}
+          onConfirmar={() => { setConfirmarSalida(false); handleSalir(); }}
+        />
+      )}
 
       {esPersonal && <AsistenteIA />}
     </div>

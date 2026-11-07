@@ -466,11 +466,8 @@ export default function PedidosTurno() {
               <div>
                 <h3 className="tv-det-titulo">Pedido #{detalle.id}</h3>
               </div>
-              <button type="button" className="tv-det-cerrar" onClick={() => setDetalleId(null)} aria-label="Cerrar">
-                ✕
-              </button>
+              <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>
             </div>
-
             <dl className="tv-det-info">
               <div><dt>Cliente</dt><dd>{nombreCliente(detalle)}</dd></div>
               <div><dt>Estado</dt><dd>{detalle.estado ?? '—'}</dd></div>
@@ -492,20 +489,41 @@ export default function PedidosTurno() {
               </div>
             </dl>
 
-            <ul className="tv-items">
-              {(detalle.detalles ?? []).map((d, i) => (
-                <li key={`d${i}`}>
-                  <b>{d.cantidad ?? 1}×</b> {d.producto?.nombre ?? 'Producto'}
-                </li>
-              ))}
-              {(detalle.promociones ?? [])
-                .filter((p) => p?.nombre)
-                .map((p, i) => (
-                  <li key={`p${i}`} className="tv-promo">
-                    {p.nombre}
-                  </li>
-                ))}
-            </ul>
+            {(() => {
+              const agrupados = new Map<string, { nombre: string; cantidad: number; subtotal: number }>();
+              (detalle.detalles ?? []).forEach((d) => {
+                const nombre = d.producto?.nombre ?? 'Producto';
+                const prev = agrupados.get(nombre) ?? { nombre, cantidad: 0, subtotal: 0 };
+                prev.cantidad += Number(d.cantidad ?? 1);
+                prev.subtotal += Number((d as any).subtotal ?? 0);
+                agrupados.set(nombre, prev);
+              });
+              const promos = (detalle.promociones ?? []).filter((p) => p?.nombre);
+
+              return (
+                <div className="tv-det-productos">
+                  <h4 className="tv-det-subtitulo">Productos</h4>
+                  <ul className="tv-det-lista">
+                    {[...agrupados.values()].map((g) => (
+                      <li key={g.nombre}>
+                        <span className="tv-det-cant">{g.cantidad}</span>
+                        <span className="tv-det-nombre">{g.nombre}</span>
+                        <span className="tv-det-precio">
+                          {g.subtotal > 0 ? `$${g.subtotal.toLocaleString('es-CO')}` : 'Incluido'}
+                        </span>
+                      </li>
+                    ))}
+                    {promos.map((p, i) => (
+                      <li key={`p${i}`} className="tv-det-combo">
+                        <span className="tv-det-cant">1</span>
+                        <span className="tv-det-nombre">Combo {p.nombre}</span>
+                        <span className="tv-det-precio" />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
 
             {separarNotas(detalle.notas).length > 0 && (
               <div className="tv-chips">

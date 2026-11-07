@@ -448,7 +448,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 }
 .tv-ver-detalle:hover { border-color: var(--text-900); transform: translateY(-1px); }
 
-.tv-det-box { max-width: 440px; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.tv-det-box { position: relative; max-width: 440px; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
 .tv-det-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
 .tv-det-titulo { margin: 0; font-size: 20px; color: var(--text-900); }
 .tv-det-sub { margin: 4px 0 0; font-size: 13.5px; color: var(--text-600); }
@@ -475,3 +475,25 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 }
 .tv-det-info dt { font-size: 11.5px; font-weight: 700; color: var(--text-400); text-transform: uppercase; letter-spacing: .03em; }
 .tv-det-info dd { margin: 2px 0 0; font-size: 14px; font-weight: 700; color: var(--text-900); word-break: break-word; }
+/* ===== Lista de productos del detalle ===== */
+.tv-det-productos { display: flex; flex-direction: column; gap: 8px; }
+.tv-det-subtitulo {
+  margin: 0; font-size: 11.5px; font-weight: 700; color: var(--text-400);
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.tv-det-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.tv-det-lista li {
+  display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.tv-det-lista li:last-child { border-bottom: none; }
+.tv-det-cant {
+  width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  color: var(--brand); font-size: 13px; font-weight: 800;
+}
+.tv-det-nombre { font-size: 14px; font-weight: 600; color: var(--text-900); }
+.tv-det-precio { font-size: 13.5px; font-weight: 700; color: var(--text-600); }
+.tv-det-combo .tv-det-nombre { color: var(--brand); font-weight: 700; }
+
+.tv-det-head { padding-right: 48px; }

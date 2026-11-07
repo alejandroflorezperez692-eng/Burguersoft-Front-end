@@ -12,7 +12,8 @@ export type ItemPersonalizar = {
   imagen?: string | null;
   descripcion?: string | null;
   adiciones?: Adicion[];
-  categoria?: string | null;   
+  categoria?: string | null;
+  esCombo?: boolean;
 };
 
 const formatCOP = (v: number) => `$${v.toLocaleString('es-CO')}`;
@@ -38,9 +39,11 @@ export default function PersonalizarModal({
   const adiciones = todas.filter((a) => a.tipo !== 'quitar');
   const quitarBD = todas.filter((a) => a.tipo === 'quitar').map((a) => a.nombre.trim());
   const deDescripcion = (item.descripcion ?? '').split('+').map((s) => s.trim()).filter(Boolean);
-  const ingredientes = Array.from(
-    new Map([...deDescripcion, ...quitarBD].map((s) => [s.toLowerCase(), s])).values(),
-  );
+  const ingredientes = item.esCombo
+  ? []
+  : Array.from(
+      new Map([...deDescripcion, ...quitarBD].map((s) => [s.toLowerCase(), s])).values(),
+    );
 
   const extrasSel = adiciones
     .filter((a) => (extras[a.id] ?? 0) > 0)

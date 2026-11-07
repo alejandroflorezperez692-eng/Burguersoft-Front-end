@@ -10,6 +10,7 @@ import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
 import logoImg from '../../assets/img/logo-burguersoft.png';
+import { imprimirEnPagina } from '../../utils/imprimirEnPagina';
 
 
 interface DetalleVenta {
@@ -39,6 +40,7 @@ interface Venta {
   usuario?: {
     nombre: string;
     apellido: string;
+    rol_id?: number | null; 
     correo?: string | null;
     email?: string | null;
     telefono?: string | null;
@@ -507,24 +509,118 @@ export default function VentasAdmin() {
 
   const totalCarrito = totalProductos + totalCombos;
 
-  const verFactura = async (id: number) => {
-    const ventana = window.open('', '_blank');
+  const htmlFactura = (v: Venta) => {
+    const logoUrl = new URL(logoImg, window.location.origin).href;
+    const numero = String(v.id).padStart(6, '0');
 
-    try {
-      const respuesta = await apiClient.get(`/ventas/${id}/recibo.pdf`, { responseType: 'blob' });
-      const url = URL.createObjectURL(new Blob([respuesta.data], { type: 'application/pdf' }));
+    const d = new Date(v.fecha);
+    const p2 = (n: number) => String(n).padStart(2, '0');
+    const fecha = `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
 
-      if (ventana) {
-        ventana.location.href = url;
-      } else {
-        window.open(url, '_blank');
-      }
+    const monedaRecibo = (n: number) => {
+      const x = Number(n) || 0;
+      return '$ ' + x.toLocaleString('es-CO', {
+        minimumFractionDigits: Number.isInteger(x) ? 0 : 2,
+        maximumFractionDigits: 2,
+      });
+    };
 
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch {
-      ventana?.close();
+    // Misma lógica del PDF: ventas de mostrador (rol 1) = "Consumidor final"
+    const usu = v.usuario;
+    const mostrador = Number(usu?.rol_id ?? 0) === 1;
+    const nombre = mostrador
+      ? (v.cliente_nombre || 'Consumidor final')
+      : (`${usu?.nombre ?? ''} ${usu?.apellido ?? ''}`.trim() || 'Cliente');
+    const documento = !mostrador ? (usu?.Ndocumento ?? '') : '';
+    const telefono = !mostrador ? (usu?.telefono ?? '') : '';
+    const correo = !mostrador ? (usu?.email ?? usu?.correo ?? '') : '';
+
+    const filas = (v.detalles ?? []).map((l) =>
+      `<tr><td>${escHtml(l.producto?.nombre ?? 'Producto')}</td><td class="c">${l.cantidad}</td><td class="r">${monedaRecibo(Number(l.precio_unitario))}</td><td class="r">${monedaRecibo(Number(l.subtotal))}</td></tr>`).join('');
+    const filasCombos = (v.promociones ?? []).map((pr) =>
+      `<tr><td>${escHtml(pr.nombre)}</td><td class="c">1</td><td class="r">—</td><td class="r">—</td></tr>`).join('');
+
+    const nLineas = (v.detalles?.length ?? 0) + (v.promociones?.length ?? 0);
+    const extras = [documento, telefono, correo].filter(Boolean).length;
+    const alto = 130 + nLineas * 7 + extras * 5; 
+
+    const u = (mm: number) => `calc(var(--u) * ${mm})`;
+    const f = (pt: number) => u(+(pt * 0.3528).toFixed(3));
+    const px = (n: number) => u(+(n * 0.2646).toFixed(3));
+
+    return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Factura ${numero}</title>
+<style>
+*{box-sizing:border-box}
+@page{size:auto;margin:0}
+:root{--u:min(1.25vw, calc(100vh / ${alto + 6}))}
+html,body{margin:0}
+body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:Helvetica,Arial,sans-serif;font-size:${f(8)};color:#000}
+.centro{text-align:center}
+.logo{width:${u(26)};height:auto;margin-bottom:${u(1.5)}}
+.negocio{font-size:${f(13)};font-weight:bold;letter-spacing:${px(1)}}
+.eslogan{font-size:${f(7.5)};letter-spacing:${px(2)};text-transform:uppercase;margin-top:${u(1)}}
+.dato{font-size:${f(7)};color:#333;margin-top:${u(0.6)}}
+.sep{border-top:1px dashed #000;margin:${u(2.5)} 0}
+.titulo{font-size:${f(9)};font-weight:bold;letter-spacing:${px(1.5)};text-transform:uppercase}
+.num{font-size:${f(8)};margin-top:${u(0.5)}}
+.fila{width:100%;border-collapse:collapse}
+.fila td{font-size:${f(7.8)};padding:${u(0.6)} 0;vertical-align:top}
+.fila td.etq{width:30%;color:#444}
+.items{width:100%;border-collapse:collapse;margin-top:${u(1)}}
+.items th{font-size:${f(6.6)};text-transform:uppercase;letter-spacing:${px(0.5)};text-align:left;border-bottom:1px solid #000;padding:${u(1)} 0}
+.items td{font-size:${f(7.8)};padding:${u(1.2)} 0;vertical-align:top;border-bottom:1px dotted #ccc}
+.items .c{text-align:center}
+.items .r{text-align:right;white-space:nowrap}
+.totales{width:100%;border-collapse:collapse;margin-top:${u(2)}}
+.totales td{padding:${u(1)} 0}
+.total-etq{font-size:${f(9)};font-weight:bold;text-transform:uppercase;letter-spacing:${px(1)}}
+.total-val{font-size:${f(13)};font-weight:bold;text-align:right;white-space:nowrap}
+.pie{text-align:center;margin-top:${u(3)};font-size:${f(7)};color:#333}
+.gracias{font-size:${f(9)};font-weight:bold;color:#000;margin-bottom:${u(1)}}
+</style></head><body>
+<div class="centro">
+  <img class="logo" src="${logoUrl}" alt="Burguersoft" onerror="this.style.display='none'">
+  <div class="negocio">Burguersoft</div>
+  <div class="eslogan">El Oriente</div>
+  <div class="dato">Calle 9 # 1A-43, Barrio El Oriente</div>
+  <div class="dato">Sogamoso, Boyacá</div>
+  <div class="dato">Tel. 314 2208706</div>
+</div>
+<div class="sep"></div>
+<div class="centro titulo">Recibo de venta</div>
+<div class="centro num">No. ${numero}</div>
+<div class="sep"></div>
+<table class="fila">
+  <tr><td class="etq">Fecha</td><td>${escHtml(fecha)}</td></tr>
+  <tr><td class="etq">Cliente</td><td>${escHtml(nombre)}</td></tr>
+  ${documento ? `<tr><td class="etq">Documento</td><td>${escHtml(documento)}</td></tr>` : ''}
+  ${telefono ? `<tr><td class="etq">Teléfono</td><td>${escHtml(telefono)}</td></tr>` : ''}
+  ${correo ? `<tr><td class="etq">Correo</td><td style="word-break:break-all">${escHtml(correo)}</td></tr>` : ''}
+  <tr><td class="etq">Entrega</td><td>${escHtml(v.tipo_entrega)}</td></tr>
+  <tr><td class="etq">Pago</td><td>${escHtml(v.metodo_pago)}</td></tr>
+</table>
+<div class="sep"></div>
+<table class="items">
+  <thead><tr><th>Producto</th><th class="c" style="width:11%">Cant</th><th class="r" style="width:25%">Vr. Unit</th><th class="r" style="width:27%">Subtotal</th></tr></thead>
+  <tbody>${filas}${filasCombos}</tbody>
+</table>
+<table class="totales"><tr><td class="total-etq">Total</td><td class="total-val">${monedaRecibo(Number(v.valor_total))}</td></tr></table>
+<div class="sep"></div>
+<div class="pie">
+  <div class="gracias">¡Gracias por tu compra!</div>
+  <div>Burguersoft · El Oriente</div>
+  <div>burguersoft@gmail.com</div>
+</div>
+</body></html>`;
+  };
+
+  const verFactura = (id: number) => {
+    const venta = (items ?? []).find((x) => x.id === id);
+    if (!venta) {
       alertar('No se pudo abrir la factura.');
+      return;
     }
+    imprimirEnPagina(htmlFactura(venta));
   };
 
     /* ===== Días, cierre del día e impresión ===== */
@@ -619,11 +715,7 @@ export default function VentasAdmin() {
 
   const imprimirCierre = () => {
     const c = calcularCierre();
-    const w = window.open('', '_blank', 'width=460,height=720');
-    if (!w) {
-      alertar('Permite las ventanas emergentes para poder imprimir.');
-      return;
-    }
+
     const rango = c.desde === c.hasta ? fmtLargo(c.desde) : `${fmtLargo(c.desde)} al ${fmtLargo(c.hasta)}`;
     const filasProd = c.productos.length
       ? c.productos.map((p) => `<tr><td>${escHtml(p.nombre)}</td><td class="r">${p.cantidad}</td><td class="r">${moneda(p.total)}</td></tr>`).join('')
@@ -634,7 +726,7 @@ export default function VentasAdmin() {
     const filtrosTxt = [filtroMetodo, filtroEntrega].filter(Boolean).join(', ');
     const logoUrl = new URL(logoImg, window.location.origin).href;
 
-    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cierre del día</title>
+    imprimirEnPagina(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cierre del día</title>
 <style>
 *{box-sizing:border-box}
 @page{margin:0}
@@ -706,18 +798,6 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
   <div>burguersoft@gmail.com</div>
 </div>
 </body></html>`);
-    w.document.close();
-    w.focus();
-    const img = w.document.querySelector('img');
-    let impreso = false;
-    const lanzar = () => { if (!impreso) { impreso = true; w.print(); } };
-    if (img && !img.complete) {
-      img.onload = lanzar;
-      img.onerror = lanzar;
-      setTimeout(lanzar, 1500);
-    } else {
-      setTimeout(lanzar, 300);
-    }
   };
 
   const cierre = cierreAbierto ? calcularCierre() : null;

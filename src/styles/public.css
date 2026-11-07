@@ -317,10 +317,10 @@
   padding: 11px 14px;
   color: #3a2a1c;
   text-decoration: none;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   transition: background 0.2s, color 0.2s;
   background: none;
   border: none;
@@ -345,6 +345,14 @@
   align-items: center;
   justify-content: center;
   color: inherit;
+}
+
+.public-body .dropdown-menu button.cerrar-sesion {
+  color: #d32f2f;
+}
+.public-body .dropdown-menu button.cerrar-sesion:hover {
+  background: rgba(211, 47, 47, 0.1);
+  color: #d32f2f;
 }
 
 /* ============================================= */
