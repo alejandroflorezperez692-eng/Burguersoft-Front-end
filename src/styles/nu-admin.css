@@ -890,10 +890,16 @@ body.dark-mode .admin-body:has(.mn-page) .mn-view-toggle button.active {
   font-size: 12px;
   color: #fff;
 }
-.mn-btn-toggle.desactivar { background: #6b7280; }
-.mn-btn-toggle.activar { background: #16a34a; }
-body.dark-mode .mn-btn-toggle.desactivar { background: #16a34a; }
-.mn-btn-toggle:hover { filter: brightness(0.87); }
+.mn-btn-toggle.desactivar { background: #ffffff; color: #000; }
+.mn-btn-toggle.activar { background: #16a34a; color: #fff; }
+body.dark-mode .mn-btn-toggle.desactivar { background: #16a34a; color: #fff; }
+body.dark-mode .mn-btn-toggle.desactivar:hover {
+  border: 2px solid #E8821A;
+  transform: translateY(-2px);
+}
+.mn-btn-toggle:hover {
+  transform: translateY(-2px);
+}
 .mn-table-actions .mn-btn-toggle { flex: none; padding: 7px 14px; }
 
 .mn-table tr.inactivo { opacity: .5; }
@@ -1637,3 +1643,53 @@ body.dark-mode .admin-body .main-content .mn-card:has(.pm-chips) :is(
   background: #e8821a;
   color: #ffffff;
 }
+
+/* =====================================================================
+   Modo oscuro: X centrada, tablas con borde naranja y letras blancas
+   (mismo look que Menú / Promociones). No afecta a esas páginas.
+   ===================================================================== */
+body.dark-mode .modal-x {
+  width: 36px; height: 36px; min-width: 36px;
+  padding: 0 !important;
+  font-size: 0 !important;
+  line-height: 1 !important;
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+}
+body.dark-mode .modal-x::before {
+  content: "×";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transform: translateY(-2px);
+  font-size: 22px;
+  line-height: 1;
+}
+body.dark-mode .modal-x:hover:not(:disabled) { background: #e8821a !important; }
+
+body.dark-mode .admin-body .main-content .tabla-responsive:has(> .data-table) {
+  border: 1px solid #e8821a;
+  border-radius: var(--r-lg);
+  background: #000000;
+}
+body.dark-mode .admin-body .main-content .tabla-responsive > .data-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 0 !important;
+  background: #000000 !important;
+}
+body.dark-mode .admin-body .main-content .tabla-responsive > .data-table :is(th, td) {
+  border-bottom: 1px solid #e8821a !important;
+  color: #ffffff !important;
+}
+body.dark-mode .admin-body .main-content .tabla-responsive > .data-table tbody tr:last-child td {
+  border-bottom: 0 !important;
+}
+
+/* Ventas: fecha en una línea y textos pequeños en blanco */
+body.dark-mode .admin-body .main-content .vt-fecha span { white-space: nowrap; }
+body.dark-mode .admin-body .main-content .vt-fecha small,
+body.dark-mode .admin-body .main-content .vt-cliente small { color: #ffffff; }

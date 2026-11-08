@@ -345,7 +345,7 @@ export default function MateriaPrimaAdmin() {
         <AdminLoading texto="Cargando materia prima" subtexto="Revisando tu inventario" />
       ) : (
         <div className="tabla-responsive">
-          <table className="data-table" style={{ tableLayout: 'fixed', minWidth: 1180 }}>
+          <table className="data-table" style={{ tableLayout: 'fixed', minWidth: 1040 }}>
             <colgroup>
               <col style={{ width: '16%' }} />
               <col style={{ width: '10%' }} />

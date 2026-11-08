@@ -1040,20 +1040,16 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   <button
                     type="button"
                     className="btn-cancel"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', marginTop: 8 }}
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
                     onClick={() => setDetalleId(v.id)}
                   >
                     Ver detalle
                   </button>
                 </td>
-
-
-                <td style={{ fontWeight: 700 }}>${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
-
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
 
                 <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
-                
+                <td className="vt-estado-celda">
                   <div
                     className="venta-estado-dropdown"
                     ref={(element) => {
@@ -1160,12 +1156,6 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                       document.body,
                     )}
                   </div>
-
-                <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
-                <td><span className="badge badge-info">{v?.metodo_pago ?? ''}</span></td>
-                <td>
-                  <span className="vt-estado" data-estado={v?.estado ?? ''}>{v?.estado ?? '—'}</span>
-
                 </td>
                 <td>
                   <button
