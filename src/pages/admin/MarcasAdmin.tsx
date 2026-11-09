@@ -321,12 +321,10 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
                     <td>{m.correo || '—'}</td>
                     <td>
                       {esAdmin && (
-                        <td>
-                          <div className="mn-table-actions">
-                            <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
-                            <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)} data-tooltip="Eliminar">Eliminar</button>
-                          </div>
-                        </td>
+                        <div className="mn-table-actions">
+                          <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)} data-tooltip="Eliminar">Eliminar</button>
+                        </div>
                       )}
                     </td>
                   </tr>

@@ -472,6 +472,7 @@ export default function AsistenteIA() {
                   <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: 8, maxWidth: '92%' }}>
                     <AvatarBurgi size={28} uid={`burgiMsg${i}`} />
                     <div
+                      className="burgi-resp"
                       style={{
                         padding: '10px 14px',
                         borderRadius: '18px 18px 18px 4px',
@@ -495,7 +496,7 @@ export default function AsistenteIA() {
               {pensando && (
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
                   <AvatarBurgi size={28} uid="burgiPiensa" className="burgi-piensa" />
-                  <div style={{ display: 'flex', gap: 5, padding: '13px 16px', borderRadius: '18px 18px 18px 4px', background: 'rgba(232,130,26,0.08)', border: '1px solid rgba(232,130,26,0.18)' }}>
+                  <div className="burgi-resp" style={{ display: 'flex', gap: 5, padding: '13px 16px', borderRadius: '18px 18px 18px 4px', background: 'rgba(232,130,26,0.08)', border: '1px solid rgba(232,130,26,0.18)' }}>
                     {[0, 0.15, 0.3].map((d) => (
                       <span key={d} style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--brand)', animation: `burgiPunto 1s ${d}s infinite` }} />
                     ))}

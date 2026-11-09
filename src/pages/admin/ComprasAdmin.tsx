@@ -979,8 +979,7 @@ export default function ComprasAdmin() {
             {SpeechRec && (
               <button
                 type="button"
-                className="btn-primary"
-                style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
+                className="btn-primary btn-dictar-voz"
                 onClick={alternarMicrofono}
               >
                 {escuchando ? '⏹ Detener' : '🎤 Dictar con voz'}
@@ -1201,11 +1200,7 @@ export default function ComprasAdmin() {
           />
         </label>
         <label style={estiloEtiqueta}>
-
-          Marca
-
           Proveedores
-
           <Desplegable
             className="compras-filter-dropdown"
             value={fMarca}
@@ -1213,13 +1208,6 @@ export default function ComprasAdmin() {
             placeholder="Todos"
             opciones={[{ value: '', label: 'Todos' }, ...marcasOrdenadas.map((m) => ({ value: String(m.id), label: m.nombre }))]}
           />
-
-          Proveedores
-          <SelectOscuro style={estiloFiltro} value={fMarca} onChange={(e) => setFMarca(e.target.value)}>
-            <option value="">Todos</option>
-            {marcasOrdenadas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-          </SelectOscuro>
-
         </label>
         {hayFiltros && (
           <button type="button" className="btn-cancel compras-clear-filters-btn" style={{ padding: '9px 18px' }} onClick={limpiarFiltros}>
@@ -1334,7 +1322,7 @@ export default function ComprasAdmin() {
                     {fechaLarga(modalDetalle.fecha)}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span className="badge badge-info">{modalDetalle.metodo_pago}</span>
+                    <span className="badge badge-info compras-factura-metodo">{modalDetalle.metodo_pago}</span>
                     {modalDetalle.tipo_factura && <span className="badge badge-warning">{modalDetalle.tipo_factura}</span>}
                     {modalDetalle.numero_factura && <span style={chipNumero}>Factura {modalDetalle.numero_factura}</span>}
                   </div>

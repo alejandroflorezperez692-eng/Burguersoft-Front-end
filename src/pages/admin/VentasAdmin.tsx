@@ -534,7 +534,12 @@ export default function VentasAdmin() {
         setEstadoAbiertoId(null);
       }
     };
-    const cerrarAlDesplazarse = () => setEstadoAbiertoId(null);
+    const cerrarAlDesplazarse = (event: Event) => {
+      const options = estadoOptionsRefs.current.get(estadoAbiertoId);
+      // El scroll dentro de la propia lista de estados no debe cerrarla.
+      if (options && event.target instanceof Node && options.contains(event.target)) return;
+      setEstadoAbiertoId(null);
+    };
     document.addEventListener('mousedown', cerrarAlHacerClickFuera);
     window.addEventListener('scroll', cerrarAlDesplazarse, true);
     window.addEventListener('resize', cerrarAlDesplazarse);

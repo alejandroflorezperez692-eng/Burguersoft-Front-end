@@ -347,6 +347,7 @@ export default function CierreInventarioAdmin() {
                         <input
                           type="text"
                           inputMode="decimal"
+                          className="input-conteo"
                           style={{ width: 110 }}
                           value={conteos[f.id] ?? ''}
                           onChange={(e) => setConteos({ ...conteos, [f.id]: soloNumero(e.target.value) })}
@@ -401,7 +402,7 @@ export default function CierreInventarioAdmin() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
+          <div className="cierre-filtros" style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>
             <label style={estiloEtiqueta}>
               Desde
               <AdminDatePicker label="Desde" style={estiloFiltro} value={fDesde} max={fHasta || undefined} onChange={setFDesde} />
@@ -417,7 +418,7 @@ export default function CierreInventarioAdmin() {
                 {responsables.map((r) => <option key={r} value={r}>{r}</option>)}
               </SelectOscuro>
             </label>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-400)', padding: '8px 0', cursor: 'pointer' }}>
+            <label className="cierre-solo-dif" style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: 'var(--text-400)', padding: '8px 0', cursor: 'pointer' }}>
               <input type="checkbox" checked={fSoloDiferencias} onChange={(e) => setFSoloDiferencias(e.target.checked)} />
               Solo con diferencia
             </label>

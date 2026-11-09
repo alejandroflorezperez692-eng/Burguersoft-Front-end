@@ -374,7 +374,7 @@ export default function UsuariosAdmin() {
                       <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar" data-tooltip="Eliminar">Eliminar</button>
 
                       <button
-                        className="btn-icon btn-icon-estado btn-accion"
+                        className={`btn-icon btn-icon-estado btn-accion ${u.estado === 'Activo' ? 'estado-inactivar' : 'estado-activar'}`}
                         onClick={() => alternarEstado(u)}
                         title={u.estado === 'Activo' ? 'Inactivar cuenta' : 'Activar cuenta'}
                       >
