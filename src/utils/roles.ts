@@ -16,11 +16,13 @@ export function normalizarRol(rol?: string): RolNormalizado | '' {
   return '';
 }
 
-export const ACCESO: Record<'personal' | 'menu' | 'ventas' | 'inventario' | 'soloAdmin', RolNormalizado[]> = {
+export const ACCESO: Record<'personal' | 'menu' | 'pedidos' | 'ventas' | 'inventario' | 'cierre' | 'soloAdmin', RolNormalizado[]> = {
   personal: ['admin', 'cajero', 'cocinero', 'mesero'],
-  menu: ['admin', 'cajero', 'mesero'],
-  ventas: ['admin', 'cajero', 'cocinero', 'mesero'],
+  menu: ['admin', 'cajero', 'cocinero', 'mesero'],
+  pedidos: ['admin', 'cajero', 'cocinero', 'mesero'],
+  ventas: ['admin', 'cajero', 'mesero'],
   inventario: ['admin', 'cajero', 'cocinero'],
+  cierre: ['admin', 'cajero'],
   soloAdmin: ['admin'],
 };
 
