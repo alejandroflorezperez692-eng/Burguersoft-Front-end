@@ -9,6 +9,7 @@ import '../../styles/pedidos-turno.css';
 import { getEcho } from '../../api/echo';
 import NuevaVentaModal from '../../components/NuevaVentaModal';
 import ComprobanteImagen from '../../components/ComprobanteImagen';
+import ComprobanteModal from '../../components/ComprobanteModal';
 import { useEscape } from '../../hooks/useEscape';
 
 type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
@@ -92,6 +93,7 @@ interface Venta {
   cliente_nombre?: string | null;
   mesa?: number | null;
   notas?: string | null;
+  usuario_id?: number | null;
   usuario?: { nombre?: string; apellido?: string } | null;
   detalles?: ItemVenta[];
   promociones?: PromoVenta[];
@@ -176,6 +178,7 @@ export default function PedidosTurno() {
   const [arrastrandoId, setArrastrandoId] = useState<number | null>(null);
   const [colHover, setColHover] = useState<string | null>(null);
   const [comprobanteARechazar, setComprobanteARechazar] = useState<Venta | null>(null);
+  const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
   const [procesandoComprobante, setProcesandoComprobante] = useState(false);
 
   const config = VISTA_CONFIG[vista];
@@ -336,8 +339,12 @@ export default function PedidosTurno() {
     return texto.includes(q);
   });
 
+  const puedeSubirComprobante = (v: Venta) =>
+    esAdmin || Number(v.usuario_id) === Number(user?.id);
+
   const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
   useEscape([
+    [comprobanteASubir !== null, () => setComprobanteASubir(null)],
     [comprobanteARechazar !== null, () => setComprobanteARechazar(null)],
     [detalle !== null, () => setDetalleId(null)],
   ]);
@@ -611,9 +618,22 @@ export default function PedidosTurno() {
                 <h4>Comprobante de pago</h4>
 
                 {!detalle.tiene_comprobante ? (
-                  <p className="vt-comprobante-vacio">
-                    Este pedido no tiene comprobante de pago cargado.
-                  </p>
+                  <>
+                    <p className="vt-comprobante-vacio">
+                      Este pedido no tiene comprobante de pago cargado.
+                    </p>
+                    {puedeSubirComprobante(detalle) && (
+                      <div className="vt-comprobante-acciones">
+                        <button
+                          type="button"
+                          className="btn-save"
+                          onClick={() => setComprobanteASubir(detalle)}
+                        >
+                          Subir comprobante
+                        </button>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <>
                     <div className="vt-comprobante-cabecera">
@@ -694,6 +714,25 @@ export default function PedidosTurno() {
                             Devolver comprobante
                           </button>
                         )}
+                        <button
+                          type="button"
+                          className="btn-cancel"
+                          onClick={() => setComprobanteASubir(detalle)}
+                        >
+                          Reemplazar comprobante
+                        </button>
+                      </div>
+                    )}
+
+                    {!esAdmin && puedeSubirComprobante(detalle) && (
+                      <div className="vt-comprobante-acciones">
+                        <button
+                          type="button"
+                          className="btn-cancel"
+                          onClick={() => setComprobanteASubir(detalle)}
+                        >
+                          Reemplazar comprobante
+                        </button>
                       </div>
                     )}
                   </>
@@ -714,6 +753,18 @@ export default function PedidosTurno() {
             </div>
           </div>
         </div>
+      )}
+
+      {comprobanteASubir && (
+        <ComprobanteModal
+          ventaId={comprobanteASubir.id}
+          numero={comprobanteASubir.id}
+          onClose={() => setComprobanteASubir(null)}
+          onSubido={() => {
+            setComprobanteASubir(null);
+            void load();
+          }}
+        />
       )}
 
       {comprobanteARechazar && (

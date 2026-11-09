@@ -3999,6 +3999,22 @@ body.dark-mode .cfg-requisito.cumple {
 .vt-comprobante-datos { margin-bottom: 12px; }
 .vt-comprobante-vacio { margin: 0; font-size: 13px; color: var(--text-400); }
 .vt-comprobante-acciones { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.vt-comprobante-aviso {
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  line-height: 1.45;
+  color: #7a3c00;
+  background: #fff4e0;
+  border: 1px solid #f3c67a;
+}
+body.dark-mode .vt-comprobante-aviso {
+  color: #ffd79a;
+  background: rgba(243, 198, 122, 0.12);
+  border-color: rgba(243, 198, 122, 0.4);
+}
 
 .comprobante-imagen-wrap {
   display: flex; flex-direction: column; align-items: flex-start; gap: 8px;

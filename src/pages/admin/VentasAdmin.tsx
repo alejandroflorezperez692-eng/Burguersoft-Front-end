@@ -13,6 +13,7 @@ import { useEscape } from '../../hooks/useEscape';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
 import MotivoModal from '../../components/MotivoModal';
 import ComprobanteImagen from '../../components/ComprobanteImagen';
+import ComprobanteModal from '../../components/ComprobanteModal';
 import { mensajeDeError } from '../../types/Trazabilidad';
 
 
@@ -88,6 +89,10 @@ interface Promocion {
 const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
 const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
+
+const METODOS_CON_COMPROBANTE = ['Nequi', 'Daviplata', 'Bancolombia', 'Transferencia', 'Tarjeta', 'PSE'];
+const requiereComprobante = (v: Venta): boolean =>
+  METODOS_CON_COMPROBANTE.includes((v.metodo_pago ?? '').trim());
 
 // Estados que un mesero puede asignar (el resto queda deshabilitado)
 const ESTADOS_MESERO = ['Registrado', 'En preparación', 'Preparado', 'Servido', 'Cancelado'];
@@ -323,6 +328,8 @@ export default function VentasAdmin() {
   const alertar = (m: any) => showToast(String(m), true);
    const esAdmin = normalizarRol(user?.role) === 'admin';
   const esMesero = normalizarRol(user?.role) === 'mesero';
+  const puedeSubirComprobante = (v: Venta) =>
+    esAdmin || Number(v.usuario_id) === Number(user?.id);
 
   
   const [items, setItems] = useState<Venta[]>([]);
@@ -359,6 +366,7 @@ export default function VentasAdmin() {
   const [historialId, setHistorialId] = useState<number | null>(null);
   const [detalleId, setDetalleId] = useState<number | null>(null);
   const [comprobanteARechazar, setComprobanteARechazar] = useState<Venta | null>(null);
+  const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
   const [procesandoComprobante, setProcesandoComprobante] = useState(false);
   const [, setVersion] = useState(0);
 
@@ -1168,9 +1176,22 @@ export default function VentasAdmin() {
               <h4>Comprobante de pago</h4>
 
               {!detalle.tiene_comprobante ? (
-                <p className="vt-comprobante-vacio">
-                  Este pedido no tiene comprobante de pago cargado.
-                </p>
+                <>
+                  <p className="vt-comprobante-vacio">
+                    Este pedido no tiene comprobante de pago cargado.
+                  </p>
+                  {puedeSubirComprobante(detalle) && (
+                    <div className="vt-comprobante-acciones">
+                      <button
+                        type="button"
+                        className="btn-save"
+                        onClick={() => setComprobanteASubir(detalle)}
+                      >
+                        Subir comprobante
+                      </button>
+                    </div>
+                  )}
+                </>
               ) : (
                 <>
                   <div className="vt-comprobante-cabecera">
@@ -1240,7 +1261,7 @@ export default function VentasAdmin() {
                   />
 
                   <div className="vt-comprobante-acciones">
-                    {detalle.comprobante_estado !== 'Aprobado' && (
+                    {esAdmin && detalle.comprobante_estado !== 'Aprobado' && (
                       <button
                         type="button"
                         className="btn-save"
@@ -1250,7 +1271,7 @@ export default function VentasAdmin() {
                         {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
                       </button>
                     )}
-                    {detalle.comprobante_estado !== 'Rechazado' && (
+                    {esAdmin && detalle.comprobante_estado !== 'Rechazado' && (
                       <button
                         type="button"
                         className="btn-cancel"
@@ -1261,8 +1282,35 @@ export default function VentasAdmin() {
                         Devolver comprobante
                       </button>
                     )}
+                    {esAdmin && (
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        onClick={() => setComprobanteASubir(detalle)}
+                      >
+                        Reemplazar comprobante
+                      </button>
+                    )}
                   </div>
+
+                  {!esAdmin && puedeSubirComprobante(detalle) && (
+                    <div className="vt-comprobante-acciones">
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        onClick={() => setComprobanteASubir(detalle)}
+                      >
+                        Reemplazar comprobante
+                      </button>
+                    </div>
+                  )}
                 </>
+              )}
+
+              {requiereComprobante(detalle) && detalle.comprobante_estado !== 'Aprobado' && (
+                <p className="vt-comprobante-aviso">
+                  Pago electrónico: para confirmar el pago primero debe estar aprobado el comprobante.
+                </p>
               )}
             </section>
 
@@ -1294,6 +1342,19 @@ export default function VentasAdmin() {
             </div>
           </div>
         </div>
+      )}
+
+      {comprobanteASubir && (
+        <ComprobanteModal
+          ventaId={comprobanteASubir.id}
+          numero={comprobanteASubir.id}
+          onClose={() => setComprobanteASubir(null)}
+          onSubido={() => {
+            setComprobanteASubir(null);
+            setVersion((v) => v + 1);
+            void load();
+          }}
+        />
       )}
 
       {comprobanteARechazar && (
