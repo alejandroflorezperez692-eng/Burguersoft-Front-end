@@ -27,18 +27,17 @@ import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
 
-// Cada opción dice qué roles la ven (ver ACCESO en utils/roles.ts)
 const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
   { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.menu },
   { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.menu },
-  { to: '/pedidos-en-vivo', label: 'Pedidos', icono: cena, roles: ACCESO.ventas },
+  { to: '/pedidos-en-vivo', label: 'Pedidos', icono: cena, roles: ACCESO.pedidos },
   { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.ventas },
   { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.inventario },
   { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.inventario },
   { to: '/inventario', label: 'Inventario', icono: inventarioIcono, roles: ACCESO.inventario },
-  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: cierreInventarioIcono, roles: ACCESO.inventario },
-  { to: '/gestion-marca', label: 'Proveedores', icono: proveedoresIcono, roles: ACCESO.inventario },
+  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: cierreInventarioIcono, roles: ACCESO.cierre },
+  { to: '/gestion-marca', label: 'Proveedores', icono: proveedoresIcono, roles: ACCESO.soloAdmin },
   { to: '/reportes', label: 'Reportes', icono: insignia, roles: ACCESO.soloAdmin },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
   { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
@@ -69,17 +68,26 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
+  const [colapsado, setColapsado] = useState(
+    () => localStorage.getItem('sidebarCollapsed') === '1'
+  );
   const userMenuRef = useRef<HTMLDivElement>(null);
   const cerrarMenu = () => setMenuOpen(false);
   const rol = normalizarRol(user?.role);
   const esPersonal = rol !== '' && ACCESO.personal.includes(rol);
   const navItems = todosLosItems.filter((item) => rol !== '' && item.roles.includes(rol));
 
+  const toggleColapsado = () => {
+    setColapsado((v) => {
+      localStorage.setItem('sidebarCollapsed', v ? '0' : '1');
+      return !v;
+    });
+  };
+
   useEffect(() => {
     if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
     apiClient.get('/me').catch((err) => {
       console.error('[AdminLayout] Error validando sesión:', err.message);
-      // No redirigir aquí; el interceptor de la API maneja el 401.
     });
   }, [location.pathname]);
 
@@ -142,7 +150,7 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="admin-body">
+    <div className={`admin-body${colapsado ? ' sidebar-collapsed' : ''}`}>
       <aside className={`sidebar${menuOpen ? ' open' : ''}`}>
         <div className="sidebar-header">
           <img src={logoClaro} alt="Logo" className="logo logo-claro" />
@@ -151,11 +159,25 @@ export default function AdminLayout() {
           <span className="nom-local">El Oriente</span>
         </div>
 
+        <button
+          type="button"
+          className="sidebar-collapse-btn"
+          onClick={toggleColapsado}
+          title={colapsado ? 'Expandir menú' : 'Contraer menú'}
+          aria-label={colapsado ? 'Expandir menú' : 'Contraer menú'}
+          aria-expanded={!colapsado}
+        >
+          <span className={`hamburger-icon${colapsado ? '' : ' open'}`}>
+            <span /><span /><span />
+          </span>
+        </button>
+
         <div className="sidebar-footer">
           {navItems.map((item) => (
             <div className="sidebar-item" key={item.to}>
               <NavLink
                 to={item.to}
+                title={item.label}
                 onClick={cerrarMenu}
                 className={({ isActive }) => (isActive ? 'active' : undefined)}
               >
