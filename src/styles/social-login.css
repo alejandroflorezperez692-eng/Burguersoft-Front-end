@@ -94,7 +94,7 @@ body.dark-mode .btn-social-phone {
 }
 
 body.dark-mode .btn-social-phone:hover {
-  background: #1a1a1a;
+  background: #000000 !important;
   border-color: var(--color-primario);
 }
 
@@ -171,7 +171,7 @@ body.dark-mode .btn-social-phone:hover {
 }
 
 body.dark-mode .phone-modal {
-  background: #1a1a1a;
+  background: #000000 !important;
 }
 
 body.dark-mode .phone-modal h2 {

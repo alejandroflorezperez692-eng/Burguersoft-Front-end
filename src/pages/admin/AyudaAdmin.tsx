@@ -16,7 +16,9 @@ import {
   Mail,
 } from "lucide-react";
 import "../../styles/ayuda-admin.css";
-
+import { useAuth } from "../../hooks/useAuth";
+import { normalizarRol } from "../../utils/roles";
+import { ayudaPorRol } from "../../utils/ayudaPorRol";
 type Articulo = {
   titulo: string;
   contenido: string;
@@ -131,7 +133,6 @@ const categorias: Categoria[] = [
     ],
   },
 ];
-
 const preguntas: Pregunta[] = [
   {
     pregunta: "¿Cómo registrar un producto?",
@@ -204,6 +205,11 @@ const normalizar = (texto: string) =>
     .replace(/[\u0300-\u036f]/g, "");
 
 const AyudaAdmin = () => {
+  const { user } = useAuth();
+  const rol = normalizarRol(user?.role);
+ const ayudaDelRol = rol === "cajero" || rol === "cocinero" || rol === "mesero" ? ayudaPorRol[rol] : undefined;
+  const categoriasRol = ayudaDelRol ? ayudaDelRol.categorias : categorias;
+  const preguntasRol = ayudaDelRol ? ayudaDelRol.preguntas : preguntas;
   const [busqueda, setBusqueda] = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState<string | null>(null);
   const [preguntaAbierta, setPreguntaAbierta] = useState<string | null>(null);
@@ -215,7 +221,7 @@ const AyudaAdmin = () => {
   const resultados = useMemo(() => {
     if (!consulta) return [];
 
-    const deArticulos = categorias.flatMap((categoria) =>
+    const deArticulos = categoriasRol.flatMap((categoria) =>
       categoria.articulos
         .filter((a) =>
           normalizar(`${a.titulo} ${a.contenido}`).includes(consulta)
@@ -227,7 +233,7 @@ const AyudaAdmin = () => {
         }))
     );
 
-    const dePreguntas = preguntas
+    const dePreguntas = preguntasRol
       .filter((p) =>
         normalizar(`${p.pregunta} ${p.respuesta}`).includes(consulta)
       )
@@ -238,12 +244,12 @@ const AyudaAdmin = () => {
       }));
 
     return [...deArticulos, ...dePreguntas];
-  }, [consulta]);
+}, [consulta, categoriasRol, preguntasRol]);
 
-  const categoriaSeleccionada = categorias.find((c) => c.id === categoriaActiva);
+  const categoriaSeleccionada = categoriasRol.find((c) => c.id === categoriaActiva);
   const preguntasVisibles = verTodas
-    ? preguntas
-    : preguntas.slice(0, PREGUNTAS_VISIBLES);
+    ? preguntasRol
+    : preguntasRol.slice(0, PREGUNTAS_VISIBLES);
 
   const manejarBusqueda = (e: FormEvent) => {
     e.preventDefault();
@@ -319,7 +325,7 @@ const AyudaAdmin = () => {
               </div>
             ) : (
               <div className="ayuda-categorias">
-                {categorias.map((categoria) => {
+                {categoriasRol.map((categoria) => {
                   const Icono = categoria.icono;
                   return (
                     <button

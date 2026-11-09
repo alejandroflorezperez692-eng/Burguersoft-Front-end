@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../components/Toast';
 import apiClient from '../../api/client';
@@ -33,8 +33,10 @@ export default function ConfiguracionAdmin() {
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [tdoc, setTdoc] = useState('');
+  const [tdocAbierto, setTdocAbierto] = useState(false);
   const [ndoc, setNdoc] = useState('');
   const [telefono, setTelefono] = useState('');
+  const [telefonoEditado, setTelefonoEditado] = useState(false);
   const [correo, setCorreo] = useState(user?.email ?? '');
   const [cargando, setCargando] = useState(true);
   const [verHistorial, setVerHistorial] = useState(false);
@@ -48,7 +50,18 @@ export default function ConfiguracionAdmin() {
   const [mostrarNueva, setMostrarNueva] = useState(false);
   const [mostrarConf, setMostrarConf] = useState(false);
   const [actualizandoPwd, setActualizandoPwd] = useState(false);
+  const selectorTdocRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const cerrarAlHacerClickFuera = (event: MouseEvent) => {
+      if (!selectorTdocRef.current?.contains(event.target as Node)) {
+        setTdocAbierto(false);
+      }
+    };
+
+    document.addEventListener('mousedown', cerrarAlHacerClickFuera);
+    return () => document.removeEventListener('mousedown', cerrarAlHacerClickFuera);
+  }, []);
 
   useEffect(() => {
     let cancelado = false;
@@ -179,7 +192,7 @@ export default function ConfiguracionAdmin() {
             {user?.name ?? 'Administrador'}
           </h3>
           <p style={{ fontSize: 13, color: 'var(--text-400)', margin: 0 }}>{correo || user?.email || ''}</p>
-          <span className="badge badge-info">{user?.role ?? 'Administrador'}</span>
+          <span className="badge badge-info cfg-role-badge">{user?.role ?? 'Administrador'}</span>
         </div>
         {normalizarRol(user?.role) === 'admin' && (
           <button
@@ -233,29 +246,66 @@ export default function ConfiguracionAdmin() {
             <div className="grid-2col">
               <div className="form-group">
                 <label htmlFor="admin-tdoc">Tipo de documento <span className="cfg-req">*</span></label>
-                <select
-                  id="admin-tdoc"
-                  value={tdoc}
-                  onChange={(e) => setTdoc(e.target.value)}
-                  disabled={cargando}
-                  required
-                >
-                  <option value="">Seleccione...</option>
-                  {tiposDoc.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
+                <div className="cfg-document-select" ref={selectorTdocRef}>
+                  <button
+                    type="button"
+                    id="admin-tdoc"
+                    className={`cfg-document-trigger${tdocAbierto ? ' open' : ''}${!tdoc ? ' placeholder' : ''}`}
+                    onClick={() => setTdocAbierto((abierto) => !abierto)}
+                    aria-haspopup="listbox"
+                    aria-expanded={tdocAbierto}
+                    aria-controls="admin-tdoc-options"
+                    aria-label="Tipo de documento"
+                    disabled={cargando}
+                  >
+                    <span>{tdoc || 'Seleccione...'}</span>
+                    <span className="cfg-document-arrow" aria-hidden="true">▾</span>
+                  </button>
+                  {tdocAbierto && (
+                    <ul id="admin-tdoc-options" className="cfg-document-options" role="listbox" aria-label="Tipo de documento">
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={!tdoc}
+                        className="cfg-document-option"
+                        onClick={() => {
+                          setTdoc('');
+                          setTdocAbierto(false);
+                        }}
+                      >
+                        Seleccione...
+                      </button>
+                      {tiposDoc.map((tipo) => (
+                        <button
+                          type="button"
+                          key={tipo}
+                          role="option"
+                          aria-selected={tdoc === tipo}
+                          className={`cfg-document-option${tdoc === tipo ? ' selected' : ''}`}
+                          onClick={() => {
+                            setTdoc(tipo);
+                            setTdocAbierto(false);
+                          }}
+                        >
+                          {tipo}
+                        </button>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
               <div className="form-group">
-                <label htmlFor="admin-ndoc">Número de documento <span className="cfg-req">*</span></label>
+                <label htmlFor="admin-ndoc">Número de documento</label>
                 <input
                   id="admin-ndoc"
                   type="text"
                   value={ndoc}
-                  onChange={(e) => setNdoc(e.target.value.replace(/[^0-9A-Za-z]/g, ''))}
                   placeholder="Número de documento"
                   maxLength={maxLenDocumento(tdoc)}
-                  disabled={cargando}
+                  disabled
                   required
                 />
+                <span className="cfg-hint cfg-documento-hint">El número de documento no se puede cambiar.</span>
               </div>
             </div>
 
@@ -266,12 +316,16 @@ export default function ConfiguracionAdmin() {
                   id="admin-telefono"
                   type="tel"
                   inputMode="numeric"
+                  autoComplete="tel"
+                  className={telefonoEditado ? 'telefono-editado' : ''}
                   value={telefono}
+                  onFocus={() => setTelefonoEditado(false)}
                   onChange={(e) => {
                     let v = e.target.value.replace(/[^0-9]/g, '');
                     if (v.length > 0 && v[0] !== '3') v = '3' + v.slice(1);
                     if (v.length > 10) v = v.slice(0, 10);
                     setTelefono(v);
+                    setTelefonoEditado(true);
                   }}
                   placeholder="3001234567"
                   maxLength={10}
@@ -349,16 +403,16 @@ export default function ConfiguracionAdmin() {
 
               <ul className="cfg-requisitos">
                 <li className={`cfg-requisito${reglas.longitud ? ' cumple' : ''}`}>
-                  <span aria-hidden="true">{reglas.longitud ? '✅' : '❌'}</span> Mínimo 8 caracteres
+                  <span className="cfg-requisito-icon" aria-hidden="true">{reglas.longitud ? '✓' : '×'}</span> Mínimo 8 caracteres
                 </li>
                 <li className={`cfg-requisito${reglas.mayuscula ? ' cumple' : ''}`}>
-                  <span aria-hidden="true">{reglas.mayuscula ? '✅' : '❌'}</span> Al menos una mayúscula
+                  <span className="cfg-requisito-icon" aria-hidden="true">{reglas.mayuscula ? '✓' : '×'}</span> Al menos una mayúscula
                 </li>
                 <li className={`cfg-requisito${reglas.numero ? ' cumple' : ''}`}>
-                  <span aria-hidden="true">{reglas.numero ? '✅' : '❌'}</span> Al menos un número
+                  <span className="cfg-requisito-icon" aria-hidden="true">{reglas.numero ? '✓' : '×'}</span> Al menos un número
                 </li>
                 <li className={`cfg-requisito${reglas.especial ? ' cumple' : ''}`}>
-                  <span aria-hidden="true">{reglas.especial ? '✅' : '❌'}</span> Al menos un símbolo (@, #, $, etc.)
+                  <span className="cfg-requisito-icon" aria-hidden="true">{reglas.especial ? '✓' : '×'}</span> Al menos un símbolo (@, #, $, etc.)
                 </li>
               </ul>
             </div>

@@ -122,10 +122,10 @@ body {
 }
 
 body.dark-mode {
-  --bg: #1a0e06;
-  --surface: #251a10;
-  --surface-2: #2e2115;
-  --surface-3: #3d2818;
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #000000;
+  --surface-3: #000000;
   --text-900: #f0ebe3;
   --text-600: #c4a88a;
   --text-400: #9a7d62;
@@ -562,7 +562,7 @@ body.dark-mode .acc-btn-reset:active {
 }
 
 body.dark-mode .acc-btn-tile.activa {
-  background: #2b1a0b !important;
+  background: #000000 !important;
   border-color: #e8821a !important;
   color: #ffffff !important;
 }
@@ -1973,4 +1973,36 @@ body.acc-contraste:not(.dark-mode) :is(
   .carousel-indicator.active
 ) {
   color: #fff !important;
+}
+
+/* Scrollbar naranja con pista negra en modo oscuro (páginas públicas y admin) */
+body.dark-mode,
+body.dark-mode * {
+  scrollbar-color: #e8821a #000000;
+}
+body.dark-mode ::-webkit-scrollbar-track { background: #000000; }
+body.dark-mode ::-webkit-scrollbar-thumb,
+body.dark-mode ::-webkit-scrollbar-thumb:hover,
+body.dark-mode ::-webkit-scrollbar-button { background-color: #e8821a; }
+body.dark-mode ::-webkit-scrollbar-thumb { border-radius: 999px; }
+body.dark-mode ::-webkit-scrollbar-corner { background: #000000; }
+
+/* Scrollbar de la página (html) también naranja con pista negra en modo oscuro */
+html:has(body.dark-mode) {
+  scrollbar-color: #e8821a #000000;
+}
+html:has(body.dark-mode)::-webkit-scrollbar-track { background: #000000; }
+html:has(body.dark-mode)::-webkit-scrollbar-thumb,
+html:has(body.dark-mode)::-webkit-scrollbar-thumb:hover,
+html:has(body.dark-mode)::-webkit-scrollbar-button { background-color: #e8821a; }
+html:has(body.dark-mode)::-webkit-scrollbar-thumb { border-radius: 999px; }
+html:has(body.dark-mode)::-webkit-scrollbar-corner { background: #000000; }
+
+/* Campo "Pregúntale a Burgi..." con fondo negro en modo oscuro */
+body.dark-mode textarea.burgi-input {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+body.dark-mode textarea.burgi-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
 }

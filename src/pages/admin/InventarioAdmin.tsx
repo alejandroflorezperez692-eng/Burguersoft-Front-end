@@ -6,6 +6,7 @@ import Paginacion, { paginar } from '../../components/Paginacion';
 import { useToast } from '../../components/Toast';
 import { useEscape } from '../../hooks/useEscape';
 import '../../styles/nu-admin.css';
+import SelectOscuro from '../../components/SelectOscuro';
 
 interface MateriaPrima {
   id: number;
@@ -135,7 +136,7 @@ export default function InventarioAdmin() {
       <div className="mn-filtros">
         <div className="mn-field">
           <label>Stock</label>
-          <select
+          <SelectOscuro
             className={filtroEstado !== 'todos' ? 'activo' : ''}
             value={filtroEstado}
             onChange={(e) => setFiltroEstado(e.target.value as 'todos' | EstadoStock)}
@@ -144,7 +145,7 @@ export default function InventarioAdmin() {
             <option value="disponible">Disponible</option>
             <option value="bajo">Bajo</option>
             <option value="agotado">Agotado</option>
-          </select>
+          </SelectOscuro>
         </div>
 
         {hayFiltros && (
@@ -168,7 +169,7 @@ export default function InventarioAdmin() {
                 <th>Nombre del insumo</th>
                 <th>Tipo</th>
                 <th>Cantidad</th>
-                <th>Cantidad</th>
+                <th>Disponibilidad</th>
                 <th className="th-acciones">Acciones</th>
               </tr>
             </thead>

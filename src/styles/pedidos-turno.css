@@ -476,6 +476,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 .tv-det-info dt { font-size: 11.5px; font-weight: 700; color: var(--text-400); text-transform: uppercase; letter-spacing: .03em; }
 .tv-det-info dd { margin: 2px 0 0; font-size: 14px; font-weight: 700; color: var(--text-900); word-break: break-word; }
 
+
 /* ===== Comprobante de pago dentro de "Ver detalle" ===== */
 .tv-det-comprobante {
   border-top: 1px solid var(--border);
@@ -518,4 +519,98 @@ body.dark-mode .tv-pago-aviso {
   color: #ffd79a;
   background: rgba(243, 198, 122, 0.12);
   border-color: rgba(243, 198, 122, 0.4);
+
+body.dark-mode .admin-body .tv-wrap {
+  --surface: #000000;
+  --surface-2: #000000;
+  --surface-3: #000000;
+  --text-900: #ffffff;
+  --text-600: #ffffff;
+  --text-400: #ffffff;
+  --border: #e8821a;
+  --border-strong: #e8821a;
+}
+
+body.dark-mode .admin-body .tv-wrap :is(
+  .tv-tabs,
+  .tv-refrescar,
+  .tv-buscar,
+  .tv-col,
+  .tv-col-count,
+  .tv-col-vacio,
+  .tv-card,
+  .tv-tag,
+  .tv-items li,
+  .tv-chip,
+  .tv-ver-detalle,
+  .tv-det-info
+) {
+  background-color: #000000 !important;
+  border-color: #e8821a !important;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-cols {
+  scrollbar-color: #e8821a #000000;
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-cols::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-cols::-webkit-scrollbar-thumb {
+  background: #e8821a;
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-pill {
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-pill.activo {
+  background: #e8821a;
+  border: 1px solid #e8821a;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-tab.activo {
+  background: #e8821a;
+  border: 1px solid #e8821a;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-ver-detalle:hover {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-card {
+  box-shadow: none;
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(232, 130, 26, 0.32);
+}
+
+body.dark-mode .admin-body .tv-wrap .tv-items li.tv-promo,
+body.dark-mode .admin-body .tv-wrap .tv-chip.sin,
+body.dark-mode .admin-body .tv-wrap .tv-chip.extra {
+  background: #000000;
+  border: 1px solid #e8821a;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .tv-errorbox {
+  background: #000000;
+  border-color: #e8821a;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .modal-box.tv-det-box {
+  background: #000000;
+  border: 1px solid #e8821a;
+  color: #ffffff;
+
 }

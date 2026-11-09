@@ -12,6 +12,7 @@ import {
   validarPassword,
 } from '../utils/perfil';
 import { mensajeError } from '../utils/errores';
+import SelectOscuro from './SelectOscuro';
 
 
 type Tab = 'datos' | 'pwd' | 'info';
@@ -124,29 +125,32 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     }
   };
 
-const handlePassword = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!actual) { showToast('La contraseña actual es obligatoria.', true); return; }
-  const errPwd = validarPassword(nueva, actual);
-  if (errPwd) { showToast(errPwd, true); return; }
-  if (nueva !== confirmar) { showToast('Las contraseñas no coinciden.', true); return; }
-  setEnviandoPwd(true);
-  try {
-    await apiClient.post('/perfil/password', { actual, nueva, confirmar });
-    sessionStorage.setItem('login_toast', 'password_ok');
-    logout();
-    window.location.replace('/login');
-  } catch (err) {
-    const msg = mensajeError(err, 'No se pudo actualizar la contraseña');
-    if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
-      showToast('La contraseña actual es incorrecta.', true);
-    } else {
-      showToast(msg, true);
+  const handlePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!actual) { showToast('La contraseña actual es obligatoria.', true); return; }
+    const errPwd = validarPassword(nueva, actual);
+    if (errPwd) { showToast(errPwd, true); return; }
+    if (nueva !== confirmar) { showToast('Las contraseñas no coinciden.', true); return; }
+    setEnviandoPwd(true);
+    try {
+      await apiClient.post('/perfil/password', { actual, nueva, confirmar });
+
+      // Contraseña cambiada: cerrar sesión y pedir login de nuevo
+      sessionStorage.setItem('login_toast', 'password_ok');
+      logout();
+      window.location.replace('/login');
+    } catch (err) {
+      const msg = mensajeError(err, 'No se pudo actualizar la contraseña');
+
+      if (msg.toLowerCase().includes('actual') || msg.toLowerCase().includes('incorrecta')) {
+        showToast('La contraseña actual es incorrecta.', true);
+      } else {
+        showToast(msg, true);
+      }
+    } finally {
+      setEnviandoPwd(false);
     }
-  } finally {
-    setEnviandoPwd(false);
-  }
-};
+  };
 
   // fuerza de contraseña
   const reglas = reglasPassword(nueva);
@@ -240,10 +244,10 @@ const handlePassword = async (e: React.FormEvent) => {
                 <div className="mp-field">
                   <label className="mp-label">Tipo de documento <span className="mp-req">*</span></label>
                   <div className="mp-select-wrap">
-                    <select value={tdoc} onChange={(e) => { marcarEditado(); setTdoc(e.target.value); }} required>
+                    <SelectOscuro value={tdoc} onChange={(e) => { marcarEditado(); setTdoc(e.target.value); }} required>
                       <option value="">Seleccione...</option>
                       {tiposDoc.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select>
+                    </SelectOscuro>
                   </div>
                 </div>
                 <div className="mp-field">

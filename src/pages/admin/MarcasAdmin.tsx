@@ -7,6 +7,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import SelectOscuro from '../../components/SelectOscuro';
 
 interface Marca {
   id: number;
@@ -252,12 +253,12 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
             <label>Proveedores</label>
-            <select value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
+            <SelectOscuro value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
               <option value="">Todos los provedores</option>
               {marcasOrdenadas.map((m) => (
                 <option key={m.id} value={String(m.id)}>{m.nombre}</option>
               ))}
-            </select>
+            </SelectOscuro>
           </div>
 
           <div className="form-group" style={{ marginBottom: 0, minWidth: 220 }}>
@@ -320,12 +321,10 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
                     <td>{m.correo || '—'}</td>
                     <td>
                       {esAdmin && (
-                        <td>
-                          <div className="mn-table-actions">
-                            <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
-                            <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)} data-tooltip="Eliminar">Eliminar</button>
-                          </div>
-                        </td>
+                        <div className="mn-table-actions">
+                          <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)} data-tooltip="Eliminar">Eliminar</button>
+                        </div>
                       )}
                     </td>
                   </tr>

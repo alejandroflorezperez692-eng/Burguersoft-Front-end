@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import apiClient from '../../api/client';
+import AdminDatePicker from '../../components/AdminDatePicker';
 import AdminLoading from '../../components/AdminLoading';
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
@@ -808,22 +809,22 @@ export default function ReportesAdmin() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end', marginTop: 20, paddingTop: 18, borderTop: '1px solid var(--border)' }}>
           <div className="form-group" style={{ margin: 0 }}>
             <label>Desde</label>
-            <input
-              type="date"
+            <AdminDatePicker
+              label="Desde"
               value={desde}
               max={hasta || hoy}
               min={hasta ? sumarDias(hasta, -(MAX_DIAS - 1)) : undefined}
-              onChange={(e) => setDesde(e.target.value)}
+              onChange={setDesde}
             />
           </div>
           <div className="form-group" style={{ margin: 0 }}>
             <label>Hasta</label>
-            <input
-              type="date"
+            <AdminDatePicker
+              label="Hasta"
               value={hasta}
               min={desde || undefined}
               max={desde && sumarDias(desde, MAX_DIAS - 1) < hoy ? sumarDias(desde, MAX_DIAS - 1) : hoy}
-              onChange={(e) => setHasta(e.target.value)}
+              onChange={setHasta}
             />
           </div>
           {rangoValido && (
