@@ -409,12 +409,12 @@ body.dark-mode .sidebar-header .logo-oscuro {
 }
 
 .page-header h1 {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);
   font-size: 30px;
-  font-weight: 900;
+  font-weight: 500;
   color: var(--text-900);
   line-height: 1.1;
-  letter-spacing: -0.5px;
+  letter-spacing: normal;
 }
 
 .page-header .subtitulo {
