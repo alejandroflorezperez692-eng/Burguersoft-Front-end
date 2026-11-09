@@ -123,35 +123,32 @@ function obtenerDescripcion(elemento: Element): string {
   return elemento.matches('a[href]') ? 'Abrir enlace' : 'Realizar acción';
 }
 
+function sinTextoVisible(elemento: Element): boolean {
+  const copia = elemento.cloneNode(true) as Element;
+  copia.querySelectorAll('svg, img, [class*="badge"]').forEach((n) => n.remove());
+  return !/[a-záéíóúñü0-9]/i.test(copia.textContent ?? '');
+}
+
 function encontrarElemento(target: EventTarget | null): Element | null {
   if (!(target instanceof Element)) return null;
   const accion = target.closest(SELECTOR_ACCIONES);
   if (accion?.getAttribute('aria-expanded') === 'true') return null;
 
+  // Iconos de contacto
   const cajaContacto = target.closest('.icon-box[data-tooltip]');
   if (cajaContacto) return cajaContacto;
 
-  const enlaceConTooltip = target.closest('a[data-tooltip]');
-  if (enlaceConTooltip) return enlaceConTooltip;
+  // Enlace que envuelve un icono o un "+" (ej. el + que lleva al login)
+  const enlace = target.closest('a[data-tooltip]');
+  if (enlace && sinTextoVisible(enlace)) return enlace;
 
-  if (accion && !(accion instanceof HTMLInputElement)
-    && (accion.hasAttribute('data-tooltip') || accion.hasAttribute('title'))) {
-    return accion;
+  // Botones o enlaces SOLO si son de icono (sin texto visible)
+  if (accion && !(accion instanceof HTMLInputElement)) {
+    return sinTextoVisible(accion) ? accion : null;
   }
 
-  const icono = target.closest(SELECTOR_ICONOS);
-  if (icono) return icono;
-
-  if (!accion || accion instanceof HTMLInputElement) return null;
-
-  const iconos = accion.querySelectorAll('svg, img');
-  if (iconos.length === 0) return null;
-
-  const contenido = accion.cloneNode(true) as Element;
-  contenido.querySelectorAll('svg, img').forEach((elemento) => elemento.remove());
-  if (/[a-záéíóúñü0-9]/i.test(contenido.textContent ?? '')) return null;
-
-  return accion;
+  // Icono suelto, fuera de cualquier botón o enlace
+  return target.closest(SELECTOR_ICONOS);
 }
 
 export default function TooltipsGlobales() {

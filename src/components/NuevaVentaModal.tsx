@@ -27,7 +27,48 @@ const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
 const MESAS_BASE: Mesa[] = [1, 2, 3, 4].map((n) => ({ numero: n, estado: 'Libre' }));
+
 const imgOk = (s?: string | null) => !!s && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(s);
+
+function precargarImagenes(lista: Producto[]) {
+  lista.forEach((p) => {
+    if (imgOk(p.img)) {
+      const i = new Image();
+      i.decoding = 'async';
+      i.src = p.img as string;
+    }
+  });
+}
+
+function leerCache<T>(k: string): T | null {
+  try { const s = sessionStorage.getItem(k); return s ? (JSON.parse(s) as T) : null; } catch { return null; }
+}
+
+const cache: {
+  productos: Producto[] | null;
+  promociones: Promocion[] | null;
+  mesas: Mesa[] | null;
+} = {
+  productos: leerCache<Producto[]>('nv:productos'),
+  promociones: leerCache<Promocion[]>('nv:promociones'),
+  mesas: leerCache<Mesa[]>('nv:mesas'),
+};
+
+// Si ya hay productos en caché, las fotos empiezan a bajar apenas carga la app
+if (cache.productos) precargarImagenes(cache.productos);
+
+function fijar<K extends keyof typeof cache>(k: K, v: NonNullable<(typeof cache)[K]>) {
+  cache[k] = v as (typeof cache)[K];
+  try { sessionStorage.setItem('nv:' + k, JSON.stringify(v)); } catch { /* sin storage */ }
+  if (k === 'productos') precargarImagenes(v as Producto[]);
+}
+
+/** Llamar antes de abrir el modal para que todo aparezca al instante. */
+export function precargarNuevaVenta() {
+  apiClient.get('/productos').then(({ data }) => fijar('productos', toArray<Producto>(data))).catch(() => {});
+  apiClient.get('/promociones').then(({ data }) => fijar('promociones', toArray<Promocion>(data))).catch(() => {});
+  apiClient.get('/mesas').then(({ data }) => fijar('mesas', toArray<Mesa>(data))).catch(() => {});
+}
 
 interface Props {
   abierto: boolean;
@@ -44,12 +85,14 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const esMesero = rol === 'mesero';
   const esAdmin = rol === 'admin';
 
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [promociones, setPromociones] = useState<Promocion[]>([]);
-  const [mesas, setMesas] = useState<Mesa[]>([]);
+  const [productos, setProductos] = useState<Producto[]>(cache.productos ?? []);
+  const [promociones, setPromociones] = useState<Promocion[]>(cache.promociones ?? []);
+  const [mesas, setMesas] = useState<Mesa[]>(cache.mesas ?? []);
+  const [cargandoProd, setCargandoProd] = useState(!cache.productos);
+
+  const [enviando, setEnviando] = useState(false);
 
   const [cat, setCat] = useState('Todos');
-
   const [tipoEntrega, setTipoEntrega] = useState('Consumir');
   const [mesa, setMesa] = useState<number | null>(null);
   const [cliente, setCliente] = useState('');
@@ -76,23 +119,37 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     try {
       const { data } = await apiClient.get('/mesas');
       const lista = toArray<Mesa>(data);
-      setMesas(lista.length ? lista : MESAS_BASE);
+      fijar('mesas', lista.length ? lista : MESAS_BASE);
+      setMesas(cache.mesas as Mesa[]);
     } catch {
-      setMesas(MESAS_BASE);
+      setMesas((prev) => (prev.length ? prev : MESAS_BASE));
     }
   }, []);
 
   useEffect(() => {
     if (!abierto) return;
     let vivo = true;
-    Promise.all([apiClient.get('/productos'), apiClient.get('/promociones')])
-      .then(([r1, r2]) => {
-        if (!vivo) return;
-        setProductos(toArray<Producto>(r1.data));
-        setPromociones(toArray<Promocion>(r2.data));
+
+    // Lo que ya está en caché se muestra de inmediato
+    if (cache.productos) setProductos(cache.productos);
+    if (cache.promociones) setPromociones(cache.promociones);
+    if (cache.mesas) setMesas(cache.mesas);
+
+    // Cada petición va por separado: nadie espera a nadie
+    apiClient.get('/productos')
+      .then(({ data }) => {
+        fijar('productos', toArray<Producto>(data));
+        if (vivo) { setProductos(cache.productos as Producto[]); setCargandoProd(false); }
       })
-      .catch(() => { if (vivo) { setProductos([]); setPromociones([]); } });
+      .catch(() => { if (vivo) setCargandoProd(false); });
+    apiClient.get('/promociones')
+      .then(({ data }) => {
+        fijar('promociones', toArray<Promocion>(data));
+        if (vivo) setPromociones(cache.promociones as Promocion[]);
+      })
+      .catch(() => {});
     cargarMesas();
+
     setTipoEntrega('Consumir');
     if (mesaInicial) setMesa(mesaInicial);
     return () => { vivo = false; };
@@ -137,7 +194,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     }
   };
 
-    const lineas = todos.filter((i) => cantidadDe(i) > 0);
+  const lineas = todos.filter((i) => cantidadDe(i) > 0);
 
   const adicionesDe = (productoId: number) =>
     (productos.find((p) => p.id === productoId)?.adiciones ?? [])
@@ -195,7 +252,8 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     onClose();
   };
 
-  const guardar = () => {
+    const guardar = () => {
+    if (enviando) return;
     if (tipoEntrega === 'Consumir' && !mesa) return alertar('Elige la mesa');
     if (tipoEntrega === 'Domicilio' && !direccion.trim()) return alertar('Escribe la dirección de entrega');
     if (lineas.length === 0) return alertar('Agrega al menos un producto');
@@ -206,6 +264,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
       notas.trim(),
     ].filter(Boolean).join(' · ').slice(0, 255);
 
+    setEnviando(true);
     apiClient
       .post('/ventas', {
         carrito,
@@ -221,14 +280,15 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
       .catch((e) => {
         const d = (e as { response?: { data?: { error?: string; message?: string; errors?: Record<string, string[]> } } })?.response?.data;
         alertar(d?.error || d?.message || Object.values(d?.errors ?? {})[0]?.[0] || 'No se pudo registrar el pedido.');
-      });
+      })
+      .finally(() => setEnviando(false));
   };
 
   useEscape([[abierto, cerrar]]);
   if (!abierto) return null;
 
   return (
-    <div className="modal-overlay open" onClick={cerrar}>
+    <div className="modal-overlay open" style={{ zIndex: 300 }} onClick={cerrar}>
       <div className="modal-box np-modal" onClick={(e) => e.stopPropagation()}>
         <header className="np-top">
           <div>
@@ -253,6 +313,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
             {tipoEntrega === 'Consumir' ? (
               <>
                 <h5 className="np-sub">Mesas</h5>
+                {mesas.length === 0 && <p className="np-hint">Cargando mesas…</p>}
                 <div className="np-scroll">
                   <div className="np-mesas">
                     {mesas.map((m) => (
@@ -333,7 +394,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
               {lineas.length === 0 ? (
                 <p className="np-hint">Agrega productos desde el menú.</p>
               ) : (
-                                lineas.map((it) => (
+                lineas.map((it) => (
                   <div key={`l-${it.tipo}-${it.id}`}>
                     <div className="np-line">
                       <span className="np-line-name">{it.nombre}</span>
@@ -368,8 +429,8 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
               <div className="np-total">
                 <span>{tieneCuenta ? 'Total a agregar' : 'Total'}</span><b>{money(total)}</b>
               </div>
-              <button type="button" className="np-finalizar" disabled={lineas.length === 0} onClick={guardar}>
-                {tieneCuenta ? `Agregar a la mesa ${mesa}` : 'Finalizar pedido'}
+              <button type="button" className="np-finalizar" disabled={lineas.length === 0 || enviando} onClick={guardar}>
+                {enviando ? 'Enviando…' : tieneCuenta ? `Agregar a la mesa ${mesa}` : 'Finalizar pedido'}
               </button>
             </div>
           </section>
@@ -433,27 +494,29 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                   </article>
                 );
               })}
-              {filtrados.length === 0 && <p className="np-hint">No hay productos.</p>}
+              {filtrados.length === 0 && (
+                <p className="np-hint">{cargandoProd ? 'Cargando productos…' : 'No hay productos.'}</p>
+              )}
             </div>
 
             <nav className="np-pager" aria-label="Paginación">
-                {pagina > 1 && (
-                  <button type="button" className="np-pg" onClick={() => setPagina((p) => p - 1)}>‹ Anterior</button>
-                )}
-                {Array.from({ length: paginas }, (_, i) => i + 1)
-                  .filter((n) => n === 1 || n === paginas || Math.abs(n - pagina) <= 1)
-                  .map((n, i, arr) => (
-                    <span key={n} className="np-pg-wrap">
-                      {i > 0 && n - arr[i - 1] > 1 && <span className="np-pg-dots">…</span>}
-                      <button type="button" className={`np-pg${n === pagina ? ' on' : ''}`} onClick={() => setPagina(n)}>
-                        {n}
-                      </button>
-                    </span>
-                  ))}
-                {pagina < paginas && (
-                  <button type="button" className="np-pg" onClick={() => setPagina((p) => p + 1)}>Siguiente ›</button>
-                )}
-              </nav>
+              {pagina > 1 && (
+                <button type="button" className="np-pg" onClick={() => setPagina((p) => p - 1)}>‹ Anterior</button>
+              )}
+              {Array.from({ length: paginas }, (_, i) => i + 1)
+                .filter((n) => n === 1 || n === paginas || Math.abs(n - pagina) <= 1)
+                .map((n, i, arr) => (
+                  <span key={n} className="np-pg-wrap">
+                    {i > 0 && n - arr[i - 1] > 1 && <span className="np-pg-dots">…</span>}
+                    <button type="button" className={`np-pg${n === pagina ? ' on' : ''}`} onClick={() => setPagina(n)}>
+                      {n}
+                    </button>
+                  </span>
+                ))}
+              {pagina < paginas && (
+                <button type="button" className="np-pg" onClick={() => setPagina((p) => p + 1)}>Siguiente ›</button>
+              )}
+            </nav>
           </section>
         </div>
       </div>

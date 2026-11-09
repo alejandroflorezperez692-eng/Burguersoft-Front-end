@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useCart } from '../hooks/useCart';
 import cenaFallback from '../assets/img/cena.png';
+import { categoriaSinExtras } from '../utils/categorias';
 
 type Adicion = { id: number; nombre: string; precio: number | string; tipo?: string };
 
@@ -11,6 +12,8 @@ export type ItemPersonalizar = {
   imagen?: string | null;
   descripcion?: string | null;
   adiciones?: Adicion[];
+  categoria?: string | null;
+  esCombo?: boolean;
 };
 
 const formatCOP = (v: number) => `$${v.toLocaleString('es-CO')}`;
@@ -23,6 +26,7 @@ export default function PersonalizarModal({
   onClose: () => void;
 }) {
   const { agregar } = useCart();
+  const sinExtras = categoriaSinExtras(item.categoria);
   const [abierta, setAbierta] = useState<'quitar' | 'extras' | 'nota' | null>('quitar');
   const [sin, setSin] = useState<string[]>([]);
   const [nota, setNota] = useState('');
@@ -33,9 +37,11 @@ export default function PersonalizarModal({
   const adiciones = todas.filter((a) => a.tipo !== 'quitar');
   const quitarBD = todas.filter((a) => a.tipo === 'quitar').map((a) => a.nombre.trim());
   const deDescripcion = (item.descripcion ?? '').split('+').map((s) => s.trim()).filter(Boolean);
-  const ingredientes = Array.from(
-    new Map([...deDescripcion, ...quitarBD].map((s) => [s.toLowerCase(), s])).values(),
-  );
+  const ingredientes = item.esCombo
+  ? []
+  : Array.from(
+      new Map([...deDescripcion, ...quitarBD].map((s) => [s.toLowerCase(), s])).values(),
+    );
 
   const extrasSel = adiciones
     .filter((a) => (extras[a.id] ?? 0) > 0)
@@ -88,7 +94,7 @@ export default function PersonalizarModal({
           </div>
 
           <div className="pers-der">
-            {ingredientes.length > 0 && (
+            {!sinExtras && ingredientes.length > 0 && (
               <div className="pers-acc">
                 <button
                   type="button"
@@ -125,7 +131,7 @@ export default function PersonalizarModal({
               </div>
             )}
 
-            {adiciones.length > 0 && (
+            {!sinExtras && adiciones.length > 0 && (
               <div className="pers-acc">
                 <button
                   type="button"
@@ -161,6 +167,7 @@ export default function PersonalizarModal({
               </div>
             )}
 
+            {!sinExtras && (
             <div className="pers-acc">
               <button
                 type="button"
@@ -188,6 +195,7 @@ export default function PersonalizarModal({
                 </div>
               )}
             </div>
+            )}
           </div>
         </div>
 

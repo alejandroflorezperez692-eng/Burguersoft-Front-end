@@ -11,6 +11,8 @@ import { IconoToast } from '../components/Toast';
 import '../styles/public.css';
 import PersonalizarModal, { type ItemPersonalizar } from '../components/PersonalizarModal';
 
+type AdicionCombo = { id: number; nombre: string; precio: number | string; tipo?: string };
+
 type Promocion = {
   id: number;
   nombre: string;
@@ -20,7 +22,7 @@ type Promocion = {
   estado?: string;
   fecha_inicio?: string | null;
   fecha_fin?: string | null;
-  productos?: { id: number; valor: number | string }[];
+  productos?: { id: number; valor: number | string; adiciones?: AdicionCombo[] }[]; // ← NUEVO
 };
 
 function formatCOP(valor: number): string {
@@ -29,6 +31,17 @@ function formatCOP(valor: number): string {
 
 function precioNormal(promo: Promocion): number {
   return (promo.productos ?? []).reduce((s, x) => s + (Number(x.valor) || 0), 0);
+}
+
+// ← NUEVO: adicionales de los productos del combo (sin las de "quitar")
+function adicionesCombo(promo: Promocion): AdicionCombo[] {
+  const mapa = new Map<number, AdicionCombo>();
+  (promo.productos ?? []).forEach((p) =>
+    (p.adiciones ?? [])
+      .filter((a) => a.tipo !== 'quitar')
+      .forEach((a) => mapa.set(a.id, a)),
+  );
+  return [...mapa.values()];
 }
 
 function formatFecha(fecha?: string | null): string {
@@ -123,6 +136,8 @@ export default function Home() {
                     <img
                       src={promo.imagen || promocionFallback}
                       alt={promo.nombre}
+                      loading="lazy"
+                      decoding="async"
                       onError={(e) => {
                         e.currentTarget.src = promocionFallback;
                       }}
@@ -157,6 +172,8 @@ export default function Home() {
                               precio: Number(promo.precio),
                               imagen: promo.imagen,
                               descripcion: promo.descripcion,
+                              adiciones: adicionesCombo(promo), // ← NUEVO
+                              esCombo: true,                    // ← NUEVO
                             })
                           }
                         >

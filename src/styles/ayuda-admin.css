@@ -427,6 +427,7 @@ body.dark-mode .admin-body .main-content .ayuda-pagina .ayuda-faq .ayuda-boton-b
   background-color: #e8821a !important;
   border-color: #e8821a !important;
   color: #ffffff !important;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .ayuda-categoria::after {

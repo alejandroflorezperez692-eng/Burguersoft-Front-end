@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import slide1 from '../assets/img/carrusel-1.png';
-import slide2 from '../assets/img/carrusel-2.png';
-import slide3 from '../assets/img/carrusel-3.png';
-import slide4 from '../assets/img/carrusel-4.png';
-import slide5 from '../assets/img/carrusel-5.png';
-import slide6 from '../assets/img/carrusel-6.png';
-import slide7 from '../assets/img/carrusel-7.png';
+import slide1 from '../assets/img/carrusel-1.webp';
+import slide2 from '../assets/img/carrusel-2.webp';
+import slide3 from '../assets/img/carrusel-3.webp';
+import slide4 from '../assets/img/carrusel-4.webp';
+import slide5 from '../assets/img/carrusel-5.webp';
+import slide6 from '../assets/img/carrusel-6.webp';
+import slide7 from '../assets/img/carrusel-7.webp';
 
 const SLIDES = [slide1, slide2, slide3, slide4, slide5, slide6, slide7];
 

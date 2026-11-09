@@ -1,5 +1,4 @@
-
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
@@ -11,6 +10,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
+import logoImg from '../../assets/img/logo-burguersoft.png';
+import { imprimirEnPagina } from '../../utils/imprimirEnPagina';
+import ArqueoCaja from '../../components/ArqueoCaja';
 import MotivoModal from '../../components/MotivoModal';
 import ComprobanteImagen from '../../components/ComprobanteImagen';
 import ComprobanteModal from '../../components/ComprobanteModal';
@@ -45,6 +47,7 @@ interface Venta {
   usuario?: {
     nombre: string;
     apellido: string;
+    rol_id?: number | null; 
     correo?: string | null;
     email?: string | null;
     telefono?: string | null;
@@ -367,30 +370,39 @@ export default function VentasAdmin() {
   const [loading, setLoading] = useState(true);
   const [historialId, setHistorialId] = useState<number | null>(null);
   const [detalleId, setDetalleId] = useState<number | null>(null);
+  const [cierreAbierto, setCierreAbierto] = useState(false);
+  const [cierreDesde, setCierreDesde] = useState('');
+  const [cierreHasta, setCierreHasta] = useState('');
   const [comprobanteARechazar, setComprobanteARechazar] = useState<Venta | null>(null);
   const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
   const [procesandoComprobante, setProcesandoComprobante] = useState(false);
   const [, setVersion] = useState(0);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [r1, r2, r3] = await Promise.all([
-        apiClient.get('/ventas'),
-        apiClient.get('/productos'),
-        apiClient.get('/promociones'),
-      ]);
-      setItems(toArray<Venta>(r1.data));
+const load = async (silencioso = false) => {
+  if (!silencioso) setLoading(true);
+
+  // Se piden a la vez, pero el loader solo espera las ventas
+  const extras = Promise.all([apiClient.get('/productos'), apiClient.get('/promociones')])
+    .then(([r2, r3]) => {
       setProductos(toArray<Producto>(r2.data));
       setPromociones(toArray<Promocion>(r3.data));
-    } catch {
-      setItems([]);
+    })
+    .catch(() => {
       setProductos([]);
       setPromociones([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
+
+  try {
+    const r1 = await apiClient.get('/ventas');
+    setItems(toArray<Venta>(r1.data));
+  } catch {
+    setItems([]);
+  } finally {
+    setLoading(false);
+  }
+
+  await extras;
+};
 
   useEffect(() => { load(); }, []);
 
@@ -462,7 +474,7 @@ export default function VentasAdmin() {
     };
     apiClient.post('/ventas', body).then(() => {
       cerrarFormulario();
-      load();
+      load(true);
     }).catch((e) => {
       const d = (e as any)?.response?.data;
       const msg = d?.error || d?.message || (Object.values(d?.errors ?? {}) as string[][])[0]?.[0];
@@ -546,6 +558,110 @@ export default function VentasAdmin() {
 
   const totalCarrito = totalProductos + totalCombos;
 
+  const htmlFactura = (v: Venta) => {
+    const logoUrl = new URL(logoImg, window.location.origin).href;
+    const numero = String(v.id).padStart(6, '0');
+
+    const d = new Date(v.fecha);
+    const p2 = (n: number) => String(n).padStart(2, '0');
+    const fecha = `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+
+    const monedaRecibo = (n: number) => {
+      const x = Number(n) || 0;
+      return '$ ' + x.toLocaleString('es-CO', {
+        minimumFractionDigits: Number.isInteger(x) ? 0 : 2,
+        maximumFractionDigits: 2,
+      });
+    };
+
+    // Misma lógica del PDF: ventas de mostrador (rol 1) = "Consumidor final"
+    const usu = v.usuario;
+    const mostrador = Number(usu?.rol_id ?? 0) === 1;
+    const nombre = mostrador
+      ? (v.cliente_nombre || 'Consumidor final')
+      : (`${usu?.nombre ?? ''} ${usu?.apellido ?? ''}`.trim() || 'Cliente');
+    const documento = !mostrador ? (usu?.Ndocumento ?? '') : '';
+    const telefono = !mostrador ? (usu?.telefono ?? '') : '';
+    const correo = !mostrador ? (usu?.email ?? usu?.correo ?? '') : '';
+
+    const filas = (v.detalles ?? []).map((l) =>
+      `<tr><td>${escHtml(l.producto?.nombre ?? 'Producto')}</td><td class="c">${l.cantidad}</td><td class="r">${monedaRecibo(Number(l.precio_unitario))}</td><td class="r">${monedaRecibo(Number(l.subtotal))}</td></tr>`).join('');
+    const filasCombos = (v.promociones ?? []).map((pr) =>
+      `<tr><td>${escHtml(pr.nombre)}</td><td class="c">1</td><td class="r">—</td><td class="r">—</td></tr>`).join('');
+
+    const nLineas = (v.detalles?.length ?? 0) + (v.promociones?.length ?? 0);
+    const extras = [documento, telefono, correo].filter(Boolean).length;
+    const alto = 130 + nLineas * 7 + extras * 5; 
+
+    const u = (mm: number) => `calc(var(--u) * ${mm})`;
+    const f = (pt: number) => u(+(pt * 0.3528).toFixed(3));
+    const px = (n: number) => u(+(n * 0.2646).toFixed(3));
+
+    return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Factura ${numero}</title>
+<style>
+*{box-sizing:border-box}
+@page{size:auto;margin:0}
+:root{--u:min(1.25vw, calc(100vh / ${alto + 6}))}
+html,body{margin:0}
+body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:Helvetica,Arial,sans-serif;font-size:${f(8)};color:#000}
+.centro{text-align:center}
+.logo{width:${u(26)};height:auto;margin-bottom:${u(1.5)}}
+.negocio{font-size:${f(13)};font-weight:bold;letter-spacing:${px(1)}}
+.eslogan{font-size:${f(7.5)};letter-spacing:${px(2)};text-transform:uppercase;margin-top:${u(1)}}
+.dato{font-size:${f(7)};color:#333;margin-top:${u(0.6)}}
+.sep{border-top:1px dashed #000;margin:${u(2.5)} 0}
+.titulo{font-size:${f(9)};font-weight:bold;letter-spacing:${px(1.5)};text-transform:uppercase}
+.num{font-size:${f(8)};margin-top:${u(0.5)}}
+.fila{width:100%;border-collapse:collapse}
+.fila td{font-size:${f(7.8)};padding:${u(0.6)} 0;vertical-align:top}
+.fila td.etq{width:30%;color:#444}
+.items{width:100%;border-collapse:collapse;margin-top:${u(1)}}
+.items th{font-size:${f(6.6)};text-transform:uppercase;letter-spacing:${px(0.5)};text-align:left;border-bottom:1px solid #000;padding:${u(1)} 0}
+.items td{font-size:${f(7.8)};padding:${u(1.2)} 0;vertical-align:top;border-bottom:1px dotted #ccc}
+.items .c{text-align:center}
+.items .r{text-align:right;white-space:nowrap}
+.totales{width:100%;border-collapse:collapse;margin-top:${u(2)}}
+.totales td{padding:${u(1)} 0}
+.total-etq{font-size:${f(9)};font-weight:bold;text-transform:uppercase;letter-spacing:${px(1)}}
+.total-val{font-size:${f(13)};font-weight:bold;text-align:right;white-space:nowrap}
+.pie{text-align:center;margin-top:${u(3)};font-size:${f(7)};color:#333}
+.gracias{font-size:${f(9)};font-weight:bold;color:#000;margin-bottom:${u(1)}}
+</style></head><body>
+<div class="centro">
+  <img class="logo" src="${logoUrl}" alt="Burguersoft" onerror="this.style.display='none'">
+  <div class="negocio">Burguersoft</div>
+  <div class="eslogan">El Oriente</div>
+  <div class="dato">Calle 9 # 1A-43, Barrio El Oriente</div>
+  <div class="dato">Sogamoso, Boyacá</div>
+  <div class="dato">Tel. 314 2208706</div>
+</div>
+<div class="sep"></div>
+<div class="centro titulo">Recibo de venta</div>
+<div class="centro num">No. ${numero}</div>
+<div class="sep"></div>
+<table class="fila">
+  <tr><td class="etq">Fecha</td><td>${escHtml(fecha)}</td></tr>
+  <tr><td class="etq">Cliente</td><td>${escHtml(nombre)}</td></tr>
+  ${documento ? `<tr><td class="etq">Documento</td><td>${escHtml(documento)}</td></tr>` : ''}
+  ${telefono ? `<tr><td class="etq">Teléfono</td><td>${escHtml(telefono)}</td></tr>` : ''}
+  ${correo ? `<tr><td class="etq">Correo</td><td style="word-break:break-all">${escHtml(correo)}</td></tr>` : ''}
+  <tr><td class="etq">Entrega</td><td>${escHtml(v.tipo_entrega)}</td></tr>
+  <tr><td class="etq">Pago</td><td>${escHtml(v.metodo_pago)}</td></tr>
+</table>
+<div class="sep"></div>
+<table class="items">
+  <thead><tr><th>Producto</th><th class="c" style="width:11%">Cant</th><th class="r" style="width:25%">Vr. Unit</th><th class="r" style="width:27%">Subtotal</th></tr></thead>
+  <tbody>${filas}${filasCombos}</tbody>
+</table>
+<table class="totales"><tr><td class="total-etq">Total</td><td class="total-val">${monedaRecibo(Number(v.valor_total))}</td></tr></table>
+<div class="sep"></div>
+<div class="pie">
+  <div class="gracias">¡Gracias por tu compra!</div>
+  <div>Burguersoft · El Oriente</div>
+  <div>burguersoft@gmail.com</div>
+</div>
+</body></html>`;
+  };
 
   const updateEstado = (id: number, estado: string) => {
     apiClient.patch(`/ventas/${id}/estado`, { estado })
@@ -645,9 +761,193 @@ export default function VentasAdmin() {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     } catch {
       ventana?.close();
-      alertar('No se pudo abrir la factura.');
+      const venta = (items ?? []).find((x) => x.id === id);
+      if (!venta) {
+        alertar('No se pudo abrir la factura.');
+        return;
+      }
+      imprimirEnPagina(htmlFactura(venta));
     }
   };
+
+    /* ===== Días, cierre del día e impresión ===== */
+  const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
+  const esVendida = (v: Venta) => v?.estado === 'Pagado';
+  const hoyStr = new Date().toLocaleDateString('en-CA');
+  const moneda = (n: number) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
+  const escHtml = (t: unknown) =>
+    String(t ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+  const fmtLargo = (clave: string) =>
+    new Date(`${clave}T12:00:00`).toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  const etiquetaDia = (clave: string) => {
+    const ayer = new Date();
+    ayer.setDate(ayer.getDate() - 1);
+    if (clave === hoyStr) return `Hoy · ${fmtLargo(clave)}`;
+    if (clave === ayer.toLocaleDateString('en-CA')) return `Ayer · ${fmtLargo(clave)}`;
+    return fmtLargo(clave);
+  };
+
+  const resumenDia = (clave: string) => {
+    const delDia = filtered.filter((v) => fechaLocal(v?.fecha) === clave);
+    const vendidas = delDia.filter(esVendida);
+    return {
+      ventas: delDia.length,
+      total: vendidas.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0),
+    };
+  };
+
+  const abrirCierre = (desde?: string, hasta?: string) => {
+    const d = desde || fechaDesde || hoyStr;
+    setCierreDesde(d);
+    setCierreHasta(hasta || (desde ? desde : fechaHasta) || d);
+    setCierreAbierto(true);
+  };
+
+  const calcularCierre = () => {
+    const desde = cierreDesde || hoyStr;
+    const hasta = cierreHasta || desde;
+
+    const base = (items ?? []).filter((v) => {
+      const f = fechaLocal(v?.fecha);
+      if (f < desde || f > hasta) return false;
+      if (filtroMetodo && v?.metodo_pago !== filtroMetodo) return false;
+      if (filtroEntrega && v?.tipo_entrega !== filtroEntrega) return false;
+      return true;
+    });
+
+    const vendidas = base.filter(esVendida);
+    const pendientes = base.filter((v) => !esVendida(v) && !NO_VENDIDOS.includes(v?.estado));
+    const anuladas = base.filter((v) => NO_VENDIDOS.includes(v?.estado));
+
+    const prod = new Map<string, { cantidad: number; total: number }>();
+    const combos = new Map<string, number>();
+    const metodos = new Map<string, { ventas: number; total: number }>();
+
+    vendidas.forEach((v) => {
+      (v?.detalles ?? []).forEach((d) => {
+        const nombre = d?.producto?.nombre ?? 'Producto';
+        const a = prod.get(nombre) ?? { cantidad: 0, total: 0 };
+        a.cantidad += Number(d?.cantidad) || 0;
+        a.total += Number(d?.subtotal) || (Number(d?.cantidad) || 0) * (Number(d?.precio_unitario) || 0);
+        prod.set(nombre, a);
+      });
+      (v?.promociones ?? []).forEach((p) => {
+        combos.set(p?.nombre, (combos.get(p?.nombre) ?? 0) + 1);
+      });
+      const m = metodos.get(v?.metodo_pago ?? '—') ?? { ventas: 0, total: 0 };
+      m.ventas += 1;
+      m.total += Number(v?.valor_total) || 0;
+      metodos.set(v?.metodo_pago ?? '—', m);
+    });
+
+    const productos = [...prod.entries()]
+      .map(([nombre, x]) => ({ nombre, ...x }))
+      .sort((a, b) => b.cantidad - a.cantidad);
+
+    return {
+      desde,
+      hasta,
+      vendidas: vendidas.length,
+      total: vendidas.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0),
+      unidades: productos.reduce((a, p) => a + p.cantidad, 0),
+      productos,
+      combos: [...combos.entries()].map(([nombre, cantidad]) => ({ nombre, cantidad })),
+      metodos: [...metodos.entries()].map(([nombre, x]) => ({ nombre, ...x })),
+      pendientes: { n: pendientes.length, total: pendientes.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0) },
+      anuladas: anuladas.length,
+    };
+  };
+
+  const imprimirCierre = () => {
+    const c = calcularCierre();
+
+    const rango = c.desde === c.hasta ? fmtLargo(c.desde) : `${fmtLargo(c.desde)} al ${fmtLargo(c.hasta)}`;
+    const filasProd = c.productos.length
+      ? c.productos.map((p) => `<tr><td>${escHtml(p.nombre)}</td><td class="r">${p.cantidad}</td><td class="r">${moneda(p.total)}</td></tr>`).join('')
+      : '<tr><td colspan="3" class="vacio">Sin ventas en este periodo</td></tr>';
+    const filasCombos = c.combos.map((p) => `<tr><td>${escHtml(p.nombre)}</td><td class="r">${p.cantidad}</td><td class="r">—</td></tr>`).join('');
+    const filasMetodos = c.metodos.map((m) => `<tr><td>${escHtml(m.nombre)}</td><td class="r">${m.ventas}</td><td class="r">${moneda(m.total)}</td></tr>`).join('');
+
+    const filtrosTxt = [filtroMetodo, filtroEntrega].filter(Boolean).join(', ');
+    const logoUrl = new URL(logoImg, window.location.origin).href;
+
+    imprimirEnPagina(`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Cierre del día</title>
+<style>
+*{box-sizing:border-box}
+@page{margin:0}
+body{margin:0 auto;padding:16px 14px 20px;max-width:380px;font-family:Helvetica,Arial,sans-serif;font-size:13px;color:#000}
+.centro{text-align:center}
+.logo{width:90px;height:auto;margin-bottom:6px}
+.negocio{font-size:22px;font-weight:bold;letter-spacing:1px}
+.eslogan{font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-top:3px}
+.dato{font-size:11.5px;color:#333;margin-top:2px}
+.sep{border-top:1px dashed #000;margin:14px 0}
+.titulo{font-size:16px;font-weight:bold;letter-spacing:2px;text-transform:uppercase}
+.rango{font-size:12.5px;margin-top:3px;text-transform:capitalize}
+.fila{width:100%;border-collapse:collapse}
+.fila td{padding:3px 0;vertical-align:top;font-size:13px}
+.fila td.etq{width:34%;color:#444}
+.items{width:100%;border-collapse:collapse;margin-top:2px}
+.items th{font-size:11px;text-transform:uppercase;letter-spacing:.5px;text-align:left;border-bottom:2px solid #000;padding:5px 0}
+.items td{padding:6px 0;vertical-align:top;border-bottom:1px dotted #ccc;font-size:13px}
+.items .c{text-align:center}
+.items .r{text-align:right;white-space:nowrap}
+.items th.c{text-align:center}
+.items th.r{text-align:right}
+.vacio{text-align:center;color:#777;padding:10px 0}
+.sec{font-size:12px;font-weight:bold;text-transform:uppercase;letter-spacing:1px;margin:14px 0 2px}
+.tot{display:flex;justify-content:space-between;align-items:center;margin-top:6px}
+.tot-etq{font-size:15px;font-weight:bold;text-transform:uppercase;letter-spacing:1px}
+.tot-val{font-size:22px;font-weight:bold}
+.nota{font-size:11.5px;color:#333;margin:5px 0 0}
+.pie{text-align:center;font-size:11.5px;color:#333}
+.gracias{font-size:14px;font-weight:bold;color:#000;margin-bottom:3px}
+@media print{body{padding:4mm 3mm 5mm;max-width:none}}
+</style></head><body>
+<div class="centro">
+  <img class="logo" src="${logoUrl}" alt="Burguersoft" onerror="this.style.display='none'">
+  <div class="negocio">Burguersoft</div>
+  <div class="eslogan">El Oriente</div>
+  <div class="dato">Calle 9 # 1A-43, Barrio El Oriente</div>
+  <div class="dato">Sogamoso, Boyacá</div>
+  <div class="dato">Tel. 314 2208706</div>
+</div>
+<div class="sep"></div>
+<div class="centro titulo">Cierre del día</div>
+<div class="centro rango">${escHtml(rango)}</div>
+<div class="sep"></div>
+<table class="fila">
+  <tr><td class="etq">Impreso</td><td>${escHtml(new Date().toLocaleString('es-CO'))}</td></tr>
+  <tr><td class="etq">Ventas</td><td>${c.vendidas} pagadas</td></tr>
+  <tr><td class="etq">Productos</td><td>${c.unidades} unidades</td></tr>
+  ${filtrosTxt ? `<tr><td class="etq">Filtros</td><td>${escHtml(filtrosTxt)}</td></tr>` : ''}
+</table>
+<div class="sep"></div>
+<table class="items">
+  <thead><tr><th>Producto</th><th class="c" style="width:14%">Cant</th><th class="r" style="width:32%">Subtotal</th></tr></thead>
+  <tbody>${filasProd}${filasCombos}</tbody>
+</table>
+<div class="sep"></div>
+<div class="sec" style="margin-top:0">Por método de pago</div>
+<table class="items">
+  <thead><tr><th>Método</th><th class="c" style="width:14%">Ventas</th><th class="r" style="width:32%">Total</th></tr></thead>
+  <tbody>${filasMetodos || '<tr><td colspan="3" class="vacio">—</td></tr>'}</tbody>
+</table>
+<div class="sep"></div>
+<div class="tot"><span class="tot-etq">Total del día</span><span class="tot-val">${moneda(c.total)}</span></div>
+${c.pendientes.n ? `<p class="nota">Pendientes de cobro: ${c.pendientes.n} (${moneda(c.pendientes.total)}), no incluidos en el total.</p>` : ''}
+${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''}
+<div class="sep"></div>
+<div class="pie">
+  <div class="gracias">Burguersoft · Cierre de caja</div>
+  <div>burguersoft@gmail.com</div>
+</div>
+</body></html>`);
+  };
+
+  const cierre = cierreAbierto ? calcularCierre() : null;
 
   const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
 
@@ -667,8 +967,78 @@ export default function VentasAdmin() {
           <h1>{esAdmin ? 'Gestión de Ventas' : 'Caja'}</h1>
           <p className="subtitulo">{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
+        <button type="button" className="btn-save" onClick={() => abrirCierre()}>
+          Cierre del día
+        </button>
       </div>
       
+
+      {cierre && (
+        <div className="modal-overlay open">
+          <div className="modal-box cierre-box" style={{ maxWidth: 680, width: '95%' }} onClick={(e) => e.stopPropagation()}>
+            <button type="button" className="modal-x" onClick={() => setCierreAbierto(false)} aria-label="Cerrar">×</button>
+            <h2>Cierre del día</h2>
+
+            <div className="cierre-filtros">
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Desde</label>
+                <input type="date" value={cierre.desde} max={cierre.hasta} onChange={(e) => setCierreDesde(e.target.value)} />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>Hasta</label>
+                <input type="date" value={cierre.hasta} min={cierre.desde} onChange={(e) => setCierreHasta(e.target.value)} />
+              </div>
+              <p className="cierre-nota">
+                Solo cuenta ventas <b>Pagadas</b>
+                {(filtroMetodo || filtroEntrega) && ` · Filtros: ${[filtroMetodo, filtroEntrega].filter(Boolean).join(', ')}`}
+              </p>
+            </div>
+
+            <div className="cierre-resumen">
+              <div><small>Total del día</small><strong>{moneda(cierre.total)}</strong></div>
+              <div><small>Ventas</small><strong>{cierre.vendidas}</strong></div>
+              <div><small>Productos</small><strong>{cierre.unidades}</strong></div>
+            </div>
+
+            <h4 className="cierre-sub">Productos vendidos</h4>
+            <div className="cierre-scroll">
+              <table className="cierre-tabla">
+                <thead><tr><th>Producto</th><th className="r">Cant.</th><th className="r">Subtotal</th></tr></thead>
+                <tbody>
+                  {cierre.productos.map((p) => (
+                    <tr key={p.nombre}><td>{p.nombre}</td><td className="r">{p.cantidad}</td><td className="r">{moneda(p.total)}</td></tr>
+                  ))}
+                  {cierre.combos.map((p) => (
+                    <tr key={`c-${p.nombre}`}><td>{p.nombre} <small>(combo)</small></td><td className="r">{p.cantidad}</td><td className="r">—</td></tr>
+                  ))}
+                  {cierre.productos.length === 0 && cierre.combos.length === 0 && (
+                    <tr><td colSpan={3} className="c">No hay ventas pagadas en este periodo</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <h4 className="cierre-sub">Por método de pago</h4>
+            <div className="cierre-metodos">
+              {cierre.metodos.map((m) => (
+                <span key={m.nombre}><b>{m.nombre}</b> {moneda(m.total)} <small>({m.ventas})</small></span>
+              ))}
+              {cierre.metodos.length === 0 && <span>—</span>}
+            </div>
+
+            {cierre.pendientes.n > 0 && (
+              <p className="cierre-nota">Pendientes de cobro: {cierre.pendientes.n} ({moneda(cierre.pendientes.total)}), no incluidos en el total.</p>
+            )}
+
+            <ArqueoCaja />
+
+            <div className="modal-actions" style={{ marginTop: 16 }}>
+              <button type="button" className="btn-cancel" onClick={() => setCierreAbierto(false)}>Cerrar</button>
+              <button type="button" className="btn-save" onClick={imprimirCierre}>Imprimir</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="modal-overlay open" onClick={cerrarFormulario}>
@@ -958,8 +1328,26 @@ export default function VentasAdmin() {
             </tr>
           </thead>
           <tbody>
-            {visibles.map((v) => (
-              <tr key={v?.id}>
+            {visibles.map((v, i) => {
+              const clave = fechaLocal(v?.fecha);
+              const nuevoDia = i === 0 || clave !== fechaLocal(visibles[i - 1]?.fecha);
+              const r = nuevoDia ? resumenDia(clave) : null;
+              return (
+              <Fragment key={v?.id}>
+              {r && (
+                <tr className="vt-dia">
+                  <td colSpan={9}>
+                    <div className="vt-dia-bar">
+                      <span className="vt-dia-label">{etiquetaDia(clave)}</span>
+                      <span className="vt-dia-info">{r.ventas} ventas · Vendido: <b>{moneda(r.total)}</b></span>
+                      <button type="button" className="btn-save vt-dia-btn" onClick={() => abrirCierre(clave, clave)}>
+                        Cierre del día
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )}
+              <tr>
                 <td className="vt-num">#{v?.id}</td>
                 <td className="vt-fecha">
                   <span>{fmtDia(v?.fecha)}</span>
@@ -1125,7 +1513,9 @@ export default function VentasAdmin() {
                   </button>
                 </td>
               </tr>
-            ))}
+              </Fragment>
+              );
+            })}
             {filtered.length === 0 && (
               <tr><td colSpan={9} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
             )}

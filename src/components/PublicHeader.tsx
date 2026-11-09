@@ -8,6 +8,7 @@ import PerfilModal from './PerfilModal';
 import CartPanel from './CartPanel';
 import AdminLoading from './AdminLoading';
 import { normalizarRol } from '../utils/roles';
+import ConfirmarSalida from './ConfirmarSalida';
 
 export default function PublicHeader() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -24,6 +25,7 @@ export default function PublicHeader() {
     { to: ayudaPath, label: 'Ayuda', end: false },
   ];
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [confirmarSalida, setConfirmarSalida] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -137,7 +139,7 @@ export default function PublicHeader() {
                     </span>
                     Mis compras
                   </button>
-                  <button type="button" className="cerrar-sesion" data-tooltip="Cerrar sesión" onClick={handleSalir}>
+                  <button type="button" className="cerrar-sesion" data-tooltip="Cerrar sesión" onClick={() => { setMenuAbierto(false); setConfirmarSalida(true); }}>
                     <span style={{ width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>↪</span>
 
                     Cerrar sesión
@@ -162,6 +164,12 @@ export default function PublicHeader() {
         <>
           <CartPanel />
           <PerfilModal isOpen={perfilOpen} onClose={() => setPerfilOpen(false)} />
+          {confirmarSalida && (
+            <ConfirmarSalida
+              onCancelar={() => setConfirmarSalida(false)}
+              onConfirmar={() => { setConfirmarSalida(false); handleSalir(); }}
+            />
+          )}
         </>
       )}
     </>

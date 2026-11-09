@@ -96,10 +96,10 @@ export default function CierreInventarioAdmin() {
 
   const cargandoRef = useRef(false);
 
-  const load = async () => {
-    if (cargandoRef.current) return;
-    cargandoRef.current = true;
-    setLoading(true);
+  const load = async (silencioso = false) => {
+  if (cargandoRef.current) return;
+  cargandoRef.current = true;
+  if (!silencioso) setLoading(true);
     try {
       const [r1, r2] = await Promise.all([
         apiClient.get('/inventario/cierre/preview'),
@@ -273,7 +273,7 @@ export default function CierreInventarioAdmin() {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando cierre" subtexto="Calculando el stock esperado" />
+        <AdminLoading texto="Cargando cierre" subtexto="Calculando la cantidad esperada" />
       ) : (
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import apiClient from '../../api/client';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
@@ -7,10 +7,13 @@ import MotivoModal from '../../components/MotivoModal';
 import { mensajeDeError, type MapaTransiciones } from '../../types/Trazabilidad';
 import '../../styles/pedidos-turno.css';
 import { getEcho } from '../../api/echo';
-import NuevaVentaModal from '../../components/NuevaVentaModal';
+
+import NuevaVentaModal, { precargarNuevaVenta } from '../../components/NuevaVentaModal';
 import ComprobanteImagen from '../../components/ComprobanteImagen';
 import ComprobanteModal from '../../components/ComprobanteModal';
 import { useEscape } from '../../hooks/useEscape';
+import AdminLoading from '../../components/AdminLoading';
+
 
 type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
 
@@ -168,7 +171,7 @@ export default function PedidosTurno() {
   const [transiciones, setTransiciones] = useState<MapaTransiciones | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ocupadoId, setOcupadoId] = useState<number | null>(null);
+  const [ocupadoId] = useState<number | null>(null);
   const [cambioConMotivo, setCambioConMotivo] = useState<CambioConMotivo | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEntrega, setFiltroEntrega] = useState<Entrega>('todos');
@@ -181,11 +184,18 @@ export default function PedidosTurno() {
   const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
   const [procesandoComprobante, setProcesandoComprobante] = useState(false);
 
+  const version = useRef(0);
+
+  const pendientes = useRef(0);
+
   const config = VISTA_CONFIG[vista];
 
   const load = useCallback(async () => {
+    if (pendientes.current > 0) return;
+    const miVersion = version.current;
     try {
       const res = await apiClient.get('/pedidos/tablero');
+      if (miVersion !== version.current || pendientes.current > 0) return;
       const lista: Venta[] = Array.isArray(res.data)
         ? res.data
         : ((res.data as { data?: unknown })?.data as Venta[]) ?? [];
@@ -195,15 +205,19 @@ export default function PedidosTurno() {
     } catch {
       setError('No se pudo cargar la lista de pedidos.');
     } finally {
-      setLoading(false);
-    }
+  setLoading(false);
+}
   }, [config.estados]);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    void load();
-  }, [load]);
+  setLoading(true);
+  setError(null);
+  void load();
+}, [load]);
+
+  useEffect(() => {
+    precargarNuevaVenta();
+  }, []);
 
   useEffect(() => {
     let vivo = true;
@@ -249,23 +263,29 @@ export default function PedidosTurno() {
     void ejecutarCambio(venta, accion, undefined);
   };
 
-  const ejecutarCambio = async (venta: Venta, accion: Accion, motivo?: string) => {
-    setOcupadoId(venta.id);
-    try {
-      await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo });
-      setItems((prev) =>
-        prev
-          .map((v) => (v.id === venta.id ? { ...v, estado: accion.sig } : v))
-          .filter((v) => config.estados.includes(v.estado ?? '')),
-      );
-      showToast(`Pedido #${venta.id}: ${accion.sig.toLowerCase()}`, false);
-      void load();
-    } catch (e) {
-      setError(mensajeDeError(e, `No se pudo marcar el pedido #${venta.id} como «${accion.sig}».`));
-    } finally {
-      setOcupadoId(null);
-    }
-  };
+ const ejecutarCambio = async (venta: Venta, accion: Accion, motivo?: string) => {
+  const anterior = items;
+  pendientes.current += 1;
+  version.current += 1;            // ← NUEVA: invalida recargas en vuelo
+
+  setItems((prev) =>
+    prev
+      .map((v) => (v.id === venta.id ? { ...v, estado: accion.sig } : v))
+      .filter((v) => config.estados.includes(v.estado ?? '')),
+  );
+  showToast(`Pedido #${venta.id}: ${accion.sig.toLowerCase()}`, false);
+
+  try {
+    await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo });
+  } catch (e) {
+    setItems(anterior);
+    setError(mensajeDeError(e, `No se pudo marcar el pedido #${venta.id} como «${accion.sig}».`));
+  } finally {
+    pendientes.current -= 1;
+    version.current += 1;          // ← NUEVA: la recarga siguiente sí es válida
+    void load();
+  }
+};
 
   const claseComprobante = (estado?: string | null) => {
     const e = (estado ?? '').trim().toLowerCase();
@@ -545,6 +565,9 @@ export default function PedidosTurno() {
         })}
       </div>
 
+      {loading && (
+        <AdminLoading texto="Cargando pedidos" subtexto="Preparando el tablero" />
+      )}
       <NuevaVentaModal
         abierto={nuevoAbierto}
         mesaInicial={mesaNueva}
@@ -562,11 +585,8 @@ export default function PedidosTurno() {
               <div>
                 <h3 className="tv-det-titulo">Pedido #{detalle.id}</h3>
               </div>
-              <button type="button" className="tv-det-cerrar" onClick={() => setDetalleId(null)} aria-label="Cerrar">
-                ✕
-              </button>
+              <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>
             </div>
-
             <dl className="tv-det-info">
               <div><dt>Cliente</dt><dd>{nombreCliente(detalle)}</dd></div>
               <div><dt>Estado</dt><dd>{detalle.estado ?? '—'}</dd></div>
@@ -588,20 +608,41 @@ export default function PedidosTurno() {
               </div>
             </dl>
 
-            <ul className="tv-items">
-              {(detalle.detalles ?? []).map((d, i) => (
-                <li key={`d${i}`}>
-                  <b>{d.cantidad ?? 1}×</b> {d.producto?.nombre ?? 'Producto'}
-                </li>
-              ))}
-              {(detalle.promociones ?? [])
-                .filter((p) => p?.nombre)
-                .map((p, i) => (
-                  <li key={`p${i}`} className="tv-promo">
-                    {p.nombre}
-                  </li>
-                ))}
-            </ul>
+            {(() => {
+              const agrupados = new Map<string, { nombre: string; cantidad: number; subtotal: number }>();
+              (detalle.detalles ?? []).forEach((d) => {
+                const nombre = d.producto?.nombre ?? 'Producto';
+                const prev = agrupados.get(nombre) ?? { nombre, cantidad: 0, subtotal: 0 };
+                prev.cantidad += Number(d.cantidad ?? 1);
+                prev.subtotal += Number((d as any).subtotal ?? 0);
+                agrupados.set(nombre, prev);
+              });
+              const promos = (detalle.promociones ?? []).filter((p) => p?.nombre);
+
+              return (
+                <div className="tv-det-productos">
+                  <h4 className="tv-det-subtitulo">Productos</h4>
+                  <ul className="tv-det-lista">
+                    {[...agrupados.values()].map((g) => (
+                      <li key={g.nombre}>
+                        <span className="tv-det-cant">{g.cantidad}</span>
+                        <span className="tv-det-nombre">{g.nombre}</span>
+                        <span className="tv-det-precio">
+                          {g.subtotal > 0 ? `$${g.subtotal.toLocaleString('es-CO')}` : 'Incluido'}
+                        </span>
+                      </li>
+                    ))}
+                    {promos.map((p, i) => (
+                      <li key={`p${i}`} className="tv-det-combo">
+                        <span className="tv-det-cant">1</span>
+                        <span className="tv-det-nombre">Combo {p.nombre}</span>
+                        <span className="tv-det-precio" />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
 
             {separarNotas(detalle.notas).length > 0 && (
               <div className="tv-chips">

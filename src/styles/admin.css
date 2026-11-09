@@ -1598,6 +1598,7 @@ body.dark-mode .sidebar-header {
 body.dark-mode .sidebar-divider {
   background: rgba(232, 130, 26, 0.15);
   height: 60%;
+}
 
 body.dark-mode .nom-local {
   color: #E8821A;
@@ -4529,7 +4530,7 @@ body.dark-mode .vt-comprobante-aviso {
 .comprobante-imagen-abrir { font-size: 12px; font-weight: 700; color: #e8821a; text-decoration: none; }
 .comprobante-imagen-abrir:hover { text-decoration: underline; }
 .comprobante-imagen-estado { margin: 0; padding: 18px; text-align: center; font-size: 12.5px; color: var(--text-400); }
-.comprobante-imagen-estado.error { color: var(--danger); 
+.comprobante-imagen-estado.error { color: var(--danger); }
 
 body.dark-mode .admin-body .main-content :is(
   h1,
@@ -4639,7 +4640,8 @@ body.dark-mode .admin-body :is(*, *::before, *::after) {
 body.dark-mode .admin-body :is(input, textarea, select)::placeholder {
   color: #ffffff !important;
   opacity: 1;
-  
+}
+
 @property --angulo {
   syntax: "<angle>";
   initial-value: 0deg;

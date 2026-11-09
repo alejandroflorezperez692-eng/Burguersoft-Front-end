@@ -26,6 +26,7 @@ import AdminLoading from '../components/AdminLoading';
 import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
+import ConfirmarSalida from '../components/ConfirmarSalida';
 
 const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
@@ -36,8 +37,8 @@ const todosLosItems = [
   { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.inventario },
   { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.inventario },
   { to: '/inventario', label: 'Inventario', icono: inventarioIcono, roles: ACCESO.inventario },
-  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: cierreInventarioIcono, roles: ACCESO.cierre },
-  { to: '/gestion-marca', label: 'Proveedores', icono: proveedoresIcono, roles: ACCESO.soloAdmin },
+  { to: '/cierre-inventario', label: 'Cierre de inventario', icono: cierreInventarioIcono, roles: ACCESO.inventario },
+  { to: '/gestion-proveedores', label: 'Proveedores', icono: proveedoresIcono, roles: ACCESO.inventario },
   { to: '/reportes', label: 'Reportes', icono: insignia, roles: ACCESO.soloAdmin },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
   { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
@@ -68,6 +69,7 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
+  const [confirmarSalida, setConfirmarSalida] = useState(false);
   const [colapsado, setColapsado] = useState(
     () => localStorage.getItem('sidebarCollapsed') === '1'
   );
@@ -89,26 +91,26 @@ export default function AdminLayout() {
     apiClient.get('/me').catch((err) => {
       console.error('[AdminLayout] Error validando sesión:', err.message);
     });
-  }, [location.pathname]);
+    }, []);
 
   const handleSalir = () => {
-    setSaliendo(true);
-    setTimeout(() => {
-      logout();
-      navigate('/login', { replace: true, state: { toast: 'logout_ok' } });
-      setSaliendo(false);
-    }, 500);
-  };
+  setSaliendo(true);
+  setTimeout(() => {
+    logout();
+    navigate('/', { replace: true, state: { toast: 'logout_ok' } }); // ← antes era '/login'
+    setSaliendo(false);
+  }, 500);
+};
 
   const irAMiPerfil = () => {
-    setUserMenuOpen(false);
-    navigate('/configuracion');
-  };
+  setUserMenuOpen(false);
+  navigate('/configuracion');
+};
 
-  const salirDesdeMenuUsuario = () => {
-    setUserMenuOpen(false);
-    handleSalir();
-  };
+const salirDesdeMenuUsuario = () => {
+  setUserMenuOpen(false);
+  setConfirmarSalida(true);
+};
 
   useEffect(() => {
     setMenuOpen(false);
@@ -282,6 +284,14 @@ export default function AdminLayout() {
         <Outlet />
         <AdminFooter />
       </div>
+
+      {confirmarSalida && (
+        <ConfirmarSalida
+        mensaje="¿Cerrar sesión? Tendrás que iniciar sesión de nuevo para volver al panel."
+        onCancelar={() => setConfirmarSalida(false)}
+        onConfirmar={() => { setConfirmarSalida(false); handleSalir(); }}
+        />
+      )}
 
       {esPersonal && <AsistenteIA />}
     </div>

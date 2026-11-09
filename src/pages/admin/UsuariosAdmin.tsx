@@ -90,17 +90,17 @@ export default function UsuariosAdmin() {
     setPagina(1);
   };
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const r = await apiClient.get<Usuario[]>('/usuarios');
-      setItems(r.data);
-    } catch {
-      showToast('No se pudieron cargar los usuarios', true);
-    } finally {
-      setLoading(false);
-    }
-  };
+const load = async (silencioso = false) => {
+  if (!silencioso) setLoading(true);
+  try {
+    const r = await apiClient.get<Usuario[]>('/usuarios');
+    setItems(r.data);
+  } catch {
+    showToast('No se pudieron cargar los usuarios', true);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => { load(); }, []);
 
@@ -189,7 +189,7 @@ export default function UsuariosAdmin() {
       await apiClient.put(`/usuarios/${sel.id}`, payload);
       showToast('Usuario actualizado correctamente');
       setModal(false);
-      load();
+      load(true);
     } catch (e: unknown) {
       showToast(mensajeError(e, 'No se pudo actualizar el usuario'), true);
     }

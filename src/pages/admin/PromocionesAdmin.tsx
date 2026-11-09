@@ -60,6 +60,32 @@ const toArray = <T,>(v: unknown): T[] =>
 const imgValida = (img: string | null | undefined): boolean =>
   !!img && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(img);
 
+const precargarImagenes = (
+  urls: (string | null | undefined)[],
+  alAvanzar: (pct: number) => void
+): Promise<unknown> => {
+  const validas = urls.filter((u) => imgValida(u)).slice(0, 8) as string[];
+  if (validas.length === 0) return Promise.resolve();
+
+  let listas = 0;
+  const cargas = validas.map(
+    (src) =>
+      new Promise<void>((resolve) => {
+        const im = new Image();
+        const fin = () => {
+          listas += 1;
+          alAvanzar(40 + Math.round((60 * listas) / validas.length));
+          resolve();
+        };
+        im.onload = fin;
+        im.onerror = fin;
+        im.src = src;
+      })
+  );
+
+  return Promise.race([Promise.all(cargas), new Promise((res) => setTimeout(res, 6000))]);
+};
+
 const aISO = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
@@ -94,7 +120,16 @@ function CardImg({ img, nombre }: { img: string | null; nombre: string }) {
   if (!imgValida(img) || error) {
     return <div className="mn-card-noimg">{(nombre || '?').charAt(0).toUpperCase()}</div>;
   }
-  return <img className="mn-card-img" src={img ?? ''} alt={nombre} onError={() => setError(true)} />;
+  return (
+    <img
+      className="mn-card-img"
+      src={img ?? ''}
+      alt={nombre}
+      loading="lazy"
+      decoding="async"
+      onError={() => setError(true)}
+    />
+  );
 }
 
 function PromoFilterSelect({
@@ -332,6 +367,7 @@ export default function PromocionesAdmin() {
   const [promos, setPromos] = useState<Promocion[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [, setProgreso] = useState(10);
   const [vista, setVista] = useState<'tarjetas' | 'lista'>(() => {
     try {
       return localStorage.getItem('promosAdminVista') === 'lista' ? 'lista' : 'tarjetas';
@@ -386,23 +422,26 @@ export default function PromocionesAdmin() {
     setFiltroAhorro('');
   };
 
-  const cargar = useCallback(async () => {
-    try {
-      const [r1, r2] = await Promise.all([
-        apiClient.get('/promociones'),
-        apiClient.get('/productos'),
-      ]);
-      setPromos(toArray<Promocion>(r1.data));
-      setProductos(toArray<Producto>(r2.data));
-    } catch {
-      showToast('No se pudieron cargar las promociones', true);
-      setPromos([]);
-      setProductos([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+const cargar = useCallback(async () => {
+  try {
+    const [r1, r2] = await Promise.all([
+      apiClient.get('/promociones'),
+      apiClient.get('/productos'),
+    ]);
+    const lista = toArray<Promocion>(r1.data);
+    setPromos(lista);
+    setProductos(toArray<Producto>(r2.data));
+    setProgreso(40);
+    await precargarImagenes(lista.map((p) => p.imagen), setProgreso);
+  } catch {
+    showToast('No se pudieron cargar las promociones', true);
+    setPromos([]);
+    setProductos([]);
+  } finally {
+    setProgreso(100);
+    setLoading(false);
+  }
+}, []);
   useEffect(() => {
     cargar();
   }, [cargar]);

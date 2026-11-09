@@ -103,8 +103,8 @@ export default function MateriaPrimaAdmin() {
   const toArray = <T,>(v: unknown): T[] =>
     Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silencioso = false) => {
+    if (!silencioso) setLoading(true);
     setErrorCarga(null);
 
     // allSettled: si /marcas falla, los insumos igual se muestran (y viceversa)
@@ -223,7 +223,7 @@ export default function MateriaPrimaAdmin() {
       await apiClient.put(`/materias-primas/${editId}`, body);
       showToast('Materia prima actualizada');
       setModal(false);
-      load();
+      load(true);
     } catch (e) {
       console.error('Error al actualizar materia prima:', e);
       showToast(mensajeError(e, 'No se pudo actualizar'), true);
@@ -274,7 +274,7 @@ export default function MateriaPrimaAdmin() {
           }}
         >
           <span>{errorCarga}</span>
-          <button type="button" className="btn-primary" style={{ padding: '7px 18px' }} onClick={load}>
+          <button type="button" className="btn-primary" style={{ padding: '7px 18px' }} onClick={() => load()}>
             Reintentar
           </button>
         </div>

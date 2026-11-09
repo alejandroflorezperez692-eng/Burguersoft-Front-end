@@ -8,6 +8,7 @@ import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
+import ComprasSugeridas, { type ItemSugerido } from '../../components/ComprasSugeridas';
 import SelectOscuro from '../../components/SelectOscuro';
 
 interface DetalleCompra {
@@ -469,18 +470,22 @@ export default function ComprasAdmin() {
   const vozRef = useRef<{ stop: () => void } | null>(null);
   const inputFactura = useRef<HTMLInputElement>(null);
 
-  const load = () => {
-    Promise.all([
-      apiClient.get<Compra[]>('/compras'),
-      apiClient.get<MateriaPrima[]>('/materias-primas'),
-      apiClient.get<Marca[]>('/marcas'),
-    ]).then(([r1, r2, r3]) => {
-      setItems(r1.data);
+const load = () => {
+  apiClient.get<Compra[]>('/compras')
+    .then((r) => setItems(r.data))
+    .catch(() => {})
+    .finally(() => setLoading(false));
+
+  Promise.all([
+    apiClient.get<MateriaPrima[]>('/materias-primas'),
+    apiClient.get<Marca[]>('/marcas'),
+  ])
+    .then(([r2, r3]) => {
       setMaterias(r2.data);
       setMarcas(r3.data);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  };
+    })
+    .catch(() => {});
+};
 
   useEffect(() => {
     if (cargado.current) return;
@@ -605,6 +610,27 @@ export default function ComprasAdmin() {
     setFechaIA('');
     setAviso(null);
     setLineas([{ materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
+    setShowForm(true);
+  };
+
+  // Precarga el formulario de compra con la lista sugerida ("Qué comprar esta semana")
+  const agregarSugeridas = (sugeridas: ItemSugerido[]) => {
+    if (!sugeridas.length) {
+      showToast('No hay sugerencias para agregar', true);
+      return;
+    }
+    setIntentado(false);
+    setEditId(null);
+    setAviso(null);
+    setLineas(sugeridas.map((s) => ({
+      materia_prima_id: s.materia_id,
+      cantidad: String(s.comprar),
+      precio_unitario: String(Math.round(s.costo_estimado)),
+      marca_id: 0,
+      nombre_nuevo: '',
+      tipo: '',
+      unidad_medida: '',
+    })));
     setShowForm(true);
   };
 
@@ -961,6 +987,7 @@ export default function ComprasAdmin() {
           />
         </div>
       </div>
+      <ComprasSugeridas onAgregar={agregarSugeridas} />
 
       {mostrarDictado && (
         <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 24, marginBottom: 24, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
