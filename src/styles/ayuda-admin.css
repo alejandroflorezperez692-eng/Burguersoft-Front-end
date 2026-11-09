@@ -340,12 +340,13 @@
   padding: 12px 22px;
   font-weight: 600;
   text-decoration: none;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.2s;
 }
 
 .ayuda-boton-reportar:hover {
   background: var(--ayuda-naranja-oscuro);
   color: #fff;
+  transform: translateY(-3px);
 }
 
 .ayuda-panel {
@@ -420,10 +421,18 @@
   }
 }
 
+
+body.dark-mode .admin-body .main-content .ayuda-pagina .ayuda-faq .ayuda-boton-borde:is(:hover, :focus-visible, :active) {
+  background: #e8821a !important;
+  background-color: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+
 @media (prefers-reduced-motion: reduce) {
   .ayuda-categoria::after {
     animation: none;
     left: 27%;
     opacity: 1;
   }
+
 }

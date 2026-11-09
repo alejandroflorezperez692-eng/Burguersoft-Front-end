@@ -215,13 +215,13 @@ body.dark-mode .sidebar-header .logo-oscuro {
 }
 
 .header-nav > hr {
+  display: block !important;
   width: 1px !important;
-  height: 30px !important;
-  background: rgba(255, 255, 255, 0.12) !important;
+  height: 24px !important;
+  background: var(--brand) !important;
   border: none !important;
   margin: 0 !important;
   flex-shrink: 0;
-  display: block;
 }
 
 .nav-item {
@@ -1596,8 +1596,8 @@ body.dark-mode .sidebar-header {
 }
 
 body.dark-mode .sidebar-divider {
-  background: rgba(232, 130, 26, 0.35);
-}
+  background: rgba(232, 130, 26, 0.15);
+  height: 60%;
 
 body.dark-mode .nom-local {
   color: #E8821A;
@@ -1870,7 +1870,7 @@ body.dark-mode .admin-body .ventas-page .pag-btn.activa {
 body.dark-mode .admin-body:has(.compras-page) .main-content {
   --surface: #000000;
   --surface-2: #000000;
-  --surface-3: #111111;
+  --surface-3: #000000;
   --bg: #000000;
   --border: #E8821A;
   --border-strong: #E8821A;
@@ -1914,6 +1914,19 @@ body.dark-mode .admin-body .compras-filtros input[type="date"] {
   accent-color: #E8821A;
 }
 
+body.dark-mode .admin-body input[type="date"] {
+  color-scheme: dark;
+  accent-color: #E8821A;
+  background-color: #000000 !important;
+  border-color: #E8821A !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(54%) sepia(88%) saturate(849%) hue-rotate(348deg) brightness(94%) contrast(91%);
+  cursor: pointer;
+}
+
 body.dark-mode .admin-body .compras-date-picker {
   position: relative;
 }
@@ -1941,13 +1954,43 @@ body.dark-mode .admin-body .compras-calendar {
   z-index: 2100;
   top: calc(100% + 5px);
   left: 0;
-  width: 240px;
-  padding: 8px;
+  width: 190px;
+  padding: 6px;
   border: 1px solid #E8821A;
   border-radius: 8px;
   background: #000000;
   color: #ffffff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.65);
+}
+
+body.dark-mode .admin-body .compras-calendar,
+body.dark-mode .admin-body .compras-calendar :is(strong, span, button) {
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .compras-calendar :is(strong, span, button) {
+  font-family: var(--font-sans) !important;
+  font-size: 10px !important;
+  line-height: 1.2;
+}
+
+body.dark-mode .admin-body .compras-calendar {
+  border-color: #E8821A !important;
+  background: #000000 !important;
+  color-scheme: dark;
+}
+
+body.dark-mode .admin-body .compras-calendar :is(.compras-calendar-header, .compras-calendar-footer) {
+  border-color: #E8821A !important;
+}
+
+body.dark-mode .admin-body .compras-calendar .compras-calendar-weekdays span {
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .compras-calendar .compras-calendar-grid button:is(:hover, .selected) {
+  background: #E8821A !important;
+  color: #ffffff !important;
 }
 
 .compras-calendar-header,
@@ -1957,8 +2000,8 @@ body.dark-mode .admin-body .compras-calendar {
   justify-content: space-between;
 }
 
-.compras-calendar-header { margin-bottom: 8px; }
-.compras-calendar-header strong { text-transform: capitalize; font-size: 12px; }
+.compras-calendar-header { margin-bottom: 5px; }
+.compras-calendar-header strong { text-transform: capitalize; font-size: 10px; }
 
 .compras-calendar-header button,
 .compras-calendar-footer button {
@@ -1985,7 +2028,7 @@ body.dark-mode .admin-body .compras-calendar {
 .compras-calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 2px;
+  gap: 1px;
   text-align: center;
 }
 
@@ -1995,13 +2038,13 @@ body.dark-mode .admin-body .compras-calendar {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  height: 26px;
+  height: 22px;
   border: 0;
   border-radius: 4px;
   background: transparent;
   color: #ffffff;
   font: inherit;
-  font-size: 11px;
+  font-size: 10px;
 }
 
 .compras-calendar-grid button { cursor: pointer; }
@@ -2020,7 +2063,7 @@ body.dark-mode .admin-body .compras-calendar {
 }
 
 .compras-calendar-footer {
-  margin-top: 6px;
+  margin-top: 5px;
   border-top: 1px solid #E8821A;
 }
 
@@ -2761,7 +2804,8 @@ body.dark-mode .chip-filtro:hover {
 .grid-lineas { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px; align-items: end; }
 .grid-registro { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; align-items: end; }
 .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.grid-perfil { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; align-items: start; }
+.grid-perfil { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 24px; align-items: start; }
+.grid-perfil > * { min-width: 0; }
 
 .grid-registro {
   display: grid;
@@ -2853,8 +2897,14 @@ body.dark-mode .chip-filtro:hover {
   }
 
   .header-nav > hr {
-    display: none !important;
-  }
+  width: 1px !important;
+  height: 30px !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: none !important;
+  margin: 0 !important;
+  flex-shrink: 0;
+  display: block;
+}
 
   .stat-grid {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -2880,7 +2930,7 @@ body.dark-mode .chip-filtro:hover {
   }
 
   .grid-perfil {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .grid-2col {
@@ -3079,6 +3129,149 @@ input[type='number'] {
   appearance: textfield;
 }
 
+.cfg-document-select {
+  position: relative;
+}
+
+.cfg-document-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-900);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cfg-document-trigger:focus,
+.cfg-document-trigger.open {
+  border-color: var(--brand);
+  outline: none;
+}
+
+.cfg-document-trigger:disabled {
+  cursor: not-allowed;
+}
+
+.cfg-document-trigger.placeholder {
+  color: var(--text-400);
+}
+
+.cfg-document-options {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 2px);
+  left: 0;
+  width: 100%;
+  margin: 0;
+  padding: 3px;
+  list-style: none;
+  border: 1.5px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+
+.cfg-document-option {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text-900);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cfg-document-option + .cfg-document-option {
+  border-top: 1px solid var(--border);
+}
+
+.cfg-document-option:hover {
+  background: var(--brand);
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) {
+  --surface: #000000;
+  --surface-2: #000000;
+  --surface-3: #000000;
+  --border: #E8821A;
+  --border-strong: #E8821A;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-pw-toggle {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-documento-hint {
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-role-badge {
+  background: #000000 !important;
+  border: 1px solid #E8821A !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .form-group input::placeholder {
+  color: #777777 !important;
+  opacity: 1;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-document-trigger,
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-document-options {
+  border-color: #E8821A;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-document-option + .cfg-document-option {
+  border-top-color: #E8821A;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-document-option:hover {
+  background-color: #E8821A;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-document-trigger.placeholder {
+  color: #777777;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) #admin-telefono {
+  color: #777777 !important;
+  -webkit-text-fill-color: #777777 !important;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) #admin-telefono::placeholder {
+  color: #777777 !important;
+  -webkit-text-fill-color: #777777 !important;
+  opacity: 1;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) #admin-telefono:focus,
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) #admin-telefono:-webkit-autofill,
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) #admin-telefono:-webkit-autofill:hover,
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) #admin-telefono:-webkit-autofill:focus {
+  background-color: #000000 !important;
+  border-color: #E8821A !important;
+  -webkit-box-shadow: 0 0 0 1000px #000000 inset !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18);
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) #admin-telefono.telefono-editado {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff !important;
+}
+
 .cfg-card {
   background: var(--surface);
   border-radius: var(--r-lg);
@@ -3197,6 +3390,47 @@ input[type='number'] {
 .cfg-requisito.cumple {
   color: #2a9d48;
   font-weight: 600;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-barra {
+  background: #262626;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-requisito {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-requisito-icon {
+  color: #ff3b78 !important;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  position: relative;
+  top: -3px;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-requisito.cumple .cfg-requisito-icon {
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  background: #2ecc71;
+  color: #ffffff !important;
+  font-size: 9px;
+  line-height: 11px;
+  text-align: center;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-hint-err {
+  margin-top: 5px;
+  color: #ff3b4d !important;
+  font-size: 10px;
+}
+
+body.dark-mode .admin-body .page-inner:has(.grid-perfil) .cfg-hint-ok {
+  margin-top: 5px;
+  color: #2ecc71 !important;
+  font-size: 10px;
 }
 
 .cfg-msg {
@@ -4018,9 +4252,341 @@ body.dark-mode .cfg-requisito.cumple {
 .vt-det-linea:last-child { border-bottom: none; }
 .vt-det-linea > span:first-child { flex: 1; }
 .vt-det-linea b { color: var(--text-400); }
+
+/* ===== Tema oscuro consistente para las páginas del administrador ===== */
+body.dark-mode .admin-body {
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #000000;
+  --surface-3: #000000;
+  --text-900: #ffffff;
+  --text-600: #e5e5e5;
+  --text-400: #b8b8b8;
+  --border: #e8821a;
+  --border-strong: #e8821a;
+  --ayuda-texto: #ffffff;
+  --ayuda-texto-suave: #b8b8b8;
+  --ayuda-borde: #e8821a;
+  --ayuda-naranja-suave: #211307;
+}
+
+body.dark-mode .admin-body .main-content {
+  background: #000000 !important;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  .stat-card,
+  .kpi-card,
+  .historial-section,
+  .marca-card,
+  .detalle-box,
+  .modal-box,
+  .mn-modal-box,
+  .mn-form-panel,
+  .mn-card,
+  .mn-table-wrap,
+  .acc-panel,
+  .cfg-card,
+  .backups-tablas-panel,
+  .compras-table-wrap,
+  .ventas-table-wrap,
+  .ayuda-panel,
+  .ayuda-faq,
+  .ayuda-categoria,
+  .ayuda-pregunta,
+  .ayuda-buscador,
+  .ayuda-soporte
+) {
+  background-color: #000000 !important;
+  border-color: #e8821a !important;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  .mn-form-header,
+  .mn-form-footer,
+  .mn-card-body,
+  .mn-card-actions,
+  .mn-acc,
+  .mn-acc > summary,
+  .mn-adic-row input,
+  .mn-field .mn-adic-row input,
+  .mn-adic-chip,
+  .mn-view-toggle,
+  .mn-table,
+  .ayuda-categoria-texto,
+  .ayuda-boton-borde
+) {
+  background-color: #000000 !important;
+  border-color: #e8821a !important;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  .mn-form-header,
+  .mn-form-footer,
+  .mn-card-actions,
+  .mn-table th,
+  .mn-table td,
+  .mn-acc[open] > summary
+) {
+  border-color: #e8821a !important;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  .mn-card-imgwrap,
+  .mn-upload,
+  .mn-ing-list li,
+  .mn-cat-count,
+  .vt-det-grid,
+  .backups-tablas-grupo
+) {
+  background-color: #000000 !important;
+  border-color: #e8821a !important;
+}
+
+body.dark-mode .admin-body .main-content .mn-upload {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  .mn-field input,
+  .mn-field select:not([class*="est-"]),
+  .mn-field textarea,
+  .mn-ing-row input,
+  .mn-ing-row select,
+  .mn-search,
+  .mn-adic-row input,
+  .mn-field .mn-adic-row input,
+  .ayuda-buscador input,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]),
+  select:not([class*="est-"]),
+  textarea
+) {
+  background-color: #000000 !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+  color-scheme: dark;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  input,
+  select,
+  textarea,
+  .mn-search
+)::placeholder {
+  color: #b8b8b8 !important;
+  opacity: 1;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  .mn-field select.est-Disponible,
+  .mn-field select.activo,
+  .mn-estado-Disponible,
+  .mn-estado-Activa
+) {
+  background-color: rgba(26, 122, 66, 0.24) !important;
+  border-color: #1a7a42 !important;
+  color: #8be0a8 !important;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  .mn-field select.est-Agotado,
+  .mn-estado-Agotado,
+  .mn-estado-Finalizada
+) {
+  background-color: rgba(200, 56, 42, 0.2) !important;
+  border-color: #c8382a !important;
+  color: #ffaaa3 !important;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  .mn-estado-Por_agotarse,
+  .mn-estado-Programada,
+  .vt-estado
+) {
+  color: #ffc078 !important;
+}
+
+body.dark-mode .admin-body .main-content :is(
+  .mn-card-desc,
+  .mn-table-desc,
+  .mn-empty,
+  .mn-counter,
+  .mn-upload-empty,
+  .ayuda-respuesta,
+  .ayuda-categoria-texto p,
+  .ayuda-faq-titulo p,
+  .ayuda-soporte-info p,
+  .vt-fecha small,
+  .vt-cliente small,
+  .vt-det-sec h4,
+  .vt-det-grid dt
+) {
+  color: #b8b8b8 !important;
+}
+
+body.dark-mode .admin-body .main-content .mn-modal-box .mn-form-header,
+body.dark-mode .admin-body .main-content .modal-box .mm-head,
+body.dark-mode .admin-body .main-content .modal-overlay [style*="var(--text-900)"][style*="18px 28px"],
+body.dark-mode .admin-body .main-content .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] {
+  background: #000000 !important;
+  border-bottom-color: #e8821a !important;
+}
+
+body.dark-mode .admin-body .main-content .mn-form-cerrar,
+body.dark-mode .admin-body .main-content .modal-box .mm-cerrar,
+body.dark-mode .admin-body .main-content .modal-x,
+body.dark-mode .admin-body .main-content .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .main-content :is(.data-table, .mn-table) {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .main-content :is(.data-table, .mn-table) :is(th, td) {
+  background-color: #000000;
+  border-color: #e8821a !important;
+  color: #ffffff;
+}
+
+body.dark-mode .admin-body .main-content :is(.data-table, .mn-table) thead th {
+  background-color: #000000 !important;
+}
+
+/* En modo oscuro las filas mantienen el fondo negro al pasar el cursor */
+body.dark-mode .admin-body .main-content :is(.data-table, .mn-table) tbody tr:hover > td {
+  background-color: #000000 !important;
+}
+
+body.dark-mode .admin-body .main-content :is(.data-table, .mn-table) tbody tr:hover {
+  background-color: transparent;
+}
+
+body.dark-mode .admin-body .admin-footer {
+  background: #000000;
+  border-top-color: #e8821a;
+}
 .vt-det-pu { font-size: 12px; color: var(--text-400); }
 .vt-det-total { display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: var(--text-600); }
 .vt-det-total strong { font-size: 20px; color: var(--text-900); }
+
+body.dark-mode .admin-body .main-content :is(
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  span,
+  strong,
+  em,
+  b,
+  label,
+  th,
+  td,
+  a,
+  li,
+  button,
+  small,
+  dt,
+  dd,
+  legend,
+  summary,
+  .ayuda-categoria-texto p,
+  .ayuda-respuesta,
+  .ayuda-pregunta-boton,
+  .ayuda-articulo
+) {
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .main-content :is(input, textarea, select)::placeholder {
+  color: #ffffff !important;
+  opacity: 1;
+}
+
+body.dark-mode .admin-body .main-content .ayuda-pregunta-boton svg {
+  color: var(--ayuda-naranja) !important;
+}
+
+body.dark-mode .admin-body .main-content .ayuda-flecha {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .main-content .ayuda-boton-borde:hover,
+body.dark-mode .admin-body .main-content .ayuda-boton-borde:focus-visible,
+body.dark-mode .admin-body .main-content .ayuda-boton-borde:active {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .main-content .ayuda-faq .ayuda-respuesta {
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .main-content [aria-haspopup="listbox"] {
+  border-color: #e8821a !important;
+}
+
+body.dark-mode .admin-body .main-content [role="listbox"] {
+  border: 1px solid #e8821a !important;
+  border-radius: 4px !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .main-content [role="listbox"] > [role="option"] {
+  border-bottom: 1px solid #e8821a !important;
+  border-radius: 0 !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .main-content [role="listbox"] > [role="option"]:last-child {
+  border-bottom: 0 !important;
+}
+
+body.dark-mode .admin-body .main-content [role="listbox"] > [role="option"]:hover,
+body.dark-mode .admin-body .main-content [role="listbox"] > [role="option"]:focus-visible {
+  background: #e8821a !important;
+  color: #ffffff !important;
+  outline: none;
+}
+
+body.dark-mode .admin-body .main-content select option {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .main-content select option:checked {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body .main-content select option:hover {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body :is(*, *::before, *::after) {
+  color: #ffffff !important;
+}
+
+body.dark-mode .admin-body :is(input, textarea, select)::placeholder {
+  color: #ffffff !important;
+  opacity: 1;
+  
 @property --angulo {
   syntax: "<angle>";
   initial-value: 0deg;

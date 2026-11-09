@@ -264,9 +264,9 @@ body.dark-mode .pedido-info {
   border-color: #333333;
 }
 
-body.dark-mode .pedido-info-label { color: #b9a894; }
-body.dark-mode .pedido-info-valor { color: #f0e6da; }
-body.dark-mode .pedido-info-notas { color: #cfc2b4; }
+body.dark-mode .pedido-info-label { color: var(--text-600); }
+body.dark-mode .pedido-info-valor { color: var(--text-900); }
+body.dark-mode .pedido-info-notas { color: var(--text-400); }
 
 body.dark-mode .pedido-table,
 body.dark-mode .pedido-table thead tr {
@@ -322,7 +322,7 @@ body.dark-mode .progreso-linea-bg {
 }
 
 body.dark-mode .pedido-metodo {
-  background: #1a1a1a;
+  background: #000000 !important;
   color: #E8821A;
 }
 

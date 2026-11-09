@@ -1,0 +1,580 @@
+/* =====================================================================
+   AJUSTES MODO OSCURO
+   Se importa al final en AdminLayout.tsx para ganar sobre admin.css / nu-admin.css
+   ===================================================================== */
+
+/* ---------------------------------------------------------------------
+   1) BOTONES CON COLOR: flotan al pasar el cursor (como en la imagen)
+   --------------------------------------------------------------------- */
+body.dark-mode :is(
+  .btn-primary, .btn-save, .btn-danger, .btn-accion, .btn-primario, .btn-secundario,
+  .btn-circular-add, .btn-ubicacion, .btn-pagar-ahora, .btn-ir-pagar, .btn-login,
+  .btn-regresar, .btn-det-editar, .btn-det-eliminar, .btn-icon, .btn-icon-edit,
+  .btn-icon-del, .btn-icon-estado, .btn-icon-restore,
+  .mn-btn-edit, .mn-btn-del, .mn-btn-confirm, .mn-btn-submit, .mn-btn-pick, .mn-btn-toggle,
+  .mp-btn-save, .compras-modificar-btn, .tv-btn-nuevo, .verify-btn-verificar,
+  .verify-btn-enviar, .burgi-btn
+) {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease, background 0.18s ease;
+}
+
+body.dark-mode :is(
+  .btn-primary, .btn-save, .btn-danger, .btn-accion, .btn-primario, .btn-secundario,
+  .btn-circular-add, .btn-ubicacion, .btn-pagar-ahora, .btn-ir-pagar, .btn-login,
+  .btn-regresar, .btn-det-editar, .btn-det-eliminar, .btn-icon, .btn-icon-edit,
+  .btn-icon-del, .btn-icon-estado, .btn-icon-restore,
+  .mn-btn-edit, .mn-btn-del, .mn-btn-confirm, .mn-btn-submit, .mn-btn-pick, .mn-btn-toggle,
+  .mp-btn-save, .compras-modificar-btn, .tv-btn-nuevo, .verify-btn-verificar,
+  .verify-btn-enviar, .burgi-btn
+):hover:not(:disabled) {
+  transform: translateY(-3px);
+  filter: none;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode :is(.mn-btn-edit, .btn-det-editar, .btn-icon-edit):hover:not(:disabled) {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(47, 138, 240, 0.4);
+}
+
+body.dark-mode :is(.mn-btn-del, .btn-det-eliminar, .btn-danger, .btn-icon-del):hover:not(:disabled) {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(200, 56, 42, 0.45);
+}
+
+body.dark-mode :is(.btn-primary, .btn-save, .mp-btn-save, .mn-btn-confirm, .mn-btn-submit, .mn-btn-pick):hover:not(:disabled) {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(232, 130, 26, 0.5);
+}
+
+body.dark-mode :is(.btn-primary, .btn-save, .btn-danger, .mn-btn-edit, .mn-btn-del, .mn-btn-toggle):active:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------------------
+   2) SCROLLBAR NARANJA (pista negra) EN TODO EL MODO OSCURO
+   --------------------------------------------------------------------- */
+body.dark-mode,
+body.dark-mode * {
+  scrollbar-color: #e8821a #000000;
+}
+
+body.dark-mode ::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb,
+body.dark-mode ::-webkit-scrollbar-thumb:hover,
+body.dark-mode ::-webkit-scrollbar-button {
+  background-color: #e8821a;
+}
+
+body.dark-mode ::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+}
+
+body.dark-mode ::-webkit-scrollbar-corner {
+  background: #000000;
+}
+
+/* ---------------------------------------------------------------------
+   3) TEXTO Y NÚMEROS EN BLANCO (incluye inputs y modales)
+   --------------------------------------------------------------------- */
+body.dark-mode :is(input, select, textarea) {
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
+}
+
+body.dark-mode .modal-box :is(h1, h2, h3, h4, h5, h6, p, span, label, li, td, th, strong, b, small, div, a):not(.required-marker):not(.checkout-required):not(.cfg-req):not(.mn-req):not(.mp-req) {
+  color: #ffffff !important;
+}
+
+body.dark-mode .main-content :is(.data-table, .mn-table) :is(td, th),
+body.dark-mode .main-content :is(.data-table, .mn-table) :is(td, th) :is(div, span, small, strong) {
+  color: #ffffff !important;
+}
+
+/* ---------------------------------------------------------------------
+   4) CIERRE DE INVENTARIO: columna "Conteo real"
+   --------------------------------------------------------------------- */
+body.dark-mode .data-table input.input-conteo {
+  width: 110px;
+  padding: 8px 10px;
+  background: #000000 !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 6px !important;
+  color: #ffffff !important;
+  outline: none !important;
+  box-shadow: none !important;
+  font-weight: 600;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+body.dark-mode .data-table input.input-conteo:focus,
+body.dark-mode .data-table input.input-conteo:focus-visible {
+  border-color: #ffa94d !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.3) !important;
+  outline: none !important;
+}
+
+/* ---------------------------------------------------------------------
+   5) TABLAS: quitar las líneas naranjas y dejar un solo separador uniforme
+   --------------------------------------------------------------------- */
+body.dark-mode .data-table tbody tr,
+body.dark-mode .admin-body .data-table tbody tr {
+  border-bottom: none !important;
+  border-top: none !important;
+}
+
+body.dark-mode .data-table tbody td,
+body.dark-mode .admin-body .data-table tbody td {
+  border-top: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+body.dark-mode .data-table tbody tr:last-child td,
+body.dark-mode .admin-body .data-table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* ---------------------------------------------------------------------
+   6) TOGGLE DE VISTA (lista / cuadrícula): negro con segmento naranja
+   --------------------------------------------------------------------- */
+body.dark-mode .mn-view-toggle {
+  background: #000000 !important;
+  border: 1.5px solid #e8821a !important;
+}
+
+body.dark-mode .mn-view-toggle button {
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .mn-view-toggle button + button {
+  border-left: 1.5px solid #e8821a !important;
+}
+
+body.dark-mode .mn-view-toggle button.active {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .mn-view-toggle button svg {
+  color: #ffffff;
+  stroke: currentColor;
+}
+
+/* ---------------------------------------------------------------------
+   7) BADGES (Disponible / Bajo / Activo / Inactivo...): colores visibles
+   --------------------------------------------------------------------- */
+body.dark-mode .badge {
+  color: #ffffff !important;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+body.dark-mode .badge.badge-success {
+  background: #16a34a !important;
+  border-color: #4ade80;
+}
+
+body.dark-mode .badge.badge-warning {
+  background: #ca8a04 !important;
+  border-color: #facc15;
+}
+
+body.dark-mode .badge.badge-danger {
+  background: #dc2626 !important;
+  border-color: #f87171;
+}
+
+body.dark-mode .badge.badge-info {
+  background: #2563eb !important;
+  border-color: #60a5fa;
+}
+
+body.dark-mode .badge.badge-gray {
+  background: #4b5563 !important;
+  border-color: #9ca3af;
+}
+
+/* Filas inactivas: atenuamos el texto pero NO los badges (que se vean los colores) */
+body.dark-mode .data-table tr.fila-inactiva td:has(.badge) {
+  opacity: 1;
+}
+
+/* ---------------------------------------------------------------------
+   8) ACCIONES (Usuarios y tablas): colores sólidos y visibles
+   --------------------------------------------------------------------- */
+body.dark-mode .btn-icon.btn-icon-edit {
+  background: #2f8af0 !important;
+  color: #ffffff !important;
+}
+body.dark-mode .btn-icon.btn-icon-del {
+  background: #dc2626 !important;
+  color: #ffffff !important;
+}
+body.dark-mode .btn-icon.btn-icon-estado.estado-inactivar {
+  background: #d97706 !important;
+  color: #ffffff !important;
+}
+body.dark-mode .btn-icon.btn-icon-estado.estado-activar {
+  background: #16a34a !important;
+  color: #ffffff !important;
+}
+body.dark-mode .btn-icon.btn-icon-edit:hover:not(:disabled) { background: #1f77dc !important; }
+body.dark-mode .btn-icon.btn-icon-del:hover:not(:disabled) { background: #b91c1c !important; }
+body.dark-mode .btn-icon.btn-icon-estado.estado-inactivar:hover:not(:disabled) { background: #b45309 !important; }
+body.dark-mode .btn-icon.btn-icon-estado.estado-activar:hover:not(:disabled) { background: #15803d !important; }
+
+body.dark-mode .btn-icon.btn-icon-restore {
+  background: #16a34a !important;
+  color: #ffffff !important;
+}
+body.dark-mode .btn-icon.btn-icon-restore:hover:not(:disabled) { background: #15803d !important; }
+
+/* Desactivar / Activar: sin borde naranja al pasar el cursor, solo flota */
+body.dark-mode .mn-btn-toggle,
+body.dark-mode .mn-btn-toggle:hover,
+body.dark-mode .mn-btn-toggle.desactivar,
+body.dark-mode .mn-btn-toggle.desactivar:hover,
+body.dark-mode .mn-btn-toggle.activar:hover {
+  border: none !important;
+  outline: none !important;
+}
+
+/* Método de pago (Ventas y Compras): fondo negro, borde naranja, letra blanca */
+body.dark-mode .badge.badge-info.venta-metodo-badge,
+body.dark-mode .badge.badge-info.compras-metodo-badge {
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* ---------------------------------------------------------------------
+   9) BOTONES DE CONTORNO (Ver detalle, Ver historial, Cancelar, Limpiar...):
+      borde naranja desde el inicio; al pasar el cursor se llenan de naranja
+   --------------------------------------------------------------------- */
+body.dark-mode :is(
+  .btn-cancel, .mn-btn-cancel, .mp-btn-cancel, .confirm-btn-cancel,
+  .compras-outline-btn, .ventas-clear-filters-btn, .compras-clear-filters-btn,
+  .tv-ver-detalle
+) {
+  background: #000000 !important;
+  border: 1.5px solid #e8821a !important;
+  color: #ffffff !important;
+  transition: background 0.18s ease;
+}
+
+body.dark-mode :is(
+  .btn-cancel, .mn-btn-cancel, .mp-btn-cancel, .confirm-btn-cancel,
+  .compras-outline-btn, .ventas-clear-filters-btn, .compras-clear-filters-btn,
+  .tv-ver-detalle
+):hover:not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ---------------------------------------------------------------------
+   10) ESTADO DE LA VENTA (Preparado, Pagado, etc.): color sólido visible
+   --------------------------------------------------------------------- */
+body.dark-mode .admin-body .main-content .vt-estado {
+  --c: #4b5563;
+  background: var(--c) !important;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Registrado"]        { --c: #4b5563; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Por verificar"]     { --c: #d97706; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Recepcionado"]      { --c: #2563eb; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="En preparación"]    { --c: #e8821a; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Preparado"]         { --c: #16a34a; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Servido"]           { --c: #7c3aed; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Pendiente de pago"] { --c: #dc2626; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Pagado"]            { --c: #16a34a; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Cancelado"],
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Rechazada"]         { --c: #dc2626; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="Reembolsada"]       { --c: #4b5563; }
+
+/* ---------------------------------------------------------------------
+   11) AYUDA (admin): líneas separadoras naranjas
+   --------------------------------------------------------------------- */
+body.dark-mode .admin-body .main-content .ayuda-pagina .ayuda-articulo {
+  border-top: 1px solid #e8821a !important;
+}
+body.dark-mode .admin-body .main-content .ayuda-pagina :is(.ayuda-panel, .ayuda-faq, .ayuda-soporte, .ayuda-categoria, .ayuda-pregunta, .ayuda-buscador) {
+  border-color: #e8821a !important;
+}
+body.dark-mode .admin-body .main-content .ayuda-pagina :is(h2, h3, h4, hr, .ayuda-panel h2, .ayuda-respuesta, .ayuda-faq-cabecera) {
+  border-color: #e8821a !important;
+}
+body.dark-mode .admin-body .main-content .ayuda-pagina hr {
+  background: #e8821a !important;
+  border: none !important;
+  height: 1px;
+}
+
+/* Método de pago en la factura de compra: verde */
+body.dark-mode .badge.badge-info.compras-factura-metodo {
+  background: #16a34a !important;
+  border: 1px solid #4ade80 !important;
+  color: #ffffff !important;
+}
+
+/* ---------------------------------------------------------------------
+   12) NOTIFICACIONES: fondo negro (sin el marrón)
+   --------------------------------------------------------------------- */
+body.dark-mode .notif-panel,
+body.dark-mode .notif-panel .notif-head,
+body.dark-mode .notif-panel .notif-lista,
+body.dark-mode .notif-panel .notif-item,
+body.dark-mode .notif-panel .notif-item.nueva,
+body.dark-mode .notif-panel .notif-vacio,
+body.dark-mode .notif-panel .notif-pie {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+
+body.dark-mode .notif-panel .notif-pie:hover {
+  background: #e8821a !important;
+}
+
+body.dark-mode .notif-panel :is(.notif-titulo, .notif-detalle, .notif-vacio, .notif-head, .notif-head strong, .notif-head span) {
+  color: #ffffff !important;
+}
+
+/* ---------------------------------------------------------------------
+   13) MENÚ DE USUARIO (Mi perfil / Cerrar sesión): línea divisoria y hover naranja
+   --------------------------------------------------------------------- */
+body.dark-mode .menu-usuario {
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+  gap: 0 !important;
+}
+
+body.dark-mode .menu-usuario .menu-usuario-item {
+  background: transparent !important;
+  color: #ffffff !important;
+  border-radius: 8px;
+  transition: background 0.18s ease;
+}
+
+body.dark-mode .menu-usuario .menu-usuario-item + .menu-usuario-item {
+  border-top: 1px solid #e8821a !important;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+body.dark-mode .menu-usuario .menu-usuario-item:hover,
+body.dark-mode .menu-usuario .menu-usuario-item:focus-visible {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* El icono de cerrar sesión pasa a blanco al pasar el cursor para que se vea sobre el naranja */
+body.dark-mode .menu-usuario .menu-usuario-salir:hover img {
+  filter: brightness(0) invert(1) !important;
+}
+
+/* ---------------------------------------------------------------------
+   14) BURGI (asistente): sugerencias con fondo naranja al pasar el cursor
+   --------------------------------------------------------------------- */
+body.dark-mode .burgi-sug {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .burgi-sug:hover,
+body.dark-mode .burgi-sug:focus-visible {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+  transform: none !important;
+}
+
+body.dark-mode .burgi-sug:hover > span[aria-hidden="true"] {
+  background: rgba(0, 0, 0, 0.25) !important;
+  color: #ffffff !important;
+}
+
+/* Burgi: botón X (cerrar) y Limpiar -> fondo negro, borde naranja; naranja al pasar o pulsar */
+body.dark-mode .burgi-mini {
+  background: #000000 !important;
+  border: 1.5px solid #e8821a !important;
+  color: #ffffff !important;
+  transition: background 0.18s ease;
+}
+
+body.dark-mode .burgi-mini:hover,
+body.dark-mode .burgi-mini:active,
+body.dark-mode .burgi-mini:focus-visible {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Burgi: burbuja de respuesta con fondo negro y borde naranja */
+body.dark-mode .burgi-resp {
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+  color: #ffffff !important;
+}
+body.dark-mode .burgi-resp :is(p, span, strong, b, li, div) {
+  color: #ffffff !important;
+}
+
+/* ---------------------------------------------------------------------
+   Botón "Dictar con voz" (Compras): estático, fondo transparente y
+   naranja al pasar el cursor o al hacer clic. No flota.
+   --------------------------------------------------------------------- */
+html body .btn-primary.btn-dictar-voz {
+  background: transparent !important;
+  color: var(--brand, #e8821a) !important;
+  border: 2px solid var(--brand, #e8821a) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: background 0.18s ease, color 0.18s ease !important;
+}
+html body .btn-primary.btn-dictar-voz:hover:not(:disabled),
+html body .btn-primary.btn-dictar-voz:active:not(:disabled),
+html body .btn-primary.btn-dictar-voz:focus-visible:not(:disabled) {
+  background: #e8821a !important;
+  color: #ffffff !important;
+  border-color: #e8821a !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* ---------------------------------------------------------------------
+   Cierre de inventario > Cierres anteriores: el select "Responsable" y el
+   checkbox "Solo con diferencia" se ven igual que los demás filtros.
+   --------------------------------------------------------------------- */
+html body.dark-mode .admin-body .cierre-filtros select {
+  box-sizing: border-box;
+  height: 30px;
+  min-width: 150px;
+  padding: 0 30px 0 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid #e8821a !important;
+  background-color: #000000 !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+}
+
+html body.dark-mode .admin-body .cierre-filtros input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid #e8821a;
+  border-radius: 5px;
+  background-color: #000000;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px 12px;
+  cursor: pointer;
+}
+
+html body.dark-mode .admin-body .cierre-filtros input[type="checkbox"]:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23e8821a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6.5l2.5 2.5L10 3'/%3E%3C/svg%3E");
+}
+
+html body.dark-mode .admin-body .cierre-filtros input[type="checkbox"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(232, 130, 26, 0.35);
+}
+
+html body.dark-mode .admin-body .cierre-solo-dif {
+  color: #ffffff !important;
+}
+
+/* ---------------------------------------------------------------------
+   Botón X de los modales: centrada de verdad (dos barras centradas, sin
+   depender de la tipografía) y naranja al pasar el cursor o al hacer clic.
+   --------------------------------------------------------------------- */
+html body :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar) {
+  font-size: 0 !important;
+  line-height: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  text-indent: -999px;
+}
+/* .modal-x es flotante (absolute, arriba a la derecha); las demás van en la cabecera */
+html body :is(.mn-form-cerrar, .modal-box .mm-cerrar) { position: relative; }
+html body .modal-x { position: absolute !important; top: 14px; right: 14px; }
+html body .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button { position: relative; font-size: 0 !important; overflow: hidden; text-indent: -999px; padding: 0 !important; }
+html body .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button::before,
+html body .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button::after,
+html body .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button::before,
+html body .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: auto !important;
+  left: 50% !important;
+  top: 50% !important;
+  display: block !important;
+  width: 14px !important;
+  height: 2px !important;
+  border-radius: 2px;
+  background: currentColor !important;
+}
+html body .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button::before,
+html body .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button::before { transform: translate(-50%, -50%) rotate(45deg) !important; }
+html body .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button::after,
+html body .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button::after { transform: translate(-50%, -50%) rotate(-45deg) !important; }
+
+html body :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar)::before,
+html body :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar)::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: auto !important;
+  left: 50% !important;
+  top: 50% !important;
+  display: block !important;
+  width: 14px !important;
+  height: 2px !important;
+  border-radius: 2px;
+  background: currentColor !important;
+  font-size: 0 !important;
+}
+html body :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar)::before {
+  transform: translate(-50%, -50%) rotate(45deg) !important;
+}
+html body :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar)::after {
+  transform: translate(-50%, -50%) rotate(-45deg) !important;
+}
+
+html body.dark-mode :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar) {
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+  color: #ffffff !important;
+  transition: background 0.18s ease;
+}
+html body.dark-mode :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar):is(:hover, :active, :focus-visible):not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Línea bajo el título de los modales sencillos (ej. "Generar copia de seguridad") */
+html body.dark-mode .modal-box h2,
+html body.dark-mode .modal-overlay .modal-box h2 {
+  border-bottom: 2px solid #e8821a !important;
+}
+
+/* X de las cabeceras en línea (Proveedor, Registrar compra, etc.): fondo naranja al pasar/clic */
+html body.dark-mode .admin-body .main-content .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button,
+html body.dark-mode .admin-body .main-content .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button {
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+  color: #ffffff !important;
+  transition: background 0.18s ease;
+}
+html body.dark-mode .admin-body .main-content .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button:is(:hover, :active, :focus-visible):not(:disabled),
+html body.dark-mode .admin-body .main-content .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button:is(:hover, :active, :focus-visible):not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}

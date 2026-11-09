@@ -21,6 +21,7 @@ import apiClient from '../api/client';
 import { ACCESO, normalizarRol } from '../utils/roles';
 import '../styles/admin.css';
 import '../styles/nu-admin.css';
+import '../styles/dark-fixes.css';
 import AdminLoading from '../components/AdminLoading';
 import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
@@ -217,6 +218,7 @@ export default function AdminLayout() {
             {userMenuOpen && (
               <div
                 role="menu"
+                className="menu-usuario"
                 style={{
                   position: 'absolute',
                   top: 'calc(100% + 8px)',
@@ -236,6 +238,7 @@ export default function AdminLayout() {
                 <button
                   type="button"
                   role="menuitem"
+                  className="menu-usuario-item"
                   data-tooltip="Ver mi perfil"
                   style={estiloItemMenu}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3, #f3ece4)'; }}
@@ -248,6 +251,7 @@ export default function AdminLayout() {
                 <button
                   type="button"
                   role="menuitem"
+                  className="menu-usuario-item menu-usuario-salir"
                   data-tooltip="Cerrar sesión"
                   style={{ ...estiloItemMenu, color: 'var(--danger, #d32f2f)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(211, 47, 47, 0.1)'; }}

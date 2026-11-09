@@ -11,6 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { useEscape } from '../../hooks/useEscape';
 import TrazabilidadModal from '../../components/TrazabilidadModal';
+import SelectOscuro from '../../components/SelectOscuro';
 
 
 interface DetalleVenta {
@@ -82,6 +83,7 @@ const normalizar = (s: unknown) =>
 
 const fechaLocal = (fecha?: string | null) =>
   fecha ? new Date(fecha).toLocaleDateString('en-CA') : '';
+
 
 function FiltroDesplegableVentas({ value, onChange, opciones }: {
   value: string;
@@ -516,6 +518,7 @@ export default function VentasAdmin() {
 
   const totalCarrito = totalProductos + totalCombos;
 
+
   const updateEstado = (id: number, estado: string) => {
     apiClient.patch(`/ventas/${id}/estado`, { estado })
       .then(() => { setVersion((v) => v + 1); load(); })
@@ -531,7 +534,12 @@ export default function VentasAdmin() {
         setEstadoAbiertoId(null);
       }
     };
-    const cerrarAlDesplazarse = () => setEstadoAbiertoId(null);
+    const cerrarAlDesplazarse = (event: Event) => {
+      const options = estadoOptionsRefs.current.get(estadoAbiertoId);
+      // El scroll dentro de la propia lista de estados no debe cerrarla.
+      if (options && event.target instanceof Node && options.contains(event.target)) return;
+      setEstadoAbiertoId(null);
+    };
     document.addEventListener('mousedown', cerrarAlHacerClickFuera);
     window.addEventListener('scroll', cerrarAlDesplazarse, true);
     window.addEventListener('resize', cerrarAlDesplazarse);
@@ -549,6 +557,7 @@ export default function VentasAdmin() {
       ?.querySelector<HTMLButtonElement>('[role="option"][aria-selected="true"], [role="option"]:not(:disabled)')
       ?.focus();
   }, [estadoAbiertoId]);
+
 
   const verFactura = async (id: number) => {
     const ventana = window.open('', '_blank');
@@ -742,10 +751,10 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro">
             <div className="form-group">
               <label>Producto</label>
-              <select value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
+              <SelectOscuro value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
                 <option value={0}>Seleccionar...</option>
                 {(productos ?? []).map((p) => <option key={p?.id ?? p?.nombre} value={p?.id}>{p?.nombre ?? 'Sin nombre'} — ${Number(p?.valor || 0).toLocaleString('es-CO')}</option>)}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Cantidad</label>
@@ -772,7 +781,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro" style={{ marginTop: 18 }}>
             <div className="form-group">
               <label>Combo (opcional)</label>
-              <select value={promocionId} onChange={(e) => setPromocionId(Number(e.target.value))}>
+              <SelectOscuro value={promocionId} onChange={(e) => setPromocionId(Number(e.target.value))}>
                 <option value={0}>Seleccionar combo...</option>
                 {(promociones ?? [])
                   .filter((p) => p?.estado === 'Activa')
@@ -781,7 +790,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                       {p?.nombre ?? 'Combo'} — ${Number(p?.precio || 0).toLocaleString('es-CO')}
                     </option>
                   ))}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Cantidad de combos</label>
@@ -866,15 +875,15 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro" style={{ marginTop: 8 }}>
             <div className="form-group">
               <label>Método de pago</label>
-              <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
+              <SelectOscuro value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
                 {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Tipo de entrega</label>
-              <select value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
+              <SelectOscuro value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
                 {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Cliente (opcional)</label>
@@ -889,14 +898,14 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             {tipoEntrega === 'Consumir' && (
               <div className="form-group">
                 <label>Mesa *</label>
-                <select
+                <SelectOscuro
                   value={mesa}
                   onChange={(e) => setMesa(e.target.value)}
                   style={intentado && !mesa ? { borderColor: 'var(--danger)' } : undefined}
                 >
                   <option value="">Elige la mesa</option>
                   {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Mesa {n}</option>)}
-                </select>
+                </SelectOscuro>
               </div>
             )}
             <div className="form-group">
@@ -1036,15 +1045,16 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   <button
                     type="button"
                     className="btn-cancel"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', marginTop: 8 }}
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
                     onClick={() => setDetalleId(v.id)}
                   >
                     Ver detalle
                   </button>
                 </td>
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
+
                 <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
-                <td>
+                <td className="vt-estado-celda">
                   <div
                     className="venta-estado-dropdown"
                     ref={(element) => {

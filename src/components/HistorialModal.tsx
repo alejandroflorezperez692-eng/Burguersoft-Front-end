@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import apiClient from '../api/client';
 import { useEscape } from '../hooks/useEscape';
+import SelectOscuro from './SelectOscuro';
 
 interface Movimiento {
   id: number;
@@ -80,10 +81,10 @@ export default function HistorialModal({ onClose }: { onClose: () => void }) {
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <select value={modulo} onChange={(e) => setModulo(e.target.value)} style={{ minWidth: 170 }}>
+          <SelectOscuro value={modulo} onChange={(e) => setModulo(e.target.value)} style={{ minWidth: 170 }}>
             <option value="">Todos los apartados</option>
             {modulos.map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
+          </SelectOscuro>
         </div>
         <p style={{ margin: '10px 28px 8px', fontSize: 12, color: 'var(--text-400)', flexShrink: 0 }}>
           {filtrados.length} movimiento{filtrados.length !== 1 ? 's' : ''} de todos los roles

@@ -453,7 +453,8 @@ canvas {
   }
 
   body.dark-mode .footer-scroll-top {
-    background: #1e1e1e;
+    background: #000000 !important;
+    background-color: #000000 !important;
     border-color: #fff;
     color: #fff;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
