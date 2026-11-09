@@ -1,11 +1,4 @@
-/* =====================================================================
-   Selects desplegables en modo oscuro (componente SelectOscuro)
-   Mismo estilo que los filtros de Promociones: borde naranja, fondo negro,
-   flecha blanca, opciones separadas por línea naranja y hover naranja.
-   ===================================================================== */
 
-/* Flecha blanca en el select. La clase se repite a propósito para ganarle en
-   especificidad a las reglas con !important que ya existen en admin.css y nu-admin.css. */
 body.dark-mode select.so-select.so-select.so-select.so-select.so-select.so-select.so-select {
   -webkit-appearance: none !important;
   appearance: none !important;
@@ -21,12 +14,12 @@ body.dark-mode select.so-select:disabled {
   cursor: not-allowed;
 }
 
-/* El modal de perfil dibuja su propio triángulo; en oscuro se usa la flecha blanca. */
+
 body.dark-mode .mp-select-wrap::after {
   display: none;
 }
 
-/* Lista desplegable (se pinta fuera del layout, en <body>) */
+
 body.dark-mode .so-lista {
   position: fixed;
   z-index: 2147483647;
