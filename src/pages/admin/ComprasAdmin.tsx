@@ -9,6 +9,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
 import ComprasSugeridas, { type ItemSugerido } from '../../components/ComprasSugeridas';
+import SelectOscuro from '../../components/SelectOscuro';
 
 interface DetalleCompra {
   id: number;
@@ -1005,8 +1006,7 @@ const load = () => {
             {SpeechRec && (
               <button
                 type="button"
-                className="btn-primary"
-                style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
+                className="btn-primary btn-dictar-voz"
                 onClick={alternarMicrofono}
               >
                 {escuchando ? '⏹ Detener' : '🎤 Dictar con voz'}
@@ -1059,10 +1059,10 @@ const load = () => {
           )}
           <div className="form-group">
             <label>Método de pago <span className="mn-req">*</span></label>
-            <select value={metodoPago} style={rojo(!metodoPago)} onChange={(e) => setMetodoPago(e.target.value)}>
+            <SelectOscuro value={metodoPago} style={rojo(!metodoPago)} onChange={(e) => setMetodoPago(e.target.value)}>
               <option value="">Seleccionar...</option>
               {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
+            </SelectOscuro>
           </div>
 
           <div className="form-group">
@@ -1077,10 +1077,10 @@ const load = () => {
 
           <div className="form-group">
             <label>Tipo de factura <span style={{ opacity: 0.6, fontWeight: 500 }}>(opcional)</span></label>
-            <select value={tipoFactura} onChange={(e) => setTipoFactura(e.target.value)}>
+            <SelectOscuro value={tipoFactura} onChange={(e) => setTipoFactura(e.target.value)}>
               <option value="">Seleccionar...</option>
               {TIPOS_FACTURA.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
+            </SelectOscuro>
           </div>
 
           {lineas.map((l, i) => (
@@ -1100,10 +1100,10 @@ const load = () => {
             >
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Insumo (elige o crea uno nuevo) <span className="mn-req">*</span></label>
-                <select value={l.materia_prima_id ?? '__nuevo__'} onChange={(e) => updateLinea(i, 'materia_prima_id', e.target.value === '__nuevo__' ? null : Number(e.target.value))}>
+                <SelectOscuro value={l.materia_prima_id ?? '__nuevo__'} onChange={(e) => updateLinea(i, 'materia_prima_id', e.target.value === '__nuevo__' ? null : Number(e.target.value))}>
                   <option value="__nuevo__">+ Nuevo insumo</option>
                   {materias.filter((m) => m.estado !== 'Inactivo' || m.id === l.materia_prima_id).map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-                </select>
+                </SelectOscuro>
               </div>
 
               {l.materia_prima_id === null && (
@@ -1162,10 +1162,10 @@ const load = () => {
 
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Proveedor <span className="mn-req">*</span></label>
-                <select value={l.marca_id} style={rojo(errLinea(l).marca)} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
+                <SelectOscuro value={l.marca_id} style={rojo(errLinea(l).marca)} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
                   <option value={0}>Seleccionar...</option>
                   {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-                </select>
+                </SelectOscuro>
               </div>
 
               {lineas.length > 1 && (
@@ -1349,7 +1349,7 @@ const load = () => {
                     {fechaLarga(modalDetalle.fecha)}
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <span className="badge badge-info">{modalDetalle.metodo_pago}</span>
+                    <span className="badge badge-info compras-factura-metodo">{modalDetalle.metodo_pago}</span>
                     {modalDetalle.tipo_factura && <span className="badge badge-warning">{modalDetalle.tipo_factura}</span>}
                     {modalDetalle.numero_factura && <span style={chipNumero}>Factura {modalDetalle.numero_factura}</span>}
                   </div>

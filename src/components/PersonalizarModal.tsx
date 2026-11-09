@@ -80,10 +80,11 @@ export default function PersonalizarModal({
         <div className="pers-main">
           <div className="pers-izq">
             <img
-              className="pers-img"
+              className={`pers-img${item.imagen ? '' : ' pers-img-fallback'}`}
               src={item.imagen || cenaFallback}
               alt={item.nombre}
               onError={(e) => {
+                e.currentTarget.classList.add('pers-img-fallback');
                 e.currentTarget.src = cenaFallback;
               }}
             />

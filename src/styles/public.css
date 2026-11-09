@@ -1304,8 +1304,8 @@ body.dark-mode .public-body {
   --color-acento: #f5a623;
   --color-texto: #f0ebe3;
   --color-texto-suave: #a89888;
-  --color-fondo: #111;
-  --color-fondo-alt: #1a0800;
+  --color-fondo: #000000 !important;
+  --color-fondo-alt: #000000 !important;
   --color-borde: rgba(232, 130, 26, 0.2);
 }
 
@@ -1416,7 +1416,8 @@ body.dark-mode .section-text {
 }
 
 body.dark-mode .promo-card-pub {
-  background: #1e1e1e;
+  background: #000000 !important;
+  background-color: #000000 !important;
   border-color: var(--color-borde);
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.3);
@@ -1531,7 +1532,8 @@ body.dark-mode .promo-vacio {
 /* ============================================= */
 
 body.dark-mode .perfil-dropdown {
-  background: #1e1e1e;
+  background: #000000 !important;
+  background-color: #000000 !important;
   border-color: var(--color-borde);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.4);
@@ -1988,3 +1990,180 @@ body.dark-mode .promo-precio-old {
 .pers-mini{display:flex;align-items:center;gap:10px}
 .pers-mini button{width:28px;height:28px;border-radius:50%;border:1.5px solid #222;background:#fff;cursor:pointer;font-size:15px}
 .pers-mini span{min-width:16px;text-align:center;font-weight:700}
+
+/* =====================================================================
+   MODO OSCURO (clientes): modal de personalizar producto (.pers-*)
+   Fondo negro, borde naranja, textos blancos, naranja al pasar el cursor.
+   ===================================================================== */
+body.dark-mode .pers-modal {
+  background: #000000 !important;
+  border: 1px solid #e8821a;
+  color: #ffffff;
+}
+body.dark-mode .pers-header,
+body.dark-mode .pers-pie {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+}
+body.dark-mode .pers-header h3,
+body.dark-mode .pers-nombre,
+body.dark-mode .pers-acc-top strong,
+body.dark-mode .pers-check span,
+body.dark-mode .pers-extra span,
+body.dark-mode .pers-mini span,
+body.dark-mode .pers-qty span {
+  color: #ffffff !important;
+}
+body.dark-mode .pers-desc,
+body.dark-mode .pers-acc-top small,
+body.dark-mode .pers-tag,
+body.dark-mode .pers-chev {
+  color: #ffffff !important;
+}
+body.dark-mode .pers-precio,
+body.dark-mode .pers-extra small {
+  color: #e8821a !important;
+}
+body.dark-mode .pers-acc {
+  border-bottom-color: #e8821a !important;
+}
+body.dark-mode .pers-check,
+body.dark-mode .pers-check span {
+  color: #ffffff !important;
+}
+body.dark-mode .pers-check input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid #e8821a;
+  border-radius: 5px;
+  background-color: #000000;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px 12px;
+  cursor: pointer;
+}
+body.dark-mode .pers-check input[type="checkbox"]:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23e8821a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6.5l2.5 2.5L10 3'/%3E%3C/svg%3E");
+}
+body.dark-mode .pers-nota {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1px solid #e8821a !important;
+}
+body.dark-mode .pers-nota::placeholder {
+  color: #ffffff;
+  opacity: 1;
+}
+body.dark-mode .pers-nota:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(232, 130, 26, 0.35);
+}
+/* X, +, − : negro con borde naranja; naranja al pasar o pulsar */
+body.dark-mode .pers-cerrar,
+body.dark-mode .pers-qty button,
+body.dark-mode .pers-mini button {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  transition: background 0.18s ease;
+}
+body.dark-mode .pers-cerrar {
+  border-radius: 10px;
+  font-size: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 3px;
+}
+body.dark-mode .pers-cerrar:hover,
+body.dark-mode .pers-cerrar:active,
+body.dark-mode .pers-cerrar:focus-visible,
+body.dark-mode .pers-qty button:hover:not(:disabled),
+body.dark-mode .pers-qty button:active:not(:disabled),
+body.dark-mode .pers-mini button:hover:not(:disabled),
+body.dark-mode .pers-mini button:active:not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+body.dark-mode .pers-ok {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+body.dark-mode .pers-ok {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+body.dark-mode .pers-ok:hover:not(:disabled) {
+  background: #e8821a !important;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(232, 130, 26, 0.5);
+}
+body.dark-mode .pers-ok:active:not(:disabled) {
+  transform: translateY(-1px);
+}
+/* Scrollbar naranja con pista negra dentro del modal */
+body.dark-mode .pers-main {
+  scrollbar-color: #e8821a #000000;
+}
+
+/* Imagen del modal en modo oscuro: fondo negro; el ícono por defecto (cubiertos y plato) en blanco */
+body.dark-mode .pers-img {
+  background: #000000 !important;
+  border: 1px solid #e8821a;
+}
+/* Ícono por defecto: se invierte (fondo blanco -> negro, ícono negro -> blanco).
+   El selector por nombre de archivo funciona aunque no se haya puesto la clase. */
+body.dark-mode .pers-img.pers-img-fallback,
+body.dark-mode img.pers-img[src*="cena"] {
+  background: #ffffff !important;
+  /* el filtro invierte también el borde: se pone el color opuesto al naranja (#e8821a) para que se vea naranja */
+  border-color: #177de5 !important;
+  filter: invert(1);
+}
+
+/* Tarjetas de promociones/productos (clientes) en modo oscuro: fondo negro y, en la imagen por defecto,
+   solo la figura (etiqueta, cubiertos, plato) en blanco. Las fotos reales (URL http/https) no se invierten. */
+body.dark-mode .public-body .promo-img-pub {
+  background: #000000 !important;
+  background-color: #000000 !important;
+}
+body.dark-mode .public-body .promo-img-pub img[src^="data:image/png"],
+body.dark-mode .public-body .promo-img-pub img[src*="/cena"],
+body.dark-mode .public-body .promo-img-pub img[src*="/promocion"] {
+  background: transparent !important;
+  /* Solo el contorno de la figura en blanco (sin relleno): se erosiona la silueta y se pinta el borde */
+  filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='o' color-interpolation-filters='sRGB'%3E%3CfeMorphology in='SourceAlpha' operator='erode' radius='1' result='e'/%3E%3CfeComposite in='SourceAlpha' in2='e' operator='out' result='b0'/%3E%3CfeComponentTransfer in='b0' result='b'%3E%3CfeFuncA type='linear' slope='5'/%3E%3C/feComponentTransfer%3E%3CfeFlood flood-color='%23ffffff'/%3E%3CfeComposite in2='b' operator='in'/%3E%3C/filter%3E%3C/svg%3E#o");
+}
+
+/* Tarjetas de promociones/productos (clientes) en modo oscuro: borde y línea de la imagen en naranja;
+   al pasar el cursor los colores se mantienen igual (solo sube la tarjeta). */
+body.dark-mode .public-body .promo-card-pub,
+body.dark-mode .public-body .promo-card-pub:hover {
+  border: 2.5px solid #e8821a !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6) !important;
+  background: #000000 !important;
+}
+body.dark-mode .public-body .promo-img-pub,
+body.dark-mode .public-body .promo-card-pub:hover .promo-img-pub {
+  border-bottom: 1px solid #e8821a !important;
+  background: #000000 !important;
+}
+body.dark-mode .public-body .promo-card-pub:hover .promo-info-pub {
+  background: #000000 !important;
+}
+
+/* Menú de perfil del cliente en modo oscuro: bordes y líneas divisorias en naranja (el carrito no se toca) */
+body.dark-mode .public-body .btn-perfil,
+body.dark-mode .public-body .btn-perfil .icono-circulo-perfil,
+body.dark-mode .public-body .dropdown-menu {
+  border-color: #e8821a !important;
+}
+body.dark-mode .public-body .dropdown-menu button + button,
+body.dark-mode .public-body .dropdown-menu button + .cerrar-sesion {
+  border-top: 1px solid #e8821a !important;
+  border-radius: 0 !important;
+}

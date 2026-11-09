@@ -6,6 +6,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { mensajeError } from '../../utils/errores';
+import SelectOscuro from '../../components/SelectOscuro';
 
 interface Usuario {
   id: number;
@@ -289,7 +290,7 @@ const load = async (silencioso = false) => {
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
             <label>Rol</label>
-            <select
+            <SelectOscuro
               value={filtroRol}
               onChange={(e) => { setFiltroRol(e.target.value); setPagina(1); }}
             >
@@ -299,7 +300,7 @@ const load = async (silencioso = false) => {
               <option value="Cocinero">Cocinero</option>
               <option value="Mesero">Mesero</option>
               <option value="Cliente">Cliente</option>
-            </select>
+            </SelectOscuro>
           </div>
 
           <div className="form-group" style={{ marginBottom: 0, minWidth: 220 }}>
@@ -314,14 +315,14 @@ const load = async (silencioso = false) => {
 
           <div className="form-group" style={{ marginBottom: 0, minWidth: 150 }}>
             <label>Mostrar</label>
-            <select
+            <SelectOscuro
               value={porPagina}
               onChange={(e) => { setPorPagina(Number(e.target.value)); setPagina(1); }}
             >
               {OPCIONES_POR_PAGINA.map((n) => (
                 <option key={n} value={n}>{n} por página</option>
               ))}
-            </select>
+            </SelectOscuro>
           </div>
 
           {hayFiltros && (
@@ -369,15 +370,16 @@ const load = async (silencioso = false) => {
                   <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
                   <td className="td-acciones">
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                      <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar" data-tooltip="Editar">Editar</button>
+                      <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar" data-tooltip="Eliminar">Eliminar</button>
+
                       <button
-                        className="btn-icon btn-icon-estado btn-accion"
+                        className={`btn-icon btn-icon-estado btn-accion ${u.estado === 'Activo' ? 'estado-inactivar' : 'estado-activar'}`}
                         onClick={() => alternarEstado(u)}
                         title={u.estado === 'Activo' ? 'Inactivar cuenta' : 'Activar cuenta'}
                       >
                         {u.estado === 'Activo' ? 'Inactivar' : 'Activar'}
                       </button>
-                      <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar" data-tooltip="Editar">Editar</button>
-                      <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar" data-tooltip="Eliminar">Eliminar</button>
                     </div>
                   </td>
                 </tr>
@@ -522,23 +524,23 @@ const load = async (silencioso = false) => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Rol <span className="mn-req">*</span></label>
-                <select style={bordeError(errores.rol)} value={rol} onChange={(e) => setRol(e.target.value)}>
+                <SelectOscuro style={bordeError(errores.rol)} value={rol} onChange={(e) => setRol(e.target.value)}>
                   <option value="">Seleccionar rol...</option>
                   <option value="Administrador">Administrador</option>
                   <option value="Cajero">Cajero</option>
                   <option value="Cocinero">Cocinero</option>
                   <option value="Mesero">Mesero</option>
                   <option value="Cliente">Cliente</option>
-                </select>
+                </SelectOscuro>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Estado <span className="mn-req">*</span></label>
-                <select style={bordeError(errores.estado)} value={estado} onChange={(e) => setEstado(e.target.value)}>
+                <SelectOscuro style={bordeError(errores.estado)} value={estado} onChange={(e) => setEstado(e.target.value)}>
                   <option value="">Seleccionar estado...</option>
                   <option value="Activo">Activo</option>
                   <option value="Inactivo">Inactivo</option>
                   <option value="Suspendido">Suspendido</option>
-                </select>
+                </SelectOscuro>
               </div>
             </div>
 

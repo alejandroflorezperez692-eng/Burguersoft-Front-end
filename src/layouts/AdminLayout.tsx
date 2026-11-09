@@ -21,6 +21,7 @@ import apiClient from '../api/client';
 import { ACCESO, normalizarRol } from '../utils/roles';
 import '../styles/admin.css';
 import '../styles/nu-admin.css';
+import '../styles/dark-fixes.css';
 import AdminLoading from '../components/AdminLoading';
 import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
@@ -31,7 +32,7 @@ const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
   { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.menu },
   { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.menu },
-  { to: '/pedidos-en-vivo', label: 'Pedidos', icono: cena, roles: ACCESO.ventas },
+  { to: '/pedidos-en-vivo', label: 'Pedidos', icono: cena, roles: ACCESO.pedidos },
   { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.ventas },
   { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.inventario },
   { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.inventario },
@@ -69,17 +70,26 @@ export default function AdminLayout() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
   const [confirmarSalida, setConfirmarSalida] = useState(false);
+  const [colapsado, setColapsado] = useState(
+    () => localStorage.getItem('sidebarCollapsed') === '1'
+  );
   const userMenuRef = useRef<HTMLDivElement>(null);
   const cerrarMenu = () => setMenuOpen(false);
   const rol = normalizarRol(user?.role);
   const esPersonal = rol !== '' && ACCESO.personal.includes(rol);
   const navItems = todosLosItems.filter((item) => rol !== '' && item.roles.includes(rol));
 
+  const toggleColapsado = () => {
+    setColapsado((v) => {
+      localStorage.setItem('sidebarCollapsed', v ? '0' : '1');
+      return !v;
+    });
+  };
+
   useEffect(() => {
     if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
     apiClient.get('/me').catch((err) => {
       console.error('[AdminLayout] Error validando sesión:', err.message);
-      // No redirigir aquí; el interceptor de la API maneja el 401.
     });
     }, []);
 
@@ -142,7 +152,7 @@ const salirDesdeMenuUsuario = () => {
   }
 
   return (
-    <div className="admin-body">
+    <div className={`admin-body${colapsado ? ' sidebar-collapsed' : ''}`}>
       <aside className={`sidebar${menuOpen ? ' open' : ''}`}>
         <div className="sidebar-header">
           <img src={logoClaro} alt="Logo" className="logo logo-claro" />
@@ -151,11 +161,25 @@ const salirDesdeMenuUsuario = () => {
           <span className="nom-local">El Oriente</span>
         </div>
 
+        <button
+          type="button"
+          className="sidebar-collapse-btn"
+          onClick={toggleColapsado}
+          title={colapsado ? 'Expandir menú' : 'Contraer menú'}
+          aria-label={colapsado ? 'Expandir menú' : 'Contraer menú'}
+          aria-expanded={!colapsado}
+        >
+          <span className={`hamburger-icon${colapsado ? '' : ' open'}`}>
+            <span /><span /><span />
+          </span>
+        </button>
+
         <div className="sidebar-footer">
           {navItems.map((item) => (
             <div className="sidebar-item" key={item.to}>
               <NavLink
                 to={item.to}
+                title={item.label}
                 onClick={cerrarMenu}
                 className={({ isActive }) => (isActive ? 'active' : undefined)}
               >
@@ -196,6 +220,7 @@ const salirDesdeMenuUsuario = () => {
             {userMenuOpen && (
               <div
                 role="menu"
+                className="menu-usuario"
                 style={{
                   position: 'absolute',
                   top: 'calc(100% + 8px)',
@@ -215,6 +240,7 @@ const salirDesdeMenuUsuario = () => {
                 <button
                   type="button"
                   role="menuitem"
+                  className="menu-usuario-item"
                   data-tooltip="Ver mi perfil"
                   style={estiloItemMenu}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-3, #f3ece4)'; }}
@@ -227,6 +253,7 @@ const salirDesdeMenuUsuario = () => {
                 <button
                   type="button"
                   role="menuitem"
+                  className="menu-usuario-item menu-usuario-salir"
                   data-tooltip="Cerrar sesión"
                   style={{ ...estiloItemMenu, color: 'var(--danger, #d32f2f)' }}
                   onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(211, 47, 47, 0.1)'; }}

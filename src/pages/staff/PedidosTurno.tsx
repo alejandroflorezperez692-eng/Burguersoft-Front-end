@@ -7,7 +7,10 @@ import MotivoModal from '../../components/MotivoModal';
 import { mensajeDeError, type MapaTransiciones } from '../../types/Trazabilidad';
 import '../../styles/pedidos-turno.css';
 import { getEcho } from '../../api/echo';
+
 import NuevaVentaModal, { precargarNuevaVenta } from '../../components/NuevaVentaModal';
+import ComprobanteImagen from '../../components/ComprobanteImagen';
+import ComprobanteModal from '../../components/ComprobanteModal';
 import { useEscape } from '../../hooks/useEscape';
 import AdminLoading from '../../components/AdminLoading';
 
@@ -93,9 +96,22 @@ interface Venta {
   cliente_nombre?: string | null;
   mesa?: number | null;
   notas?: string | null;
+  usuario_id?: number | null;
   usuario?: { nombre?: string; apellido?: string } | null;
   detalles?: ItemVenta[];
   promociones?: PromoVenta[];
+  tiene_comprobante?: boolean;
+  comprobante_estado?: string | null;
+  comprobante_motivo?: string | null;
+  comprobante_valor?: string | number | null;
+  comprobante_coincide?: boolean | null;
+  comprobante_subido_en?: string | null;
+  comprobante_datos?: {
+    entidad?: string | null;
+    referencia?: string | null;
+    estado_transaccion?: string | null;
+    observaciones?: string | null;
+  } | null;
 }
 
 interface CambioConMotivo {
@@ -114,6 +130,15 @@ const duracion = (min: number): string =>
   min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`;
 
 type Entrega = 'todos' | 'Domicilio' | 'Recoger' | 'Consumir';
+
+const METODOS_CON_COMPROBANTE = [
+  'Nequi', 'Daviplata', 'Bancolombia', 'Transferencia', 'Tarjeta', 'PSE',
+];
+
+const requiereComprobante = (v: Venta): boolean =>
+  METODOS_CON_COMPROBANTE.includes((v.metodo_pago ?? '').trim());
+
+const comprobanteAprobado = (v: Venta): boolean => v.comprobante_estado === 'Aprobado';
 
 const FILTROS_ENTREGA: { valor: Entrega; texto: string }[] = [
   { valor: 'todos', texto: 'Todos' },
@@ -137,6 +162,7 @@ export default function PedidosTurno() {
 
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
+  const puedeVerComprobante = esAdmin || rol === 'cajero' || rol === 'cocinero';
   const puedeCrear = rol === 'admin' || rol === 'mesero';
   const vistaInicial = VISTA_INICIAL[rol] ?? 'cocina';
 
@@ -154,6 +180,9 @@ export default function PedidosTurno() {
   const [detalleId, setDetalleId] = useState<number | null>(null);
   const [arrastrandoId, setArrastrandoId] = useState<number | null>(null);
   const [colHover, setColHover] = useState<string | null>(null);
+  const [comprobanteARechazar, setComprobanteARechazar] = useState<Venta | null>(null);
+  const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
+  const [procesandoComprobante, setProcesandoComprobante] = useState(false);
 
   const version = useRef(0);
 
@@ -258,6 +287,55 @@ export default function PedidosTurno() {
   }
 };
 
+  const claseComprobante = (estado?: string | null) => {
+    const e = (estado ?? '').trim().toLowerCase();
+    if (e === 'aprobado') return 'badge-success';
+    if (e === 'rechazado') return 'badge-danger';
+    if (e === 'pendiente') return 'badge-warning';
+    return 'badge-info';
+  };
+
+  const revisarComprobante = async (
+    venta: Venta,
+    estado: 'Aprobado' | 'Rechazado',
+    motivo?: string,
+  ) => {
+    setProcesandoComprobante(true);
+    setError(null);
+    try {
+      const { data } = await apiClient.patch(`/ventas/${venta.id}/comprobante/revisar`, {
+        estado,
+        motivo,
+      });
+      showToast(
+        data?.message ??
+          (estado === 'Aprobado'
+            ? 'Comprobante aprobado.'
+            : 'Comprobante devuelto al cliente.'),
+        false,
+      );
+      setComprobanteARechazar(null);
+      setItems((prev) =>
+        prev.map((v) =>
+          v.id === venta.id
+            ? {
+                ...v,
+                comprobante_estado: estado,
+                comprobante_motivo: estado === 'Rechazado' ? motivo ?? null : null,
+              }
+            : v,
+        ),
+      );
+      await load();
+    } catch (e: unknown) {
+      setError(
+        mensajeDeError(e, `No se pudo revisar el comprobante del pedido #${venta.id}.`),
+      );
+    } finally {
+      setProcesandoComprobante(false);
+    }
+  };
+
   const soltarEn = (estadoDestino: string) => {
     const venta = items.find((x) => x.id === arrastrandoId);
     setArrastrandoId(null);
@@ -281,14 +359,32 @@ export default function PedidosTurno() {
     return texto.includes(q);
   });
 
+  const puedeSubirComprobante = (v: Venta) =>
+    esAdmin || Number(v.usuario_id) === Number(user?.id);
+
   const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
-  useEscape([[detalle !== null, () => setDetalleId(null)]]);
+  useEscape([
+    [comprobanteASubir !== null, () => setComprobanteASubir(null)],
+    [comprobanteARechazar !== null, () => setComprobanteARechazar(null)],
+    [detalle !== null, () => setDetalleId(null)],
+  ]);
 
   const tarjeta = (v: Venta) => {
     const accion = config.acciones[v.estado ?? ''];
     const esOcupado = ocupadoId === v.id;
     const min = minutosDesde(v.fecha ?? '');
     const enMesa = v.tipo_entrega === 'Consumir' && !!v.mesa;
+
+    // El pago electrónico no se puede confirmar hasta aprobar el comprobante.
+    const vaAPagar = accion?.sig === 'Pagado';
+    const faltaComprobante = vaAPagar && requiereComprobante(v) && !comprobanteAprobado(v);
+    const textoAccion = faltaComprobante
+      ? esAdmin
+        ? 'Aprobar comprobante'
+        : 'Comprobante pendiente'
+      : accion?.texto;
+    const accionDeshabilitada = esOcupado || (faltaComprobante && !esAdmin);
+
     return (
       <div
         className={`tv-card${accion ? ' arrastrable' : ''}${arrastrandoId === v.id ? ' arrastrando' : ''}`}
@@ -322,13 +418,33 @@ export default function PedidosTurno() {
           <button type="button" className="tv-ver-detalle" onClick={() => setDetalleId(v.id)}>
             Ver detalle
           </button>
+
+          {faltaComprobante && (
+            <span className="tv-pago-bloqueado">
+              {v.comprobante_estado === 'Rechazado'
+                ? 'Comprobante devuelto'
+                : v.comprobante_estado === 'Pendiente'
+                  ? 'Comprobante pendiente de aprobación'
+                  : 'Sin comprobante de pago'}
+            </span>
+          )}
         </div>
 
         <div className="tv-card-foot">
           <span className="tv-total">${Number(v.valor_total || 0).toLocaleString('es-CO')}</span>
           {accion ? (
-            <button type="button" className="tv-btn" disabled={esOcupado} onClick={() => intentarCambio(v, accion)}>
-              {esOcupado ? 'Guardando…' : accion.texto}
+            <button
+              type="button"
+              className="tv-btn"
+              disabled={accionDeshabilitada}
+              title={faltaComprobante && !esAdmin
+                ? 'El administrador debe aprobar el comprobante antes de confirmar el pago.'
+                : undefined}
+              onClick={() =>
+                faltaComprobante ? setDetalleId(v.id) : intentarCambio(v, accion)
+              }
+            >
+              {esOcupado ? 'Guardando…' : textoAccion}
             </button>
           ) : (
             <span className="tv-espera">Sin acción disponible</span>
@@ -538,12 +654,171 @@ export default function PedidosTurno() {
               </div>
             )}
 
+            {puedeVerComprobante && (
+              <section className="vt-det-sec tv-det-comprobante">
+                <h4>Comprobante de pago</h4>
+
+                {!detalle.tiene_comprobante ? (
+                  <>
+                    <p className="vt-comprobante-vacio">
+                      Este pedido no tiene comprobante de pago cargado.
+                    </p>
+                    {puedeSubirComprobante(detalle) && (
+                      <div className="vt-comprobante-acciones">
+                        <button
+                          type="button"
+                          className="btn-save"
+                          onClick={() => setComprobanteASubir(detalle)}
+                        >
+                          Subir comprobante
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="vt-comprobante-cabecera">
+                      <span className={`badge ${claseComprobante(detalle.comprobante_estado)}`}>
+                        {detalle.comprobante_estado || 'Pendiente'}
+                      </span>
+                      {detalle.comprobante_subido_en && (
+                        <span className="vt-comprobante-fecha">
+                          Subido: {aFecha(detalle.comprobante_subido_en).toLocaleString('es-CO', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })}
+                        </span>
+                      )}
+                    </div>
+
+                    {detalle.comprobante_estado === 'Rechazado' && detalle.comprobante_motivo && (
+                      <p className="vt-comprobante-motivo">
+                        Motivo enviado al cliente: {detalle.comprobante_motivo}
+                      </p>
+                    )}
+
+                    <dl className="vt-det-grid vt-comprobante-datos">
+                      <div>
+                        <dt>Valor detectado por la IA</dt>
+                        <dd>
+                          {detalle.comprobante_valor !== null && detalle.comprobante_valor !== undefined
+                            ? `$${Number(detalle.comprobante_valor).toLocaleString('es-CO')}`
+                            : 'No identificado'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>¿Coincide con el total?</dt>
+                        <dd>
+                          {detalle.comprobante_coincide === true
+                            ? 'Sí'
+                            : detalle.comprobante_coincide === false
+                              ? 'No — revisar antes de aprobar'
+                              : 'No se pudo determinar'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Entidad</dt>
+                        <dd>{detalle.comprobante_datos?.entidad || 'No identificada'}</dd>
+                      </div>
+                      <div>
+                        <dt>Referencia</dt>
+                        <dd>{detalle.comprobante_datos?.referencia || 'No identificada'}</dd>
+                      </div>
+                    </dl>
+
+                    <ComprobanteImagen
+                      ventaId={detalle.id}
+                      version={detalle.comprobante_subido_en}
+                      alt={`Comprobante de pago del pedido ${detalle.id}`}
+                    />
+
+                    {esAdmin && (
+                      <div className="vt-comprobante-acciones">
+                        {detalle.comprobante_estado !== 'Aprobado' && (
+                          <button
+                            type="button"
+                            className="btn-save"
+                            disabled={procesandoComprobante}
+                            onClick={() => void revisarComprobante(detalle, 'Aprobado')}
+                          >
+                            {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
+                          </button>
+                        )}
+                        {detalle.comprobante_estado !== 'Rechazado' && (
+                          <button
+                            type="button"
+                            className="btn-cancel"
+                            style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                            disabled={procesandoComprobante}
+                            onClick={() => setComprobanteARechazar(detalle)}
+                          >
+                            Devolver comprobante
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="btn-cancel"
+                          onClick={() => setComprobanteASubir(detalle)}
+                        >
+                          Reemplazar comprobante
+                        </button>
+                      </div>
+                    )}
+
+                    {!esAdmin && puedeSubirComprobante(detalle) && (
+                      <div className="vt-comprobante-acciones">
+                        <button
+                          type="button"
+                          className="btn-cancel"
+                          onClick={() => setComprobanteASubir(detalle)}
+                        >
+                          Reemplazar comprobante
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {requiereComprobante(detalle) && !comprobanteAprobado(detalle) && (
+                  <p className="tv-pago-aviso">
+                    Pago electrónico: para confirmar el pago primero debe estar aprobado el
+                    comprobante.
+                  </p>
+                )}
+              </section>
+            )}
+
             <div className="tv-det-total">
               <span>Total</span>
               <strong>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</strong>
             </div>
           </div>
         </div>
+      )}
+
+      {comprobanteASubir && (
+        <ComprobanteModal
+          ventaId={comprobanteASubir.id}
+          numero={comprobanteASubir.id}
+          onClose={() => setComprobanteASubir(null)}
+          onSubido={() => {
+            setComprobanteASubir(null);
+            void load();
+          }}
+        />
+      )}
+
+      {comprobanteARechazar && (
+        <MotivoModal
+          titulo={`Devolver el comprobante del pedido #${comprobanteARechazar.id}`}
+          descripcion="Explica al cliente por qué no se acepta el comprobante (por ejemplo, porque el valor no coincide con el total). El cliente verá este motivo en Mis compras y podrá subir uno nuevo."
+          confirmarTexto="Devolver comprobante"
+          placeholder="Ej: el comprobante muestra $20.000 y el total del pedido es $35.000..."
+          onClose={() => setComprobanteARechazar(null)}
+          onConfirm={(motivo) =>
+            void revisarComprobante(comprobanteARechazar, 'Rechazado', motivo)
+          }
+        />
       )}
 
       {cambioConMotivo && (

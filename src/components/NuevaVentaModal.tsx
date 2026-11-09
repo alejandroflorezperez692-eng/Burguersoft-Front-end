@@ -6,6 +6,7 @@ import { useEscape } from '../hooks/useEscape';
 import { normalizarRol } from '../utils/roles';
 import '../styles/nu-admin.css';
 import '../styles/nuevo-pedido.css';
+import SelectOscuro from './SelectOscuro';
 
 interface Adicion { id: number; nombre: string; precio: number | string; tipo?: string; estado?: string }
 interface Producto { id: number; nombre: string; valor: number; img?: string | null; estado?: string; categoria?: string; adiciones?: Adicion[] }
@@ -303,11 +304,11 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
           {/* 1. Tipo de pedido y mesas */}
           <aside className="np-panel">
             <h4><b>1</b> Tipo de pedido</h4>
-            <select className="np-select" value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
+            <SelectOscuro className="np-select" value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
               {TIPOS.filter((t) => !esMesero || t.v === 'Consumir').map((t) => (
                 <option key={t.v} value={t.v}>{t.t}</option>
               ))}
-            </select>
+            </SelectOscuro>
 
             {tipoEntrega === 'Consumir' ? (
               <>
@@ -365,9 +366,9 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
               )}
               <div className="form-group">
                 <label>Método de pago</label>
-                <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
+                <SelectOscuro value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
                   {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-                </select>
+                </SelectOscuro>
               </div>
               <div className="form-group">
                 <label>Notas para cocina</label>

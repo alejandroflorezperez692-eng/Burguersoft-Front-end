@@ -7,6 +7,7 @@ import Paginacion, { paginar } from '../../components/Paginacion';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
+import SelectOscuro from '../../components/SelectOscuro';
 
 interface MateriaPrima {
   id: number;
@@ -291,46 +292,46 @@ export default function MateriaPrimaAdmin() {
       <div className="mn-filtros">
         <div className="mn-field">
           <label>Estado</label>
-          <select className={filtroEstado !== 'todos' ? 'activo' : ''} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value as 'todos' | EstadoStock)}>
+          <SelectOscuro className={filtroEstado !== 'todos' ? 'activo' : ''} value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value as 'todos' | EstadoStock)}>
             <option value="todos">Todos</option>
             <option value="disponible">Disponible</option>
             <option value="bajo">Bajo</option>
             <option value="agotado">Agotado</option>
-          </select>
+          </SelectOscuro>
         </div>
 
         <div className="mn-field">
           <label>Tipo</label>
-          <select className={filtroTipo ? 'activo' : ''} value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
+          <SelectOscuro className={filtroTipo ? 'activo' : ''} value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
             <option value="">Todos</option>
             {tipos.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
+          </SelectOscuro>
         </div>
 
         <div className="mn-field">
           <label>Marca</label>
-          <select className={filtroMarca ? 'activo' : ''} value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
+          <SelectOscuro className={filtroMarca ? 'activo' : ''} value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
             <option value="">Todas</option>
             {(marcas ?? []).map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-          </select>
+          </SelectOscuro>
         </div>
 
         <div className="mn-field">
           <label>Unidad</label>
-          <select className={filtroUnidad ? 'activo' : ''} value={filtroUnidad} onChange={(e) => setFiltroUnidad(e.target.value)}>
+          <SelectOscuro className={filtroUnidad ? 'activo' : ''} value={filtroUnidad} onChange={(e) => setFiltroUnidad(e.target.value)}>
             <option value="">Todas</option>
             {unidades.map((u) => <option key={u} value={u}>{u}</option>)}
-          </select>
+          </SelectOscuro>
         </div>
 
         <div className="mn-field">
           <label>Ordenar por</label>
-          <select className={orden !== 'nombre' ? 'activo' : ''} value={orden} onChange={(e) => setOrden(e.target.value as Orden)}>
+          <SelectOscuro className={orden !== 'nombre' ? 'activo' : ''} value={orden} onChange={(e) => setOrden(e.target.value as Orden)}>
             <option value="nombre">Nombre (A-Z)</option>
             <option value="cantidad_asc">Menor cantidad</option>
             <option value="cantidad_desc">Mayor cantidad</option>
             <option value="total_desc">Mayor precio total</option>
-          </select>
+          </SelectOscuro>
         </div>
 
         {hayFiltros && (
@@ -344,7 +345,7 @@ export default function MateriaPrimaAdmin() {
         <AdminLoading texto="Cargando materia prima" subtexto="Revisando tu inventario" />
       ) : (
         <div className="tabla-responsive">
-          <table className="data-table" style={{ tableLayout: 'fixed', minWidth: 1180 }}>
+          <table className="data-table" style={{ tableLayout: 'fixed', minWidth: 1040 }}>
             <colgroup>
               <col style={{ width: '16%' }} />
               <col style={{ width: '10%' }} />
@@ -457,12 +458,12 @@ export default function MateriaPrimaAdmin() {
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Unidad <span style={{ opacity: 0.6, fontWeight: 500 }}>(opcional)</span></label>
-                <select value={form.unidad_medida} onChange={(e) => setForm({ ...form, unidad_medida: e.target.value })}>
+                <SelectOscuro value={form.unidad_medida} onChange={(e) => setForm({ ...form, unidad_medida: e.target.value })}>
                   <option value="">Seleccionar...</option>
                   {(form.unidad_medida && !UNIDADES.includes(form.unidad_medida) ? [form.unidad_medida, ...UNIDADES] : UNIDADES).map((u) => (
                     <option key={u} value={u}>{u}</option>
                   ))}
-                </select>
+                </SelectOscuro>
               </div>
             </div>
 
@@ -483,7 +484,7 @@ export default function MateriaPrimaAdmin() {
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Proveedor <span className="mn-req">*</span></label>
-                <select
+                <SelectOscuro
                   style={bordeError(errores.marca)}
                   value={form.marca_id}
                   onChange={(e) => setForm({ ...form, marca_id: Number(e.target.value) })}
@@ -491,7 +492,7 @@ export default function MateriaPrimaAdmin() {
                   {(marcas ?? []).map((m) => (
                     <option key={m?.id} value={m?.id}>{m?.nombre ?? 'Sin nombre'}</option>
                   ))}
-                </select>
+                </SelectOscuro>
               </div>
             </div>
 

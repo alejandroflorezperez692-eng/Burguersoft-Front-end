@@ -113,7 +113,7 @@ export default function Home() {
           }}
         >
           <IconoToast tipo="exito" />
-          <span>Has cerrado sesión correctamente.</span>
+          <span>{avisoSesion}</span>
         </div>
       )}
       <PublicHeader />
@@ -199,7 +199,7 @@ export default function Home() {
         <PersonalizarModal item={personalizando} onClose={() => setPersonalizando(null)} />
       )}
 
-      <Footer/>
+      <Footer />
     </div>
   );
 }

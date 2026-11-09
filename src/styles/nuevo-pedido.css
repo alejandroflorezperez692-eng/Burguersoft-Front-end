@@ -68,7 +68,8 @@
 .np-tag{font-size:10px;background:#fff4e5;color:#b85f0a;border-radius:999px;padding:1px 8px;align-self:flex-start}
 .np-precio{color:#e8821a;font-weight:800;font-size:15px}
 .np-ctrl{flex:none;padding:8px 16px 16px}
-.np-add{background:#e8821a;color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer;width:100%}
+.np-add{background:#e8821a;color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:800;cursor:pointer;width:100%;transition:transform .15s,box-shadow .15s}
+.np-add:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 14px rgba(232,130,26,.35)}
 .np-add:disabled{opacity:.5;cursor:not-allowed}
 .np-step{display:flex;align-items:center;justify-content:center;gap:12px}
 .np-step button{width:28px;height:28px;border-radius:50%;border:1.5px solid #1a0f0a;background:#fff;cursor:pointer;line-height:1;font-weight:700}
@@ -113,6 +114,149 @@
 .np-extra .np-step{gap:8px}
 .np-extra .np-step button{width:24px;height:24px;font-size:14px}
 .np-extra .np-step button:disabled{opacity:.35;cursor:not-allowed}
+
+body.dark-mode .np-modal {
+  background: #000;
+  color: #fff;
+}
+body.dark-mode .np-modal .np-top,
+body.dark-mode .np-modal .np-cols,
+body.dark-mode .np-modal .np-panel {
+  background: #000;
+  border-color: #e8821a;
+  color: #fff;
+}
+body.dark-mode .np-modal .np-top {
+  background: #000;
+  border-bottom-color: #e8821a;
+}
+body.dark-mode .np-modal .np-top h3,
+body.dark-mode .np-modal .np-top p,
+body.dark-mode .np-modal .np-panel h4,
+body.dark-mode .np-modal .np-sub,
+body.dark-mode .np-modal .np-hint,
+body.dark-mode .np-modal .form-group label,
+body.dark-mode .np-modal .np-line,
+body.dark-mode .np-modal .np-total,
+body.dark-mode .np-modal .np-info strong,
+body.dark-mode .np-modal .np-extra,
+body.dark-mode .np-modal .np-previo-item,
+body.dark-mode .np-modal .np-previo-head,
+body.dark-mode .np-modal .np-previo-total {
+  color: #fff;
+}
+body.dark-mode .np-modal .np-close,
+body.dark-mode .np-modal .np-select,
+body.dark-mode .np-modal .form-group input,
+body.dark-mode .np-modal .form-group select,
+body.dark-mode .np-modal .np-tools input,
+body.dark-mode .np-modal .np-pg,
+body.dark-mode .np-modal .np-step button,
+body.dark-mode .np-modal .np-mesa,
+body.dark-mode .np-modal .np-card,
+body.dark-mode .np-modal .np-cats button {
+  background: #000;
+  border-color: #e8821a;
+  color: #fff;
+}
+body.dark-mode .np-modal select option {
+  background: #000;
+  color: #fff;
+}
+body.dark-mode .np-modal .np-close:hover,
+body.dark-mode .np-modal .np-cats button:hover,
+body.dark-mode .np-modal .np-step button:hover:not(:disabled),
+body.dark-mode .np-modal .np-pg:hover {
+  background: #e8821a;
+  border-color: #e8821a;
+  color: #fff;
+}
+body.dark-mode .np-modal .np-close {
+  font-size: 20px;
+}
+body.dark-mode .np-modal .np-mesa.sel,
+body.dark-mode .np-modal .np-cats button.on,
+body.dark-mode .np-modal .np-pg.on,
+body.dark-mode .np-modal .mn-view-toggle button.active {
+  background: #e8821a;
+  border-color: #e8821a;
+  color: #fff;
+}
+body.dark-mode .np-modal .np-card.in {
+  background: #000;
+  border-color: #e8821a;
+}
+body.dark-mode .np-modal .np-mesa.np-nueva {
+  border-color: #e8821a;
+  color: #fff;
+}
+body.dark-mode .np-modal .np-mesa.libre .np-pill {
+  background: #12351e;
+  color: #a6efbb;
+}
+body.dark-mode .np-modal .np-mesa.ocupada .np-pill {
+  background: #3b260d;
+  color: #ffc078;
+}
+body.dark-mode .np-modal .np-mesa.por-cobrar .np-pill {
+  background: #3b1515;
+  color: #ffaaa3;
+}
+body.dark-mode .np-modal .np-previo,
+body.dark-mode .np-modal .np-extras {
+  background: #000;
+  border-color: #e8821a;
+  color: #fff;
+}
+body.dark-mode .np-modal .np-previo h5,
+body.dark-mode .np-modal .np-extras small,
+body.dark-mode .np-modal .np-mesa small,
+body.dark-mode .np-modal .np-precio,
+body.dark-mode .np-modal .np-extra em {
+  color: #e8821a;
+}
+body.dark-mode .np-modal .np-previo-item,
+body.dark-mode .np-modal .np-previo-total,
+body.dark-mode .np-modal .np-line,
+body.dark-mode .np-modal .np-bottom {
+  border-color: #e8821a;
+}
+body.dark-mode .np-modal .np-panel {
+  border: 1px solid #e8821a;
+}
+body.dark-mode .np-modal .np-img {
+  background: #000;
+  color: #e8821a;
+  border-bottom: 1px solid #e8821a;
+}
+body.dark-mode .np-modal .np-tag {
+  background: #12351e;
+  color: #a6efbb;
+}
+body.dark-mode .np-modal .np-tools input::placeholder,
+body.dark-mode .np-modal .form-group input::placeholder {
+  color: #fff;
+  opacity: .7;
+}
+body.dark-mode .np-modal .mn-view-toggle {
+  background: #000;
+  border-color: #e8821a;
+}
+body.dark-mode .np-modal .mn-view-toggle button {
+  color: #fff;
+}
+body.dark-mode .np-modal .mn-view-toggle button + button {
+  border-left-color: #e8821a;
+}
+body.dark-mode .np-modal :is(.np-scroll, .np-grid, .np-list, .np-cats) {
+  scrollbar-color: #e8821a #000;
+}
+body.dark-mode .np-modal :is(.np-scroll, .np-grid, .np-list, .np-cats)::-webkit-scrollbar-track {
+  background: #000;
+}
+body.dark-mode .np-modal :is(.np-scroll, .np-grid, .np-list, .np-cats)::-webkit-scrollbar-thumb {
+  background: #e8821a;
+}
 
 @media (max-width:1250px){
   .np-cols{grid-template-columns:230px 360px minmax(0,1fr)}

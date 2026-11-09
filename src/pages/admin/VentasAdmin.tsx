@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { createPortal } from 'react-dom';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
@@ -12,6 +13,11 @@ import TrazabilidadModal from '../../components/TrazabilidadModal';
 import logoImg from '../../assets/img/logo-burguersoft.png';
 import { imprimirEnPagina } from '../../utils/imprimirEnPagina';
 import ArqueoCaja from '../../components/ArqueoCaja';
+import MotivoModal from '../../components/MotivoModal';
+import ComprobanteImagen from '../../components/ComprobanteImagen';
+import ComprobanteModal from '../../components/ComprobanteModal';
+import { mensajeDeError } from '../../types/Trazabilidad';
+import SelectOscuro from '../../components/SelectOscuro';
 
 
 interface DetalleVenta {
@@ -51,6 +57,24 @@ interface Venta {
   };
   detalles: DetalleVenta[];
   promociones: PromocionVenta[];
+  tiene_comprobante?: boolean;
+  comprobante_estado?: string | null;
+  comprobante_motivo?: string | null;
+  comprobante_datos?: {
+    es_comprobante?: boolean;
+    valor?: number | null;
+    moneda?: string | null;
+    fecha?: string | null;
+    referencia?: string | null;
+    entidad?: string | null;
+    estado_transaccion?: string | null;
+    valor_coincide?: boolean | null;
+    observaciones?: string | null;
+  } | null;
+  comprobante_valor?: number | null;
+  comprobante_coincide?: boolean | null;
+  comprobante_subido_en?: string | null;
+  comprobante_revisado_en?: string | null;
 }
 
 interface Producto {
@@ -70,6 +94,13 @@ const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
 const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
 
+const METODOS_CON_COMPROBANTE = ['Nequi', 'Daviplata', 'Bancolombia', 'Transferencia', 'Tarjeta', 'PSE'];
+const requiereComprobante = (v: Venta): boolean =>
+  METODOS_CON_COMPROBANTE.includes((v.metodo_pago ?? '').trim());
+
+// Estados que un mesero puede asignar (el resto queda deshabilitado)
+const ESTADOS_MESERO = ['Registrado', 'En preparación', 'Preparado', 'Servido', 'Cancelado'];
+
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
@@ -81,6 +112,7 @@ const normalizar = (s: unknown) =>
 
 const fechaLocal = (fecha?: string | null) =>
   fecha ? new Date(fecha).toLocaleDateString('en-CA') : '';
+
 
 function FiltroDesplegableVentas({ value, onChange, opciones }: {
   value: string;
@@ -301,6 +333,8 @@ export default function VentasAdmin() {
   const alertar = (m: any) => showToast(String(m), true);
    const esAdmin = normalizarRol(user?.role) === 'admin';
   const esMesero = normalizarRol(user?.role) === 'mesero';
+  const puedeSubirComprobante = (v: Venta) =>
+    esAdmin || Number(v.usuario_id) === Number(user?.id);
 
   
   const [items, setItems] = useState<Venta[]>([]);
@@ -313,6 +347,10 @@ export default function VentasAdmin() {
   const [filtroEntrega, setFiltroEntrega] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+  const [estadoAbiertoId, setEstadoAbiertoId] = useState<number | null>(null);
+  const [estadoDropdownPos, setEstadoDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
+  const estadoDropdownRefs = useRef(new Map<number, HTMLDivElement>());
+  const estadoOptionsRefs = useRef(new Map<number, HTMLDivElement>());
 
   const [pagina, setPagina] = useState(1);
 
@@ -335,6 +373,10 @@ export default function VentasAdmin() {
   const [cierreAbierto, setCierreAbierto] = useState(false);
   const [cierreDesde, setCierreDesde] = useState('');
   const [cierreHasta, setCierreHasta] = useState('');
+  const [comprobanteARechazar, setComprobanteARechazar] = useState<Venta | null>(null);
+  const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
+  const [procesandoComprobante, setProcesandoComprobante] = useState(false);
+  const [, setVersion] = useState(0);
 
 const load = async (silencioso = false) => {
   if (!silencioso) setLoading(true);
@@ -621,13 +663,111 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
 </body></html>`;
   };
 
-  const verFactura = (id: number) => {
-    const venta = (items ?? []).find((x) => x.id === id);
-    if (!venta) {
-      alertar('No se pudo abrir la factura.');
-      return;
+  const updateEstado = (id: number, estado: string) => {
+    apiClient.patch(`/ventas/${id}/estado`, { estado })
+      .then(() => { setVersion((v) => v + 1); load(); })
+      .catch((e: unknown) =>
+        alertar(mensajeDeError(e, 'No se pudo cambiar el estado.')),
+      );
+  };
+
+  const revisarComprobante = async (
+    venta: Venta,
+    estado: 'Aprobado' | 'Rechazado',
+    motivo?: string,
+  ) => {
+    setProcesandoComprobante(true);
+    try {
+      const { data } = await apiClient.patch(`/ventas/${venta.id}/comprobante/revisar`, {
+        estado,
+        motivo,
+      });
+      showToast(
+        data?.message ??
+          (estado === 'Aprobado'
+            ? 'Comprobante aprobado.'
+            : 'Comprobante devuelto al cliente.'),
+        false,
+      );
+      setComprobanteARechazar(null);
+      await load();
+    } catch (e: unknown) {
+      const mensaje =
+        (e as { response?: { data?: { message?: string; error?: string } } })?.response?.data
+          ?.message ??
+        (e as { response?: { data?: { error?: string } } })?.response?.data?.error ??
+        'No se pudo revisar el comprobante de pago.';
+      alertar(mensaje);
+    } finally {
+      setProcesandoComprobante(false);
     }
-    imprimirEnPagina(htmlFactura(venta));
+  };
+
+  const claseComprobante = (estado?: string | null) => {
+    const e = (estado ?? '').trim().toLowerCase();
+    if (e === 'aprobado') return 'badge-success';
+    if (e === 'rechazado') return 'badge-danger';
+    if (e === 'pendiente') return 'badge-warning';
+    return 'badge-info';
+  };
+
+  useEffect(() => {
+    if (estadoAbiertoId === null) return;
+    const cerrarAlHacerClickFuera = (event: MouseEvent) => {
+      const root = estadoDropdownRefs.current.get(estadoAbiertoId);
+      const options = estadoOptionsRefs.current.get(estadoAbiertoId);
+      if (!root?.contains(event.target as Node) && !options?.contains(event.target as Node)) {
+        setEstadoAbiertoId(null);
+      }
+    };
+    const cerrarAlDesplazarse = (event: Event) => {
+      const options = estadoOptionsRefs.current.get(estadoAbiertoId);
+      // El scroll dentro de la propia lista de estados no debe cerrarla.
+      if (options && event.target instanceof Node && options.contains(event.target)) return;
+      setEstadoAbiertoId(null);
+    };
+    document.addEventListener('mousedown', cerrarAlHacerClickFuera);
+    window.addEventListener('scroll', cerrarAlDesplazarse, true);
+    window.addEventListener('resize', cerrarAlDesplazarse);
+    return () => {
+      document.removeEventListener('mousedown', cerrarAlHacerClickFuera);
+      window.removeEventListener('scroll', cerrarAlDesplazarse, true);
+      window.removeEventListener('resize', cerrarAlDesplazarse);
+    };
+  }, [estadoAbiertoId]);
+
+  useEffect(() => {
+    if (estadoAbiertoId === null) return;
+    estadoOptionsRefs.current
+      .get(estadoAbiertoId)
+      ?.querySelector<HTMLButtonElement>('[role="option"][aria-selected="true"], [role="option"]:not(:disabled)')
+      ?.focus();
+  }, [estadoAbiertoId]);
+
+
+  const verFactura = async (id: number) => {
+    const ventana = window.open('', '_blank');
+
+    try {
+      const respuesta = await apiClient.get(`/ventas/${id}/recibo.pdf`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([respuesta.data], { type: 'application/pdf' }));
+
+      if (ventana) {
+        ventana.location.href = url;
+      } else {
+        window.open(url, '_blank');
+      }
+
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      ventana?.close();
+      const venta = (items ?? []).find((x) => x.id === id);
+      if (!venta) {
+        alertar('No se pudo abrir la factura.');
+        return;
+      }
+      imprimirEnPagina(htmlFactura(venta));
+    }
   };
 
     /* ===== Días, cierre del día e impresión ===== */
@@ -812,7 +952,6 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
   const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
 
   useEscape([
-    [cierreAbierto, () => setCierreAbierto(false)],
     [detalle !== null, () => setDetalleId(null)],
     [showForm, cerrarFormulario],
   ]);
@@ -912,10 +1051,10 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro">
             <div className="form-group">
               <label>Producto</label>
-              <select value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
+              <SelectOscuro value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
                 <option value={0}>Seleccionar...</option>
                 {(productos ?? []).map((p) => <option key={p?.id ?? p?.nombre} value={p?.id}>{p?.nombre ?? 'Sin nombre'} — ${Number(p?.valor || 0).toLocaleString('es-CO')}</option>)}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Cantidad</label>
@@ -942,7 +1081,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro" style={{ marginTop: 18 }}>
             <div className="form-group">
               <label>Combo (opcional)</label>
-              <select value={promocionId} onChange={(e) => setPromocionId(Number(e.target.value))}>
+              <SelectOscuro value={promocionId} onChange={(e) => setPromocionId(Number(e.target.value))}>
                 <option value={0}>Seleccionar combo...</option>
                 {(promociones ?? [])
                   .filter((p) => p?.estado === 'Activa')
@@ -951,7 +1090,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                       {p?.nombre ?? 'Combo'} — ${Number(p?.precio || 0).toLocaleString('es-CO')}
                     </option>
                   ))}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Cantidad de combos</label>
@@ -1036,15 +1175,15 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro" style={{ marginTop: 8 }}>
             <div className="form-group">
               <label>Método de pago</label>
-              <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
+              <SelectOscuro value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
                 {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Tipo de entrega</label>
-              <select value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
+              <SelectOscuro value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
                 {TIPOS_ENTREGA.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
+              </SelectOscuro>
             </div>
             <div className="form-group">
               <label>Cliente (opcional)</label>
@@ -1059,14 +1198,14 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             {tipoEntrega === 'Consumir' && (
               <div className="form-group">
                 <label>Mesa *</label>
-                <select
+                <SelectOscuro
                   value={mesa}
                   onChange={(e) => setMesa(e.target.value)}
                   style={intentado && !mesa ? { borderColor: 'var(--danger)' } : undefined}
                 >
                   <option value="">Elige la mesa</option>
                   {[1, 2, 3, 4].map((n) => <option key={n} value={n}>Mesa {n}</option>)}
-                </select>
+                </SelectOscuro>
               </div>
             )}
             <div className="form-group">
@@ -1224,16 +1363,134 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   <button
                     type="button"
                     className="btn-cancel"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', marginTop: 8 }}
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
                     onClick={() => setDetalleId(v.id)}
                   >
                     Ver detalle
                   </button>
+                  {v?.tiene_comprobante && (
+                    <span
+                      className={`badge ${claseComprobante(v.comprobante_estado)}`}
+                      style={{ display: 'block', marginTop: 6, fontSize: 10, textAlign: 'center' }}
+                    >
+                      {v.comprobante_estado === 'Aprobado'
+                        ? 'Pago aprobado'
+                        : v.comprobante_estado === 'Rechazado'
+                          ? 'Comprobante devuelto'
+                          : 'Comprobante pendiente'}
+                    </span>
+                  )}
                 </td>
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
+
                 <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
-                <td>
-                  <span className="vt-estado" data-estado={v?.estado}>{v?.estado ?? ''}</span>
+                <td className="vt-estado-celda">
+                  <div
+                    className="venta-estado-dropdown"
+                    ref={(element) => {
+                      if (element) estadoDropdownRefs.current.set(v.id, element);
+                      else estadoDropdownRefs.current.delete(v.id);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        setEstadoAbiertoId(null);
+                        estadoDropdownRefs.current.get(v.id)
+                          ?.querySelector<HTMLButtonElement>('.venta-estado-trigger')
+                          ?.focus();
+                        return;
+                      }
+                      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+                      event.preventDefault();
+                      if (estadoAbiertoId !== v.id) {
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const menuHeight = ESTADOS.length * 38;
+                        const width = Math.max(rect.width, 180);
+                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
+                          ? rect.bottom + 4
+                          : Math.max(8, rect.top - menuHeight - 4);
+                        setEstadoDropdownPos({
+                          top,
+                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+                          width,
+                        });
+                        setEstadoAbiertoId(v.id);
+                        return;
+                      }
+                      const options = Array.from(
+                        estadoOptionsRefs.current.get(v.id)?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)') ?? [],
+                      );
+                      const currentIndex = options.indexOf(document.activeElement as HTMLButtonElement);
+                      const increment = event.key === 'ArrowDown' ? 1 : -1;
+                      options[(currentIndex + increment + options.length) % options.length]?.focus();
+                    }}
+                  >
+                    <button
+                      type="button"
+                      className="venta-estado-trigger"
+                      aria-haspopup="listbox"
+                      aria-expanded={estadoAbiertoId === v.id}
+                      onClick={(event) => {
+                        if (estadoAbiertoId === v.id) {
+                          setEstadoAbiertoId(null);
+                          return;
+                        }
+                        const rect = event.currentTarget.getBoundingClientRect();
+                        const menuHeight = ESTADOS.length * 38;
+                        const width = Math.max(rect.width, 180);
+                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
+                          ? rect.bottom + 4
+                          : Math.max(8, rect.top - menuHeight - 4);
+                        setEstadoDropdownPos({
+                          top,
+                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+                          width,
+                        });
+                        setEstadoAbiertoId(v.id);
+                      }}
+                    >
+                      {v?.estado ?? ''}
+                      <span aria-hidden="true">▾</span>
+                    </button>
+                    {estadoAbiertoId === v.id && estadoDropdownPos && createPortal(
+                      <div
+                        className="venta-estado-options"
+                        ref={(element) => {
+                          if (element) estadoOptionsRefs.current.set(v.id, element);
+                          else estadoOptionsRefs.current.delete(v.id);
+                        }}
+                        role="listbox"
+                        aria-label={`Estado de la venta ${v.id}`}
+                        style={{
+                          position: 'fixed',
+                          top: estadoDropdownPos.top,
+                          left: estadoDropdownPos.left,
+                          width: estadoDropdownPos.width,
+                        }}
+                      >
+                        {ESTADOS.map((estado) => {
+                          const seleccionado = estado === v?.estado;
+                          const deshabilitado = (!esAdmin && estado === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(estado));
+                          return (
+                            <button
+                              key={estado}
+                              type="button"
+                              role="option"
+                              aria-selected={seleccionado}
+                              className={`venta-estado-option${seleccionado ? ' selected' : ''}`}
+                              disabled={deshabilitado}
+                              onClick={() => {
+                                updateEstado(v.id, estado);
+                                setEstadoAbiertoId(null);
+                              }}
+                            >
+                              {estado}
+                            </button>
+                          );
+                        })}
+                      </div>,
+                      document.body,
+                    )}
+                  </div>
                 </td>
                 <td>
                   <button
@@ -1316,6 +1573,148 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </section>
 
             <section className="vt-det-sec">
+              <h4>Comprobante de pago</h4>
+
+              {!detalle.tiene_comprobante ? (
+                <>
+                  <p className="vt-comprobante-vacio">
+                    Este pedido no tiene comprobante de pago cargado.
+                  </p>
+                  {puedeSubirComprobante(detalle) && (
+                    <div className="vt-comprobante-acciones">
+                      <button
+                        type="button"
+                        className="btn-save"
+                        onClick={() => setComprobanteASubir(detalle)}
+                      >
+                        Subir comprobante
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="vt-comprobante-cabecera">
+                    <span className={`badge ${claseComprobante(detalle.comprobante_estado)}`}>
+                      {detalle.comprobante_estado || 'Pendiente'}
+                    </span>
+                    {detalle.comprobante_subido_en && (
+                      <span className="vt-comprobante-fecha">
+                        Subido: {fmtDia(detalle.comprobante_subido_en)} {fmtHora(detalle.comprobante_subido_en)}
+                      </span>
+                    )}
+                  </div>
+
+                  {detalle.comprobante_estado === 'Rechazado' && detalle.comprobante_motivo && (
+                    <p className="vt-comprobante-motivo">
+                      Motivo enviado al cliente: {detalle.comprobante_motivo}
+                    </p>
+                  )}
+
+                  <dl className="vt-det-grid vt-comprobante-datos">
+                    <div>
+                      <dt>Valor detectado por la IA</dt>
+                      <dd>
+                        {detalle.comprobante_valor !== null && detalle.comprobante_valor !== undefined
+                          ? `$${Number(detalle.comprobante_valor).toLocaleString('es-CO')}`
+                          : 'No identificado'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Total del pedido</dt>
+                      <dd>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</dd>
+                    </div>
+                    <div>
+                      <dt>¿Coincide con el total?</dt>
+                      <dd>
+                        {detalle.comprobante_coincide === true
+                          ? 'Sí'
+                          : detalle.comprobante_coincide === false
+                            ? 'No — revisar antes de aprobar'
+                            : 'No se pudo determinar'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Entidad</dt>
+                      <dd>{detalle.comprobante_datos?.entidad || 'No identificada'}</dd>
+                    </div>
+                    <div>
+                      <dt>Referencia</dt>
+                      <dd>{detalle.comprobante_datos?.referencia || 'No identificada'}</dd>
+                    </div>
+                    <div>
+                      <dt>Estado en el comprobante</dt>
+                      <dd>{detalle.comprobante_datos?.estado_transaccion || 'No identificado'}</dd>
+                    </div>
+                    {detalle.comprobante_datos?.observaciones && (
+                      <div className="vt-det-full">
+                        <dt>Observaciones de la IA</dt>
+                        <dd>{detalle.comprobante_datos.observaciones}</dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  <ComprobanteImagen
+                    ventaId={detalle.id}
+                    version={detalle.comprobante_subido_en}
+                    alt={`Comprobante de pago del pedido ${detalle.id}`}
+                  />
+
+                  <div className="vt-comprobante-acciones">
+                    {esAdmin && detalle.comprobante_estado !== 'Aprobado' && (
+                      <button
+                        type="button"
+                        className="btn-save"
+                        disabled={procesandoComprobante}
+                        onClick={() => void revisarComprobante(detalle, 'Aprobado')}
+                      >
+                        {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
+                      </button>
+                    )}
+                    {esAdmin && detalle.comprobante_estado !== 'Rechazado' && (
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                        disabled={procesandoComprobante}
+                        onClick={() => setComprobanteARechazar(detalle)}
+                      >
+                        Devolver comprobante
+                      </button>
+                    )}
+                    {esAdmin && (
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        onClick={() => setComprobanteASubir(detalle)}
+                      >
+                        Reemplazar comprobante
+                      </button>
+                    )}
+                  </div>
+
+                  {!esAdmin && puedeSubirComprobante(detalle) && (
+                    <div className="vt-comprobante-acciones">
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        onClick={() => setComprobanteASubir(detalle)}
+                      >
+                        Reemplazar comprobante
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {requiereComprobante(detalle) && detalle.comprobante_estado !== 'Aprobado' && (
+                <p className="vt-comprobante-aviso">
+                  Pago electrónico: para confirmar el pago primero debe estar aprobado el comprobante.
+                </p>
+              )}
+            </section>
+
+            <section className="vt-det-sec">
               <h4>Productos</h4>
               <div className="vt-det-lineas">
                 {(detalle.detalles ?? []).map((d, i) => (
@@ -1343,6 +1742,33 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </div>
           </div>
         </div>
+      )}
+
+      {comprobanteASubir && (
+        <ComprobanteModal
+          ventaId={comprobanteASubir.id}
+          numero={comprobanteASubir.id}
+          onClose={() => setComprobanteASubir(null)}
+          onSubido={() => {
+            setComprobanteASubir(null);
+            setVersion((v) => v + 1);
+            void load();
+          }}
+        />
+      )}
+
+      {comprobanteARechazar && (
+        <MotivoModal
+          titulo={`Devolver el comprobante del pedido #${comprobanteARechazar.id}`}
+          descripcion="Explica al cliente por qué no se acepta el comprobante (por ejemplo, porque el valor no coincide con el total). El cliente verá este motivo en Mis compras y podrá subir uno nuevo."
+          confirmarTexto="Devolver comprobante"
+          placeholder="Ej: el comprobante muestra $20.000 y el total del pedido es $35.000..."
+          peligro
+          onClose={() => setComprobanteARechazar(null)}
+          onConfirm={(motivo) =>
+            void revisarComprobante(comprobanteARechazar, 'Rechazado', motivo)
+          }
+        />
       )}
     </div>
   );
