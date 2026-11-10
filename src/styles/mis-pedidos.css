@@ -491,3 +491,179 @@ body.dark-mode .comprobante-modal-preview { background: #241d18; border-color: #
   .pedido-comprobante { flex-direction: column; align-items: flex-start; }
   .btn-comprobante { width: 100%; }
 }
+
+/* ---- Botón "Ver detalle" y acciones del pie de la tarjeta ---- */
+.pedido-foot-acciones {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-right: auto;
+}
+.pedido-foot-acciones .btn-cancelar-pedido { margin-right: 0; }
+.btn-ver-detalle {
+  padding: 8px 18px;
+  background: #fff;
+  border: 2px solid rgba(232, 130, 26, 0.55);
+  color: #b35c00;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.btn-ver-detalle:hover { background: #E8821A; color: #fff; border-color: #E8821A; }
+
+/* ---- Modal de detalle del pedido (cliente) ---- */
+.mp-detalle-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(20, 12, 6, 0.55);
+}
+.mp-detalle-modal {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 24px;
+  border-radius: 16px;
+  border: 2px solid var(--mp-border);
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  animation: mpDetalleIn 0.18s ease-out;
+}
+@keyframes mpDetalleIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.mp-detalle-cerrar {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #8a735c;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.mp-detalle-cerrar:hover { background: #f6ede2; color: #3d2111; }
+.mp-detalle-titulo {
+  margin: 0 40px 4px 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--mp-primario);
+}
+.mp-detalle-sub { margin: 0 0 16px; font-size: 13px; color: #8a735c; }
+
+.mp-detalle-datos {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fdf8f1;
+  border: 1px solid var(--mp-border);
+}
+.mp-detalle-datos dt {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a735c;
+}
+.mp-detalle-datos dd { margin: 3px 0 0; font-size: 14px; font-weight: 700; color: #3d2111; }
+
+.mp-detalle-comprobante h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a735c;
+}
+.mp-detalle-estado {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #1e7a3c;
+}
+.mp-detalle-estado-pendiente { color: #b35c00; }
+.mp-detalle-estado-rechazado { color: var(--mp-alerta); }
+.mp-detalle-estado-detalle { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: #6b5d4c; }
+.mp-detalle-motivo {
+  margin: 10px 0 0;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mp-alerta);
+  background: #fff0ee;
+  border: 1px solid rgba(195, 64, 42, 0.3);
+}
+.mp-detalle-dato { margin: 8px 0 0; font-size: 12px; color: #8a735c; }
+.mp-detalle-sin-comprobante {
+  margin: 0;
+  padding: 18px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 13px;
+  color: #8a735c;
+  background: #faf6f0;
+  border: 1px dashed var(--mp-border);
+}
+.mp-detalle-modal .comprobante-imagen-wrap { margin: 0; }
+.mp-detalle-modal .comprobante-imagen {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  border-radius: 10px;
+  border: 1px solid var(--mp-border);
+  background: #fff;
+}
+.mp-detalle-acciones { display: flex; justify-content: flex-end; margin-top: 18px; }
+.mp-detalle-btn {
+  padding: 10px 22px;
+  border: 0;
+  border-radius: 8px;
+  background: #E8821A;
+  color: #fff;
+  font-weight: 800;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+.mp-detalle-btn:hover { background: #c96f0d; }
+
+body.dark-mode .btn-ver-detalle { background: #0d0d0d; border-color: #E8821A; color: #ffb066; }
+body.dark-mode .btn-ver-detalle:hover { background: #E8821A; color: #000; }
+body.dark-mode .mp-detalle-modal { background: #000; border-color: #333; }
+body.dark-mode .mp-detalle-titulo { color: #fff; }
+body.dark-mode .mp-detalle-sub,
+body.dark-mode .mp-detalle-dato { color: #cbb8a4; }
+body.dark-mode .mp-detalle-datos { background: #0d0d0d; border-color: #333; }
+body.dark-mode .mp-detalle-datos dt { color: #cbb8a4; }
+body.dark-mode .mp-detalle-datos dd { color: #fff; }
+body.dark-mode .mp-detalle-comprobante h4 { color: #cbb8a4; }
+body.dark-mode .mp-detalle-estado-detalle { color: #cbb8a4; }
+body.dark-mode .mp-detalle-sin-comprobante { background: #0d0d0d; border-color: #333; color: #cbb8a4; }
+body.dark-mode .mp-detalle-cerrar { color: #cbb8a4; }
+body.dark-mode .mp-detalle-cerrar:hover { background: #1a1a1a; color: #fff; }
+body.dark-mode .mp-detalle-motivo { background: rgba(195, 64, 42, 0.12); }
+
+@media (max-width: 540px) {
+  .mp-detalle-datos { grid-template-columns: 1fr; }
+  .pedido-foot-acciones { width: 100%; }
+  .btn-ver-detalle { flex: 1; }
+}

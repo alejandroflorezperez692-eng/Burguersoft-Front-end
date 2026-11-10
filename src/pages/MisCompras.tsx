@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
 import MotivoModal from '../components/MotivoModal';
 import ComprobanteModal from '../components/ComprobanteModal';
+import DetallePedidoCliente from '../components/DetallePedidoCliente';
 import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import { getEcho } from '../api/echo';
@@ -316,6 +317,7 @@ export default function MisCompras() {
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoUI | null>(null);
   const [pedidoARechazar, setPedidoARechazar] = useState<PedidoUI | null>(null);
   const [pedidoComprobante, setPedidoComprobante] = useState<PedidoUI | null>(null);
+  const [pedidoDetalle, setPedidoDetalle] = useState<PedidoUI | null>(null);
   const [avisoComprobante, setAvisoComprobante] = useState<string | null>(null);
   const [pedidos, setPedidos] = useState<PedidoUI[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -804,24 +806,33 @@ export default function MisCompras() {
                 )}
 
                 <div className="pedido-foot">
-                  {esCancelable && (
+                  <div className="pedido-foot-acciones">
                     <button
-                      className="btn-cancelar-pedido"
-                      onClick={() => cancelarPedido(p)}
-                      disabled={estaCancelando}
+                      type="button"
+                      className="btn-ver-detalle"
+                      onClick={() => setPedidoDetalle(p)}
                     >
-                      {estaCancelando ? 'Cancelando…' : 'Cancelar pedido'}
+                      Ver detalle
                     </button>
-                  )}
-                  {esRechazable && (
-                    <button
-                      className="btn-cancelar-pedido"
-                      onClick={() => rechazarPedido(p)}
-                      disabled={rechazandoId === p.id}
-                    >
-                      {rechazandoId === p.id ? 'Rechazando…' : 'Rechazar pedido'}
-                    </button>
-                  )}
+                    {esCancelable && (
+                      <button
+                        className="btn-cancelar-pedido"
+                        onClick={() => cancelarPedido(p)}
+                        disabled={estaCancelando}
+                      >
+                        {estaCancelando ? 'Cancelando…' : 'Cancelar pedido'}
+                      </button>
+                    )}
+                    {esRechazable && (
+                      <button
+                        className="btn-cancelar-pedido"
+                        onClick={() => rechazarPedido(p)}
+                        disabled={rechazandoId === p.id}
+                      >
+                        {rechazandoId === p.id ? 'Rechazando…' : 'Rechazar pedido'}
+                      </button>
+                    )}
+                  </div>
                   <span className="label">Total del pedido:</span>
                   <span className="total">{formatoMoneda(p.total)}</span>
                 </div>
@@ -851,6 +862,12 @@ export default function MisCompras() {
           peligro
           onClose={() => setPedidoARechazar(null)}
           onConfirm={(motivo) => void confirmarRechazo(pedidoARechazar, motivo)}
+        />
+      )}
+      {pedidoDetalle && (
+        <DetallePedidoCliente
+          pedido={pedidoDetalle}
+          onClose={() => setPedidoDetalle(null)}
         />
       )}
       {pedidoComprobante && (
