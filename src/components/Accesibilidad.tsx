@@ -442,11 +442,15 @@ export default function Accesibilidad() {
 
   // Mueve el foco de teclado al panel al abrirlo, y lo regresa al botón flotante al cerrarlo,
   // para que la navegación por teclado no "se pierda" en la página.
+  // (En la carga inicial no se enfoca nada: el foco automático disparaba el tooltip al recargar.)
+  const panelEstuvoAbierto = useRef(false);
   useEffect(() => {
     if (abierto) {
+      panelEstuvoAbierto.current = true;
       const primerBoton = panelRef.current?.querySelector<HTMLElement>('button');
       primerBoton?.focus();
-    } else {
+    } else if (panelEstuvoAbierto.current) {
+      panelEstuvoAbierto.current = false;
       fabRef.current?.focus();
     }
   }, [abierto]);

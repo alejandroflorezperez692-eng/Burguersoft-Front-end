@@ -7,6 +7,7 @@ import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
+import usuarioPerfil from '../../assets/img/usuario-perfil.png';
 
 interface Usuario {
   id: number;
@@ -46,13 +47,15 @@ const nombreValido = (v: string) => {
 function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string; estado: string }) {
   return (
     <span style={{
-      width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-      background: estado === 'Activo' ? 'var(--brand)' : 'var(--surface-3)',
-      color: estado === 'Activo' ? '#fff' : 'var(--text-400)',
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      fontWeight: 800, fontSize: 15,
+      width: 38, height: 38, borderRadius: '50%', flexShrink: 0, overflow: 'hidden',
+      border: estado === 'Activo' ? '2px solid var(--brand)' : '2px solid var(--surface-3)',
+      display: 'inline-flex',
     }}>
-      {(nombre.charAt(0) + (apellido?.charAt(0) ?? '')).toUpperCase()}
+      <img
+        src={usuarioPerfil}
+        alt={`${nombre} ${apellido}`.trim()}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
     </span>
   );
 }

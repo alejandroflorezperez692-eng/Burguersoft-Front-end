@@ -6,6 +6,7 @@ import HistorialModal from '../../components/HistorialModal';
 import { normalizarRol } from '../../utils/roles';
 import { mensajeError } from '../../utils/errores';
 import AdminLoading from '../../components/AdminLoading';
+import usuarioPerfil from '../../assets/img/usuario-perfil.png';
 import {
   maxLenDocumento,
   reglasPassword,
@@ -183,10 +184,14 @@ export default function ConfiguracionAdmin() {
           boxShadow: 'var(--shadow-sm)', padding: 28, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
         }}>
           <div style={{
-            width: 80, height: 80, borderRadius: '50%', background: 'var(--brand)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', fontSize: 32, fontWeight: 800, color: '#fff',
+            width: 80, height: 80, borderRadius: '50%', overflow: 'hidden', flexShrink: 0,
+            border: '3px solid var(--brand)',
           }}>
-            {(user?.name ?? 'A')[0].toUpperCase()}
+            <img
+              src={usuarioPerfil}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
           </div>
           <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 17, fontWeight: 700, color: 'var(--text-900)', margin: 0 }}>
             {user?.name ?? 'Administrador'}

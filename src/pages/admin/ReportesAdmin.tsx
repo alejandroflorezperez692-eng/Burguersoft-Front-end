@@ -6,7 +6,6 @@ import AdminLoading from '../../components/AdminLoading';
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
 import { exportarReporteExcel } from './exportarReporteExcel';
-import MargenProductos from '../../components/MargenProductos';
 
 interface DetalleVenta {
   id: number;
@@ -959,8 +958,6 @@ export default function ReportesAdmin() {
               <PanelProductosVendidos productos={reporte.productos} />
             </>
           )}
-
-            {ver('productos') && <MargenProductos />}
 
           {/* ================= COMPRAS ================= */}
           {ver('compras') && (
