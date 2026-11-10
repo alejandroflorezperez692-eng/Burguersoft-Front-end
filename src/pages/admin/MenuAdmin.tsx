@@ -136,7 +136,7 @@ function MnFormSelect({
   );
 }
 
-// Minúsculas y sin tildes, para búsquedas tolerantes
+
 const normalizar = (s: unknown) =>
   String(s ?? '')
     .toLowerCase()
@@ -148,7 +148,7 @@ const calcularEstado = (cantidad: number | string | null | undefined): Estado =>
   return n === 0 ? 'Agotado' : 'Disponible';
 };
 
-// Si la BD trae 'Por agotarse', se muestra como Disponible
+
 const estadoVisible = (p: Producto): Estado => {
   if (!p.estado) return calcularEstado(p.cantidad);
   return p.estado === 'Agotado' ? 'Agotado' : 'Disponible';
@@ -166,8 +166,7 @@ const mensajeError = (err: unknown, porDefecto: string): string => {
   return mensajeErrorBase(err, porDefecto);
 };
 
-// Solo acepta URLs de imagen utilizables (absolutas, data/blob o /storage).
-// Los valores legacy tipo "../uploads/..." nunca resuelven y solo generan ruido 404.
+
 const imgValida = (img: string | null | undefined): boolean =>
   !!img && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(img);
 
@@ -211,7 +210,7 @@ export default function MenuAdmin() {
   const [intentado, setIntentado] = useState(false);
   const [buscar, setBuscar] = useState('');
 
-  // --- Filtros (Carlos) ---
+
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [precioMin, setPrecioMin] = useState('');
@@ -232,7 +231,7 @@ export default function MenuAdmin() {
   const fileRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
 
-  /* ---------- Carga de datos ---------- */
+
   const cargarProductos = useCallback(async () => {
     try {
       const r = await apiClient.get<Producto[]>('/productos', { params: { todos: 1 } });
@@ -253,11 +252,11 @@ export default function MenuAdmin() {
     try {
       localStorage.setItem('menuAdminVista', vista);
     } catch {
-      /* si el navegador bloquea localStorage, simplemente no se guarda */
+
     }
   }, [vista]);
 
-  // Vista previa de la imagen elegida (y limpieza del object URL)
+
   useEffect(() => {
     if (!archivo) return;
     const url = URL.createObjectURL(archivo);
@@ -265,7 +264,7 @@ export default function MenuAdmin() {
     return () => URL.revokeObjectURL(url);
   }, [archivo]);
 
-  /* ---------- Filtros ---------- */
+ 
   const hayFiltros = Boolean(buscar || filtroCategoria || filtroEstado || precioMin || precioMax);
 
   const limpiarFiltros = () => {
@@ -276,7 +275,7 @@ export default function MenuAdmin() {
     setPrecioMax('');
   };
 
-  /* ---------- Catálogo agrupado y filtrado ---------- */
+
   const grupos = useMemo(() => {
     const fil = normalizar(buscar).trim();
     const min = precioMin ? Number(precioMin) : null;
@@ -296,7 +295,7 @@ export default function MenuAdmin() {
         }
       }
 
-      // Usamos estadoVisible(p) para que 'Por agotarse' cuente como Disponible en el filtro
+      
       if (filtroEstado && estadoVisible(p) !== filtroEstado) return false;
 
       const valor = Number(p.valor) || 0;
@@ -318,7 +317,7 @@ export default function MenuAdmin() {
 
   const totalVisibles = grupos.reduce((acc, [, lista]) => acc + lista.length, 0);
 
-  /* ---------- Activar / desactivar ---------- */
+
   const alternarActivo = async (p: Producto) => {
     const nuevo = p.activo === false;
     try {
@@ -337,7 +336,7 @@ export default function MenuAdmin() {
     await alternarActivo(p);
   };
 
-  /* ---------- Formulario ---------- */
+
   const setCampo = (campo: keyof typeof emptyForm) =>
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [campo]: e.target.value }));
@@ -402,7 +401,7 @@ export default function MenuAdmin() {
   const nQuitar = adiciones.filter((a) => a.tipo === 'quitar').length;
   const permiteExtras = !!form.categoria && !categoriaSinExtras(form.categoria);
 
-  // Adiciones y personalizaciones ya creadas en otros productos (para reutilizarlas con un clic)
+ 
   const sugeridas = useMemo(() => {
     const vistos = new Set<string>();
     const lista: FilaAdicion[] = [];
@@ -425,7 +424,7 @@ export default function MenuAdmin() {
   const sugAdic = sugeridas.filter((s) => s.tipo === 'adicion' && !yaEsta('adicion', s.nombre));
   const sugQuitar = sugeridas.filter((s) => s.tipo === 'quitar' && !yaEsta('quitar', s.nombre));
 
-  /* ---------- Guardar ---------- */
+
   const guardar = async (e: FormEvent) => {
     e.preventDefault();
     setIntentado(true);
@@ -436,7 +435,7 @@ export default function MenuAdmin() {
     if (!form.descripcion.trim()) { showToast('La descripción es obligatoria', true); return; }
     if (!editId && !archivo) { showToast('La imagen es obligatoria', true); return; }
 
-    // Las categorías sin extras no envían adiciones ni personalizaciones
+  
     const filas = permiteExtras
       ? adiciones.filter((a) => a.nombre.trim() || (a.tipo === 'adicion' && a.precio !== ''))
       : [];
@@ -478,7 +477,7 @@ export default function MenuAdmin() {
     }
   };
 
-  /* ---------- Eliminar ---------- */
+
   const confirmarEliminar = async () => {
     if (!eliminar) return;
     const p = eliminar;
@@ -493,7 +492,7 @@ export default function MenuAdmin() {
     }
   };
 
-  /* ---------- Formulario (panel para nuevo, modal para editar) ---------- */
+
   const panelFormulario = (
     <div className="mn-form-panel" ref={panelRef} style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
       <div className="mn-form-header">
@@ -505,7 +504,7 @@ export default function MenuAdmin() {
         <div className="mn-form-body">
           <div className="mn-form-grid">
 
-            {/* Columna izquierda: datos */}
+        
             <div className="mn-form-left">
               <div className="mn-field">
                 <label htmlFor="mn-nombre">Nombre <span className="mn-req">*</span></label>
@@ -698,7 +697,7 @@ export default function MenuAdmin() {
               )}
             </div>
 
-            {/* Columna derecha: imagen */}
+            
             <div className="mn-form-right">
               <div className="mn-field">
                 <label>Imagen del producto {!editId && <span className="mn-req">*</span>}</label>
@@ -749,7 +748,7 @@ export default function MenuAdmin() {
     [mostrarForm || editId !== null, limpiarFormulario],
   ]);
 
-  /* ---------- Render ---------- */
+ 
   return (
     <div className="page-inner mn-page">
       <div className="page-header">
@@ -781,7 +780,7 @@ export default function MenuAdmin() {
 
       <div className="mn-toolbar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
 
-        {/* Fila 1: Búsqueda y Vista */}
+       
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
             <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
@@ -812,7 +811,7 @@ export default function MenuAdmin() {
           </div>
         </div>
 
-        {/* Fila 2: Filtros (Carlos) */}
+        
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
           <div className="mn-field" style={{ margin: 0 }}>
             <label htmlFor="mn-f-categoria">Categoría</label>
@@ -984,7 +983,7 @@ export default function MenuAdmin() {
         </div>
       )}
 
-      {/* Alerta de confirmación: activar / desactivar */}
+      
       {cambiarEstado && (
         <div className="mn-modal-overlay" onClick={() => setCambiarEstado(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
@@ -1010,7 +1009,7 @@ export default function MenuAdmin() {
         </div>
       )}
 
-      {/* Alerta de confirmación: eliminar */}
+     
       {eliminar && (
         <div className="mn-modal-overlay" onClick={() => setEliminar(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>

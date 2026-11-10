@@ -2,7 +2,7 @@ import '../styles/paginacion.css';
 
 export const POR_PAGINA = 10;
 
-/** Corta la lista en la página pedida. La página se ajusta sola si queda fuera de rango. */
+
 export function paginar<T>(lista: T[], pagina: number, porPagina: number = POR_PAGINA) {
   const totalPaginas = Math.max(1, Math.ceil(lista.length / porPagina));
   const paginaActual = Math.min(Math.max(1, pagina), totalPaginas);
@@ -10,7 +10,7 @@ export function paginar<T>(lista: T[], pagina: number, porPagina: number = POR_P
   return { visibles: lista.slice(inicio, inicio + porPagina), paginaActual, totalPaginas, inicio };
 }
 
-// [1, '…', 4, 5, 6, '…', 12]
+
 const numerosPagina = (actual: number, total: number): (number | '…')[] => {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const out: (number | '…')[] = [1];
@@ -28,7 +28,7 @@ interface Props {
   pagina: number;
   onCambiar: (n: number) => void;
   porPagina?: number;
-  /** Texto después del total, ej: "días" -> "Mostrando 1–5 de 12 días" */
+
   etiqueta?: string;
 }
 

@@ -73,7 +73,7 @@ export default function UsuariosAdmin() {
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(10);
 
-  // --- Estados de Filtros ---
+  
   const [q, setQ] = useState('');
   const [filtroRol, setFiltroRol] = useState('');
   const [filtroNombre, setFiltroNombre] = useState('');
@@ -104,7 +104,7 @@ const load = async (silencioso = false) => {
 
   useEffect(() => { load(); }, []);
 
-  // --- Lógica de Filtrado Combinada ---
+  
   const filtered = items
     .filter((u) => {
       if (!q) return true;
@@ -122,7 +122,7 @@ const load = async (silencioso = false) => {
     })
     .sort((a, b) => a.id - b.id);
 
-  // Paginación con cantidad configurable (10, 50, 100, 200, 500)
+  
   const totalPaginas = Math.max(1, Math.ceil(filtered.length / porPagina));
   const paginaActual = Math.min(pagina, totalPaginas);
   const visibles = filtered.slice((paginaActual - 1) * porPagina, paginaActual * porPagina);
@@ -208,10 +208,7 @@ const load = async (silencioso = false) => {
     }
   };
 
-  /** Activa/inactiva desde la fila, con confirmación.
-   *  - Nunca se inactiva la propia cuenta.
-   *  - Siempre debe quedar al menos un administrador activo.
-   *  Manda el mismo payload que el modal de editar para que el backend no rechace el PUT. */
+
   const alternarEstado = async (u: Usuario) => {
     if (u.id === sesion?.id) {
       showToast('No puedes inactivar tu propia cuenta.', true);
@@ -271,10 +268,10 @@ const load = async (silencioso = false) => {
         </div>
       </div>
 
-      {/* Barra de herramientas con Búsqueda + Filtros */}
+    
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
 
-        {/* Fila 1: Búsqueda */}
+      
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
             <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
@@ -286,7 +283,7 @@ const load = async (silencioso = false) => {
           </div>
         </div>
 
-        {/* Fila 2: Filtros */}
+         
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
             <label>Rol</label>

@@ -3,15 +3,12 @@ import apiClient from '../api/client';
 
 interface ComprobanteImagenProps {
   ventaId: number;
-  /** Cambia cuando se sube un comprobante nuevo para volver a cargar la imagen. */
+  
   version?: string | number | null;
   alt?: string;
 }
 
-/**
- * Carga la imagen del comprobante con el token de sesión (la ruta es privada)
- * y la muestra como blob local. Así el archivo no queda expuesto públicamente.
- */
+
 export default function ComprobanteImagen({
   ventaId,
   version,

@@ -40,7 +40,6 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
 
   const emailLimpio = correo.trim().toLowerCase();
 
-  // Cooldown para reenviar
   useEffect(() => {
     if (segundosReenvio <= 0) return;
     const t = setInterval(() => {
@@ -49,7 +48,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
     return () => clearInterval(t);
   }, [segundosReenvio]);
 
-  // Cerrar con Escape
+ 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !loadingVerificar && !exito) onClose();
@@ -58,7 +57,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose, loadingVerificar, exito]);
 
-  // Foco inicial
+ 
   useEffect(() => {
     const t = setTimeout(() => inputsRef.current[0]?.focus(), 150);
     return () => clearTimeout(t);
@@ -85,7 +84,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
       dispararAgitado();
       setTimeout(() => {
         setDigitos(['', '', '', '', '', '']);
-        // Permite volver a auto-verificar cuando se reingrese un código
+        
         ultimoCodigoAuto.current = '';
         inputsRef.current[0]?.focus();
       }, 450);
@@ -104,7 +103,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
       setBloqueado(false);
       setSegundosReenvio(30);
       setError(null);
-      // eslint-disable-next-line no-console
+      
       console.log(`[Registro mock] Código para ${emailLimpio}: ${codigo}. ${motivo}`);
       setInfo(
         'No se pudo contactar el servicio de correo del backend, así que generamos un código de prueba.',
@@ -133,7 +132,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
         return;
       }
       if (isAxiosError(err) && !err.response) {
-        // Sin conexión al backend (ej. Laravel apagado): modo prueba para poder rectificar.
+       
         activarMock('Sin conexión al backend.');
         return;
       }
@@ -198,7 +197,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
     try {
       if (modoMock) {
         const esperado = sessionStorage.getItem(claveMock(emailLimpio));
-        // Pequeña espera para simular red
+       
         await new Promise((r) => setTimeout(r, 500));
         if (esperado && codigo === esperado) {
           sessionStorage.removeItem(claveMock(emailLimpio));
@@ -220,7 +219,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
         return;
       }
       if (isAxiosError(err) && !err.response && modoMock === false) {
-        // Si se cayó la red a mitad del flujo, cae al mock si hay uno guardado
+      
         const esperado = sessionStorage.getItem(claveMock(emailLimpio));
         if (esperado) {
           setModoMock(true);
@@ -250,8 +249,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
     }
   };
 
-  // Verificación automática: apenas se complete el 6º dígito se verifica
-  // el código sin necesidad de presionar el botón (si ya fue enviado).
+
   const codigoCompleto = digitos.every(Boolean) && codigoEnviado;
   useEffect(() => {
     if (! codigoCompleto || bloqueado || exito || loadingVerificar) return;
@@ -259,7 +257,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
     if (ultimoCodigoAuto.current === codigo) return;
     ultimoCodigoAuto.current = codigo;
     void handleVerificar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [codigoCompleto]);
 
   const puedeReenviar = segundosReenvio <= 0 && !loadingEnviar && !exito;

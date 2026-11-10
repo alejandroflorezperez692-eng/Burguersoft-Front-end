@@ -98,7 +98,7 @@ const METODOS_CON_COMPROBANTE = ['Nequi', 'Daviplata', 'Bancolombia', 'Transfere
 const requiereComprobante = (v: Venta): boolean =>
   METODOS_CON_COMPROBANTE.includes((v.metodo_pago ?? '').trim());
 
-// Estados que un mesero puede asignar (el resto queda deshabilitado)
+
 const ESTADOS_MESERO = ['Registrado', 'En preparación', 'Preparado', 'Servido', 'Cancelado'];
 
 const toArray = <T,>(v: unknown): T[] =>
@@ -381,7 +381,7 @@ export default function VentasAdmin() {
 const load = async (silencioso = false) => {
   if (!silencioso) setLoading(true);
 
-  // Se piden a la vez, pero el loader solo espera las ventas
+ 
   const extras = Promise.all([apiClient.get('/productos'), apiClient.get('/promociones')])
     .then(([r2, r3]) => {
       setProductos(toArray<Producto>(r2.data));
@@ -574,7 +574,7 @@ const load = async (silencioso = false) => {
       });
     };
 
-    // Misma lógica del PDF: ventas de mostrador (rol 1) = "Consumidor final"
+    
     const usu = v.usuario;
     const mostrador = Number(usu?.rol_id ?? 0) === 1;
     const nombre = mostrador
@@ -722,7 +722,7 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
     };
     const cerrarAlDesplazarse = (event: Event) => {
       const options = estadoOptionsRefs.current.get(estadoAbiertoId);
-      // El scroll dentro de la propia lista de estados no debe cerrarla.
+    
       if (options && event.target instanceof Node && options.contains(event.target)) return;
       setEstadoAbiertoId(null);
     };
@@ -770,7 +770,7 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
     }
   };
 
-    /* ===== Días, cierre del día e impresión ===== */
+   
   const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
   const esVendida = (v: Venta) => v?.estado === 'Pagado';
   const hoyStr = new Date().toLocaleDateString('en-CA');
@@ -1236,7 +1236,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
 
       <div className="search-bar" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         
-        {/* Fila 1: Búsqueda */}
+        
         <div className="mn-search-wrap" style={{ marginBottom: 0 }}>
           <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1252,7 +1252,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           />
         </div>
 
-        {/* Fila 2: Filtros (Carlos) */}
+      
         <div className="ventas-filtros" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
           <div className="form-group ventas-filter-state" style={{ margin: 0 }}>
             <label>Estado</label>

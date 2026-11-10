@@ -33,9 +33,7 @@ body.dark-mode .bk-modo,body.dark-mode .bk-modo.activo{background:#000;border-co
 .bk-check small{display:block;font-weight:400;font-size:12px;color:var(--text-600);margin-top:2px;line-height:1.45}
 `;
 
-/* ------------------------------------------------------------------ */
-/* Tipos de las respuestas del API                                      */
-/* ------------------------------------------------------------------ */
+
 interface Backup {
   id: number;
   nombre: string;
@@ -94,9 +92,7 @@ interface EstadoDrive {
 
 type ModoRestauracion = 'replace' | 'merge';
 
-/* ------------------------------------------------------------------ */
-/* Utilidades                                                           */
-/* ------------------------------------------------------------------ */
+
 const mensajeDeError = async (e: unknown): Promise<string> => {
   if (axios.isAxiosError(e)) {
     const status = e.response?.status;
@@ -181,32 +177,32 @@ export default function BackupsAdmin() {
   const [buscar, setBuscar] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  // Paginación
+
   const [pagina, setPagina] = useState(1);
 
-  // Modal de generación (contraseña)
+ 
   const [modalGen, setModalGen] = useState(false);
   const [passGen, setPassGen] = useState('');
   const [verPassGen, setVerPassGen] = useState(false);
   const [generando, setGenerando] = useState(false);
 
-  // Modal de restauración
+
   const [restoreSel, setRestoreSel] = useState<Backup | null>(null);
   const [restoreModo, setRestoreModo] = useState<ModoRestauracion>('replace');
   const [restorePass, setRestorePass] = useState('');
   const [verRestorePass, setVerRestorePass] = useState(false);
   const [restaurando, setRestaurando] = useState(false);
 
-  // Descargas / subidas en curso
+ 
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
   const [subiendoDrive, setSubiendoDrive] = useState<number | null>(null);
 
-  // Estado de la conexión con Google Drive
+
   const [drive, setDrive] = useState<EstadoDrive>({ configurada: false, conectada: false });
   const [subirAlGenerar, setSubirAlGenerar] = useState(false);
   const [desconectando, setDesconectando] = useState(false);
 
-  // Listado de copias en Google Drive
+  
   const [modalDrive, setModalDrive] = useState(false);
   useEscape([
     [modalGen && !generando, () => setModalGen(false)],
@@ -222,7 +218,7 @@ export default function BackupsAdmin() {
       .includes(buscar.toLowerCase())
   );
 
-  // Aplicamos la paginación a los items filtrados
+
   const { visibles: copiasVisibles, paginaActual } = paginar(filteredItems, pagina);
 
   const load = () => {
@@ -282,7 +278,7 @@ export default function BackupsAdmin() {
     return { texto: lista[0] ?? '—', titulo: lista[0] ?? '' };
   };
 
-  /* Generar copia */
+ 
   const abrirModalGen = () => {
     setPassGen('');
     setVerPassGen(false);
@@ -334,7 +330,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* Restaurar */
+
   const abrirModalRestore = (b: Backup) => {
     setRestoreSel(b);
     setRestoreModo('replace');
@@ -373,7 +369,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* Descargas */
+
   const descargarCifrado = async (b: Backup) => {
     setDescargandoId(b.id);
     try {
@@ -390,7 +386,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* Google Drive */
+
   const conectarDrive = async () => {
     try {
       const r = await apiClient.get<{ url?: string }>('/backups/drive/auth');
@@ -472,7 +468,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* Eliminar */
+  
   const del = async (b: Backup) => {
     const ok = await confirmar(
       b.subido_drive
@@ -491,7 +487,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* UI auxiliar */
+
   const inputPassword = (
     valor: string,
     setValor: (v: string) => void,
@@ -699,7 +695,7 @@ export default function BackupsAdmin() {
         )}
       </div>
 
-      {/* ===================== Modal: generar copia ===================== */}
+     
       {modalGen && (
         <div className="modal-overlay open" onClick={() => { if (!generando) setModalGen(false); }}>
           <div className="modal-box" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
@@ -737,7 +733,7 @@ export default function BackupsAdmin() {
         </div>
       )}
 
-      {/* ===================== Modal: restaurar ===================== */}
+     
       {restoreSel && (
         <div className="modal-overlay open" onClick={() => { if (!restaurando) setRestoreSel(null); }}>
           <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
@@ -804,7 +800,7 @@ export default function BackupsAdmin() {
         </div>
       )}
 
-      {/* ===================== Modal: copias en Drive ===================== */}
+     
       {modalDrive && (
         <div className="modal-overlay open" onClick={() => setModalDrive(false)}>
           <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>

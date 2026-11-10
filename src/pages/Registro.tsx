@@ -9,7 +9,7 @@ import { mensajeError } from '../utils/errores';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
-// Tipo para window con reCAPTCHA
+
 declare global {
   interface Window {
     grecaptcha: any;
@@ -84,7 +84,7 @@ export default function Registro() {
     };
   }, [tipoOpen]);
 
-  // Cargar el script de reCAPTCHA de Google y renderizar el widget
+
   useEffect(() => {
     if (window.grecaptcha) return;
     const script = document.createElement('script');
@@ -98,7 +98,7 @@ export default function Registro() {
     };
   }, [RECAPTCHA_SITE_KEY]);
 
-  // Renderizar el widget de reCAPTCHA después de cargar el script
+  
   useEffect(() => {
     if (!window.grecaptcha) return;
     const container = document.getElementById('recaptcha-container');
@@ -170,7 +170,7 @@ export default function Registro() {
       return;
     }
 
-    // Obtener token de reCAPTCHA - el widget debe estar renderizado primero
+    
     let recaptchaToken = '';
     if ((window as any).grecaptcha) {
       recaptchaToken = await (window as any).grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'registro' });

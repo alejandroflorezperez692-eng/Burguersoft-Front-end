@@ -20,8 +20,5 @@ export default function ProtectedRoute({
     return null;
   }
 
-  // Si hay roles restringidos y el usuario no coincide, dejamos pasar igual
-  // para no dejar la pantalla en blanco. El redireccionamiento se maneja
-  // desde App.tsx con las rutas específicas de cada rol.
   return <Outlet />;
 }

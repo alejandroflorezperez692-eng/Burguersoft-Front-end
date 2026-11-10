@@ -383,12 +383,12 @@ export default function PromocionesAdmin() {
     try {
       localStorage.setItem('promosAdminVista', vista);
     } catch {
-      /* si el navegador bloquea localStorage, no se guarda */
+      
     }
   }, [vista]);
   const [guardando, setGuardando] = useState(false);
   
-  // --- Filtros unificados ---
+
   const [intentado, setIntentado] = useState(false);
   const [buscar, setBuscar] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
@@ -501,7 +501,7 @@ const cargar = useCallback(async () => {
     setForm((f) => ({ ...f, descripcion: descripcionAuto }));
   }, [descManual, descripcionAuto]);
 
-  // --- Lógica de filtros unificada ---
+  
   const grupos = useMemo(() => {
     const visibles = promos.filter((p) => {
       if (buscar && !p.nombre.toLowerCase().includes(buscar.toLowerCase())) return false;
@@ -600,7 +600,7 @@ const cargar = useCallback(async () => {
     setMostrarForm(false);
   };
 
-  /* ---------- Guardar ---------- */
+  
   const errores = {
     nombre: !form.nombre.trim(),
     productos: seleccion.length === 0,
@@ -903,7 +903,7 @@ const cargar = useCallback(async () => {
           </div>
         </div>
 
-        {/* Fila 2: Filtros (Carlos) */}
+        
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
             <label>Estado</label>

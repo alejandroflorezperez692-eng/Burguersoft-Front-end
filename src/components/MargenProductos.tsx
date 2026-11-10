@@ -31,7 +31,7 @@ export default function MargenProductos() {
         if (vivo) setDatos(data);
       })
       .catch(() => {
-        /* sin permiso o sin datos: la tarjeta no se muestra */
+    
       });
     return () => {
       vivo = false;

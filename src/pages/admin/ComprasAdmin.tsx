@@ -423,7 +423,7 @@ export default function ComprasAdmin() {
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
 
-  // --- Estados de filtros ---
+  
   const [q, setQ] = useState('');
   const [fDesde, setFDesde] = useState('');
   const [fHasta, setFHasta] = useState('');
@@ -431,7 +431,7 @@ export default function ComprasAdmin() {
   const [fInsumo, setFInsumo] = useState('');
   const [fMarca, setFMarca] = useState('');
 
-  // --- Estados de paginación ---
+ 
   const DIAS_POR_PAGINA = 5;
   const [pagina, setPagina] = useState(1);
 
@@ -500,7 +500,7 @@ const load = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [modalDetalle]);
 
-  // Si cambia cualquier filtro, reiniciamos a la página 1
+
   useEffect(() => { setPagina(1); }, [q, fDesde, fHasta, fMetodo, fInsumo, fMarca]);
 
   const hayFiltros = q !== '' || fDesde !== '' || fHasta !== '' || fMetodo !== '' || fInsumo !== '' || fMarca !== '';
@@ -514,7 +514,7 @@ const load = () => {
     setFMarca('');
   };
 
-  // Copia automática en este equipo mientras escribes
+
   useEffect(() => {
     if (!showForm || editId) return;
     const vacio = !metodoPago && !numeroFactura && !tipoFactura &&
@@ -542,7 +542,7 @@ const load = () => {
     [marcas],
   );
 
-  // --- Lógica de filtrado ---
+  
   const filtered = useMemo(() => {
     const texto = q.toLowerCase();
     return items.filter((c) => {
@@ -613,7 +613,7 @@ const load = () => {
     setShowForm(true);
   };
 
-  // Precarga el formulario de compra con la lista sugerida ("Qué comprar esta semana")
+  
   const agregarSugeridas = (sugeridas: ItemSugerido[]) => {
     if (!sugeridas.length) {
       showToast('No hay sugerencias para agregar', true);

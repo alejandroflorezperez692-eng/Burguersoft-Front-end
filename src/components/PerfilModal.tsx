@@ -27,7 +27,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
   const [tab, setTab] = useState<Tab>('datos');
 
 
-  // datos del usuario - intentar cargar de /me
+
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [tdoc, setTdoc] = useState('');
@@ -47,8 +47,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     dirtyRef.current = true;
   };
 
-  // cargar datos solo una vez por apertura; lo que el usuario
-  // ya editó no se sobrescribe cuando /me responde tarde
+ 
   useEffect(() => {
     if (!isOpen) {
       abiertoRef.current = false;
@@ -58,14 +57,14 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     abiertoRef.current = true;
     dirtyRef.current = false;
     setTab('datos');
-    // intentar split nombre
+   
     const partes = (user?.name ?? '').split(' ');
     setNombre(partes[0] ?? '');
     setApellido(partes.slice(1).join(' ') ?? '');
-    // intentar obtener perfil completo del backend
+    
     apiClient.get('/me').then(({ data }) => {
       if (dirtyRef.current) return;
-      // data puede venir con nombre, apellido, Tdocumento etc
+      
       const u = data?.usuario ?? data?.user ?? data;
       if (u) {
         if (u.nombre) setNombre(u.nombre);
@@ -76,7 +75,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
         if (u.correo && !correo) {/* */}
       }
     }).catch(() => {
-      // fallback: leer de localStorage si existía algo extra
+    
       try {
         const raw = localStorage.getItem('perfil_extra');
         if (raw) {
@@ -89,7 +88,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     });
   }, [isOpen, user?.name, correo]);
 
-  // configurar longitud según tipo documento (como PHP)
+
   const maxLenDoc = maxLenDocumento(tdoc);
 
   const handleGuardarDatos = async (e: React.FormEvent) => {
@@ -110,7 +109,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
         telefono,
       });
       showToast('Datos actualizados correctamente.');
-      // actualizar contexto + local para que no se revierta al reabrir
+   
       updateUser({ name: nombreCompleto });
       localStorage.setItem(
         'perfil_extra',
@@ -135,7 +134,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     try {
       await apiClient.post('/perfil/password', { actual, nueva, confirmar });
 
-      // Contraseña cambiada: cerrar sesión y pedir login de nuevo
+    
       sessionStorage.setItem('login_toast', 'password_ok');
       logout();
       window.location.replace('/login');
@@ -152,7 +151,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     }
   };
 
-  // fuerza de contraseña
+
   const reglas = reglasPassword(nueva);
   const fuerza = Object.values(reglas).filter(Boolean).length;
 

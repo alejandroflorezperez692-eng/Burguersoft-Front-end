@@ -47,14 +47,14 @@ const claseBadge = (stock: unknown) => {
   return k === 'agotado' ? 'badge-danger' : k === 'bajo' ? 'badge-warning' : 'badge-success';
 };
 
-// Deja solo dígitos y un punto decimal (acepta coma como punto)
+
 const soloNumero = (v: string): string => {
   const limpio = v.replace(',', '.').replace(/[^0-9.]/g, '');
   const [ent, ...dec] = limpio.split('.');
   return dec.length ? `${ent}.${dec.join('')}` : ent;
 };
 
-// Muestra el precio con punto de miles y coma decimal (ej: 9.999,99)
+
 const formatMiles = (v: string): string => {
   const limpio = v.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '');
   const [ent, ...dec] = limpio.split('.');
@@ -62,7 +62,7 @@ const formatMiles = (v: string): string => {
   return dec.length ? `${entFmt},${dec.join('')}` : entFmt;
 };
 
-// Convierte "9.999,99" de vuelta a número (9999.99)
+
 const milesANumero = (v: string): number =>
   Number(v.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
 
@@ -91,7 +91,7 @@ export default function MateriaPrimaAdmin() {
   const [pagina, setPagina] = useState(1);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
 
-  // --- Filtros de Carlos ---
+
   const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoStock>('todos');
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroMarca, setFiltroMarca] = useState('');
@@ -107,7 +107,7 @@ export default function MateriaPrimaAdmin() {
     if (!silencioso) setLoading(true);
     setErrorCarga(null);
 
-    // allSettled: si /marcas falla, los insumos igual se muestran (y viceversa)
+    
     const [r1, r2] = await Promise.allSettled([
       apiClient.get('/materias-primas'),
       apiClient.get('/marcas'),
@@ -133,13 +133,13 @@ export default function MateriaPrimaAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  // Si cambia cualquier filtro, volvemos a la página 1
+ 
   useEffect(() => { setPagina(1); }, [q, filtroEstado, filtroTipo, filtroMarca, filtroUnidad, orden]);
 
   const marcaNombre = (id: unknown): string =>
     (marcas ?? []).find((x) => x?.id === id)?.nombre ?? '';
 
-  // Opciones de los filtros, sacadas de los datos existentes
+
   const tipos = Array.from(new Set((items ?? []).map((m) => (m?.tipo ?? '').trim()).filter(Boolean)))
     .sort((a, b) => a.localeCompare(b, 'es'));
   const unidades = Array.from(new Set((items ?? []).map((m) => (m?.unidad_medida ?? '').trim()).filter(Boolean)))
@@ -232,7 +232,7 @@ export default function MateriaPrimaAdmin() {
 
   const esInactivo = (m: MateriaPrima) => m?.estado === 'Inactivo';
 
-  /** Activa o desactiva el insumo (ya no se elimina: así se conserva todo el historial). */
+
   const alternarEstado = async (m: MateriaPrima) => {
     if (m?.id == null || cambiandoId !== null) return;
     setDesactivar(null);

@@ -31,7 +31,7 @@ export default function AlertasIA() {
   const [cargando, setCargando] = useState(true);
   const [recarga, setRecarga] = useState(0);
 
-  // Aviso en vivo por websocket
+  
   useEffect(() => {
     const canal = conectarAlertas(() => setRecarga((n) => n + 1));
     return () => {
@@ -41,7 +41,7 @@ export default function AlertasIA() {
 
   useEffect(() => {
     let vivo = true;
-    // Si ya hay una petición en curso (StrictMode), se comparte en vez de repetirla
+
     const peticion =
       peticionEnCurso ??
       (peticionEnCurso = apiClient.get<RespuestaAlertas>('/asistente/alertas').finally(() => {
