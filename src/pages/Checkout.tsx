@@ -587,7 +587,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     if (!numeroDocumento || !nombre || !apellido || !correo || !telefono) {
       return 'Completa todos los datos de la compra.';
     }
-    if (metodoPago !== 'efectivo' && !comprobante) {
+    if (!comprobante) {
       return 'Adjunta una imagen del comprobante de pago. La IA verificará que sea un comprobante real.';
     }
     return null;
@@ -988,11 +988,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                     <span className="checkout-paso">4</span>
                     <h3>
                       Comprobante de pago{' '}
-                      {metodoPago !== 'efectivo' ? (
-                        <span className="checkout-required">*</span>
-                      ) : (
-                        <small style={{ fontWeight: 500, color: '#888' }}>(opcional)</small>
-                      )}
+                      <span className="checkout-required">*</span>
                     </h3>
                   </div>
                   <p className="checkout-comprobante-texto">

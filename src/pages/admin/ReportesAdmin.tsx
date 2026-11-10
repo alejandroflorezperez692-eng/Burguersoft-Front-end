@@ -185,7 +185,7 @@ function PanelProductosVendidos({ productos }: { productos: ProductoVendido[] })
 
   return (
     <Panel titulo="Productos más vendidos" scroll>
-      <div style={{ position: 'relative', marginBottom: 14 }}>
+      <div className="form-group rpt-buscador" style={{ position: 'relative', marginBottom: 14 }}>
         <input
           type="text"
           value={busqueda}

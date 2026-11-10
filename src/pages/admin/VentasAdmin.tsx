@@ -982,11 +982,11 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <div className="cierre-filtros">
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Desde</label>
-                <input type="date" value={cierre.desde} max={cierre.hasta} onChange={(e) => setCierreDesde(e.target.value)} />
+                <SelectorFechaVentas value={cierre.desde} max={cierre.hasta} onChange={setCierreDesde} />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Hasta</label>
-                <input type="date" value={cierre.hasta} min={cierre.desde} onChange={(e) => setCierreHasta(e.target.value)} />
+                <SelectorFechaVentas value={cierre.hasta} min={cierre.desde} onChange={setCierreHasta} />
               </div>
               <p className="cierre-nota">
                 Solo cuenta ventas <b>Pagadas</b>

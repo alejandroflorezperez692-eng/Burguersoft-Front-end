@@ -1249,7 +1249,7 @@ body.dark-mode .btn-icon-estado:hover {
   color: #fff;
 }
 
-.btn-det-editar   { background: var(--info, #2d89ef); }
+.btn-det-editar   { background: #e8821a; }
 .btn-det-eliminar { background: var(--danger, #C8382A); }
 
 .btn-det-editar:hover,
@@ -1635,7 +1635,7 @@ body.dark-mode .header-sep {
 
 body.dark-mode .notif-btn,
 body.dark-mode .header-user {
-  background: rgba(232, 130, 26, 0.12);
+  background: #000000;
   border-color: #E8821A;
 }
 
@@ -1643,7 +1643,7 @@ body.dark-mode .notif-btn:hover,
 body.dark-mode .notif-btn.open,
 body.dark-mode .header-user:hover,
 body.dark-mode .header-user.active {
-  background: rgba(232, 130, 26, 0.24);
+  background: #E8821A;
   border-color: #E8821A;
 }
 
@@ -4394,9 +4394,7 @@ body.dark-mode .admin-body .main-content :is(
 
 body.dark-mode .admin-body .main-content :is(
   .mn-field select.est-Disponible,
-  .mn-field select.activo,
-  .mn-estado-Disponible,
-  .mn-estado-Activa
+  .mn-field select.activo
 ) {
   background-color: rgba(26, 122, 66, 0.24) !important;
   border-color: #1a7a42 !important;

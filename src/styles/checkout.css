@@ -581,3 +581,198 @@ a.btn-pagar-ahora {
   .checkout-comprobante-preview { align-items: flex-start; }
   .checkout-comprobante-preview img { width: 68px; height: 68px; }
 }
+
+/* =====================================================================
+   MODO OSCURO (clientes): página de Checkout
+   Fondo negro, borde naranja, textos blancos, naranja al pasar el cursor.
+   Solo aplica dentro de .checkout-wrapper (no afecta al administrador).
+   ===================================================================== */
+body.dark-mode .checkout-wrapper .checkout-card,
+body.dark-mode .checkout-wrapper .checkout-resumen {
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+}
+body.dark-mode .checkout-wrapper .checkout-card:hover {
+  box-shadow: 0 6px 22px rgba(232, 130, 26, 0.18);
+}
+
+/* Encabezado "Finaliza tu pedido" */
+body.dark-mode .checkout-wrapper .checkout-encabezado {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+}
+body.dark-mode .checkout-wrapper .checkout-encabezado h2 { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-encabezado p { color: #ffffff !important; }
+
+/* Separadores y títulos de sección */
+body.dark-mode .checkout-wrapper .checkout-seccion,
+body.dark-mode .checkout-wrapper .checkout-comprobante,
+body.dark-mode .checkout-wrapper .checkout-resumen-items,
+body.dark-mode .checkout-wrapper .checkout-resumen-total {
+  border-color: rgba(232, 130, 26, 0.55) !important;
+}
+body.dark-mode .checkout-wrapper .checkout-seccion-titulo h3 { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-paso { color: #ffffff; }
+
+/* Etiquetas, subtítulos y textos de ayuda */
+body.dark-mode .checkout-wrapper .form-group label,
+body.dark-mode .checkout-wrapper .checkout-dato-label,
+body.dark-mode .checkout-wrapper .checkout-subtitulo {
+  color: #e8821a !important;
+}
+body.dark-mode .checkout-wrapper .checkout-hint,
+body.dark-mode .checkout-wrapper .checkout-comprobante-texto,
+body.dark-mode .checkout-wrapper .pago-qr-texto {
+  color: #ffffff !important;
+}
+body.dark-mode .checkout-wrapper .checkout-required { color: #e8821a !important; }
+
+/* Campos editables (teléfono, dirección, barrio, referencia, facturación) */
+body.dark-mode .checkout-wrapper .form-group input,
+body.dark-mode .checkout-wrapper .form-group select,
+body.dark-mode .checkout-wrapper .form-group textarea {
+  background: #000000 !important;
+  color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
+  border: 1.5px solid #e8821a !important;
+}
+body.dark-mode .checkout-wrapper .form-group input:hover,
+body.dark-mode .checkout-wrapper .form-group select:hover,
+body.dark-mode .checkout-wrapper .form-group textarea:hover {
+  border-color: #f5a623 !important;
+}
+body.dark-mode .checkout-wrapper .form-group input:focus,
+body.dark-mode .checkout-wrapper .form-group select:focus,
+body.dark-mode .checkout-wrapper .form-group textarea:focus {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.3);
+}
+body.dark-mode .checkout-wrapper .form-group input::placeholder,
+body.dark-mode .checkout-wrapper .form-group textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Datos de solo lectura (Nombre, Documento, Correo) */
+body.dark-mode .checkout-wrapper .checkout-dato {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+}
+body.dark-mode .checkout-wrapper .checkout-dato-valor { color: #ffffff !important; }
+
+/* Info row (Para llevar / Lo antes posible) */
+body.dark-mode .checkout-wrapper .checkout-info-row {
+  background: #000000 !important;
+  border: 1.5px solid #e8821a;
+}
+body.dark-mode .checkout-wrapper .checkout-info-icon {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+}
+body.dark-mode .checkout-wrapper .checkout-info-row strong { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-info-row p { color: #ffffff !important; }
+
+/* Checkbox de facturación electrónica */
+body.dark-mode .checkout-wrapper .checkout-checkbox-row { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-checkbox-row:hover { background: rgba(232, 130, 26, 0.12); }
+
+/* Métodos de pago */
+body.dark-mode .checkout-wrapper .pago-chip {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+}
+body.dark-mode .checkout-wrapper .pago-chip:hover,
+body.dark-mode .checkout-wrapper .pago-chip:has(input:checked):hover {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+}
+body.dark-mode .checkout-wrapper .pago-chip:hover .pago-chip-texto { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .pago-chip:has(input:checked) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.35);
+}
+body.dark-mode .checkout-wrapper .pago-chip:has(input:checked) .pago-chip-texto {
+  color: #ffffff !important;
+}
+body.dark-mode .checkout-wrapper .pago-chip-texto { color: #ffffff !important; }
+/* Los logos conservan su fondo blanco para que se vean bien */
+body.dark-mode .checkout-wrapper .pago-icono { background: #ffffff !important; }
+
+/* Panel del QR (la imagen del QR sigue en blanco para poder escanearla) */
+body.dark-mode .checkout-wrapper .pago-qr-caja {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+  box-shadow: 0 6px 22px rgba(232, 130, 26, 0.15);
+}
+body.dark-mode .checkout-wrapper .pago-qr-cuenta strong,
+body.dark-mode .checkout-wrapper .pago-qr-cuenta span { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .pago-qr-vacio {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Botón de ubicación */
+body.dark-mode .checkout-wrapper .btn-ubicacion {
+  background: #000000 !important;
+  border: 1.5px solid #e8821a !important;
+  color: #ffffff !important;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+body.dark-mode .checkout-wrapper .btn-ubicacion:hover:not(:disabled),
+body.dark-mode .checkout-wrapper .btn-ubicacion:focus-visible:not(:disabled),
+body.dark-mode .checkout-wrapper .btn-ubicacion:active:not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+/* Estáticos: sin flotar, sin sombra y sin cambiar de tamaño */
+body.dark-mode .checkout-wrapper .btn-ubicacion,
+body.dark-mode .checkout-wrapper .btn-ubicacion:hover,
+body.dark-mode .checkout-wrapper .btn-ubicacion:focus-visible,
+body.dark-mode .checkout-wrapper .btn-ubicacion:active {
+  transform: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Resumen "Tu pedido" */
+body.dark-mode .checkout-wrapper .checkout-resumen-titulo { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-resumen-item,
+body.dark-mode .checkout-wrapper .checkout-resumen-rows > div { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-resumen-item span:last-child { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-resumen-total,
+body.dark-mode .checkout-wrapper .checkout-resumen-total span {
+  color: #e8821a !important;
+}
+
+/* Aviso */
+body.dark-mode .checkout-wrapper .checkout-aviso {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Comprobante de pago */
+body.dark-mode .checkout-wrapper .checkout-comprobante-label {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+body.dark-mode .checkout-wrapper .checkout-comprobante-label:hover {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+body.dark-mode .checkout-wrapper .checkout-comprobante-label:hover small { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-comprobante-label small { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-comprobante-preview {
+  background: #000000 !important;
+  border-color: #e8821a !important;
+}
+body.dark-mode .checkout-wrapper .checkout-comprobante-preview img { border-color: #e8821a; }
+body.dark-mode .checkout-wrapper .checkout-comprobante-preview-info strong { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-comprobante-preview-info span { color: #ffffff !important; }
+body.dark-mode .checkout-wrapper .checkout-comprobante-preview-info button { color: #e8821a !important; }

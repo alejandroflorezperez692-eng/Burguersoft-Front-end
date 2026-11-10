@@ -423,7 +423,7 @@
   color: #fff;
   transition: filter 0.18s, transform 0.15s;
 }
-.mn-btn-edit { background: var(--info); }
+.mn-btn-edit { background: #e8821a; }
 .mn-btn-del { background: var(--danger); }
 .mn-btn-edit:hover,
 .mn-btn-del:hover { filter: brightness(0.87); transform: translateY(-1px); }
@@ -466,6 +466,9 @@
   box-shadow: 0 4px 14px rgba(200, 56, 42, 0.3);
 }
 .mn-btn-confirm:hover { background: #a82d22; }
+/* "Sí, salir" (cerrar sesión): naranja en vez de rojo */
+.mn-btn-confirm.mn-btn-salir { background: #e8821a !important; color: #fff !important; box-shadow: 0 4px 14px rgba(232, 130, 26, 0.35); }
+.mn-btn-confirm.mn-btn-salir:hover:not(:disabled) { background: #d4761a !important; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1100px) {
@@ -907,8 +910,8 @@ body.dark-mode .admin-body:has(.mn-page) .mn-view-toggle button.active {
   color: #fff;
 }
 .mn-btn-toggle.desactivar { background: #ffffff; color: #000; }
-.mn-btn-toggle.activar { background: #16a34a; color: #fff; }
-body.dark-mode .mn-btn-toggle.desactivar { background: #16a34a; color: #fff; }
+.mn-btn-toggle.activar { background: #e8821a; color: #fff; }
+body.dark-mode .mn-btn-toggle.desactivar { background: #e8821a; color: #fff; }
 body.dark-mode .mn-btn-toggle.desactivar:hover {
   border: 2px solid #E8821A;
   transform: translateY(-2px);

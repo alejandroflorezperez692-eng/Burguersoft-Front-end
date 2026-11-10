@@ -2135,8 +2135,8 @@ body.dark-mode .public-body .promo-img-pub img[src^="data:image/png"],
 body.dark-mode .public-body .promo-img-pub img[src*="/cena"],
 body.dark-mode .public-body .promo-img-pub img[src*="/promocion"] {
   background: transparent !important;
-  /* Solo el contorno de la figura en blanco (sin relleno): se erosiona la silueta y se pinta el borde */
-  filter: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='o' color-interpolation-filters='sRGB'%3E%3CfeMorphology in='SourceAlpha' operator='erode' radius='1' result='e'/%3E%3CfeComposite in='SourceAlpha' in2='e' operator='out' result='b0'/%3E%3CfeComponentTransfer in='b0' result='b'%3E%3CfeFuncA type='linear' slope='5'/%3E%3C/feComponentTransfer%3E%3CfeFlood flood-color='%23ffffff'/%3E%3CfeComposite in2='b' operator='in'/%3E%3C/filter%3E%3C/svg%3E#o");
+  /* Figura rellena como en modo claro: silueta en blanco sólida (los huecos, como el %, se ven negros) */
+  filter: brightness(0) invert(1) !important;
 }
 
 /* Tarjetas de promociones/productos (clientes) en modo oscuro: borde y línea de la imagen en naranja;
@@ -2166,4 +2166,17 @@ body.dark-mode .public-body .dropdown-menu button + button,
 body.dark-mode .public-body .dropdown-menu button + .cerrar-sesion {
   border-top: 1px solid #e8821a !important;
   border-radius: 0 !important;
+}
+
+/* Ventana "¿Cerrar sesión?" del cliente en modo oscuro: botón "Sí, salir" en naranja (el administrador no se toca) */
+body.dark-mode .public-body .mn-modal-overlay .mn-btn-confirm {
+  background: #e8821a !important;
+  color: #ffffff !important;
+  border: none;
+  box-shadow: 0 6px 20px rgba(232, 130, 26, 0.38);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+body.dark-mode .public-body .mn-modal-overlay .mn-btn-confirm:hover:not(:disabled) {
+  background: #d4761a !important;
+  box-shadow: 0 8px 24px rgba(232, 130, 26, 0.5);
 }

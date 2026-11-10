@@ -267,7 +267,7 @@ body:not(.dark-mode) .mis-pedidos-page button:not(.btn-cancelar-pedido):hover:no
 /* Modo oscuro: tarjetas de pedido */
 body.dark-mode .pedido-card {
   background: #000000;
-  border-color: #333333;
+  border-color: #E8821A;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
 }
 
@@ -278,18 +278,18 @@ body.dark-mode .pedido-card:hover {
 
 body.dark-mode .pedido-head,
 body.dark-mode .pedido-foot {
-  background: #0d0d0d;
-  border-color: #333333;
+  background: #000000;
+  border-color: #E8821A;
 }
 
 body.dark-mode .progreso-container {
   background: #000000;
-  border-color: #333333;
+  border-color: #E8821A;
 }
 
 body.dark-mode .pedido-info {
-  background: #080808;
-  border-color: #333333;
+  background: #000000;
+  border-color: #E8821A;
 }
 
 body.dark-mode .pedido-info-label { color: var(--text-600); }
@@ -303,16 +303,17 @@ body.dark-mode .pedido-table thead tr {
 
 body.dark-mode .pedido-table th {
   color: #ffffff;
-  border-color: #333333;
+  border-color: #E8821A;
 }
 
 body.dark-mode .pedido-table td {
   color: #e0e0e0;
-  border-color: #222222;
+  border-color: #E8821A;
 }
 
+body.dark-mode .pedido-table td,
 body.dark-mode .pedido-table tr:hover td {
-  background: rgba(232, 130, 26, 0.08);
+  background: transparent;
 }
 
 body.dark-mode .producto-nombre {
@@ -359,6 +360,9 @@ body.dark-mode .progreso-linea-bg {
 body.dark-mode .pedido-metodo {
   background: #000000 !important;
   color: #E8821A;
+  border: 1.5px solid #E8821A;
+  border-radius: 999px;
+  padding: 5px 14px;
 }
 
 body.dark-mode .pedido-foot .total {
@@ -381,16 +385,81 @@ body.dark-mode .progreso-estado-label.cancelado {
   color: #ff8a65;
 }
 
-body.dark-mode .btn-cancelar-pedido {
-  color: #ff8a65;
-  border-color: rgba(255, 138, 101, 0.5);
+/* Modo oscuro: fondo negro, borde naranja y letra blanca; al pasar el cursor, fondo naranja */
+body.dark-mode .mis-pedidos-page .btn-cancelar-pedido {
+  background: #000000;
+  border: 2px solid #e8821a;
+  color: #ffffff;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-body.dark-mode .btn-cancelar-pedido:hover:not(:disabled) {
-  background: #c3402a;
-  border-color: #c3402a;
+body.dark-mode .mis-pedidos-page .btn-cancelar-pedido:hover:not(:disabled),
+body.dark-mode .mis-pedidos-page .btn-cancelar-pedido:focus-visible:not(:disabled) {
+  background: #e8821a;
+  border-color: #e8821a;
   color: #ffffff;
 }
+/* Modo oscuro: ventana "Cancelar / Rechazar pedido" (solo en las páginas de cliente, dentro de .public-body) */
+body.dark-mode .public-body .modal-box {
+  background: #000000;
+  border: 1.5px solid #E8821A;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+}
+
+body.dark-mode .public-body .modal-box h3,
+body.dark-mode .public-body .modal-box p:not([style*="var(--danger)"]) {
+  color: #ffffff !important;
+}
+
+body.dark-mode .public-body .modal-box textarea {
+  background: #000000;
+  color: #ffffff !important;
+  caret-color: #E8821A;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+body.dark-mode .public-body .modal-box textarea {
+  border-color: #E8821A !important;
+}
+
+body.dark-mode .public-body .modal-box textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+body.dark-mode .public-body .modal-box textarea:focus {
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.3);
+}
+
+/* Botón "Volver": fondo negro, borde naranja, letra blanca; al pasar el cursor, fondo naranja */
+body.dark-mode .public-body .modal-box .btn-cancel {
+  background: #000000;
+  border: 1.5px solid #E8821A;
+  color: #ffffff;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+body.dark-mode .public-body .modal-box .btn-cancel:hover:not(:disabled) {
+  background: #E8821A;
+  border-color: #E8821A;
+  color: #ffffff;
+}
+
+/* Botón de confirmar: naranja con letra blanca y efecto flotante */
+body.dark-mode .public-body .modal-box .btn-primary {
+  background: #E8821A !important;
+  border: 1.5px solid #E8821A;
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(232, 130, 26, 0.38);
+  transition: all 0.2s ease;
+}
+
+body.dark-mode .public-body .modal-box .btn-primary:hover:not(:disabled) {
+  background: #d4761a !important;
+  border-color: #d4761a;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(232, 130, 26, 0.5);
+}
+
 /* ---- Aviso de comprobante / recarga ---- */
 .mis-pedidos-aviso {
   background: #eefaf0;
@@ -481,11 +550,21 @@ body.dark-mode .btn-cancelar-pedido:hover:not(:disabled) {
 .comprobante-modal-cambiar { display: inline-block; margin-top: 5px; font-size: 12px; font-weight: 700; color: #c3402a; cursor: pointer; text-decoration: underline; }
 .comprobante-modal-error { margin-top: 10px; padding: 9px 12px; border-radius: 8px; background: #fff0ee; border: 1px solid rgba(195, 64, 42, 0.3); color: #c3402a; font-size: 12.5px; }
 
-body.dark-mode .pedido-comprobante { background: #241d18; border-color: #3a3028; }
+body.dark-mode .pedido-comprobante { background: #000000; border-color: #E8821A; }
 body.dark-mode .pedido-comprobante-texto strong { color: #f5e6d8; }
 body.dark-mode .pedido-comprobante-texto span { color: #cbb8a4; }
+
+/* Modo oscuro: todo el texto, los números y las fechas de la tarjeta de pedido en blanco */
+body.dark-mode .mis-pedidos-page .pedido-card,
+body.dark-mode .mis-pedidos-page .pedido-card *:not(button) {
+  color: #ffffff !important;
+}
 body.dark-mode .comprobante-modal-adjuntar,
-body.dark-mode .comprobante-modal-preview { background: #241d18; border-color: #4a3b2f; color: #f5e6d8; }
+body.dark-mode .comprobante-modal-preview { background: #000000; border-color: #E8821A; color: #ffffff; }
+body.dark-mode .comprobante-modal-adjuntar:hover { background: #000000; border-color: #E8821A; box-shadow: 0 0 0 2px rgba(232, 130, 26, 0.35); }
+body.dark-mode .comprobante-modal-adjuntar small,
+body.dark-mode .comprobante-modal-preview span { color: rgba(255, 255, 255, 0.7); }
+body.dark-mode .comprobante-modal-preview strong { color: #ffffff; }
 
 @media (max-width: 540px) {
   .pedido-comprobante { flex-direction: column; align-items: flex-start; }

@@ -326,10 +326,10 @@ body.dark-mode .tv-card {
 .tv-btn:hover:not(:disabled) { opacity: 1; filter: brightness(.94); }
 
 /* Colores del botón según la columna */
-.tv-col[data-estado="Por verificar"]  .tv-btn { background: #d33a3a; box-shadow: 0 6px 16px -4px rgba(211, 58, 58, .45); }
-.tv-col[data-estado="Recepcionado"]   .tv-btn { background: #2f6fed; box-shadow: 0 6px 16px -4px rgba(47, 111, 237, .45); }
-.tv-col[data-estado="En preparación"] .tv-btn { background: #1a7a42; box-shadow: 0 6px 16px -4px rgba(26, 122, 66, .45); }
-.tv-col[data-estado="Preparado"]      .tv-btn { background: #7a4fd6; box-shadow: 0 6px 16px -4px rgba(122, 79, 214, .45); }
+.tv-col[data-estado="Por verificar"]  .tv-btn { background: #e8821a; box-shadow: 0 6px 16px -4px rgba(232, 130, 26, .45); }
+.tv-col[data-estado="Recepcionado"]   .tv-btn { background: #e8821a; box-shadow: 0 6px 16px -4px rgba(232, 130, 26, .45); }
+.tv-col[data-estado="En preparación"] .tv-btn { background: #e8821a; box-shadow: 0 6px 16px -4px rgba(232, 130, 26, .45); }
+.tv-col[data-estado="Preparado"]      .tv-btn { background: #e8821a; box-shadow: 0 6px 16px -4px rgba(232, 130, 26, .45); }
 
 /* Pedidos nuevos (por verificar) resaltados con borde completo */
 .tv-col[data-estado="Por verificar"] .tv-card {
@@ -378,15 +378,15 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 /* Botón de la tarjeta: color según el estado (verde, rojo, azul, amarillo) */
 .tv-btn,
 .tv-col[data-estado] .tv-btn {
-  background: #1a7a42; color: #fff; box-shadow: none;
+  background: #e8821a; color: #fff; box-shadow: none;
 }
 .tv-col[data-estado="Registrado"] .tv-btn,
 .tv-col[data-estado="Por verificar"] .tv-btn { background: #e8821a; color: #fff; }
-.tv-col[data-estado="Recepcionado"] .tv-btn { background: #2f6fed; color: #fff; }
-.tv-col[data-estado="En preparación"] .tv-btn { background: #1a7a42; color: #fff; }
+.tv-col[data-estado="Recepcionado"] .tv-btn { background: #e8821a; color: #fff; }
+.tv-col[data-estado="En preparación"] .tv-btn { background: #e8821a; color: #fff; }
 .tv-col[data-estado="Preparado"] .tv-btn { background: #e8821a; color: #fff; }
 .tv-col[data-estado="Servido"] .tv-btn,
-.tv-col[data-estado="Pendiente de pago"] .tv-btn { background: #1a7a42; color: #fff; }
+.tv-col[data-estado="Pendiente de pago"] .tv-btn { background: #e8821a; color: #fff; }
 /* ===== Botones con el mismo estilo que "+ Añadir promoción" ===== */
 
 .tv-btn-nuevo,
@@ -531,15 +531,11 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
   background: #fff4e0;
   border: 1px solid #f3c67a;
 }
-body.dark-mode .tv-pago-bloqueado {
-  color: #ffd79a;
-  background: rgba(243, 198, 122, 0.16);
-  border-color: rgba(243, 198, 122, 0.45);
-}
+body.dark-mode .tv-pago-bloqueado,
 body.dark-mode .tv-pago-aviso {
-  color: #ffd79a;
-  background: rgba(243, 198, 122, 0.12);
-  border-color: rgba(243, 198, 122, 0.4);
+  color: #ffffff;
+  background: #000000;
+  border-color: #e8821a;
 }
 
 body.dark-mode .admin-body .tv-wrap {
