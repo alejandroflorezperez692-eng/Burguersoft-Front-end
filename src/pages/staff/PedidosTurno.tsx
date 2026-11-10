@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import apiClient from '../../api/client';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
@@ -161,7 +161,7 @@ const nombreCliente = (v: Venta): string =>
 
 export default function PedidosTurno() {
   const { user } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, confirmar } = useToast();
 
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
@@ -189,6 +189,15 @@ export default function PedidosTurno() {
   const [procesandoComprobante, setProcesandoComprobante] = useState(false);
   const [cobro, setCobro] = useState<{ venta: Venta; accion: Accion } | null>(null);
   const [metodoCobro, setMetodoCobro] = useState('Efectivo');
+  const [archivoCobro, setArchivoCobro] = useState<File | null>(null);
+  const [pagando, setPagando] = useState(false);
+  const pagandoRef = useRef(false);
+  const refArchivoCobro = useRef<HTMLInputElement>(null);
+  const previewCobro = useMemo(
+    () => (archivoCobro ? URL.createObjectURL(archivoCobro) : null),
+    [archivoCobro],
+  );
+  useEffect(() => () => { if (previewCobro) URL.revokeObjectURL(previewCobro); }, [previewCobro]);
   const [, setTick] = useState(0);
   useEffect(() => {
     const t = window.setInterval(() => setTick((x) => x + 1), 30000);
@@ -275,6 +284,7 @@ export default function PedidosTurno() {
     if (accion.sig === 'Pagado') {
       const m = (venta.metodo_pago ?? '').trim();
       setMetodoCobro(METODOS_COBRO.includes(m) ? m : 'Efectivo');
+      setArchivoCobro(null);
       setCobro({ venta, accion });
       return;
     }
@@ -390,12 +400,76 @@ export default function PedidosTurno() {
   ]);
     const exigeComprobante =
     !!cobro && METODOS_CON_COMPROBANTE.includes(metodoCobro) && !comprobanteAprobado(cobro.venta);
+  const confirmarPago = async () => {
+    if (!cobro || pagandoRef.current) return;
+    const { venta, accion } = cobro;
+
+    if (exigeComprobante && !archivoCobro) {
+      setError('Adjunta la imagen del comprobante de pago.');
+      return;
+    }
+
+    pagandoRef.current = true;
+    setPagando(true);
+    try {
+      // 1. Guarda el método (queda registrado en el historial)
+      if ((venta.metodo_pago ?? '').trim() !== metodoCobro) {
+        await apiClient.patch(`/ventas/${venta.id}/metodo-pago`, { metodo_pago: metodoCobro });
+      }
+
+      // 2. Sube el comprobante (la IA lo verifica)
+      if (exigeComprobante && archivoCobro) {
+        const form = new FormData();
+        form.append('comprobante', archivoCobro);
+        const { data } = await apiClient.post(`/ventas/${venta.id}/comprobante`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 90000,
+        });
+
+        // Si el valor no coincide, no se aprueba solo: el cajero debe confirmar
+        if (data?.venta?.comprobante_estado !== 'Aprobado') {
+          const valor = data?.venta?.comprobante_valor;
+          const seguir = await confirmar(
+          `El valor del comprobante${valor != null ? ` ($${Number(valor).toLocaleString('es-CO')})` : ''} ` +
+          `no coincide con el total del pedido.\n¿Registrar el pago de todas formas?`,
+          'Sí, registrar pago',
+        );
+          if (!seguir) {
+            pagandoRef.current = false;
+            setPagando(false);
+            return;
+          }
+          await apiClient.patch(`/ventas/${venta.id}/comprobante/revisar`, { estado: 'Aprobado' });
+        }
+      }
+
+      // 3. Marca el pedido como pagado (el bloqueo se mantiene hasta cerrar el modal)
+      setCobro(null);
+      setArchivoCobro(null);
+      void ejecutarCambio(venta, accion, undefined, metodoCobro);
+    } catch (e) {
+      setError(mensajeDeError(e, 'No se pudo registrar el pago.'));
+      pagandoRef.current = false;
+      setPagando(false);
+    }
+  };
 
   const tarjeta = (v: Venta) => {
     const accion = config.acciones[v.estado ?? ''];
     const esOcupado = ocupadoId === v.id;
     const min = minutosDesde(v.fecha_programada ?? v.fecha ?? '');
     const enMesa = v.tipo_entrega === 'Consumir' && !!v.mesa;
+    const FINALES = ['Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
+    const hermanos = enMesa
+      ? items
+          .filter((o) => o.tipo_entrega === 'Consumir' && o.mesa === v.mesa && !FINALES.includes(o.estado ?? ''))
+          .sort((a, b) => a.id - b.id)
+      : [];
+    const nPedido = hermanos.findIndex((o) => o.id === v.id) + 1;
+    const colorMesa =
+      enMesa && hermanos.length > 1
+        ? ['#2563eb', '#e67e22', '#1d7a46', '#8b5cf6', '#db2777'][(Number(v.mesa) - 1) % 5]
+        : undefined;
 
 
     // El pago electrónico no se puede confirmar hasta aprobar el comprobante.
@@ -409,6 +483,7 @@ export default function PedidosTurno() {
         className={`tv-card${accion ? ' arrastrable' : ''}${arrastrandoId === v.id ? ' arrastrando' : ''}`}
         key={v.id}
         draggable={!!accion && !esOcupado}
+        style={colorMesa ? { borderLeftColor: colorMesa } : undefined}
         onDragStart={(e) => {
           e.dataTransfer.setData('text/plain', String(v.id));
           e.dataTransfer.effectAllowed = 'move';
@@ -433,6 +508,11 @@ export default function PedidosTurno() {
 
         <div className="tv-card-body">
           <span className="tv-cliente">{enMesa ? `Mesa ${v.mesa}` : nombreCliente(v)}</span>
+          {colorMesa && nPedido > 0 && (
+            <span className="tv-mesa-grupo" style={{ color: colorMesa, borderColor: colorMesa }}>
+              {nPedido}º pedido de la mesa
+            </span>
+          )}
 
           {v.fecha_programada && (() => {
             const t = new Date(v.fecha_programada);
@@ -462,28 +542,7 @@ export default function PedidosTurno() {
 
         <div className="tv-card-foot">
           <span className="tv-total">${Number(v.valor_total || 0).toLocaleString('es-CO')}</span>
-                    {accion ? (
-            vaAPagar && esEfectivo(v) ? (
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button
-                  type="button"
-                  className="tv-btn"
-                  disabled={accionDeshabilitada}
-                  onClick={() => void ejecutarCambio(v, accion, undefined, 'Efectivo')}
-                >
-                  {esOcupado ? 'Guardando…' : 'Cobrar en efectivo'}
-                </button>
-                <button
-                  type="button"
-                  className="tv-btn"
-                  style={{ background: 'transparent', color: 'inherit', border: '1px solid var(--border)', boxShadow: 'none' }}
-                  disabled={accionDeshabilitada}
-                  onClick={() => intentarCambio(v, accion)}
-                >
-                  Otro método
-                </button>
-              </div>
-            ) : (
+           {accion ? (
               <button
                 type="button"
                 className="tv-btn"
@@ -492,10 +551,9 @@ export default function PedidosTurno() {
               >
                 {esOcupado ? 'Guardando…' : textoAccion}
               </button>
-            )
-          ) : (
-            <span className="tv-espera">Sin acción disponible</span>
-          )}
+            ) : (
+              <span className="tv-espera">Sin acción disponible</span>
+            )}
         </div>
       </div>
     );
@@ -632,7 +690,7 @@ export default function PedidosTurno() {
               <div>
                 <h3 className="tv-det-titulo">Pedido #{detalle.id}</h3>
               </div>
-              <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>
+              <button type="button" className="modal-x" onClick={() => !pagando && setCobro(null)} aria-label="Cerrar">×</button>
             </div>
             <dl className="tv-det-info">
               <div><dt>Cliente</dt><dd>{nombreCliente(detalle)}</dd></div>
@@ -884,63 +942,81 @@ export default function PedidosTurno() {
         />
       )}
 
-            {cobro && (
-        <div className="modal-overlay open" onClick={() => setCobro(null)}>
+      {cobro && (
+        <div className="modal-overlay open" onClick={() => !pagando && setCobro(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="tv-det-head">
               <h3 className="tv-det-titulo">Registrar pago del pedido #{cobro.venta.id}</h3>
               <button type="button" className="modal-x" onClick={() => setCobro(null)} aria-label="Cerrar">×</button>
             </div>
+
+            <div className="tv-cobro-resumen">
+              <div>
+                <span className="tv-cobro-etq">
+                  {cobro.venta.tipo_entrega === 'Consumir' && cobro.venta.mesa
+                    ? `Mesa ${cobro.venta.mesa}`
+                    : ETIQUETA_ENTREGA[cobro.venta.tipo_entrega ?? ''] ?? 'Pedido'}
+                </span>
+              </div>
+              <div className="tv-cobro-total">
+                <span className="tv-cobro-etq">Total a cobrar</span>
+                <strong>${Number(cobro.venta.valor_total).toLocaleString('es-CO')}</strong>
+              </div>
+            </div>
+
             <div className="form-group">
               <label>Método de pago</label>
-              <select value={metodoCobro} onChange={(e) => setMetodoCobro(e.target.value)}>
+              <select value={metodoCobro} onChange={(e) => setMetodoCobro(e.target.value)} disabled={pagando}>
                 {METODOS_COBRO.map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
             </div>
-            {exigeComprobante && (
-              <p className="tv-pago-aviso">
-                {metodoCobro} necesita un comprobante aprobado. Si el cliente pagó en efectivo,
-                cambia el método a Efectivo.
-              </p>
+
+                        {exigeComprobante && (
+              <div className="form-group">
+                <label>Comprobante de pago <span style={{ color: '#E8821A' }}>*</span></label>
+                <input
+                  ref={refArchivoCobro}
+                  id="comprobante-cobro"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={(e) => setArchivoCobro(e.target.files?.[0] ?? null)}
+                />
+                {previewCobro ? (
+                  <div className="tv-drop-preview">
+                    <img src={previewCobro} alt="Vista previa del comprobante" />
+                    <div className="tv-drop-info">
+                      <strong>{archivoCobro?.name}</strong>
+                      <span>{((archivoCobro?.size ?? 0) / 1024 / 1024).toFixed(2)} MB</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setArchivoCobro(null);
+                          if (refArchivoCobro.current) refArchivoCobro.current.value = '';
+                        }}
+                      >
+                        Quitar y elegir otra
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label htmlFor="comprobante-cobro" className="tv-drop">
+                    <span>📎 Adjuntar imagen del comprobante</span>
+                    <small>JPG, PNG o WEBP · máximo 8 MB</small>
+                  </label>
+                )}
+              </div>
             )}
+
             <div className="vt-comprobante-acciones">
-              <button type="button" className="btn-cancel" onClick={() => setCobro(null)}>Cancelar</button>
-                            {exigeComprobante ? (
-                <button
-                  type="button"
-                  className="btn-save"
-                  onClick={async () => {
-                    const { venta } = cobro;
-                    try {
-                      await apiClient.patch(`/ventas/${venta.id}/metodo-pago`, { metodo_pago: metodoCobro });
-                      setItems((prev) =>
-                        prev.map((v) => (v.id === venta.id ? { ...v, metodo_pago: metodoCobro } : v)),
-                      );
-                      setCobro(null);
-                      setDetalleId(venta.id);
-                    } catch (e) {
-                      setCobro(null);
-                      setError(mensajeDeError(e, 'No se pudo cambiar el método de pago.'));
-                    }
-                  }}
-                >
-                  Guardar y subir comprobante
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="btn-save"
-                  onClick={() => {
-                    const { venta, accion } = cobro;
-                    setCobro(null);
-                    void ejecutarCambio(venta, accion, undefined, metodoCobro);
-                  }}
-                >
-                  Registrar pago
-                </button>
-              )}
+              <button type="button" className="btn-cancel" onClick={() => setCobro(null)} disabled={pagando}>
+                Cancelar
+              </button>
+              <button type="button" className="btn-save" onClick={confirmarPago} disabled={pagando}>
+                {pagando ? 'Registrando…' : 'Registrar pago'}
+              </button>
             </div>
           </div>
         </div>

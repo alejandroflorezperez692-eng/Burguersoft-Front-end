@@ -606,6 +606,37 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
 
   const [enviando, setEnviando] = useState(false);
 
+    const enviandoRef = useRef(false);
+
+  // Reduce la imagen del comprobante: se sube y se verifica mucho más rápido.
+  const comprimirImagen = (archivo: File): Promise<File> =>
+    new Promise((resolve) => {
+      if (archivo.size < 400 * 1024) return resolve(archivo);
+      const url = URL.createObjectURL(archivo);
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1400;
+        const escala = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * escala);
+        canvas.height = Math.round(img.height * escala);
+        canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(
+          (blob) =>
+            resolve(
+              blob && blob.size < archivo.size
+                ? new File([blob], archivo.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' })
+                : archivo,
+            ),
+          'image/jpeg',
+          0.85,
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(archivo); };
+      img.src = url;
+    });
+
   const subtotal = total / (1 + IVA_RATE);
   const impuestos = total - subtotal;
 
@@ -637,12 +668,14 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       navigate('/login');
       return;
     }
+    if (enviandoRef.current) return;
     const error = validar();
     if (error) {
       alertar(error);
       return;
     }
 
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       // Se envía como multipart porque incluye la imagen del comprobante.
@@ -682,7 +715,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       form.append('cliente[telefono]', telefono);
 
       if (comprobante) {
-        form.append('comprobante', comprobante);
+        form.append('comprobante', await comprimirImagen(comprobante));
       }
 
       const respuesta = await apiClient.post('/ventas', form, {
@@ -710,6 +743,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     } catch (err) {
       alertar(mensajeErrorPago(err));
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
     }
   };
@@ -824,32 +858,23 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                     </div>
                   </div>
 
-                  <a
-                    className="btn-pagar-ahora"
-                    href={pedidoConfirmado.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {pedidoConfirmado.metodoPago === 'efectivo'
-                      ? 'Escribir por WhatsApp'
-                      : 'Enviar comprobante por WhatsApp'}
-                  </a>
+                  <div className="checkout-confirm-acciones">
+                    <button
+                      type="button"
+                      className="btn-ubicacion"
+                      onClick={() => navigate('/mis-compras')}
+                    >
+                      Ver el estado de mis compras
+                    </button>
 
-                  <button
-                    type="button"
-                    className="btn-ubicacion"
-                    onClick={() => navigate('/mis-compras')}
-                  >
-                    Ver el estado de mi pedido
-                  </button>
-
-                  <button
-                    type="button"
-                    className="btn-ubicacion"
-                    onClick={() => navigate('/menu-publico')}
-                  >
-                    Hacer otro pedido
-                  </button>
+                    <button
+                      type="button"
+                      className="btn-ubicacion"
+                      onClick={() => navigate('/menu-publico')}
+                    >
+                      Hacer otro pedido
+                    </button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -1167,6 +1192,15 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
         </aside>
         )}
       </div>
+      {enviando && (
+        <div className="checkout-cargando" role="status" aria-live="polite">
+          <div className="checkout-cargando-caja">
+            <span className="checkout-spinner" />
+            <strong>{comprobante ? 'Verificando tu comprobante…' : 'Registrando tu pedido…'}</strong>
+            <small>No cierres ni recargues esta página.</small>
+          </div>
+        </div>
+      )}
       <Footer />
     </div>
   );

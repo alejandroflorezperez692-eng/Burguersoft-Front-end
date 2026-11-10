@@ -98,6 +98,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const [cliente, setCliente] = useState('');
   const [direccion, setDireccion] = useState('');
   const [telefono, setTelefono] = useState('');
+  const [recibeNombre, setRecibeNombre] = useState('');
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [notas, setNotas] = useState('');
   const [buscar, setBuscar] = useState('');
@@ -248,15 +249,39 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   /* ---------- Guardar ---------- */
   const cerrar = () => {
     setCarrito([]); setCombos([]); setExtras([]); setMesa(null); setCliente(''); setDireccion('');
-    setTelefono(''); setNotas(''); setBuscar('');
+       setTelefono(''); setRecibeNombre(''); setNotas('');
     onClose();
   };
 
     const guardar = () => {
     if (enviando) return;
     if (tipoEntrega === 'Consumir' && !mesa) return alertar('Elige la mesa');
-    if (tipoEntrega === 'Domicilio' && !direccion.trim()) return alertar('Escribe la dirección de entrega');
+    if (tipoEntrega === 'Domicilio') {
+      if (!direccion.trim()) return alertar('Escribe la dirección de entrega');
+      if (!recibeNombre.trim()) return alertar('Escribe el nombre de quien recibe');
+      if (telefono.trim().length < 7) return alertar('Escribe un teléfono válido de quien recibe');
+    }
     if (lineas.length === 0) return alertar('Agrega al menos un producto');
+
+    setEnviando(true);
+    apiClient
+      .post('/ventas', {
+        carrito,
+        combos: combos.length ? combos : undefined,
+        adiciones: extras.length ? extras : undefined,
+        metodo_pago: metodoPago,
+        tipo_entrega: tipoEntrega,
+        cliente_nombre: cliente.trim() || undefined,
+        mesa: tipoEntrega === 'Consumir' ? mesa : undefined,
+        notas: notas.trim() || undefined,
+        direccion: tipoEntrega === 'Domicilio'
+          ? {
+              linea1: direccion.trim(),
+              recibe_nombre: recibeNombre.trim(),
+              recibe_telefono: telefono.trim(),
+            }
+          : undefined,
+      })
 
     const notasFinal = [
       tipoEntrega === 'Domicilio' ? `Dirección: ${direccion.trim()}` : '',
@@ -351,16 +376,32 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                 <label>Cliente (opcional)</label>
                 <input type="text" maxLength={150} value={cliente} onChange={(e) => setCliente(e.target.value)} />
               </div>
-              {tipoEntrega === 'Domicilio' && (
+                            {tipoEntrega === 'Domicilio' && (
                 <>
                   <div className="form-group">
-                    <label>Dirección *</label>
+                    <label>Dirección <span style={{ color: '#E8821A' }}>*</span></label>
                     <input type="text" maxLength={120} value={direccion} onChange={(e) => setDireccion(e.target.value)} />
                   </div>
                   <div className="form-group">
-                    <label>Teléfono</label>
-                    <input type="text" inputMode="numeric" maxLength={15} value={telefono}
-                      onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))} />
+                    <label>Nombre de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
+                    <input
+                      type="text"
+                      maxLength={150}
+                      value={recibeNombre}
+                      onChange={(e) => setRecibeNombre(e.target.value)}
+                      placeholder="Nombre y apellido"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Teléfono de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={15}
+                      value={telefono}
+                      onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
+                      placeholder="3001234567"
+                    />
                   </div>
                 </>
               )}

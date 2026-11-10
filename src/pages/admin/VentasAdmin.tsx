@@ -1354,7 +1354,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                     >
                       Ver historial
                     </button>
-                    {esAdmin && v.estado !== 'Pagado' && !NO_VENDIDOS.includes(v?.estado) && (
+                                        {esAdmin && !['Servido', 'Pendiente de pago', 'Pagado'].includes(v?.estado) && !NO_VENDIDOS.includes(v?.estado) && (
                       <button
                         type="button"
                         className="btn-cancel"
