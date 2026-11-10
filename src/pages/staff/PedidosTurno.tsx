@@ -89,6 +89,7 @@ interface PromoVenta {
 interface Venta {
   id: number;
   fecha?: string;
+  fecha_programada?: string | null;
   estado?: string;
   tipo_entrega?: string | null;
   metodo_pago?: string | null;
@@ -118,6 +119,8 @@ interface CambioConMotivo {
   venta: Venta;
   accion: Accion;
 }
+
+const METODOS_COBRO = ['Efectivo', 'Nequi', 'Daviplata', 'Bancolombia'];
 
 const aFecha = (f: string) => new Date((f || '').replace(' ', 'T'));
 
@@ -162,6 +165,7 @@ export default function PedidosTurno() {
 
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
+  const puedeRevisar = esAdmin || rol === 'cajero';
   const puedeVerComprobante = esAdmin || rol === 'cajero' || rol === 'cocinero';
   const puedeCrear = rol === 'admin' || rol === 'mesero';
   const vistaInicial = VISTA_INICIAL[rol] ?? 'cocina';
@@ -183,6 +187,13 @@ export default function PedidosTurno() {
   const [comprobanteARechazar, setComprobanteARechazar] = useState<Venta | null>(null);
   const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
   const [procesandoComprobante, setProcesandoComprobante] = useState(false);
+  const [cobro, setCobro] = useState<{ venta: Venta; accion: Accion } | null>(null);
+  const [metodoCobro, setMetodoCobro] = useState('Efectivo');
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(() => setTick((x) => x + 1), 30000);
+    return () => window.clearInterval(t);
+  }, []);
 
   const version = useRef(0);
 
@@ -200,7 +211,8 @@ export default function PedidosTurno() {
         ? res.data
         : ((res.data as { data?: unknown })?.data as Venta[]) ?? [];
       const turno = lista.filter((v) => config.estados.includes(v.estado ?? ''));
-      turno.sort((a, b) => aFecha(a.fecha ?? '').getTime() - aFecha(b.fecha ?? '').getTime());
+      turno.sort((a, b) =>
+        aFecha(a.fecha_programada ?? a.fecha ?? '').getTime() - aFecha(b.fecha_programada ?? b.fecha ?? '').getTime());
       setItems(turno);
     } catch {
       setError('No se pudo cargar la lista de pedidos.');
@@ -260,10 +272,16 @@ export default function PedidosTurno() {
       setCambioConMotivo({ venta, accion });
       return;
     }
+    if (accion.sig === 'Pagado') {
+      const m = (venta.metodo_pago ?? '').trim();
+      setMetodoCobro(METODOS_COBRO.includes(m) ? m : 'Efectivo');
+      setCobro({ venta, accion });
+      return;
+    }
     void ejecutarCambio(venta, accion, undefined);
   };
 
- const ejecutarCambio = async (venta: Venta, accion: Accion, motivo?: string) => {
+ const ejecutarCambio = async (venta: Venta, accion: Accion, motivo?: string, metodo?: string) => {
   const anterior = items;
   pendientes.current += 1;
   version.current += 1;            // ← NUEVA: invalida recargas en vuelo
@@ -276,7 +294,7 @@ export default function PedidosTurno() {
   showToast(`Pedido #${venta.id}: ${accion.sig.toLowerCase()}`, false);
 
   try {
-    await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo });
+    await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo, metodo_pago: metodo });
   } catch (e) {
     setItems(anterior);
     setError(mensajeDeError(e, `No se pudo marcar el pedido #${venta.id} como «${accion.sig}».`));
@@ -360,30 +378,31 @@ export default function PedidosTurno() {
   });
 
   const puedeSubirComprobante = (v: Venta) =>
-    esAdmin || Number(v.usuario_id) === Number(user?.id);
+    puedeRevisar || Number(v.usuario_id) === Number(user?.id);
+  const esEfectivo = (v: Venta) => (v.metodo_pago || '').toLowerCase() === 'efectivo';
 
   const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
   useEscape([
+    [cobro !== null, () => setCobro(null)],
     [comprobanteASubir !== null, () => setComprobanteASubir(null)],
     [comprobanteARechazar !== null, () => setComprobanteARechazar(null)],
     [detalle !== null, () => setDetalleId(null)],
   ]);
+    const exigeComprobante =
+    !!cobro && METODOS_CON_COMPROBANTE.includes(metodoCobro) && !comprobanteAprobado(cobro.venta);
 
   const tarjeta = (v: Venta) => {
     const accion = config.acciones[v.estado ?? ''];
     const esOcupado = ocupadoId === v.id;
-    const min = minutosDesde(v.fecha ?? '');
+    const min = minutosDesde(v.fecha_programada ?? v.fecha ?? '');
     const enMesa = v.tipo_entrega === 'Consumir' && !!v.mesa;
+
 
     // El pago electrónico no se puede confirmar hasta aprobar el comprobante.
     const vaAPagar = accion?.sig === 'Pagado';
     const faltaComprobante = vaAPagar && requiereComprobante(v) && !comprobanteAprobado(v);
-    const textoAccion = faltaComprobante
-      ? esAdmin
-        ? 'Aprobar comprobante'
-        : 'Comprobante pendiente'
-      : accion?.texto;
-    const accionDeshabilitada = esOcupado || (faltaComprobante && !esAdmin);
+    const textoAccion = accion?.texto;
+    const accionDeshabilitada = esOcupado;
 
     return (
       <div
@@ -415,6 +434,17 @@ export default function PedidosTurno() {
         <div className="tv-card-body">
           <span className="tv-cliente">{enMesa ? `Mesa ${v.mesa}` : nombreCliente(v)}</span>
 
+          {v.fecha_programada && (() => {
+            const t = new Date(v.fecha_programada);
+            const hora = t.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            const faltan = Math.round((t.getTime() - Date.now()) / 60000);
+            return faltan <= 30 ? (
+              <span className="tv-pago-bloqueado">¡Preparar ya! Para las {hora}</span>
+            ) : (
+              <span className="tv-tag">Programado: {hora}</span>
+            );
+          })()}
+
           <button type="button" className="tv-ver-detalle" onClick={() => setDetalleId(v.id)}>
             Ver detalle
           </button>
@@ -432,20 +462,37 @@ export default function PedidosTurno() {
 
         <div className="tv-card-foot">
           <span className="tv-total">${Number(v.valor_total || 0).toLocaleString('es-CO')}</span>
-          {accion ? (
-            <button
-              type="button"
-              className="tv-btn"
-              disabled={accionDeshabilitada}
-              title={faltaComprobante && !esAdmin
-                ? 'El administrador debe aprobar el comprobante antes de confirmar el pago.'
-                : undefined}
-              onClick={() =>
-                faltaComprobante ? setDetalleId(v.id) : intentarCambio(v, accion)
-              }
-            >
-              {esOcupado ? 'Guardando…' : textoAccion}
-            </button>
+                    {accion ? (
+            vaAPagar && esEfectivo(v) ? (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  className="tv-btn"
+                  disabled={accionDeshabilitada}
+                  onClick={() => void ejecutarCambio(v, accion, undefined, 'Efectivo')}
+                >
+                  {esOcupado ? 'Guardando…' : 'Cobrar en efectivo'}
+                </button>
+                <button
+                  type="button"
+                  className="tv-btn"
+                  style={{ background: 'transparent', color: 'inherit', border: '1px solid var(--border)', boxShadow: 'none' }}
+                  disabled={accionDeshabilitada}
+                  onClick={() => intentarCambio(v, accion)}
+                >
+                  Otro método
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className="tv-btn"
+                disabled={accionDeshabilitada}
+                onClick={() => intentarCambio(v, accion)}
+              >
+                {esOcupado ? 'Guardando…' : textoAccion}
+              </button>
+            )
           ) : (
             <span className="tv-espera">Sin acción disponible</span>
           )}
@@ -661,9 +708,11 @@ export default function PedidosTurno() {
                 {!detalle.tiene_comprobante ? (
                   <>
                     <p className="vt-comprobante-vacio">
-                      Este pedido no tiene comprobante de pago cargado.
+                      {esEfectivo(detalle)
+                        ? 'Pago en efectivo contra entrega: no requiere comprobante.'
+                        : 'Este pedido no tiene comprobante de pago cargado.'}
                     </p>
-                    {puedeSubirComprobante(detalle) && (
+                    {!esEfectivo(detalle) && puedeSubirComprobante(detalle) && (
                       <div className="vt-comprobante-acciones">
                         <button
                           type="button"
@@ -833,6 +882,68 @@ export default function PedidosTurno() {
             void ejecutarCambio(venta, accion, motivo);
           }}
         />
+      )}
+
+            {cobro && (
+        <div className="modal-overlay open" onClick={() => setCobro(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="tv-det-head">
+              <h3 className="tv-det-titulo">Registrar pago del pedido #{cobro.venta.id}</h3>
+              <button type="button" className="modal-x" onClick={() => setCobro(null)} aria-label="Cerrar">×</button>
+            </div>
+            <div className="form-group">
+              <label>Método de pago</label>
+              <select value={metodoCobro} onChange={(e) => setMetodoCobro(e.target.value)}>
+                {METODOS_COBRO.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+            {exigeComprobante && (
+              <p className="tv-pago-aviso">
+                {metodoCobro} necesita un comprobante aprobado. Si el cliente pagó en efectivo,
+                cambia el método a Efectivo.
+              </p>
+            )}
+            <div className="vt-comprobante-acciones">
+              <button type="button" className="btn-cancel" onClick={() => setCobro(null)}>Cancelar</button>
+                            {exigeComprobante ? (
+                <button
+                  type="button"
+                  className="btn-save"
+                  onClick={async () => {
+                    const { venta } = cobro;
+                    try {
+                      await apiClient.patch(`/ventas/${venta.id}/metodo-pago`, { metodo_pago: metodoCobro });
+                      setItems((prev) =>
+                        prev.map((v) => (v.id === venta.id ? { ...v, metodo_pago: metodoCobro } : v)),
+                      );
+                      setCobro(null);
+                      setDetalleId(venta.id);
+                    } catch (e) {
+                      setCobro(null);
+                      setError(mensajeDeError(e, 'No se pudo cambiar el método de pago.'));
+                    }
+                  }}
+                >
+                  Guardar y subir comprobante
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="btn-save"
+                  onClick={() => {
+                    const { venta, accion } = cobro;
+                    setCobro(null);
+                    void ejecutarCambio(venta, accion, undefined, metodoCobro);
+                  }}
+                >
+                  Registrar pago
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

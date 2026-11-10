@@ -335,6 +335,7 @@ export default function VentasAdmin() {
   const esMesero = normalizarRol(user?.role) === 'mesero';
   const puedeSubirComprobante = (v: Venta) =>
     esAdmin || Number(v.usuario_id) === Number(user?.id);
+  const esEfectivo = (v: Venta) => (v.metodo_pago || '').toLowerCase() === 'efectivo';
 
   
   const [items, setItems] = useState<Venta[]>([]);
@@ -348,6 +349,7 @@ export default function VentasAdmin() {
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
   const [estadoAbiertoId, setEstadoAbiertoId] = useState<number | null>(null);
+  const [cambioMotivo, setCambioMotivo] = useState<{ id: number; estado: string } | null>(null);
   const [estadoDropdownPos, setEstadoDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const estadoDropdownRefs = useRef(new Map<number, HTMLDivElement>());
   const estadoOptionsRefs = useRef(new Map<number, HTMLDivElement>());
@@ -663,8 +665,8 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
 </body></html>`;
   };
 
-  const updateEstado = (id: number, estado: string) => {
-    apiClient.patch(`/ventas/${id}/estado`, { estado })
+  const updateEstado = (id: number, estado: string, motivo?: string) => {
+    apiClient.patch(`/ventas/${id}/estado`, { estado, motivo })
       .then(() => { setVersion((v) => v + 1); load(); })
       .catch((e: unknown) =>
         alertar(mensajeDeError(e, 'No se pudo cambiar el estado.')),
@@ -1469,7 +1471,10 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                       >
                         {ESTADOS.map((estado) => {
                           const seleccionado = estado === v?.estado;
-                          const deshabilitado = (!esAdmin && estado === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(estado));
+                          const deshabilitado =
+                            (!esAdmin && estado === 'Reembolsada') ||
+                            (estado === 'Reembolsada' && fechaLocal(v?.fecha) !== hoyStr) ||
+                            (esMesero && !ESTADOS_MESERO.includes(estado));
                           return (
                             <button
                               key={estado}
@@ -1479,8 +1484,12 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                               className={`venta-estado-option${seleccionado ? ' selected' : ''}`}
                               disabled={deshabilitado}
                               onClick={() => {
-                                updateEstado(v.id, estado);
                                 setEstadoAbiertoId(null);
+                                if (estado === 'Cancelado' || estado === 'Reembolsada') {
+                                  setCambioMotivo({ id: v.id, estado });
+                                } else {
+                                  updateEstado(v.id, estado);
+                                }
                               }}
                             >
                               {estado}
@@ -1493,14 +1502,26 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   </div>
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    className="btn-cancel"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
-                    onClick={() => setHistorialId(v.id)}
-                  >
-                    Ver historial
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+                    <button
+                      type="button"
+                      className="btn-cancel"
+                      style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+                      onClick={() => setHistorialId(v.id)}
+                    >
+                      Ver historial
+                    </button>
+                    {esAdmin && v.estado === 'Pagado' && fechaLocal(v.fecha) === hoyStr && (
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                        onClick={() => setCambioMotivo({ id: v.id, estado: 'Reembolsada' })}
+                      >
+                        Reembolsar
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td>
                   <button
@@ -1578,9 +1599,11 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               {!detalle.tiene_comprobante ? (
                 <>
                   <p className="vt-comprobante-vacio">
-                    Este pedido no tiene comprobante de pago cargado.
+                    {esEfectivo(detalle)
+                      ? 'Pago en efectivo contra entrega: no requiere comprobante.'
+                      : 'Este pedido no tiene comprobante de pago cargado.'}
                   </p>
-                  {puedeSubirComprobante(detalle) && (
+                  {!esEfectivo(detalle) && puedeSubirComprobante(detalle) && (
                     <div className="vt-comprobante-acciones">
                       <button
                         type="button"
@@ -1768,6 +1791,25 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           onConfirm={(motivo) =>
             void revisarComprobante(comprobanteARechazar, 'Rechazado', motivo)
           }
+        />
+      )}
+
+      {cambioMotivo && (
+        <MotivoModal
+          titulo={cambioMotivo.estado === 'Reembolsada'
+            ? `Reembolsar el pedido #${cambioMotivo.id}`
+            : `Cancelar el pedido #${cambioMotivo.id}`}
+          descripcion={cambioMotivo.estado === 'Reembolsada'
+            ? 'Indica por qué se devuelve el dinero. Quedará anotado el monto y el método de pago en el historial.'
+            : 'Indica el motivo de la cancelación. Quedará registrado en el historial del pedido.'}
+          confirmarTexto={cambioMotivo.estado === 'Reembolsada' ? 'Reembolsar' : 'Cancelar pedido'}
+          peligro
+          onClose={() => setCambioMotivo(null)}
+          onConfirm={(motivo) => {
+            const c = cambioMotivo;
+            setCambioMotivo(null);
+            updateEstado(c.id, c.estado, motivo);
+          }}
         />
       )}
     </div>

@@ -69,8 +69,7 @@ const PASOS_DOMICILIO = PASOS;
 const PASOS_RECOGER = PASOS;
 const PASOS_CONSUMIR = PASOS;
 const CANCELABLES = ['Registrado', 'Por verificar', 'Recepcionado'];
-// Estados en los que el cliente puede rechazar el pedido (ej. pago pendiente que no hizo).
-const RECHAZABLES = ['Pendiente de pago'];
+const RECHAZABLES: string[] = [];
 
 // Orden global para estimar progreso cuando el estado no pertenece al flujo actual
 // (el backend permite cualquier estado en cualquier tipo de entrega).
@@ -80,7 +79,7 @@ function normalizarTipoEntrega(tipo?: string): string {
   const t = (tipo ?? '').trim().toLowerCase();
   if (t.includes('domi')) return 'Domicilio';
   if (t.includes('recog') || t.includes('llevar')) return 'Para recoger';
-  return 'En restaurante';
+  return 'En el local';
 }
 
 function pasosPara(tipoEntrega: string): string[] {

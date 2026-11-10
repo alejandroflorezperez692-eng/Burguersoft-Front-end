@@ -364,12 +364,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                   </div>
                 </>
               )}
-              <div className="form-group">
-                <label>Método de pago</label>
-                <SelectOscuro value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
-                  {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-                </SelectOscuro>
-              </div>
+              
               <div className="form-group">
                 <label>Notas para cocina</label>
                 <input type="text" maxLength={120} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej: sin tomate" />

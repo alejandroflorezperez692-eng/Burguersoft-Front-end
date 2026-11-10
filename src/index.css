@@ -2008,3 +2008,16 @@ body.dark-mode textarea.burgi-input {
 body.dark-mode textarea.burgi-input::placeholder {
   color: rgba(255, 255, 255, 0.6);
 }
+@media (max-width: 768px) {
+  .acc-panel {
+    top: 96px !important;
+    bottom: 16px !important;
+    max-height: calc(100dvh - 96px - 16px) !important;
+  }
+}
+.acc-panel {
+  top: auto !important;
+  bottom: 80px !important;
+  max-height: calc(100dvh - 80px - 120px) !important;
+  overflow-y: auto !important;
+}

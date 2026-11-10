@@ -4733,13 +4733,16 @@ body.dark-mode .admin-body :is(input, textarea, select)::placeholder {
   .admin-body.sidebar-collapsed .sidebar-item { padding: 0 8px; }
   .admin-body.sidebar-collapsed .sidebar-item a {
     font-size: 0;
+    letter-spacing: 0;        /* evita que el texto oculto ocupe ancho */
     gap: 0;
     justify-content: center;
     padding: 10px 0;
   }
   .admin-body.sidebar-collapsed .icono-sidebar {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
+    margin: 0 auto;
+    display: block;
     opacity: 0.85;
   }
 }
