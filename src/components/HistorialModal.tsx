@@ -23,7 +23,23 @@ interface Item {
 const POR_PAGINA = 50;
 const ALTO = 38;
 
-/** Deduce el tipo de acción a partir del texto de la descripción. */
+const PALETA = [
+  { dot: '#2f6fed', bg: '#e6f1fb', text: '#0c447c' },
+  { dot: '#e8821a', bg: '#faeeda', text: '#633806' },
+  { dot: '#1a7a42', bg: '#eaf3de', text: '#27500a' },
+  { dot: '#7a4fd6', bg: '#eeedfe', text: '#3c3489' },
+  { dot: '#d33a3a', bg: '#fceaea', text: '#791f1f' },
+  { dot: '#0f9d8a', bg: '#e1f5ee', text: '#085041' },
+];
+
+function colorModulo(modulo: string): CSSProperties {
+  const texto = modulo ?? '';
+  let suma = 0;
+  for (let i = 0; i < texto.length; i += 1) suma += texto.charCodeAt(i);
+  const c = PALETA[suma % PALETA.length];
+  return { '--hc': c.dot, '--hb': c.bg, '--ht': c.text } as CSSProperties;
+}
+
 function tipoAccion(desc: string): Accion {
   const d = (desc ?? '').toLowerCase();
   if (/elimin|borr|anul|cancel|desactiv/.test(d)) return 'eliminar';
@@ -34,7 +50,6 @@ function tipoAccion(desc: string): Accion {
 
 const dosDigitos = (n: number) => String(n).padStart(2, '0');
 
-/** Clave de día local (YYYY-MM-DD), para comparar con <input type="date"> */
 function claveDia(f: string): string {
   const d = new Date(f);
   if (Number.isNaN(d.getTime())) return '';
@@ -115,13 +130,6 @@ const etiquetaCtl: CSSProperties = {
   letterSpacing: 0.4,
 };
 
-const tarjeta: CSSProperties = {
-  background: 'var(--surface)',
-  border: '1px solid var(--border)',
-  borderRadius: 14,
-};
-
-/** Botones de rango rápido (Hoy, 7 días, 30 días, Todo) */
 function chip(activo: boolean): CSSProperties {
   return {
     height: ALTO,
@@ -138,8 +146,6 @@ function chip(activo: boolean): CSSProperties {
   };
 }
 
-// La prop onVolver se mantiene en el tipo para no romper ConfiguracionAdmin,
-// pero ya no se usa porque se quitó el botón "Volver".
 export default function HistorialPage(_props: { onVolver?: () => void }) {
   const [movs, setMovs] = useState<Movimiento[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,7 +193,6 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
     setMostrar(POR_PAGINA);
   }, [q, modulo, usuario, rol, accion, desde, hasta]);
 
-  // Siempre del más reciente al más antiguo
   const ordenados = useMemo(
     () => [...movs].sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()),
     [movs],
@@ -227,7 +232,6 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
     });
   }, [ordenados, q, modulo, usuario, rol, accion, desde, hasta]);
 
-  // Junta movimientos idénticos consecutivos (mismo usuario, módulo, texto y minuto)
   const items = useMemo<Item[]>(() => {
     const out: Item[] = [];
     let ultimaClave = '';
@@ -284,16 +288,55 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
     dias === null ? !desde && !hasta : desde === hoyClave(dias) && hasta === hoyClave(0);
 
   return (
-    <div style={{ width: '100%', boxSizing: 'border-box', padding: '24px 32px 48px' }}>
+    <div className="hist-page">
       <style>{`
+        .hist-page { width: 100%; box-sizing: border-box; padding: 24px 32px 48px; }
+        body:not(.dark-mode) .hist-page { background: #faf5ef; min-height: 100%; }
         .hist-ctl:focus {
           border-color: var(--brand) !important;
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
         }
         .hist-ctl:hover { border-color: var(--brand); }
+        .hist-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+        body:not(.dark-mode) .hist-card { background: #ffffff; border-color: #e5dccf; }
+        body:not(.dark-mode) .hist-page .hist-ctl { border-color: #e5dccf; }
+        .hist-dia {
+          margin: 0; padding: 20px 0 12px; font-size: 12px; font-weight: 700;
+          color: var(--text-400); text-transform: uppercase; letter-spacing: .5px;
+        }
+        body:not(.dark-mode) .hist-dia { color: #8a6a45; }
+        .hist-linea { position: relative; padding-left: 26px; }
+        .hist-linea::before {
+          content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px;
+          width: 2px; background: var(--border);
+        }
+        body:not(.dark-mode) .hist-linea::before { background: #e5dccf; }
+        .hist-item {
+          position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 14px;
+          padding: 11px 14px; margin-bottom: 8px; border-radius: 10px;
+          background: var(--surface); border: 1px solid var(--border);
+        }
+        body:not(.dark-mode) .hist-item { background: #ffffff; border-color: #e5dccf; }
+        .hist-item::before {
+          content: ''; position: absolute; left: -26px; top: 50%; margin-top: -7px;
+          width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%;
+          background: var(--hc); border: 3px solid var(--bg, #000000);
+        }
+        body:not(.dark-mode) .hist-item::before { border-color: #faf5ef; }
+        .hist-texto { flex: 1; min-width: 200px; font-size: 13px; color: var(--text-900); }
+        .hist-rol { color: var(--text-400); }
+        .hist-tag {
+          display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: 6px;
+          font-size: 12px; font-weight: 600; background: var(--hb); color: var(--ht);
+        }
+        body.dark-mode .hist-tag { background: transparent; border: 1px solid var(--hc); color: var(--hc); }
+        .hist-rep {
+          margin-left: 8px; padding: 1px 7px; border-radius: 999px; font-size: 11px;
+          font-weight: 700; background: var(--border); color: var(--text-900);
+        }
+        .hist-hora { flex-shrink: 0; font-size: 12px; color: var(--text-400); text-align: right; }
       `}</style>
 
-      {/* Encabezado */}
       <div style={{ marginBottom: 18 }}>
         <h2
           style={{
@@ -308,10 +351,9 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
         </h2>
       </div>
 
-      {/* Filtros */}
       <div
+        className="hist-card"
         style={{
-          ...tarjeta,
           padding: 18,
           display: 'flex',
           flexDirection: 'column',
@@ -473,7 +515,6 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
         </div>
       </div>
 
-      {/* Contador */}
       <div
         style={{
           margin: '0 4px 8px',
@@ -507,19 +548,20 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
         )}
       </div>
 
-      {/* Lista */}
-      <div style={{ ...tarjeta, padding: '0 20px 20px' }}>
+      <div>
         {loading ? (
-          <p style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>Cargando historial...</p>
+          <div className="hist-card" style={{ padding: 30 }}>
+            <p style={{ textAlign: 'center', margin: 0, color: 'var(--text-400)' }}>Cargando historial...</p>
+          </div>
         ) : error ? (
-          <div style={{ textAlign: 'center', padding: 30 }}>
+          <div className="hist-card" style={{ textAlign: 'center', padding: 30 }}>
             <p style={{ color: 'var(--danger)', margin: '0 0 12px' }}>No se pudo cargar el historial.</p>
             <button type="button" className="btn-cancel" onClick={cargar}>
               Reintentar
             </button>
           </div>
         ) : filtrados.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 30 }}>
+          <div className="hist-card" style={{ textAlign: 'center', padding: 30 }}>
             <p style={{ color: 'var(--text-400)', margin: '0 0 12px' }}>No hay movimientos para mostrar.</p>
             {filtrosActivos > 0 && (
               <button type="button" className="btn-cancel" onClick={limpiar}>
@@ -531,78 +573,39 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
           <>
             {grupos.map((g) => (
               <section key={g.clave}>
-                {agrupar && (
-                  <h4
-                    style={{
-                      margin: 0,
-                      padding: '18px 0 6px',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: 'var(--text-400)',
-                      textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {g.etiqueta}
-                  </h4>
-                )}
-                {g.items.map(({ mov: m, repetidos }) => (
-                  <div
-                    key={m.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 14,
-                      padding: '10px 4px',
-                      borderBottom: '1px solid var(--border)',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <span
-                      className="badge badge-info"
-                      style={{ flexShrink: 0, minWidth: 92, textAlign: 'center' }}
-                    >
-                      {m.modulo ?? '—'}
-                    </span>
+                {agrupar && <h4 className="hist-dia">{g.etiqueta}</h4>}
+                <div className="hist-linea">
+                  {g.items.map(({ mov: m, repetidos }) => (
+                    <div key={m.id} className="hist-item" style={colorModulo(m.modulo)}>
+                      <span className="hist-texto">
+                        <strong>{nombreDe(m)}</strong>
+                        {m.rol && <span className="hist-rol"> ({m.rol})</span>}
+                        {' — '}
+                        {m.descripcion ?? '—'}
+                        {repetidos > 1 && (
+                          <span
+                            className="hist-rep"
+                            title={`Este movimiento se repitió ${repetidos} veces en el mismo minuto`}
+                          >
+                            ×{repetidos}
+                          </span>
+                        )}
+                        <span className="hist-tag">{m.modulo ?? '—'}</span>
+                      </span>
 
-                    <span style={{ flex: 1, minWidth: 200, fontSize: 13, color: 'var(--text-900)' }}>
-                      <strong>{nombreDe(m)}</strong>
-                      {m.rol && <span style={{ color: 'var(--text-400)' }}> ({m.rol})</span>}
-                      {' — '}
-                      {m.descripcion ?? '—'}
-                      {repetidos > 1 && (
-                        <span
-                          title={`Este movimiento se repitió ${repetidos} veces en el mismo minuto`}
-                          style={{
-                            marginLeft: 8,
-                            padding: '1px 7px',
-                            borderRadius: 999,
-                            fontSize: 11,
-                            fontWeight: 700,
-                            background: 'var(--border)',
-                            color: 'var(--text-900)',
-                          }}
-                        >
-                          ×{repetidos}
-                        </span>
-                      )}
-                    </span>
-
-                    <span
-                      title={fmtCompleta(m.fecha)}
-                      style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-400)', textAlign: 'right' }}
-                    >
-                      {agrupar
-                        ? fmtHora(m.fecha)
-                        : new Date(m.fecha).toLocaleString('es-CO', {
-                            day: '2-digit',
-                            month: 'short',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                    </span>
-                  </div>
-                ))}
+                      <span className="hist-hora" title={fmtCompleta(m.fecha)}>
+                        {agrupar
+                          ? fmtHora(m.fecha)
+                          : new Date(m.fecha).toLocaleString('es-CO', {
+                              day: '2-digit',
+                              month: 'short',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </section>
             ))}
 
