@@ -47,14 +47,12 @@ const claseBadge = (stock: unknown) => {
   return k === 'agotado' ? 'badge-danger' : k === 'bajo' ? 'badge-warning' : 'badge-success';
 };
 
-// Deja solo dígitos y un punto decimal (acepta coma como punto)
 const soloNumero = (v: string): string => {
   const limpio = v.replace(',', '.').replace(/[^0-9.]/g, '');
   const [ent, ...dec] = limpio.split('.');
   return dec.length ? `${ent}.${dec.join('')}` : ent;
 };
 
-// Muestra el precio con punto de miles y coma decimal (ej: 9.999,99)
 const formatMiles = (v: string): string => {
   const limpio = v.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '');
   const [ent, ...dec] = limpio.split('.');
@@ -62,7 +60,6 @@ const formatMiles = (v: string): string => {
   return dec.length ? `${entFmt},${dec.join('')}` : entFmt;
 };
 
-// Convierte "9.999,99" de vuelta a número (9999.99)
 const milesANumero = (v: string): number =>
   Number(v.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
 
@@ -91,7 +88,6 @@ export default function MateriaPrimaAdmin() {
   const [pagina, setPagina] = useState(1);
   const [errorCarga, setErrorCarga] = useState<string | null>(null);
 
-  // --- Filtros de Carlos ---
   const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoStock>('todos');
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroMarca, setFiltroMarca] = useState('');
@@ -107,7 +103,6 @@ export default function MateriaPrimaAdmin() {
     if (!silencioso) setLoading(true);
     setErrorCarga(null);
 
-    // allSettled: si /marcas falla, los insumos igual se muestran (y viceversa)
     const [r1, r2] = await Promise.allSettled([
       apiClient.get('/materias-primas'),
       apiClient.get('/marcas'),
@@ -133,13 +128,11 @@ export default function MateriaPrimaAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  // Si cambia cualquier filtro, volvemos a la página 1
   useEffect(() => { setPagina(1); }, [q, filtroEstado, filtroTipo, filtroMarca, filtroUnidad, orden]);
 
   const marcaNombre = (id: unknown): string =>
     (marcas ?? []).find((x) => x?.id === id)?.nombre ?? '';
 
-  // Opciones de los filtros, sacadas de los datos existentes
   const tipos = Array.from(new Set((items ?? []).map((m) => (m?.tipo ?? '').trim()).filter(Boolean)))
     .sort((a, b) => a.localeCompare(b, 'es'));
   const unidades = Array.from(new Set((items ?? []).map((m) => (m?.unidad_medida ?? '').trim()).filter(Boolean)))
@@ -180,7 +173,7 @@ export default function MateriaPrimaAdmin() {
     setForm({
       nombre: m?.nombre ?? '',
       tipo: m?.tipo ?? '',
-      valor: m?.valor != null ? formatMiles(String(Number(m.valor))) : '',
+      valor: m?.valor != null ? formatMiles(String(Number(m.valor)).replace('.', ',')) : '',
       cantidad: m?.cantidad != null ? String(Number(m.cantidad)) : '',
       unidad_medida: m?.unidad_medida ?? '',
       marca_id: m?.marca_id ?? marcas[0]?.id ?? 1,
@@ -192,10 +185,52 @@ export default function MateriaPrimaAdmin() {
     setModal(true);
   };
 
+  const cantidadNum = Number(form.cantidad);
+  const precioNum = milesANumero(form.valor);
+
   const errores = {
     nombre: !form.nombre.trim(),
     marca: !form.marca_id,
-    cantidad: form.cantidad.trim() === '',
+    cantidad: form.cantidad.trim() === '' || Number.isNaN(cantidadNum),
+    precio: !(precioNum > 0),
+  };
+
+  type CampoError = keyof typeof errores;
+
+  const listaErrores = (): { campo: CampoError; msg: string; toast: string }[] => {
+    const out: { campo: CampoError; msg: string; toast: string }[] = [];
+    if (errores.nombre) {
+      out.push({ campo: 'nombre', msg: 'Falta el nombre del insumo', toast: 'Falta escribir el nombre del insumo' });
+    }
+    if (errores.cantidad) {
+      const vacio = form.cantidad.trim() === '';
+      out.push({
+        campo: 'cantidad',
+        msg: vacio ? 'Falta la cantidad' : 'La cantidad no es un número válido',
+        toast: vacio ? 'Falta escribir la cantidad real del insumo' : 'La cantidad no es un número válido',
+      });
+    }
+    if (errores.precio) {
+      const vacio = form.valor.trim() === '';
+      out.push({
+        campo: 'precio',
+        msg: vacio ? 'Falta el precio' : 'Debe ser mayor a $0',
+        toast: vacio ? 'Falta escribir el precio del insumo' : 'El precio debe ser mayor a $0',
+      });
+    }
+    if (errores.marca) {
+      out.push({ campo: 'marca', msg: 'Falta elegir el proveedor', toast: 'Falta elegir el proveedor' });
+    }
+    return out;
+  };
+
+  const errs = listaErrores();
+
+  const msgCampo = (campo: CampoError) => {
+    const e = errs.find((x) => x.campo === campo);
+    return intentado && e
+      ? <small style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 600, marginTop: 4, display: 'block' }}>{e.msg}</small>
+      : null;
   };
 
   const bordeError = (malo: boolean): React.CSSProperties | undefined =>
@@ -204,18 +239,22 @@ export default function MateriaPrimaAdmin() {
   const guardar = async () => {
     if (!editId) return;
     setIntentado(true);
-    if (errores.nombre) { showToast('El nombre es obligatorio', true); return; }
-    if (errores.marca) { showToast('Selecciona un proveedor', true); return; }
-    if (errores.cantidad) { showToast('Escribe la cantidad', true); return; }
+    if (errs.length > 0) {
+      const resto = errs.length - 1;
+      showToast(
+        resto === 0 ? errs[0].toast : `${errs[0].toast} (y ${resto} ${resto === 1 ? 'dato más' : 'datos más'})`,
+        true,
+      );
+      return;
+    }
 
-    const cambioCantidad = Number(form.cantidad) !== cantidadOriginal;
-    const valorActual = items.find((x) => x.id === editId)?.valor ?? 0;
+    const cambioCantidad = cantidadNum !== cantidadOriginal;
     const body = {
       nombre: form.nombre.trim(),
       tipo: form.tipo.trim() || null,
       unidad_medida: form.unidad_medida.trim() || null,
-      valor: form.valor.trim() === '' ? Number(valorActual) : milesANumero(form.valor),
-      cantidad: Number(form.cantidad),
+      valor: precioNum,
+      cantidad: cantidadNum,
       marca_id: Number(form.marca_id),
       ...(cambioCantidad ? { motivo: motivo.trim() || 'Ajuste manual de inventario' } : {}),
     };
@@ -232,7 +271,6 @@ export default function MateriaPrimaAdmin() {
 
   const esInactivo = (m: MateriaPrima) => m?.estado === 'Inactivo';
 
-  /** Activa o desactiva el insumo (ya no se elimina: así se conserva todo el historial). */
   const alternarEstado = async (m: MateriaPrima) => {
     if (m?.id == null || cambiandoId !== null) return;
     setDesactivar(null);
@@ -427,13 +465,14 @@ export default function MateriaPrimaAdmin() {
           <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar Materia Prima</h2>
 
             <div className="form-group" style={{ marginBottom: 14 }}>
-              <label>Nombre del insumo<span className="mn-req">*</span></label>
+              <label>Nombre del insumo <span className="mn-req">*</span></label>
               <input
                 style={bordeError(errores.nombre)}
                 value={form.nombre}
                 placeholder="Ej. Pan de hamburguesa"
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
               />
+              {msgCampo('nombre')}
             </div>
 
             <div className="form-group" style={{ marginBottom: 14 }}>
@@ -455,6 +494,7 @@ export default function MateriaPrimaAdmin() {
                   value={form.cantidad}
                   onChange={(e) => setForm({ ...form, cantidad: soloNumero(e.target.value) })}
                 />
+                {msgCampo('cantidad')}
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Unidad <span style={{ opacity: 0.6, fontWeight: 500 }}>(opcional)</span></label>
@@ -469,18 +509,19 @@ export default function MateriaPrimaAdmin() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Precio</label>
+                <label>Precio <span className="mn-req">*</span></label>
                 <div style={{ position: 'relative' }}>
                   <span style={{ ...adornoBase, left: 14 }}>$</span>
                   <input
                     type="text"
                     inputMode="decimal"
-                    style={{ paddingLeft: 30 }}
-                    placeholder="Se mantiene el actual"
+                    style={{ paddingLeft: 30, ...bordeError(errores.precio) }}
+                    placeholder="Ej. 2.500"
                     value={form.valor}
                     onChange={(e) => setForm({ ...form, valor: formatMiles(e.target.value) })}
                   />
                 </div>
+                {msgCampo('precio')}
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Proveedor <span className="mn-req">*</span></label>
@@ -493,6 +534,7 @@ export default function MateriaPrimaAdmin() {
                     <option key={m?.id} value={m?.id}>{m?.nombre ?? 'Sin nombre'}</option>
                   ))}
                 </SelectOscuro>
+                {msgCampo('marca')}
               </div>
             </div>
 

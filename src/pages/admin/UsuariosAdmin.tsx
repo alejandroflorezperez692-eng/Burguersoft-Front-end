@@ -34,13 +34,30 @@ const formatearNombre = (v: string) =>
     .toLowerCase()
     .replace(/(^|[\s'’-])(\p{L})/gu, (_, sep, letra) => sep + letra.toUpperCase());
 
-const nombreValido = (v: string) => {
+type ProblemaNombre = 'vacio' | 'corto' | 'largo' | 'caracteres' | 'repetidas' | 'sin_vocales';
+
+const problemaNombre = (v: string): ProblemaNombre | null => {
   const t = limpiarEspacios(v);
-  if (t.length < 2 || t.length > 50) return false;
-  if (!NOMBRE_REGEX.test(t)) return false;
-  if (/(\p{L})\1{2,}/iu.test(t)) return false;
-  if (!/[aeiouáéíóúüy]/i.test(t)) return false;
-  return true;
+  if (t.length === 0) return 'vacio';
+  if (t.length < 2) return 'corto';
+  if (t.length > 50) return 'largo';
+  if (!NOMBRE_REGEX.test(t)) return 'caracteres';
+  if (/(\p{L})\1{2,}/iu.test(t)) return 'repetidas';
+  if (!/[aeiouáéíóúüy]/i.test(t)) return 'sin_vocales';
+  return null;
+};
+
+const textosNombre = (p: ProblemaNombre, campo: 'nombre' | 'apellido'): { msg: string; toast: string } => {
+  const el = campo === 'nombre' ? 'el nombre' : 'el apellido';
+  const El = campo === 'nombre' ? 'El nombre' : 'El apellido';
+  switch (p) {
+    case 'vacio':      return { msg: `Falta ${el}`, toast: `Falta escribir ${el}` };
+    case 'corto':      return { msg: 'Debe tener al menos 2 letras', toast: `${El} debe tener al menos 2 letras` };
+    case 'largo':      return { msg: 'Máximo 50 caracteres', toast: `${El} no puede pasar de 50 caracteres` };
+    case 'caracteres': return { msg: 'Solo letras, sin números ni símbolos', toast: `${El} solo puede llevar letras, sin números ni símbolos` };
+    case 'repetidas':  return { msg: 'Repite la misma letra 3 veces seguidas', toast: `${El} no puede repetir la misma letra 3 veces seguidas` };
+    default:           return { msg: 'No parece un nombre real', toast: `${El} no parece real: revisa que esté bien escrito` };
+  }
 };
 
 function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string; estado: string }) {
@@ -73,7 +90,6 @@ export default function UsuariosAdmin() {
   const [pagina, setPagina] = useState(1);
   const [porPagina, setPorPagina] = useState(10);
 
-  // --- Estados de Filtros ---
   const [q, setQ] = useState('');
   const [filtroRol, setFiltroRol] = useState('');
   const [filtroNombre, setFiltroNombre] = useState('');
@@ -104,7 +120,6 @@ const load = async (silencioso = false) => {
 
   useEffect(() => { load(); }, []);
 
-  // --- Lógica de Filtrado Combinada ---
   const filtered = items
     .filter((u) => {
       if (!q) return true;
@@ -122,7 +137,6 @@ const load = async (silencioso = false) => {
     })
     .sort((a, b) => a.id - b.id);
 
-  // Paginación con cantidad configurable (10, 50, 100, 200, 500)
   const totalPaginas = Math.max(1, Math.ceil(filtered.length / porPagina));
   const paginaActual = Math.min(pagina, totalPaginas);
   const visibles = filtered.slice((paginaActual - 1) * porPagina, paginaActual * porPagina);
@@ -141,10 +155,10 @@ const load = async (silencioso = false) => {
   };
 
   const requisitos = [
-    { id: 'largo',     texto: 'Mínimo 8 caracteres',                 cumple: password.length >= 8 },
-    { id: 'mayuscula', texto: 'Al menos una mayúscula',              cumple: /[A-Z]/.test(password) },
-    { id: 'numero',    texto: 'Al menos un número',                  cumple: /\d/.test(password) },
-    { id: 'simbolo',   texto: 'Al menos un símbolo (@, #, $, etc.)', cumple: /[^A-Za-z0-9\s]/.test(password) },
+    { id: 'largo',     texto: 'Mínimo 8 caracteres',                 corto: 'mínimo 8 caracteres', cumple: password.length >= 8 },
+    { id: 'mayuscula', texto: 'Al menos una mayúscula',              corto: 'una mayúscula',       cumple: /[A-Z]/.test(password) },
+    { id: 'numero',    texto: 'Al menos un número',                  corto: 'un número',           cumple: /\d/.test(password) },
+    { id: 'simbolo',   texto: 'Al menos un símbolo (@, #, $, etc.)', corto: 'un símbolo',          cumple: /[^A-Za-z0-9\s]/.test(password) },
   ];
 
   const requisitosCumplidos = requisitos.filter((r) => r.cumple).length;
@@ -155,8 +169,8 @@ const load = async (silencioso = false) => {
   const porcentajeBarra = (requisitosCumplidos / requisitos.length) * 100;
 
   const errores = {
-    nombre: !nombreValido(nombre),
-    apellido: !nombreValido(apellido),
+    nombre: problemaNombre(nombre) !== null,
+    apellido: problemaNombre(apellido) !== null,
     correo: !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim()),
     password: password !== '' && requisitosCumplidos < requisitos.length,
     rol: !rol,
@@ -166,15 +180,55 @@ const load = async (silencioso = false) => {
   const bordeError = (malo: boolean): CSSProperties | undefined =>
     intentado && malo ? { borderColor: 'var(--danger)' } : undefined;
 
+  type CampoError = keyof typeof errores;
+
+  const listaErrores = (): { campo: CampoError; msg: string; toast: string }[] => {
+    const out: { campo: CampoError; msg: string; toast: string }[] = [];
+    const pNombre = problemaNombre(nombre);
+    if (pNombre) out.push({ campo: 'nombre', ...textosNombre(pNombre, 'nombre') });
+    const pApellido = problemaNombre(apellido);
+    if (pApellido) out.push({ campo: 'apellido', ...textosNombre(pApellido, 'apellido') });
+    if (errores.correo) {
+      out.push(correo.trim() === ''
+        ? { campo: 'correo', msg: 'Falta el correo', toast: 'Falta escribir el correo' }
+        : { campo: 'correo', msg: 'El correo no es válido', toast: 'El correo no es válido: debe tener la forma nombre@dominio.com' });
+    }
+    if (errores.password) {
+      const faltan = requisitos.filter((r) => !r.cumple).map((r) => r.corto).join(', ');
+      out.push({ campo: 'password', msg: `Falta: ${faltan}`, toast: `La contraseña no cumple los requisitos, falta: ${faltan}` });
+    }
+    if (errores.rol) out.push({ campo: 'rol', msg: 'Falta elegir el rol', toast: 'Falta elegir el rol del usuario' });
+    if (errores.estado) out.push({ campo: 'estado', msg: 'Falta elegir el estado', toast: 'Falta elegir el estado del usuario' });
+    return out;
+  };
+
+  const errs = listaErrores();
+
+  const inv = (campo: CampoError): 'true' | undefined =>
+    intentado && errs.some((e) => e.campo === campo) ? 'true' : undefined;
+
+  const msgCampo = (campo: CampoError) => {
+    const e = errs.find((x) => x.campo === campo);
+    return intentado && e
+      ? <small style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 600, marginTop: 4, display: 'block' }}>{e.msg}</small>
+      : null;
+  };
+
   const guardar = async () => {
     if (!sel) return;
     setIntentado(true);
-    if (errores.nombre) { showToast('Escribe un nombre real: solo letras, sin números ni símbolos', true); return; }
-    if (errores.apellido) { showToast('Escribe un apellido real: solo letras, sin números ni símbolos', true); return; }
-    if (errores.correo) { showToast('Escribe un correo válido', true); return; }
-    if (errores.password) { showToast('La contraseña debe tener 8+ caracteres, mayúscula, número y símbolo', true); return; }
-    if (errores.rol) { showToast('Selecciona un rol', true); return; }
-    if (errores.estado) { showToast('Selecciona un estado', true); return; }
+    if (errs.length > 0) {
+      const resto = errs.length - 1;
+      showToast(
+        resto === 0 ? errs[0].toast : `${errs[0].toast} (y ${resto} ${resto === 1 ? 'dato más' : 'datos más'})`,
+        true,
+      );
+      setTimeout(() => {
+        const primero = document.querySelector('[data-invalido="true"]') as HTMLElement | null;
+        primero?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 60);
+      return;
+    }
 
     const payload: Record<string, string> = {
       nombre: formatearNombre(nombre),
@@ -203,15 +257,11 @@ const load = async (silencioso = false) => {
       await apiClient.delete(`/usuarios/${id}`);
       showToast('Usuario eliminado');
       load();
-    } catch {
-      showToast('No se pudo eliminar el usuario', true);
+    } catch (e: unknown) {
+      showToast(mensajeError(e, 'No se pudo eliminar el usuario'), true);
     }
   };
 
-  /** Activa/inactiva desde la fila, con confirmación.
-   *  - Nunca se inactiva la propia cuenta.
-   *  - Siempre debe quedar al menos un administrador activo.
-   *  Manda el mismo payload que el modal de editar para que el backend no rechace el PUT. */
   const alternarEstado = async (u: Usuario) => {
     if (u.id === sesion?.id) {
       showToast('No puedes inactivar tu propia cuenta.', true);
@@ -271,10 +321,8 @@ const load = async (silencioso = false) => {
         </div>
       </div>
 
-      {/* Barra de herramientas con Búsqueda + Filtros */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
 
-        {/* Fila 1: Búsqueda */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
             <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
@@ -286,7 +334,6 @@ const load = async (silencioso = false) => {
           </div>
         </div>
 
-        {/* Fila 2: Filtros */}
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
             <label>Rol</label>
@@ -421,11 +468,11 @@ const load = async (silencioso = false) => {
       {modal && sel && (
         <div className="modal-overlay open" onClick={() => setModal(false)}>
           <div className="modal-box" style={{ maxWidth: 560, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
-          <button type="button" className="modal-x" onClick={() => setModal(false)} aria-label="Cerrar">×</button>   {/* ➕ */}
+          <button type="button" className="modal-x" onClick={() => setModal(false)} aria-label="Cerrar">×</button>
           <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar Usuario</h2>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv('nombre')}>
                 <label>Nombre <span className="mn-req">*</span></label>
                 <input
                   style={bordeError(errores.nombre)}
@@ -435,8 +482,9 @@ const load = async (silencioso = false) => {
                   onChange={(e) => setNombre(soloLetras(e.target.value))}
                   onBlur={() => setNombre(formatearNombre(nombre))}
                 />
+                {msgCampo('nombre')}
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv('apellido')}>
                 <label>Apellido <span className="mn-req">*</span></label>
                 <input
                   style={bordeError(errores.apellido)}
@@ -446,10 +494,11 @@ const load = async (silencioso = false) => {
                   onChange={(e) => setApellido(soloLetras(e.target.value))}
                   onBlur={() => setApellido(formatearNombre(apellido))}
                 />
+                {msgCampo('apellido')}
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: 14 }}>
+            <div className="form-group" style={{ marginBottom: 14 }} data-invalido={inv('correo')}>
               <label>Correo <span className="mn-req">*</span></label>
               <input
                 style={bordeError(errores.correo)}
@@ -459,9 +508,10 @@ const load = async (silencioso = false) => {
                 placeholder="correo@ejemplo.com"
                 onChange={(e) => setCorreo(e.target.value)}
               />
+              {msgCampo('correo')}
             </div>
 
-            <div className="form-group" style={{ marginBottom: 14 }}>
+            <div className="form-group" style={{ marginBottom: 14 }} data-invalido={inv('password')}>
               <label>
                 Nueva contraseña{' '}
                 <span style={{ color: 'var(--text-400)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>
@@ -495,6 +545,7 @@ const load = async (silencioso = false) => {
                   {verPass ? 'Ocultar' : 'Mostrar'}
                 </button>
               </div>
+              {msgCampo('password')}
 
                 {true && (
                 <>
@@ -522,7 +573,7 @@ const load = async (silencioso = false) => {
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv('rol')}>
                 <label>Rol <span className="mn-req">*</span></label>
                 <SelectOscuro style={bordeError(errores.rol)} value={rol} onChange={(e) => setRol(e.target.value)}>
                   <option value="">Seleccionar rol...</option>
@@ -532,8 +583,9 @@ const load = async (silencioso = false) => {
                   <option value="Mesero">Mesero</option>
                   <option value="Cliente">Cliente</option>
                 </SelectOscuro>
+                {msgCampo('rol')}
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv('estado')}>
                 <label>Estado <span className="mn-req">*</span></label>
                 <SelectOscuro style={bordeError(errores.estado)} value={estado} onChange={(e) => setEstado(e.target.value)}>
                   <option value="">Seleccionar estado...</option>
@@ -541,6 +593,7 @@ const load = async (silencioso = false) => {
                   <option value="Inactivo">Inactivo</option>
                   <option value="Suspendido">Suspendido</option>
                 </SelectOscuro>
+                {msgCampo('estado')}
               </div>
             </div>
 
