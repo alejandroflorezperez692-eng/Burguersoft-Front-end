@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
 import MotivoModal from '../components/MotivoModal';
 import ComprobanteModal from '../components/ComprobanteModal';
+import ArreglarPedidoModal from '../components/ArreglarPedidoModal';
 import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import { getEcho } from '../api/echo';
@@ -315,6 +316,7 @@ export default function MisCompras() {
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoUI | null>(null);
   const [pedidoARechazar, setPedidoARechazar] = useState<PedidoUI | null>(null);
   const [pedidoComprobante, setPedidoComprobante] = useState<PedidoUI | null>(null);
+  const [pedidoAArreglar, setPedidoAArreglar] = useState<PedidoUI | null>(null);
   const [avisoComprobante, setAvisoComprobante] = useState<string | null>(null);
   const [pedidos, setPedidos] = useState<PedidoUI[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -804,6 +806,11 @@ export default function MisCompras() {
 
                 <div className="pedido-foot">
                   {esCancelable && (
+                    <button className="btn-comprobante" onClick={() => setPedidoAArreglar(p)}>
+                      Arreglar pedido
+                    </button>
+                  )}
+                  {esCancelable && (
                     <button
                       className="btn-cancelar-pedido"
                       onClick={() => cancelarPedido(p)}
@@ -850,6 +857,17 @@ export default function MisCompras() {
           peligro
           onClose={() => setPedidoARechazar(null)}
           onConfirm={(motivo) => void confirmarRechazo(pedidoARechazar, motivo)}
+        />
+      )}
+      {pedidoAArreglar && (
+        <ArreglarPedidoModal
+          ventaId={pedidoAArreglar.id}
+          numero={pedidoAArreglar.numero_secuencial}
+          onClose={() => setPedidoAArreglar(null)}
+          onAgregado={() => {
+            setPedidoAArreglar(null);
+            void cargar();
+          }}
         />
       )}
       {pedidoComprobante && (

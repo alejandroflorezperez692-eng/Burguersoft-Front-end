@@ -214,7 +214,7 @@ export default function InventarioAdmin() {
         </div>
       )}
 
-      {!loading && <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />}
+      {!loading && <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} siempre />}
 
       {detalle && (
         <div className="mn-modal-overlay" onClick={() => setDetalle(null)}>

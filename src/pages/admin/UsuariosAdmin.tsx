@@ -7,6 +7,7 @@ import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
+import Paginacion from '../../components/Paginacion';
 import usuarioPerfil from '../../assets/img/usuario-perfil.png';
 
 interface Usuario {
@@ -394,29 +395,14 @@ const load = async (silencioso = false) => {
           </table>
         </div>
 
-        {totalPaginas > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14, marginTop: 18 }}>
-            <button
-              type="button"
-              className="btn-cancel"
-              disabled={paginaActual <= 1}
-              onClick={() => setPagina(paginaActual - 1)}
-            >
-              Anterior
-            </button>
-            <span style={{ fontSize: 14, color: 'var(--text-600)' }}>
-              Página {paginaActual} de {totalPaginas}
-            </span>
-            <button
-              type="button"
-              className="btn-cancel"
-              disabled={paginaActual >= totalPaginas}
-              onClick={() => setPagina(paginaActual + 1)}
-            >
-              Siguiente
-            </button>
-          </div>
-        )}
+        <Paginacion
+          total={filtered.length}
+          pagina={paginaActual}
+          porPagina={porPagina}
+          onCambiar={setPagina}
+          etiqueta="usuarios"
+          siempre
+        />
 
         </>
       )}

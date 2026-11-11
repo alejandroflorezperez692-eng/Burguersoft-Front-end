@@ -1387,7 +1387,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
         </table>
       </div>
 
-      <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
+      <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} siempre />
 
       {historialId !== null && (
         <TrazabilidadModal ventaId={historialId} onClose={() => setHistorialId(null)} />

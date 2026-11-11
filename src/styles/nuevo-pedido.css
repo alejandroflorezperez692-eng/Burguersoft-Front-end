@@ -115,6 +115,12 @@
 .np-extra .np-step button{width:24px;height:24px;font-size:14px}
 .np-extra .np-step button:disabled{opacity:.35;cursor:not-allowed}
 
+/* Selector de vista lista/tarjetas (versión clara, sin depender de nu-admin) */
+.np-modal .mn-view-toggle{display:inline-flex;border:1.5px solid #eadfce;border-radius:999px;overflow:hidden;background:#fff;flex:none}
+.np-modal .mn-view-toggle button{display:flex;align-items:center;justify-content:center;width:52px;height:40px;border:none;background:transparent;color:#6b4a2b;cursor:pointer;transition:background .2s,color .2s}
+.np-modal .mn-view-toggle button+button{border-left:1.5px solid #eadfce}
+.np-modal .mn-view-toggle button.active{background:rgba(47,138,240,.15);color:#2f8af0}
+
 body.dark-mode .np-modal {
   background: #000;
   color: #fff;

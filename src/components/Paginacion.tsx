@@ -30,9 +30,11 @@ interface Props {
   porPagina?: number;
   /** Texto después del total, ej: "días" -> "Mostrando 1–5 de 12 días" */
   etiqueta?: string;
+  /** Muestra los botones de página aunque haya una sola. */
+  siempre?: boolean;
 }
 
-export default function Paginacion({ total, pagina, onCambiar, porPagina = POR_PAGINA, etiqueta }: Props) {
+export default function Paginacion({ total, pagina, onCambiar, porPagina = POR_PAGINA, etiqueta, siempre }: Props) {
   if (total === 0) return null;
 
   const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
@@ -46,7 +48,7 @@ export default function Paginacion({ total, pagina, onCambiar, porPagina = POR_P
         Mostrando {inicio + 1}–{Math.min(inicio + porPagina, total)} de {total}{etiqueta ? ` ${etiqueta}` : ''}
       </span>
 
-      {totalPaginas > 1 && (
+      {(totalPaginas > 1 || siempre) && (
         <nav className="pag-nav" aria-label="Paginación">
           <button type="button" className="pag-btn" onClick={() => ir(actual - 1)} disabled={actual === 1}>
             ‹ Anterior

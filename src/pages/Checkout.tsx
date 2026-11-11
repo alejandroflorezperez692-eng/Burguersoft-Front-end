@@ -7,6 +7,7 @@ import '../styles/public.css';
 import '../styles/checkout.css';
 import PublicHeader from '../components/PublicHeader';
 import { useToast } from '../components/Toast';
+import ArreglarPedidoModal from '../components/ArreglarPedidoModal';
 import { mensajeError } from '../utils/errores';
 import Footer from '../components/Footer';
 import logoNequi from '../assets/img/nequi.png';
@@ -492,14 +493,36 @@ export default function Checkout() {
 
   // Pedido ya registrado: se muestra el panel de confirmacion con el boton
   // para abrir el chat de WhatsApp y el acceso al estado del pedido.
-  const [pedidoConfirmado, setPedidoConfirmado] = useState<{
+  // Se guarda en sessionStorage para que sobreviva a una recarga de la página.
+  const PEDIDO_KEY = 'checkout_pedido_confirmado';
+  type PedidoConfirmado = {
     id: number | null;
+    numeroCliente: number | null;
     total: number;
     url: string;
     correo: string | null;
     comprobanteCargado: boolean;
     metodoPago: string;
-  } | null>(null);
+  };
+  const leerPedidoGuardado = (): PedidoConfirmado | null => {
+    try {
+      const raw = sessionStorage.getItem(PEDIDO_KEY);
+      return raw ? (JSON.parse(raw) as PedidoConfirmado) : null;
+    } catch {
+      return null;
+    }
+  };
+  const [arreglando, setArreglando] = useState(false);
+  const [pedidoConfirmado, setPedidoConfirmado] = useState<PedidoConfirmado | null>(leerPedidoGuardado);
+
+  // Al salir de /checkout (navegación interna) se olvida el pedido confirmado.
+  // Recargar la página no dispara esto: la confirmación sigue disponible.
+  useEffect(() => {
+    return () => {
+      try { sessionStorage.removeItem(PEDIDO_KEY); } catch { /* sin storage */ }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ---- Comprobante de pago (se valida con IA en el backend) ----
   const [comprobante, setComprobante] = useState<File | null>(null);
@@ -731,14 +754,17 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       vaciar();
       setComprobante(null);
 
-      setPedidoConfirmado({
+      const confirmado: NonNullable<typeof pedidoConfirmado> = {
         id: idVenta,
+        numeroCliente: respuesta.data?.numero_cliente ?? null,
         total,
         url: urlWsp,
         correo: respuesta.data?.recibo_correo ?? null,
         comprobanteCargado: Boolean(respuesta.data?.tiene_comprobante),
         metodoPago,
-      });
+      };
+      setPedidoConfirmado(confirmado);
+      try { sessionStorage.setItem(PEDIDO_KEY, JSON.stringify(confirmado)); } catch { /* sin storage */ }
       window.scrollTo(0, 0);
     } catch (err) {
       alertar(mensajeErrorPago(err));
@@ -853,12 +879,18 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                   <div className="checkout-info-row">
                     <span className="checkout-info-icon">🧾</span>
                     <div>
-                      <strong>Pedido {pedidoConfirmado.id ? `#${pedidoConfirmado.id}` : 'registrado'}</strong>
+                      <strong>Pedido {(pedidoConfirmado.numeroCliente ?? pedidoConfirmado.id) ? `#${pedidoConfirmado.numeroCliente ?? pedidoConfirmado.id}` : 'registrado'}</strong>
                       <p>Total a pagar: {fmtCOP(pedidoConfirmado.total)}</p>
                     </div>
                   </div>
 
                   <div className="checkout-confirm-acciones">
+                    {pedidoConfirmado.id && (
+                      <button type="button" className="btn-ubicacion" onClick={() => setArreglando(true)}>
+                        Arreglar pedido
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       className="btn-ubicacion"
@@ -875,6 +907,25 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                       Hacer otro pedido
                     </button>
                   </div>
+                </div>
+              </div>
+            </section>
+          ) : items.length === 0 ? (
+            /* ---- Carrito vacío: no mostrar el formulario de pago con $0 ---- */
+            <section className="checkout-card">
+              <div className="checkout-encabezado">
+                <h2>Tu carrito está vacío</h2>
+                <p>Agrega productos desde el menú para continuar con el pago.</p>
+              </div>
+              <div className="checkout-seccion">
+                <div className="checkout-form">
+                  <button
+                    type="button"
+                    className="btn-ubicacion"
+                    onClick={() => navigate('/menu-publico')}
+                  >
+                    Ir al menú
+                  </button>
                 </div>
               </div>
             </section>
@@ -1170,7 +1221,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
         </div>
 
         {/* ---- Resumen / botón pagar ---- */}
-        {!pedidoConfirmado && (
+        {!pedidoConfirmado && items.length > 0 && (
         <aside className="checkout-resumen">
           <div className="checkout-resumen-titulo">Tu pedido</div>
           <div className="checkout-resumen-items">
@@ -1200,6 +1251,18 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
             <small>No cierres ni recargues esta página.</small>
           </div>
         </div>
+      )}
+      {arreglando && pedidoConfirmado?.id && (
+        <ArreglarPedidoModal
+          ventaId={pedidoConfirmado.id}
+          numero={pedidoConfirmado.numeroCliente ?? pedidoConfirmado.id}
+          onClose={() => setArreglando(false)}
+          onAgregado={(venta) => {
+            setArreglando(false);
+            setPedidoConfirmado((p) => (p ? { ...p, total: Number(venta?.valor_total ?? p.total) } : p));
+            showToastGlobal('Productos agregados a tu pedido.', false);
+          }}
+        />
       )}
       <Footer />
     </div>

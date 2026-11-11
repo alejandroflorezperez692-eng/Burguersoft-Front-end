@@ -376,7 +376,7 @@ export default function CierreInventarioAdmin() {
             </table>
           </div>
           
-          <Paginacion total={filasVisibles.length} pagina={conteoPag.paginaActual} onCambiar={setPaginaConteo} />
+          <Paginacion total={filasVisibles.length} pagina={conteoPag.paginaActual} onCambiar={setPaginaConteo} siempre />
 
           <div className="form-group" style={{ marginTop: 16 }}>
             <label>Observación (opcional)</label>
@@ -482,7 +482,7 @@ export default function CierreInventarioAdmin() {
             </table>
           </div>
 
-          <Paginacion total={historialFiltrado.length} pagina={cierresPag.paginaActual} onCambiar={setPaginaCierres} etiqueta="cierres" />
+          <Paginacion total={historialFiltrado.length} pagina={cierresPag.paginaActual} onCambiar={setPaginaCierres} etiqueta="cierres" siempre />
         </>
       )}
       {detalle && (

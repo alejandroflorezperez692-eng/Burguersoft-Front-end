@@ -1324,7 +1324,7 @@ const load = () => {
             </table>
           </div>
 
-          <Paginacion total={grupos.length} pagina={paginaActual} porPagina={DIAS_POR_PAGINA} etiqueta="días" onCambiar={setPagina} />
+          <Paginacion total={grupos.length} pagina={paginaActual} porPagina={DIAS_POR_PAGINA} etiqueta="días" onCambiar={setPagina} siempre />
         </>
       )}
 

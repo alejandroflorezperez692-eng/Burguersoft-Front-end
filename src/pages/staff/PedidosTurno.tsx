@@ -163,6 +163,8 @@ export default function PedidosTurno() {
   const { user } = useAuth();
   const { showToast, confirmar } = useToast();
 
+  const alertar = (m: string) => showToast(m, true);
+
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
   const puedeRevisar = esAdmin || rol === 'cajero';
@@ -274,15 +276,37 @@ export default function PedidosTurno() {
     const actual = venta.estado ?? '';
     const t = transiciones?.[actual];
     if (t && !t.directas.includes(accion.sig) && !t.con_motivo.includes(accion.sig)) {
-      setError(`El sistema no permite pasar de «${actual}» a «${accion.sig}».`);
+      alertar(`El sistema no permite pasar de «${actual}» a «${accion.sig}».`);
       return;
     }
     if (t?.con_motivo.includes(accion.sig)) {
       setCambioConMotivo({ venta, accion });
       return;
     }
+    if (actual === 'Registrado' && accion.sig === 'Por verificar') {
+      const metodo = (venta.metodo_pago ?? '').trim();
+      if (!metodo) {
+        alertar(`El pedido #${venta.id} no tiene método de pago. Verifícalo antes de avanzar.`);
+        return;
+      }
+      if (requiereComprobante(venta) && !comprobanteAprobado(venta)) {
+        alertar(
+          venta.tiene_comprobante
+            ? `Aprueba el comprobante de ${metodo} del pedido #${venta.id} antes de avanzar.`
+            : `El pedido #${venta.id} (${metodo}) no tiene comprobante de pago.`,
+        );
+        return;
+      }
+    }
     if (accion.sig === 'Pagado') {
+      pagandoRef.current = false;
+      setPagando(false);
       const m = (venta.metodo_pago ?? '').trim();
+      // Efectivo, o pago electrónico ya verificado: se registra directo, sin preguntar el método.
+      if (m === 'Efectivo' || (requiereComprobante(venta) && comprobanteAprobado(venta))) {
+        void ejecutarCambio(venta, accion, undefined, m);
+        return;
+      }
       setMetodoCobro(METODOS_COBRO.includes(m) ? m : 'Efectivo');
       setArchivoCobro(null);
       setCobro({ venta, accion });
@@ -307,7 +331,7 @@ export default function PedidosTurno() {
     await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo, metodo_pago: metodo });
   } catch (e) {
     setItems(anterior);
-    setError(mensajeDeError(e, `No se pudo marcar el pedido #${venta.id} como «${accion.sig}».`));
+    alertar(mensajeDeError(e, `No se pudo marcar el pedido #${venta.id} como «${accion.sig}».`));
   } finally {
     pendientes.current -= 1;
     version.current += 1;          // ← NUEVA: la recarga siguiente sí es válida
@@ -356,7 +380,7 @@ export default function PedidosTurno() {
       );
       await load();
     } catch (e: unknown) {
-      setError(
+      alertar(
         mensajeDeError(e, `No se pudo revisar el comprobante del pedido #${venta.id}.`),
       );
     } finally {
@@ -405,15 +429,15 @@ export default function PedidosTurno() {
     const { venta, accion } = cobro;
 
     if (exigeComprobante && !archivoCobro) {
-      setError('Adjunta la imagen del comprobante de pago.');
+      alertar('Adjunta la imagen del comprobante de pago.');
       return;
     }
 
     pagandoRef.current = true;
     setPagando(true);
     try {
-      // 1. Guarda el método (queda registrado en el historial)
-      if ((venta.metodo_pago ?? '').trim() !== metodoCobro) {
+      // 1. Solo se guarda aparte si hay comprobante; si no, va en el PATCH de estado
+      if (exigeComprobante && (venta.metodo_pago ?? '').trim() !== metodoCobro) {
         await apiClient.patch(`/ventas/${venta.id}/metodo-pago`, { metodo_pago: metodoCobro });
       }
 
@@ -447,8 +471,10 @@ export default function PedidosTurno() {
       setCobro(null);
       setArchivoCobro(null);
       void ejecutarCambio(venta, accion, undefined, metodoCobro);
+      pagandoRef.current = false;
+      setPagando(false);
     } catch (e) {
-      setError(mensajeDeError(e, 'No se pudo registrar el pago.'));
+      alertar(mensajeDeError(e, 'No se pudo registrar el pago.'));
       pagandoRef.current = false;
       setPagando(false);
     }
@@ -547,7 +573,7 @@ export default function PedidosTurno() {
                 type="button"
                 className="tv-btn"
                 disabled={accionDeshabilitada}
-                onClick={() => intentarCambio(v, accion)}
+                onClick={() => (v.estado === 'Registrado' ? setDetalleId(v.id) : intentarCambio(v, accion))}
               >
                 {esOcupado ? 'Guardando…' : textoAccion}
               </button>
@@ -690,7 +716,7 @@ export default function PedidosTurno() {
               <div>
                 <h3 className="tv-det-titulo">Pedido #{detalle.id}</h3>
               </div>
-              <button type="button" className="modal-x" onClick={() => !pagando && setCobro(null)} aria-label="Cerrar">×</button>
+              <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>
             </div>
             <dl className="tv-det-info">
               <div><dt>Cliente</dt><dd>{nombreCliente(detalle)}</dd></div>
@@ -839,7 +865,7 @@ export default function PedidosTurno() {
                       alt={`Comprobante de pago del pedido ${detalle.id}`}
                     />
 
-                    {esAdmin && (
+                    {esAdmin && !comprobanteAprobado(detalle) && (
                       <div className="vt-comprobante-acciones">
                         {detalle.comprobante_estado !== 'Aprobado' && (
                           <button
@@ -872,7 +898,7 @@ export default function PedidosTurno() {
                       </div>
                     )}
 
-                    {!esAdmin && puedeSubirComprobante(detalle) && (
+                    {!esAdmin && !comprobanteAprobado(detalle) && puedeSubirComprobante(detalle) && (
                       <div className="vt-comprobante-acciones">
                         <button
                           type="button"
@@ -899,6 +925,23 @@ export default function PedidosTurno() {
               <span>Total</span>
               <strong>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</strong>
             </div>
+
+            {detalle.estado === 'Registrado' && (
+              <div className="vt-comprobante-acciones">
+                <button
+                  type="button"
+                  className="btn-save"
+                  disabled={!detalle.metodo_pago || (requiereComprobante(detalle) && !comprobanteAprobado(detalle))}
+                  onClick={() => {
+                    const v = detalle;
+                    setDetalleId(null);
+                    intentarCambio(v, { sig: 'Por verificar', texto: 'Verificar' });
+                  }}
+                >
+                  Verificar y continuar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

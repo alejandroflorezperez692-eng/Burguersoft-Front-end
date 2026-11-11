@@ -126,34 +126,42 @@ export default function Registro() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    // 1. Validar nombre
     if (!nombre.trim() || nombre.trim().length < 2) {
       showToast('Ingrese un nombre válido (solo letras, mínimo 2 caracteres).', true);
       return;
     }
+    // 2. Validar apellido
     if (!apellido.trim() || apellido.trim().length < 2) {
       showToast('Ingrese un apellido válido (solo letras, mínimo 2 caracteres).', true);
       return;
     }
+    // 3. Validar tipo de documento
     if (!tipoDocumento) {
       showToast('Seleccione el tipo de documento.', true);
       return;
     }
+    // 4. Validar número de documento
     if (!/^[0-9]{6,12}$/.test(numeroDocumento)) {
       showToast('El número de documento debe tener entre 6 y 12 dígitos (solo números).', true);
       return;
     }
+    // 5. Validar correo ANTES de la contraseña
+    if (!correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
+      showToast('Ingrese un correo electrónico válido.', true);
+      return;
+    }
+    // 6. Validar requisitos de contraseña
     if (!cumpleRequisitos) {
       showToast('La contraseña no cumple los requisitos de seguridad.', true);
       return;
     }
+    // 7. Validar coincidencia de contraseñas
     if (password !== confirmPassword) {
       showToast('Las contraseñas no coinciden.', true);
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
-      showToast('Ingrese un correo electrónico válido.', true);
-      return;
-    }
+    // 8. Validar términos y condiciones
     if (!aceptaTerminos) {
       showToast('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.', true);
       return;
@@ -419,8 +427,6 @@ export default function Registro() {
               He leído y acepto los <Link to="/terminos" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('terminos'); }}>Términos y Condiciones</Link> y autorizo el tratamiento de mis datos personales conforme a la <Link to="/privacidad" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('privacidad'); }}>Política de Privacidad</Link>.
             </label>
           </div>
-
-          {/* Ya no es necesario el recaptcha-container para v3 */}
 
           <button type="submit" className="boton-registro" disabled={loading}>
             {loading ? 'REGISTRANDO…' : 'Registrarse'}
