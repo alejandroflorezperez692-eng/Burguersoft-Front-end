@@ -259,7 +259,7 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
   }, []);
 
   return (
-    <div ref={ref} className={className} style={{ position: 'relative' }}>
+    <div ref={ref} className={className} style={{ position: 'relative', minWidth: className ? 170 : undefined }}>
       <button
         type="button"
         className={className ? `${className}-trigger` : undefined}
@@ -309,10 +309,11 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
             position: 'absolute',
             top: 'calc(100% + 6px)',
             left: 0,
-            right: 0,
+            ...(className ? { minWidth: '100%', width: 'max-content', maxWidth: 320 } : { right: 0 }),
             zIndex: 30,
             maxHeight: 220,
             overflowY: 'auto',
+            overflowX: 'hidden',
             margin: 0,
             padding: 6,
             listStyle: 'none',
