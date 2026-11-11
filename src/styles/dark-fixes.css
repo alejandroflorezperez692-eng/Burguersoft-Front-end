@@ -669,3 +669,11 @@ html body.dark-mode .admin-body .rpt-buscador input:focus {
   box-shadow: 0 0 0 2px rgba(232, 130, 26, 0.35);
 }
 html body.dark-mode .admin-body .rpt-buscador button { color: #ffffff !important; }
+
+/* NOTIFICACIONES (modo oscuro): línea divisoria naranja sobre "Ver resumen en Inicio" y bajo el título */
+body.dark-mode .notif-panel .notif-head {
+  border-bottom: 1px solid #e8821a !important;
+}
+body.dark-mode .notif-panel .notif-pie {
+  border-top: 1px solid #e8821a !important;
+}

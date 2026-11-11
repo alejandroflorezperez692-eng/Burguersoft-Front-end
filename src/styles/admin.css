@@ -1249,7 +1249,8 @@ body.dark-mode .btn-icon-estado:hover {
   color: #fff;
 }
 
-.btn-det-editar   { background: #e8821a; }
+.btn-det-editar   { background: var(--info, #2d89ef); }
+body.dark-mode .btn-det-editar { background: #e8821a; }
 .btn-det-eliminar { background: var(--danger, #C8382A); }
 
 .btn-det-editar:hover,
@@ -4740,4 +4741,118 @@ body.dark-mode .admin-body :is(input, textarea, select)::placeholder {
     height: 16px;
     opacity: 0.85;
   }
+}
+
+/* =====================================================================
+   MODO CLARO · Inicio del administrador: fondo totalmente blanco y bordes del color de cada elemento
+   (solo con body sin .dark-mode; el modo oscuro no se toca)
+   ===================================================================== */
+body:not(.dark-mode) .admin-body .dashboard-wrap {
+  background: #ffffff;
+}
+/* Tarjeta de bienvenida: borde naranja (como su barra lateral) */
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb {
+  background: #ffffff !important;
+  border: 1px solid #e8821a;
+}
+/* Panel "Burgi te avisa" y resumen de la semana: borde naranja */
+body:not(.dark-mode) .admin-body .dashboard-wrap .alertas-dashboard {
+  background: #ffffff !important;
+  border: 1px solid #e8821a !important;
+}
+body:not(.dark-mode) .admin-body .dashboard-wrap .alertas-resumen-semanal {
+  background: #ffffff !important;
+  border: 1px solid #e8821a !important;
+}
+/* Alertas: fondo blanco y borde del color de su nivel (rojo = alta, naranja = media, verde = baja) */
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item {
+  background: #ffffff !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-left-width: 4px !important;
+}
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item.alerta-nivel-alta  { border-color: #c8382a !important; }
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item.alerta-nivel-media { border-color: #e8821a !important; }
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item.alerta-nivel-baja  { border-color: #2e9e5b !important; }
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item.alerta-stock       { border-color: #c8382a !important; }
+
+/* MODO CLARO · Inicio: textos en negro (rol, fecha, "Redactado por IA" y detalle de las alertas).
+   La hora y el punto siguen en naranja. */
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb-rol,
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb-fecha,
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-ia-tag,
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-detalle {
+  color: #000000 !important;
+}
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb-punto,
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb-hora {
+  color: #e8821a !important;
+}
+
+/* MODO CLARO · menú del usuario (Mi perfil / Cerrar sesión): línea divisoria y hover naranja / rojo.
+   Solo sin .dark-mode; el modo oscuro conserva sus reglas de dark-fixes.css */
+body:not(.dark-mode) .menu-usuario .menu-usuario-item {
+  transition: background 0.15s ease, color 0.15s ease;
+}
+body:not(.dark-mode) .menu-usuario .menu-usuario-item:not(.menu-usuario-salir) {
+  border-radius: 8px 8px 0 0 !important;
+}
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir {
+  border-top: 1px solid #e8821a !important;
+  border-radius: 0 0 8px 8px !important;
+}
+/* Mi perfil: fondo naranja y letra blanca */
+body:not(.dark-mode) .menu-usuario .menu-usuario-item:not(.menu-usuario-salir):hover,
+body:not(.dark-mode) .menu-usuario .menu-usuario-item:not(.menu-usuario-salir):focus-visible {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+/* Cerrar sesión: fondo rojo y letra e ícono blancos */
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir:hover,
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir:focus-visible {
+  background: #c8382a !important;
+  color: #ffffff !important;
+}
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir:hover img,
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir:focus-visible img {
+  filter: brightness(0) invert(1);
+}
+
+/* MODO CLARO · panel de notificaciones: sin fondo al pasar por una notificación, pie naranja al pasar,
+   y texto del estado vacío en negro. Solo sin .dark-mode. */
+body:not(.dark-mode) .notif-panel .notif-item.con-enlace:not(.nueva):hover,
+body:not(.dark-mode) .notif-panel .notif-item.con-enlace:not(.nueva):focus-visible {
+  background: transparent !important;
+}
+body:not(.dark-mode) .notif-panel .notif-item.con-enlace.nueva:hover,
+body:not(.dark-mode) .notif-panel .notif-item.con-enlace.nueva:focus-visible {
+  background: rgba(232, 130, 26, 0.08) !important;
+}
+body:not(.dark-mode) .notif-panel .notif-pie {
+  transition: background 0.15s ease, color 0.15s ease;
+}
+body:not(.dark-mode) .notif-panel .notif-pie:hover,
+body:not(.dark-mode) .notif-panel .notif-pie:focus-visible {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+body:not(.dark-mode) .notif-panel .notif-vacio {
+  color: #000000 !important;
+}
+
+/* MODO CLARO · panel de notificaciones: borde y líneas divisorias en naranja. Solo sin .dark-mode. */
+body:not(.dark-mode) .notif-panel {
+  border: 1px solid #e8821a !important;
+}
+body:not(.dark-mode) .notif-panel .notif-head {
+  border-bottom: 1px solid #e8821a !important;
+}
+body:not(.dark-mode) .notif-panel .notif-item {
+  border-bottom-color: #e8821a !important;
+}
+body:not(.dark-mode) .notif-panel .notif-item:last-child {
+  border-bottom: none !important;
+}
+body:not(.dark-mode) .notif-panel .notif-pie {
+  border-top: 1px solid #e8821a !important;
 }

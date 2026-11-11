@@ -21,6 +21,7 @@ const BACKUPS_CSS = `
 .bk-modo strong{display:block;font-size:13px;color:var(--text-900);margin-bottom:3px}
 .bk-modo p{margin:0;font-size:12px;color:var(--text-600);line-height:1.45}
 .bk-warn{font-size:12px;color:#a2651a;background:rgba(232,130,26,.1);border:1px solid rgba(232,130,26,.3);border-radius:var(--r-sm);padding:10px 12px;line-height:1.5;margin:0 0 14px}
+body.dark-mode .bk-confirmar{background:#e8821a !important;box-shadow:0 4px 14px rgba(232,130,26,.3) !important}
 body.dark-mode .bk-warn{color:#fff;background:#000;border:1px solid #e8821a}
 body.dark-mode .bk-modo,body.dark-mode .bk-modo.activo{background:#000;border-color:#e8821a}
 .bk-archivo{display:flex;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-900)}
@@ -789,9 +790,10 @@ export default function BackupsAdmin() {
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setRestoreSel(null)} disabled={restaurando}>Cancelar</button>
               <button
-                className="btn-save"
+                className="btn-save bk-confirmar"
                 onClick={confirmarRestaurar}
                 disabled={restaurando}
+                style={restoreModo === 'replace' ? { background: 'var(--danger)', boxShadow: '0 4px 14px rgba(200,56,42,.3)' } : undefined}
               >
                 {restaurando ? 'Restaurando...' : 'Confirmar restauración'}
               </button>
