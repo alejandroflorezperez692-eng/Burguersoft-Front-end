@@ -147,9 +147,9 @@ function FiltroDesplegableVentas({ value, onChange, opciones }: {
 
   if (!modoOscuro) {
     return (
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <SelectOscuro value={value} onChange={(event) => onChange(event.target.value)}>
         {opciones.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
-      </select>
+      </SelectOscuro>
     );
   }
 
@@ -201,7 +201,7 @@ function SelectorFechaVentas({ value, onChange, min, max }: {
   min?: string;
   max?: string;
 }) {
-  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
   const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
   const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
@@ -229,17 +229,6 @@ function SelectorFechaVentas({ value, onChange, min, max }: {
     };
   }, [abierto]);
 
-  if (!modoOscuro) {
-    return (
-      <input
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
-  }
 
   const anio = mesVisible.getFullYear();
   const mes = mesVisible.getMonth();
@@ -1541,6 +1530,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               <span className="vt-estado" data-estado={detalle.estado}>{detalle.estado}</span>
             </div>
 
+            <div className="vt-det-body">
             <section className="vt-det-sec">
               <h4>Cliente</h4>
               <dl className="vt-det-grid">
@@ -1739,6 +1729,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
 
             <div className="modal-actions">
               <button type="button" className="btn-cancel" onClick={() => setDetalleId(null)}>Cerrar</button>
+            </div>
             </div>
           </div>
         </div>

@@ -86,11 +86,11 @@ function MnFormSelect({
 
   if (!modoOscuro) {
     return (
-      <select id={id} value={value} onChange={(event) => onChange(event.target.value)} style={style}>
+      <SelectOscuro id={id} value={value} onChange={(event) => onChange(event.target.value)} style={style}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
         ))}
-      </select>
+      </SelectOscuro>
     );
   }
 
@@ -750,7 +750,7 @@ export default function MenuAdmin() {
 
  
   return (
-    <div className="page-inner mn-page">
+    <div className="page-inner mn-page mn-menu-admin">
       <div className="page-header">
         <div>
           <h1>Gestión del Menú</h1>

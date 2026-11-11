@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import SelectOscuro from '../../components/SelectOscuro';
 import type { ChangeEvent, FormEvent, CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import { useToast } from '../../components/Toast';
@@ -173,11 +174,11 @@ function PromoFilterSelect({
 
   if (!modoOscuro) {
     return (
-      <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)}>
+      <SelectOscuro aria-label={label} value={value} onChange={(event) => onChange(event.target.value)}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>{option.label}</option>
         ))}
-      </select>
+      </SelectOscuro>
     );
   }
 
@@ -240,17 +241,13 @@ function PromoDatePicker({
   onChange: (value: string) => void;
   style?: CSSProperties;
 }) {
-  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef<HTMLDivElement>(null);
   const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
   const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
 
-  useEffect(() => {
-    const observer = new MutationObserver(() => setModoOscuro(document.body.classList.contains('dark-mode')));
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
+  
 
   useEffect(() => {
     if (!abierto) return;
@@ -268,19 +265,7 @@ function PromoDatePicker({
     };
   }, [abierto]);
 
-  if (!modoOscuro) {
-    return (
-      <input
-        id={id}
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        style={style}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
-  }
+ 
 
   const anio = mesVisible.getFullYear();
   const mes = mesVisible.getMonth();

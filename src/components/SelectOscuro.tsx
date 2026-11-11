@@ -6,7 +6,6 @@ import {
   useEffect,
   useRef,
   useState,
-  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -14,6 +13,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import '../styles/select-oscuro.css';
+import '../styles/select-claro.css';
 
 
 
@@ -28,27 +28,6 @@ type Panel = {
   fontSize: string;
   fontFamily: string;
 };
-
-
-const suscriptores = new Set<() => void>();
-let observer: MutationObserver | null = null;
-
-function suscribirModoOscuro(callback: () => void) {
-  suscriptores.add(callback);
-  if (!observer) {
-    observer = new MutationObserver(() => suscriptores.forEach((fn) => fn()));
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-  }
-  return () => {
-    suscriptores.delete(callback);
-    if (suscriptores.size === 0 && observer) {
-      observer.disconnect();
-      observer = null;
-    }
-  };
-}
-
-const leerModoOscuro = () => document.body.classList.contains('dark-mode');
 
 
 const CONSULTA_PUNTERO = '(any-pointer: fine)';
@@ -89,9 +68,10 @@ function extraerOpciones(hijos: ReactNode, salida: Opcion[] = []): Opcion[] {
 export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectElement>) {
   const { children, className, onMouseDown, onKeyDown, ...resto } = props;
 
-  const modoOscuro = useSyncExternalStore(suscribirModoOscuro, leerModoOscuro, () => false);
   const [punteroFino] = useState(() => window.matchMedia(CONSULTA_PUNTERO).matches);
-  const personalizado = modoOscuro && punteroFino;
+  // Lista personalizada en modo claro y oscuro (con puntero fino).
+  // Los colores de cada modo viven en select-claro.css / select-oscuro.css.
+  const personalizado = punteroFino;
 
   const selectRef = useRef<HTMLSelectElement>(null);
   const listaRef = useRef<HTMLDivElement>(null);

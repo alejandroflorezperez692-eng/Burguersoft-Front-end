@@ -1,0 +1,64 @@
+
+body:not(.dark-mode) .so-lista {
+  position: fixed;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  overflow-y: auto;
+  border: 1px solid #e8821a;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  scrollbar-color: #e8821a #ffffff;
+  scrollbar-width: thin;
+}
+
+body:not(.dark-mode) .so-lista::-webkit-scrollbar {
+  width: 8px;
+}
+
+body:not(.dark-mode) .so-lista::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+
+body:not(.dark-mode) .so-lista::-webkit-scrollbar-thumb {
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #e8821a;
+}
+
+body:not(.dark-mode) .so-opcion {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 7px 12px;
+  border: 0;
+  border-bottom: 1px solid #e8821a;   
+  border-radius: 0;
+  background: #ffffff;
+  color: #000000;
+  line-height: 1.25;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+body:not(.dark-mode) .so-opcion:last-child {
+  border-bottom: 0;
+}
+
+body:not(.dark-mode) .so-opcion:hover,
+body:not(.dark-mode) .so-opcion.so-activa {
+  background: #e8821a;                
+  color: #ffffff;
+}
+
+body:not(.dark-mode) .so-opcion[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+body:not(.dark-mode) .so-opcion[aria-disabled="true"]:hover {
+  background: #ffffff;
+  color: #000000;
+}
