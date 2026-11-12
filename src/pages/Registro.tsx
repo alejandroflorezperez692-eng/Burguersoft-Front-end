@@ -9,7 +9,7 @@ import { mensajeError } from '../utils/errores';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
-// Tipo para window con reCAPTCHA
+
 declare global {
   interface Window {
     grecaptcha: any;
@@ -102,6 +102,18 @@ export default function Registro() {
       script.remove();
     };
   }, []);
+  
+  useEffect(() => {
+    if (!window.grecaptcha) return;
+    const container = document.getElementById('recaptcha-container');
+    if (container && !container.dataset.recaptchaRendered) {
+      window.grecaptcha.render(container, {
+        'sitekey': RECAPTCHA_SITE_KEY,
+        'callback': () => { /* widget rendered, can be captured on submit */ }
+      });
+      container.dataset.recaptchaRendered = 'true';
+    }
+  }, [RECAPTCHA_SITE_KEY, window.grecaptcha]);
 
   const requisitos: Requisito[] = [
     { ...TEXTO_REQUISITOS[0], cumple: password.length >= 8 },

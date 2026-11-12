@@ -1,35 +1,29 @@
-/* =====================================================================
-   Tablero de pedidos por rol (cocina / meseros / cajero / todos)
-   Diseño: columnas grises suaves + tarjetas blancas + botones rectangulares redondeados
-   ===================================================================== */
 
 .tv-wrap {
   padding: 28px 32px 56px;
   max-width: 1480px;
   margin: 0 auto;
   width: 100%;
-  min-width: 0;            /* evita que el tablero empuje el layout y corte la derecha */
+  min-width: 0;            
   box-sizing: border-box;
 }
-
-/* ---------- Encabezado ---------- */
 
 .tv-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
 
 .tv-titulo {
   margin: 0;
-  font-family: var(--font-display, 'Fraunces', Georgia, serif);
+  font-family: var(--font-sans, inherit);
   font-size: clamp(30px, 3.4vw, 40px);
-  font-weight: 900;
-  letter-spacing: -.02em;
-  line-height: 1.05;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.1;
   color: var(--text-900);
 }
 .tv-subtitulo { margin: 6px 0 0; font-size: 14.5px; color: var(--text-600); max-width: 560px; }
 
 .tv-lado { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 
-/* Selector de vista (Cocina / Meseros / Cajero / Todos) */
+
 .tv-tabs {
   display: inline-flex; gap: 4px; padding: 5px;
   background: var(--surface);
@@ -56,7 +50,7 @@
 }
 .tv-refrescar:hover { border-color: var(--brand); color: var(--brand); }
 
-/* Indicador "en vivo" */
+
 .tv-nota {
   margin: 14px 0 0; display: inline-flex; align-items: center; gap: 8px;
   font-size: 12.5px; font-weight: 600; color: var(--text-600);
@@ -78,7 +72,7 @@
 }
 .tv-errorbox button { border: none; background: transparent; color: inherit; cursor: pointer; font-size: 14px; }
 
-/* ---------- Barra: buscador + acciones ---------- */
+
 
 .tv-barra { margin-top: 22px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 
@@ -117,7 +111,7 @@
 .tv-btn-nuevo:hover { background: var(--brand-deep, #cf6e12); transform: translateY(-1px); }
 .tv-btn-nuevo:active { transform: translateY(0); }
 
-/* ---------- Filtros de entrega ---------- */
+
 
 .tv-pills { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
 .tv-pill {
@@ -129,7 +123,7 @@
 .tv-pill:hover { color: var(--text-900); }
 .tv-pill.activo { background: var(--text-900); color: var(--surface); }
 
-/* ---------- Tablero por columnas ---------- */
+
 
 .tv-vacio { text-align: left; color: var(--text-400); padding: 8px 0; font-size: 13px; }
 
@@ -176,7 +170,7 @@
   border-radius: 16px;
 }
 
-/* ---------- Tarjeta tipo comanda ---------- */
+
 
 .tv-card {
   position: relative;
@@ -244,13 +238,13 @@
 .tv-btn:hover:not(:disabled) { transform: translateY(-1px); opacity: .9; }
 .tv-btn:disabled { opacity: .55; cursor: wait; }
 
-/* Foco visible para teclado */
+
 .tv-tab:focus-visible, .tv-refrescar:focus-visible, .tv-btn-sec:focus-visible,
 .tv-btn-nuevo:focus-visible, .tv-pill:focus-visible, .tv-btn:focus-visible {
   outline: 3px solid var(--brand); outline-offset: 2px;
 }
 
-/* ---------- Modal de mesas ---------- */
+
 
 .modal-box.mm-box { max-width: 720px; width: 95%; padding: 0; overflow: hidden; border-radius: 22px; }
 .mm-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; background: var(--text-900); padding: 20px 26px; }
@@ -281,7 +275,7 @@
 }
 .mm-nuevo:hover { border-color: var(--brand); color: var(--brand); }
 
-/* ---------- Modo oscuro ---------- */
+
 
 body.dark-mode .tv-card {
   position: relative;
@@ -292,7 +286,7 @@ body.dark-mode .tv-card {
   display: flex; flex-direction: column; gap: 10px;
 }
 
-/* ---------- Pantallas pequeñas ---------- */
+
 
 @media (max-width: 720px) {
   .tv-wrap { padding: 20px 16px 48px; }
@@ -300,7 +294,7 @@ body.dark-mode .tv-card {
   .tv-btn-nuevo { flex: 1; }
   .tv-tabs { max-width: 100%; overflow-x: auto; }
 }
-/* ===== Tarjetas estilo cocina: items en recuadro + botón ancho por estado ===== */
+
 
 .tv-card { border-left: 4px solid var(--c); }
 
@@ -325,49 +319,46 @@ body.dark-mode .tv-card {
 }
 .tv-btn:hover:not(:disabled) { opacity: 1; filter: brightness(.94); }
 
-/* Colores del botón según la columna */
+
 .tv-col[data-estado="Por verificar"]  .tv-btn { background: #d33a3a; box-shadow: 0 6px 16px -4px rgba(211, 58, 58, .45); }
 .tv-col[data-estado="Recepcionado"]   .tv-btn { background: #2f6fed; box-shadow: 0 6px 16px -4px rgba(47, 111, 237, .45); }
 .tv-col[data-estado="En preparación"] .tv-btn { background: #1a7a42; box-shadow: 0 6px 16px -4px rgba(26, 122, 66, .45); }
 .tv-col[data-estado="Preparado"]      .tv-btn { background: #7a4fd6; box-shadow: 0 6px 16px -4px rgba(122, 79, 214, .45); }
 
-/* Pedidos nuevos (por verificar) resaltados con borde completo */
 .tv-col[data-estado="Por verificar"] .tv-card {
   border: 1.5px solid #d33a3a; border-left-width: 4px;
 }
-/* ===== Versión sobria: solo "+ Nuevo pedido" lleva color ===== */
 
-/* Bordes grises en vez de naranja */
 .tv-wrap { --border: #e7e4e1; --border-strong: #d6d1cc; }
 body.dark-mode .tv-wrap { --border: rgba(255,255,255,.12); --border-strong: rgba(255,255,255,.22); }
 
-/* Selector de vista en negro */
+
 .tv-tab.activo {
   background: var(--text-900); color: var(--surface); box-shadow: none;
 }
 
-/* Buscador neutro */
+
 .tv-buscar {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%239a9490' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");
   box-shadow: none;
 }
 .tv-buscar:focus { border-color: var(--text-900); box-shadow: 0 0 0 3px rgba(0,0,0,.08); }
 
-/* Indicador "en vivo" discreto */
+
 .tv-nota::before { background: var(--text-400); animation: none; box-shadow: none; }
 
-/* Botones secundarios sin naranja al pasar el mouse */
+
 .tv-refrescar:hover, .tv-btn-sec:hover, .tv-pill:hover, .mm-nuevo:hover {
   border-color: var(--text-900); color: var(--text-900);
 }
 
-/* Columnas: punto de estado pequeño, sin halo */
+
 .tv-dot { box-shadow: none; width: 8px; height: 8px; }
 .tv-cols { scrollbar-color: rgba(0,0,0,.25) transparent; }
 .tv-cols::-webkit-scrollbar-thumb { background: rgba(0,0,0,.2); }
 body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,.25); }
 
-/* Tarjetas sin borde de color */
+
 .tv-card, .tv-col[data-estado] .tv-card {
   border: 1px solid var(--border); border-left-width: 1px;
 }
@@ -375,7 +366,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
   background: color-mix(in srgb, var(--text-900) 7%, transparent); color: var(--text-900);
 }
 
-/* Botón de la tarjeta: color según el estado (verde, rojo, azul, amarillo) */
+
 .tv-btn,
 .tv-col[data-estado] .tv-btn {
   background: #1a7a42; color: #fff; box-shadow: none;
@@ -387,7 +378,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 .tv-col[data-estado="Preparado"] .tv-btn { background: #e8821a; color: #fff; }
 .tv-col[data-estado="Servido"] .tv-btn,
 .tv-col[data-estado="Pendiente de pago"] .tv-btn { background: #1a7a42; color: #fff; }
-/* ===== Botones con el mismo estilo que "+ Añadir promoción" ===== */
+
 
 .tv-btn-nuevo,
 .tv-btn-sec,
@@ -401,7 +392,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
   transition: all .2s var(--ease, ease);
 }
 
-/* Principal: naranja igual que promociones */
+
 .tv-btn-nuevo {
   background: var(--brand); color: #fff; border: none;
   box-shadow: 0 4px 14px rgba(232, 130, 26, .35);
@@ -412,7 +403,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 }
 .tv-btn-nuevo:active { transform: translateY(0); }
 
-/* Secundarios: misma forma y tamaño, fondo blanco */
+
 .tv-btn-sec,
 .tv-refrescar {
   background: var(--surface); color: var(--text-900);
@@ -422,7 +413,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 .tv-refrescar:hover {
   border-color: var(--text-900); color: var(--text-900); transform: translateY(-2px);
 }
-/* Quitar el aro naranja del selector de vista */
+
 .tv-tab,
 .tv-tab:focus,
 .tv-tab:focus-visible,
@@ -438,7 +429,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
   box-shadow: none;
 }
 
-/* ===== Botón "Ver detalle" y ventana del pedido ===== */
+
 .tv-ver-detalle {
   align-self: flex-start; margin-top: 8px; cursor: pointer;
   font-family: inherit; font-weight: 700; font-size: 13px;
@@ -464,10 +455,10 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 }
 .tv-det-total strong { font-size: 18px; color: var(--text-900); }
 
-/* ===== Botón de acción más pequeño ===== */
+
 .tv-btn { padding: 9px 16px; border-radius: 10px; font-size: 13px; }
 
-/* ===== Datos del pedido dentro de "Ver detalle" ===== */
+
 .tv-det-info {
   display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px;
   margin: 0; padding: 12px 14px; border-radius: 12px;
@@ -475,7 +466,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 }
 .tv-det-info dt { font-size: 11.5px; font-weight: 700; color: var(--text-400); text-transform: uppercase; letter-spacing: .03em; }
 .tv-det-info dd { margin: 2px 0 0; font-size: 14px; font-weight: 700; color: var(--text-900); word-break: break-word; }
-/* ===== Lista de productos del detalle ===== */
+
 .tv-det-productos { display: flex; flex-direction: column; gap: 8px; }
 .tv-det-subtitulo {
   margin: 0; font-size: 11.5px; font-weight: 700; color: var(--text-400);
@@ -498,7 +489,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 
 .tv-det-head { padding-right: 48px; }
 
-/* ===== Comprobante de pago dentro de "Ver detalle" ===== */
+
 .tv-det-comprobante {
   border-top: 1px solid var(--border);
   padding-top: 12px;
@@ -506,7 +497,7 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
 .tv-det-comprobante .comprobante-imagen { max-height: 280px; }
 .tv-det-comprobante .vt-det-grid { margin-bottom: 10px; }
 
-/* ===== Aviso de pago electrónico bloqueado hasta aprobar el comprobante ===== */
+
 .tv-pago-bloqueado {
   display: inline-flex;
   align-items: center;
@@ -531,15 +522,11 @@ body.dark-mode .tv-cols::-webkit-scrollbar-thumb { background: rgba(255,255,255,
   background: #fff4e0;
   border: 1px solid #f3c67a;
 }
-body.dark-mode .tv-pago-bloqueado {
-  color: #ffd79a;
-  background: rgba(243, 198, 122, 0.16);
-  border-color: rgba(243, 198, 122, 0.45);
-}
+body.dark-mode .tv-pago-bloqueado,
 body.dark-mode .tv-pago-aviso {
-  color: #ffd79a;
-  background: rgba(243, 198, 122, 0.12);
-  border-color: rgba(243, 198, 122, 0.4);
+  color: #ffffff;
+  background: #000000;
+  border-color: #e8821a;
 }
 
 body.dark-mode .admin-body .tv-wrap {
@@ -636,6 +623,7 @@ body.dark-mode .admin-body .modal-box.tv-det-box {
   color: #ffffff;
 
 }
+
 
 .tv-mesa-grupo {
   align-self: flex-start;
@@ -819,3 +807,35 @@ body.dark-mode .tv-col::-webkit-scrollbar-thumb { background: rgba(255, 255, 255
   cursor: pointer;
 }
 .tv-flechas button:hover { background: var(--text-900); color: var(--surface); }
+
+body.dark-mode .tv-btn,
+body.dark-mode .tv-col[data-estado] .tv-btn {
+  background: #e8821a !important;
+  color: #fff;
+  box-shadow: 0 6px 16px -4px rgba(232, 130, 26, .45);
+}
+
+
+body:not(.dark-mode) .tv-pill.activo {
+  background: #e8851a;
+  color: #ffffff;
+}
+
+
+body:not(.dark-mode) .tv-buscar {
+  border: 1.5px solid #e8851a;
+}
+body:not(.dark-mode) .tv-buscar:focus {
+  border-color: #e8851a;
+  box-shadow: 0 0 0 3px rgba(232, 133, 26, .18);
+}
+
+body:not(.dark-mode) .tv-tabs {
+  border: 1.5px solid #e8851a;
+}
+body:not(.dark-mode) .tv-tabs .tv-tab.activo,
+body:not(.dark-mode) .tv-tabs .tv-tab.activo:focus,
+body:not(.dark-mode) .tv-tabs .tv-tab.activo:focus-visible {
+  background: #e8851a;
+  color: #ffffff;
+}

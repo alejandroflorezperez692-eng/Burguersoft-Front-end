@@ -53,7 +53,7 @@ const cache: {
   mesas: leerCache<Mesa[]>('nv:mesas'),
 };
 
-// Si ya hay productos en caché, las fotos empiezan a bajar apenas carga la app
+
 if (cache.productos) precargarImagenes(cache.productos);
 
 function fijar<K extends keyof typeof cache>(k: K, v: NonNullable<(typeof cache)[K]>) {
@@ -62,7 +62,7 @@ function fijar<K extends keyof typeof cache>(k: K, v: NonNullable<(typeof cache)
   if (k === 'productos') precargarImagenes(v as Producto[]);
 }
 
-/** Llamar antes de abrir el modal para que todo aparezca al instante. */
+
 export function precargarNuevaVenta() {
   apiClient.get('/productos').then(({ data }) => fijar('productos', toArray<Producto>(data))).catch(() => {});
   apiClient.get('/promociones').then(({ data }) => fijar('promociones', toArray<Promocion>(data))).catch(() => {});
@@ -131,12 +131,12 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     if (!abierto) return;
     let vivo = true;
 
-    // Lo que ya está en caché se muestra de inmediato
+
     if (cache.productos) setProductos(cache.productos);
     if (cache.promociones) setPromociones(cache.promociones);
     if (cache.mesas) setMesas(cache.mesas);
 
-    // Cada petición va por separado: nadie espera a nadie
+  
     apiClient.get('/productos')
       .then(({ data }) => {
         fijar('productos', toArray<Producto>(data));
@@ -156,7 +156,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     return () => { vivo = false; };
   }, [abierto, mesaInicial, cargarMesas]);
 
-  /* ---------- Items (productos + combos activos) ---------- */
+
   const todos = useMemo<Item[]>(() => [
     ...productos.map((p) => ({
       tipo: 'producto' as const, id: p.id, nombre: p.nombre, precio: Number(p.valor) || 0,
@@ -211,7 +211,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
         : [...l, { adicion_id: id, cantidad: nuevo }];
     });
 
-  // Si quitan un producto del pedido, se van también sus adicionales
+
   useEffect(() => {
     setExtras((l) => l.filter((e) =>
       productos.some((p) => carrito.some((c) => c.producto_id === p.id) && p.adiciones?.some((a) => a.id === e.adicion_id))
@@ -233,7 +233,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     tipoEntrega === 'Consumir' ? (mesa ? `Mesa ${mesa}` : '—')
     : tipoEntrega === 'Domicilio' ? 'Domicilio' : 'Para recoger';
 
-  /* ---------- Mesas ---------- */
+ 
   const crearMesa = async () => {
     try {
       const { data } = await apiClient.post('/mesas');
@@ -246,7 +246,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     }
   };
 
-  /* ---------- Guardar ---------- */
+
   const cerrar = () => {
     setCarrito([]); setCombos([]); setExtras([]); setMesa(null); setCliente(''); setDireccion('');
        setTelefono(''); setRecibeNombre(''); setNotas('');
@@ -326,7 +326,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
         </header>
 
         <div className="np-cols">
-          {/* 1. Tipo de pedido y mesas */}
+       
           <aside className="np-panel">
             <h4><b>1</b> Tipo de pedido</h4>
             <SelectOscuro className="np-select" value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
@@ -368,7 +368,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
             )}
           </aside>
 
-          {/* 2. Información del cliente + pedido */}
+        
           <section className="np-panel">
             <h4><b>2</b> Información del cliente</h4>
             <div className="np-scroll">
@@ -471,7 +471,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
             </div>
           </section>
 
-          {/* 3. Productos */}
+         
           <section className="np-panel">
             <h4><b>3</b> Productos</h4>
             <div className="np-tools">

@@ -5,17 +5,16 @@ interface MotivoModalProps {
   titulo: string;
   descripcion?: string;
   textoBoton?: string;
-  /** Texto del botón de confirmar (ej. "Cancelar pedido"). */
+  
   confirmarTexto?: string;
   placeholder?: string;
-  /** Es un motivo usado para cancelar: se marca el botón en rojo. */
+
   peligro?: boolean;
   onClose: () => void;
   onConfirm: (motivo: string) => void;
 }
 
-/** Modal para pedir el motivo de una acción (ej. cancelar un pedido).
- *  OK no se activa hasta que el motivo tenga algo de contenido. */
+
 export default function MotivoModal({
   titulo,
   descripcion,

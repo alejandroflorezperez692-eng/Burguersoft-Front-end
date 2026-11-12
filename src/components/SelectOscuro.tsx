@@ -6,7 +6,6 @@ import {
   useEffect,
   useRef,
   useState,
-  useSyncExternalStore,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -14,17 +13,9 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import '../styles/select-oscuro.css';
+import '../styles/select-claro.css';
 
-/*
- * Reemplazo directo de <select>.
- *
- * - Modo claro: renderiza el <select> nativo tal cual, sin cambios.
- * - Modo oscuro: sigue siendo el mismo <select> (mismo tamaño, clases, estilos,
- *   validación y onChange), pero en vez de abrir la lista nativa del navegador
- *   abre una lista propia con el mismo estilo de los filtros de Promociones:
- *   borde naranja, fondo negro, flecha blanca y opciones separadas por línea
- *   naranja con hover naranja.
- */
+
 
 type Opcion = { value: string; label: string; disabled: boolean };
 
@@ -38,31 +29,10 @@ type Panel = {
   fontFamily: string;
 };
 
-// ---- detectar modo oscuro (un solo observer compartido por todos los selects) ----
-const suscriptores = new Set<() => void>();
-let observer: MutationObserver | null = null;
 
-function suscribirModoOscuro(callback: () => void) {
-  suscriptores.add(callback);
-  if (!observer) {
-    observer = new MutationObserver(() => suscriptores.forEach((fn) => fn()));
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-  }
-  return () => {
-    suscriptores.delete(callback);
-    if (suscriptores.size === 0 && observer) {
-      observer.disconnect();
-      observer = null;
-    }
-  };
-}
-
-const leerModoOscuro = () => document.body.classList.contains('dark-mode');
-
-// Solo en celulares/tablets sin mouse se deja el selector nativo del teléfono.
 const CONSULTA_PUNTERO = '(any-pointer: fine)';
 
-// ---- leer las <option> que llegan como children ----
+
 function textoDe(nodo: ReactNode): string {
   if (nodo == null || typeof nodo === 'boolean') return '';
   if (typeof nodo === 'string' || typeof nodo === 'number') return String(nodo);
@@ -98,9 +68,10 @@ function extraerOpciones(hijos: ReactNode, salida: Opcion[] = []): Opcion[] {
 export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectElement>) {
   const { children, className, onMouseDown, onKeyDown, ...resto } = props;
 
-  const modoOscuro = useSyncExternalStore(suscribirModoOscuro, leerModoOscuro, () => false);
   const [punteroFino] = useState(() => window.matchMedia(CONSULTA_PUNTERO).matches);
-  const personalizado = modoOscuro && punteroFino;
+  // Lista personalizada en modo claro y oscuro (con puntero fino).
+  // Los colores de cada modo viven en select-claro.css / select-oscuro.css.
+  const personalizado = punteroFino;
 
   const selectRef = useRef<HTMLSelectElement>(null);
   const listaRef = useRef<HTMLDivElement>(null);
@@ -142,14 +113,14 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
     if (!el || opcion.disabled) return;
     cerrar();
     if (el.value !== opcion.value) {
-      // Se dispara un 'change' real: el onChange original recibe un evento normal.
+    
       el.value = opcion.value;
       el.dispatchEvent(new Event('change', { bubbles: true }));
     }
     el.focus();
   };
 
-  // cerrar al hacer clic fuera, al hacer scroll fuera de la lista o al redimensionar
+ 
   useEffect(() => {
     if (!panel) return;
     const clicFuera = (e: MouseEvent) => {
@@ -171,12 +142,12 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
     };
   }, [panel, cerrar]);
 
-  // si se cambia a modo claro con la lista abierta, se cierra
+
   useEffect(() => {
     if (!personalizado) setPanel(null);
   }, [personalizado]);
 
-  // mantener a la vista la opción marcada con el teclado (no al pasar el mouse)
+ 
   useEffect(() => {
     if (!panel || !desplazarRef.current) return;
     desplazarRef.current = false;
@@ -192,7 +163,7 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
   const alPresionar = (e: ReactMouseEvent<HTMLSelectElement>) => {
     onMouseDown?.(e);
     if (e.defaultPrevented || e.button !== 0 || e.currentTarget.disabled) return;
-    // evita que se abra la lista nativa del navegador
+  
     e.preventDefault();
     e.currentTarget.focus();
     if (panel) cerrar();
@@ -293,7 +264,7 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
               fontSize: panel.fontSize,
               fontFamily: panel.fontFamily,
             }}
-            // los eventos de un portal suben por el árbol de React: no deben cerrar modales
+            
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();

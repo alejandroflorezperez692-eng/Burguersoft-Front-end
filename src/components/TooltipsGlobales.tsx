@@ -136,7 +136,7 @@ function encontrarElemento(target: EventTarget | null): Element | null {
   const itemSidebar = target.closest('.sidebar-collapsed .sidebar-item > a');
   if (itemSidebar) return itemSidebar;
 
-  // Iconos de contacto
+
   const cajaContacto = target.closest('.icon-box[data-tooltip]');
   if (cajaContacto) return cajaContacto;
 
@@ -148,12 +148,12 @@ function encontrarElemento(target: EventTarget | null): Element | null {
   const enlace = target.closest('a[data-tooltip]');
   if (enlace && sinTextoVisible(enlace)) return enlace;
 
-  // Botones o enlaces SOLO si son de icono (sin texto visible)
+
   if (accion && !(accion instanceof HTMLInputElement)) {
     return sinTextoVisible(accion) ? accion : null;
   }
 
-  // Icono suelto, fuera de cualquier botón o enlace
+
   return target.closest(SELECTOR_ICONOS);
 }
 

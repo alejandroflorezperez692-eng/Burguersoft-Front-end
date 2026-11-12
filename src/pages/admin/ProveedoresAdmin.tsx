@@ -78,11 +78,11 @@ const load = async (silencioso = false) => {
     try {
       localStorage.setItem('proveedoresAdminVista', vista);
     } catch {
-      /* si el navegador bloquea localStorage, simplemente no se guarda */
+     
     }
   }, [vista]);
 
-  // --- Lógica de Filtros Combinada ---
+  
   const proveedoresOrdenados = [...items].sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'));
 
   const hayFiltros = q !== '' || filtroProveedor !== '' || filtroNombre !== '';
@@ -94,12 +94,12 @@ const load = async (silencioso = false) => {
   };
 
   const filtered = items.filter((m) => {
-    // 1. Filtro de texto general
+    
     if (q) {
       const coincideTexto = [m.nombre, m.correo, m.telefono].some((v) => v?.toLowerCase().includes(q.toLowerCase()));
       if (!coincideTexto) return false;
     }
-    // 2. Filtros avanzados
+    
     if (filtroProveedor && String(m.id) !== filtroProveedor) return false;
     if (filtroNombre && !(m.nombre ?? '').toLowerCase().includes(filtroNombre.trim().toLowerCase())) return false;
 
@@ -206,7 +206,7 @@ const load = async (silencioso = false) => {
   ]);
 
   return (
-    <div className="page-inner">
+    <div className="page-inner proveedores-page">
       <div className="page-header">
         <div>
           <h1>Gestión de Proveedores</h1>
@@ -217,10 +217,10 @@ const load = async (silencioso = false) => {
         )}
       </div>
 
-      {/* Barra de herramientas superior + Filtros */}
+      
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
 
-        {/* Fila 1: Búsqueda y Vista */}
+       
         <div className="mn-toolbar" style={{ marginBottom: 0 }}>
           <div className="mn-search-wrap">
             <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
@@ -256,7 +256,7 @@ const load = async (silencioso = false) => {
           </div>
         </div>
 
-        {/* Fila 2: Filtros */}
+        
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
             <label>Proveedores</label>

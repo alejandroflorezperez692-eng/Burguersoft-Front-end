@@ -47,8 +47,16 @@ canvas {
     min-width: 0;
   }
 
+  /* `clip` (en lugar de `hidden`) evita que la cabecera pegajosa deje de
+     funcionar, porque no convierte al body en contenedor de scroll. */
   body {
     overflow-x: hidden;
+  }
+
+  @supports (overflow: clip) {
+    body {
+      overflow-x: clip;
+    }
   }
 
   .admin-body,
@@ -149,6 +157,7 @@ canvas {
 
   .admin-body .modal-box,
   .admin-body .detalle-box {
+    position: relative;
     width: min(100% - 24px, 640px);
     max-width: calc(100vw - 24px);
     max-height: calc(100dvh - 24px);
@@ -289,6 +298,7 @@ canvas {
 
   .admin-body .modal-box,
   .admin-body .detalle-box {
+    position: relative;
     width: calc(100vw - 20px);
     max-width: calc(100vw - 20px);
     max-height: calc(100dvh - 20px);
@@ -688,5 +698,714 @@ canvas {
   .auth-shell #registroForm .contenedor-registro > *:not(.encabezado) {
     padding-right: 16px;
     padding-left: 16px;
+  }
+}
+
+/* ==========================================================================
+   CAPA RESPONSIVE MEJORADA
+   Ajustes finos para que la interfaz se vea bien en celular, tablet,
+   portátil y pantallas grandes. Esta sección se carga después de los
+   estilos base, así que solo refina medidas; no cambia la identidad visual.
+   ========================================================================== */
+
+/* --- Base: escalado de texto y prevención de desbordes ------------------- */
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+/* Los textos largos (correos, URLs, códigos) no deben romper el layout. */
+.public-body :is(p, h1, h2, h3, h4, h5, h6, li, label, td, th, a, strong, small) {
+  overflow-wrap: break-word;
+}
+
+/* Contenedores que nunca deben generar scroll horizontal. */
+.public-body .promociones,
+.public-body .contact-section,
+.public-body .nosotros-content,
+.public-body .nosotros-ubicacion,
+.public-body .map-content,
+.public-body footer {
+  max-width: 100%;
+}
+
+/* --- Cabecera pública: tablet (769px – 1024px) --------------------------- */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .public-body header {
+    height: clamp(84px, 9vw, 100px);
+    min-height: 0;
+    padding-inline: clamp(18px, 3vw, 32px);
+    gap: 10px;
+  }
+
+  .public-body .logo {
+    width: clamp(60px, 7vw, 78px);
+    height: clamp(60px, 7vw, 78px);
+  }
+
+  .public-body .nom-local {
+    font-size: clamp(18px, 2.2vw, 24px);
+    letter-spacing: 0.3px;
+  }
+
+  .public-body .header-center {
+    gap: 0;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .public-body .header-center a {
+    font-size: clamp(12px, 1.35vw, 14px);
+    letter-spacing: 0.5px;
+    padding: 8px clamp(6px, 1vw, 12px);
+    white-space: nowrap;
+  }
+
+  .public-body .header-left,
+  .public-body .header-right {
+    gap: clamp(8px, 1.4vw, 14px);
+  }
+
+  .public-body .btn-perfil {
+    padding-right: 10px;
+    gap: 8px;
+  }
+
+  .public-body .perfil-nombre {
+    max-width: 96px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* --- Cabecera pública: celular (≤768px) ---------------------------------- */
+
+@media (max-width: 768px) {
+  .public-body header {
+    padding: max(6px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 6px
+      max(12px, env(safe-area-inset-left));
+    gap: 4px;
+    box-shadow: 0 2px 14px rgba(0, 0, 0, 0.28);
+  }
+
+  .public-body .header-left {
+    gap: 8px;
+  }
+
+  .public-body .logo {
+    width: 40px;
+    height: 40px;
+  }
+
+  .public-body .nom-local {
+    font-size: clamp(15px, 4.4vw, 19px);
+    letter-spacing: 0.2px;
+  }
+
+  .public-body .header-center {
+    gap: 2px;
+    padding: 3px;
+    border-radius: 12px;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .public-body .header-center::-webkit-scrollbar {
+    display: none;
+  }
+
+  .public-body .header-center a {
+    flex: 0 0 auto;
+    min-width: 0;
+    min-height: 36px;
+    padding: 7px clamp(6px, 1.6vw, 11px);
+    font-size: clamp(10.5px, 2.9vw, 12px);
+    line-height: 1;
+    letter-spacing: 0.4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .public-body .header-right {
+    gap: 8px;
+  }
+
+  .public-body .btn-sesion {
+    width: 40px;
+    height: 40px;
+  }
+
+  .public-body .btn-sesion img {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* En móvil el avatar ocupa menos: el nombre se oculta. */
+  .public-body .btn-perfil {
+    padding: 3px;
+    border-radius: 50%;
+  }
+
+  .public-body .perfil-nombre {
+    display: none;
+  }
+
+  .public-body .dropdown-menu {
+    right: 0;
+    min-width: min(240px, calc(100vw - 24px));
+  }
+}
+
+/* Pantallas muy estrechas (≤380px): los 5 enlaces caben sin desplazamiento. */
+
+@media (max-width: 380px) {
+  .public-body .header-center {
+    gap: 0;
+    justify-content: space-between;
+  }
+
+  .public-body .header-center a {
+    padding: 7px 4px;
+    font-size: 10.5px;
+    letter-spacing: 0;
+  }
+
+  .public-body .nom-local {
+    font-size: 15px;
+  }
+}
+
+/* --- Héroe / carrusel: altura fluida (solo móvil y tableta) --------------- */
+
+@media (max-width: 1024px) {
+  .public-body .hero {
+    height: clamp(360px, 52svh, 560px);
+  }
+}
+
+@media (max-width: 768px) {
+  .public-body .hero {
+    height: clamp(240px, 40svh, 360px);
+  }
+}
+
+@media (max-width: 480px) {
+  .public-body .hero {
+    height: clamp(220px, 34svh, 300px);
+  }
+}
+
+/* --- Secciones públicas: tipografía y rejillas fluidas ------------------- */
+
+.public-body .promociones {
+  padding: clamp(16px, 4vw, 40px);
+}
+
+.public-body .promociones h2 {
+  font-size: clamp(1.4rem, 3.4vw, 2.5rem);
+  line-height: 1.2;
+}
+
+.public-body .promociones > p {
+  font-size: clamp(0.875rem, 1.6vw, 1.0625rem);
+  margin-bottom: clamp(20px, 4vw, 48px);
+}
+
+.public-body .grid-promociones {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: clamp(12px, 2vw, 18px);
+}
+
+.public-body .promo-img-pub {
+  height: clamp(160px, 21vw, 200px);
+}
+
+.public-body .nosotros-content h2,
+.public-body .section-title {
+  font-size: clamp(1.35rem, 3.4vw, 2.5rem);
+  line-height: 1.2;
+}
+
+.public-body .nosotros-content p,
+.public-body .section-text {
+  font-size: clamp(0.875rem, 1.6vw, 1.125rem);
+}
+
+/* Nosotros: se apila antes para que la tablet no quede apretada. */
+@media (max-width: 900px) {
+  .public-body .nosotros-section {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .public-body .nosotros-content {
+    margin-left: 0;
+    padding: clamp(32px, 6vw, 60px) clamp(18px, 5vw, 40px);
+  }
+
+  .public-body .nosotros-img {
+    max-width: 100%;
+    margin-right: 0;
+    padding: 0 clamp(16px, 4vw, 32px) clamp(24px, 5vw, 40px);
+  }
+
+  .public-body .nosotros-img img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+  }
+}
+
+.public-body .nosotros-ubicacion {
+  padding: clamp(36px, 6vw, 80px) clamp(16px, 5vw, 40px);
+}
+
+.public-body .map-content {
+  padding: clamp(20px, 4vw, 60px) clamp(16px, 5vw, 5%);
+}
+
+.public-body .nosotros-map {
+  height: clamp(240px, 42vw, 500px);
+  border-radius: clamp(12px, 2vw, 24px);
+}
+
+/* --- Pie de página ------------------------------------------------------ */
+
+.public-body .footer-container {
+  gap: clamp(22px, 4vw, 40px);
+}
+
+.public-body footer {
+  padding: clamp(28px, 4vw, 60px) clamp(14px, 4vw, 5%) clamp(14px, 2vw, 20px);
+}
+
+.public-body .footer-horarios li {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* --- Contacto ----------------------------------------------------------- */
+
+.public-body .contact-section {
+  padding: clamp(36px, 8vw, 80px) clamp(16px, 5vw, 5%) clamp(48px, 9vw, 100px);
+}
+
+.public-body .contact-section h1 {
+  font-size: clamp(1.9rem, 5vw, 3.4rem);
+}
+
+.public-body .contact-section .descripcion {
+  font-size: clamp(0.9375rem, 1.8vw, 1.125rem);
+}
+
+@media (max-width: 600px) {
+  .icons-container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 10px;
+  }
+
+  .icon-box {
+    width: auto;
+    max-width: none;
+  }
+
+  .icon-box img {
+    width: 58px;
+    height: 58px;
+  }
+
+  .contact-section .descripcion {
+    margin-bottom: 32px;
+  }
+
+  .wsp-menu {
+    max-width: calc(100vw - 32px);
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+@media (max-width: 360px) {
+  .icons-container {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* --- Carrito lateral ---------------------------------------------------- */
+
+.public-body .cart-panel {
+  width: min(400px, 100vw);
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+}
+
+.public-body .cart-items {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 480px) {
+  .public-body .cart-panel {
+    width: 100vw;
+  }
+
+  .public-body .cart-header-title {
+    padding: 16px 18px;
+  }
+
+  .public-body .cart-items {
+    padding: 16px 18px;
+  }
+
+  .public-body .cart-footer {
+    padding: 16px 18px calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .public-body .cart-entrega-toggle {
+    padding: 12px 18px 0;
+    gap: 4px;
+  }
+
+  .public-body .cart-entrega-toggle button {
+    padding: 9px 6px;
+    font-size: 11px;
+  }
+
+  .public-body .cart-cuando-row,
+  .public-body .cart-fecha-row {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .public-body .cart-cuando-lista {
+    min-width: min(215px, calc(100vw - 60px));
+  }
+
+  .public-body .btn-ir-pagar {
+    padding: 13px 16px;
+    font-size: 13px;
+  }
+
+  .public-body .btn-vaciar-pill {
+    padding: 10px 18px;
+    font-size: 12px;
+  }
+}
+
+/* --- Modal de perfil (mp-*) y personalizar producto (pers-*) ------------- */
+
+.mp-panel {
+  max-height: 88vh;
+  max-height: 88dvh;
+}
+
+@media (max-width: 480px) {
+  .mp-panel {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 16px;
+  }
+
+  .mp-head {
+    padding: 14px 14px 12px;
+  }
+
+  .mp-body {
+    padding: 14px;
+  }
+
+  .mp-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .mp-actions .mp-btn-cancel,
+  .mp-actions .mp-btn-save {
+    width: 100%;
+  }
+
+  .mp-tab-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .mp-tab {
+    padding: 8px 4px;
+  }
+}
+
+.pers-modal {
+  max-height: 92vh;
+  max-height: 92dvh;
+}
+
+@media (max-width: 520px) {
+  .pers-overlay {
+    padding: 8px;
+    align-items: flex-end;
+  }
+
+  .pers-modal {
+    max-height: calc(100dvh - 16px);
+    border-radius: 16px 16px 12px 12px;
+  }
+
+  .pers-header {
+    padding: 14px 16px;
+  }
+
+  .pers-main {
+    padding: 14px 16px;
+  }
+
+  .pers-pie {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .pers-qty {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .pers-ok {
+    flex: 1 1 100%;
+    justify-content: center;
+    gap: 8px;
+  }
+}
+
+/* --- Checkout ----------------------------------------------------------- */
+
+@media (max-width: 600px) {
+  .checkout-page {
+    padding: 0 12px;
+    margin: 16px auto 24px;
+    gap: 14px;
+  }
+
+  .checkout-card {
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
+
+  .checkout-encabezado {
+    padding: 16px;
+  }
+
+  .checkout-encabezado h2 {
+    font-size: 18px;
+  }
+
+  .checkout-seccion {
+    padding: 16px 0;
+  }
+
+  .checkout-seccion-titulo h3 {
+    font-size: 14.5px;
+  }
+
+  .checkout-datos-fila {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* 16px evita el zoom automático de iOS al enfocar un campo. */
+  .checkout-form .form-group input,
+  .checkout-form .form-group select,
+  .checkout-form .form-group textarea {
+    font-size: 16px;
+  }
+}
+
+/* --- Panel administrativo ---------------------------------------------- */
+
+@media (max-width: 900px) {
+  .admin-body .header-nav {
+    padding-left: max(6px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+    gap: 2px;
+  }
+
+  .admin-body .topbar-toggle {
+    width: 40px;
+    height: 40px;
+    margin-left: 0;
+    border-radius: 10px;
+  }
+
+  .admin-body .header-actions {
+    gap: 6px;
+    padding-right: 0;
+  }
+
+  .admin-body .header-user {
+    padding: 4px;
+  }
+
+  .admin-body .header-user-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-body .sidebar {
+    width: min(86vw, 300px);
+    max-width: 86vw;
+  }
+
+  .admin-body .sidebar-footer {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  /* Las tablas se desplazan dentro de su contenedor, nunca recortadas. */
+  .admin-body .tabla-responsive,
+  .admin-body .mn-table-wrap,
+  .admin-body .ventas-table-wrap,
+  .admin-body .compras-table-wrap {
+    overflow-x: auto;
+    overflow-y: hidden;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    overscroll-behavior-x: contain;
+  }
+
+  .admin-body .mn-table {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Restaura el scroll horizontal real de las tablas de administración. */
+  .admin-body .data-table {
+    display: table;
+    /* min-width: max-content !important respeta el inline style minWidth:1040 de tablas como MateriaPrima para que las columnas no se achiquen y el contenedor .tabla-responsive permita scroll horizontal hacia la derecha, revelando la columna de Acciones. */
+    width: max-content !important;
+    min-width: max-content !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-body .page-header {
+    gap: 10px;
+  }
+
+  .admin-body .page-header h1 {
+    font-size: clamp(1.15rem, 5vw, 1.375rem);
+  }
+
+  .admin-body .page-header .btn-primary {
+    width: 100%;
+  }
+
+  .admin-body .modal-box,
+  .admin-body .detalle-box {
+    position: relative;
+    padding: 18px 14px;
+  }
+
+  /* Espacio para que el título no quede bajo el botón X en móviles */
+  .admin-body .modal-box h2 {
+    padding-right: 44px;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    font-size: clamp(18px, 4vw, 22px);
+    line-height: 1.25;
+  }
+
+  .admin-body .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .admin-body .modal-actions > button {
+    width: 100%;
+  }
+
+  /* Campos táctiles cómodos y sin zoom automático en iOS/Android. */
+  .admin-body .form-group input,
+  .admin-body .form-group select,
+  .admin-body .form-group textarea,
+  .admin-body .mn-field input,
+  .admin-body .mn-field select,
+  .admin-body .mn-field textarea {
+    font-size: 16px;
+  }
+}
+
+/* --- Pantallas grandes -------------------------------------------------- */
+
+@media (min-width: 1440px) {
+  .public-body .promociones {
+    max-width: 1280px;
+  }
+}
+
+/* --- Dispositivos táctiles: evita estados "hover" pegajosos ------------- */
+
+@media (hover: none) and (pointer: coarse) {
+  .public-body .promo-card-pub:hover {
+    transform: none;
+  }
+
+  .public-body .promo-card-pub:hover .promo-img-pub img {
+    transform: none;
+  }
+
+  .public-body .nosotros-img img:hover,
+  .public-body .nosotros-carousel img:hover {
+    transform: none;
+  }
+
+  .public-body .carousel-prev:hover,
+  .public-body .carousel-next:hover {
+    transform: translateY(-50%);
+  }
+
+  .acc-fab:hover {
+    transform: none;
+  }
+}
+
+/* --- Móviles en horizontal (poca altura) -------------------------------- */
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .public-body header {
+    position: static;
+  }
+
+  .public-body .hero {
+    height: 240px;
+  }
+
+  .mp-panel,
+  .pers-modal,
+  .acc-panel {
+    max-height: calc(100dvh - 16px);
+  }
+
+  .public-body .cart-panel {
+    height: 100dvh;
   }
 }

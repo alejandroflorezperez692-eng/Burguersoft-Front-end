@@ -14,11 +14,11 @@ interface Mensaje {
   role: 'user' | 'assistant';
   content: string;
   grafica?: Grafica;
-  /** Mensaje de error local: se muestra, pero NO se envía como historial a la IA */
+  
   error?: boolean;
 }
 
-/** Gráfica de barras horizontales (sin librerías) para las respuestas de Burgi */
+
 function GraficaBarras({ g }: { g: Grafica }) {
   const max = Math.max(...g.datos.map((d) => d.valor), 1);
   const fmt = (v: number) =>
@@ -53,12 +53,12 @@ function GraficaBarras({ g }: { g: Grafica }) {
   );
 }
 
-/** Convierte las URLs del texto en enlaces clicables. Los de Google Maps se muestran como "📍 Abrir en Google Maps". */
+
 function renderTexto(texto: string) {
   return texto.split(/(https?:\/\/[^\s]+)/g).map((parte, i) => {
     if (!/^https?:\/\//.test(parte)) return parte;
 
-    // La puntuación final (punto, coma, paréntesis...) no hace parte de la URL
+
     const m = parte.match(/^(.*?)([).,;:!?]*)$/);
     const url = m ? m[1] : parte;
     const resto = m ? m[2] : '';
@@ -90,7 +90,7 @@ const SUGERENCIAS = [
 ];
 const ICONOS = ['💰', '📦', '🧾', '🔥', '📈', '📊'];
 
-// Cada rol ve preguntas acordes a lo que Burgi le puede responder
+
 const SUGERENCIAS_PERSONAL = {
   cocinero: {
     textos: [
@@ -123,7 +123,7 @@ const SUGERENCIAS_PERSONAL = {
   },
 } as const;
 
-/** Burgi: hamburguesa-robot dibujada en SVG (quieta, solo parpadea) */
+
 export function BurgiRobot({ size, uid }: { size: number; uid: string }) {
   const g = (n: string) => `${uid}-${n}`;
   return (
@@ -153,7 +153,7 @@ export function BurgiRobot({ size, uid }: { size: number; uid: string }) {
         </radialGradient>
       </defs>
 
-      {/* Cuerpo de la hamburguesa */}
+     
       <path d="M14 72 H86 C86 84 80 90 70 90 H30 C20 90 14 84 14 72 Z" fill={`url(#${g('panAbajo')})`} />
       <rect x="11" y="60" width="78" height="14" rx="7" fill="#6a3719" />
       <rect x="11" y="68" width="78" height="6" rx="3" fill="#4f2811" />
@@ -161,22 +161,22 @@ export function BurgiRobot({ size, uid }: { size: number; uid: string }) {
       <rect x="12" y="50" width="76" height="7" rx="3.5" fill="#e5392b" />
       <path d="M10 45 H90 Q95 45 94 50 Q93 53 88 52 Q82 58 76 52 T64 52 T52 52 T40 52 T28 52 T16 52 Q10 57 7 51 Q5 45 10 45 Z" fill="#5cb83a" />
 
-      {/* Antena con luz */}
+     
       <rect x="48.8" y="12" width="2.4" height="14" rx="1.2" fill={`url(#${g('metal')})`} />
       <circle className="burgi-led" cx="50" cy="10" r="4.6" fill={`url(#${g('led')})`} />
       <circle cx="48.4" cy="8.4" r="1.3" fill="#fff" opacity="0.7" />
 
-      {/* Orejas metálicas */}
+    
       <rect x="5.5" y="33" width="8" height="13" rx="3.5" fill={`url(#${g('metal')})`} />
       <rect x="86.5" y="33" width="8" height="13" rx="3.5" fill={`url(#${g('metal')})`} />
       <circle cx="9.5" cy="39.5" r="1.4" fill="#4b5563" />
       <circle cx="90.5" cy="39.5" r="1.4" fill="#4b5563" />
 
-      {/* Pan de arriba */}
+      
       <path d="M12 47 C12 18 88 18 88 47 Z" fill={`url(#${g('pan')})`} />
       <path d="M24 36 C27 29 33 25.5 40 24.5" stroke="#fff2c9" strokeWidth="2.4" strokeLinecap="round" fill="none" opacity="0.6" />
 
-      {/* Visor y ojos */}
+      
       <rect x="25" y="29" width="50" height="17" rx="8.5" fill={`url(#${g('visor')})`} />
       <rect x="25" y="29" width="50" height="17" rx="8.5" fill="none" stroke="#fff2c9" strokeOpacity="0.35" strokeWidth="1" />
       <g className="burgi-ojos">
@@ -186,7 +186,7 @@ export function BurgiRobot({ size, uid }: { size: number; uid: string }) {
         <circle cx="60" cy="35.3" r="1.3" fill="#fff" opacity="0.85" />
       </g>
 
-      {/* Semillas de ajonjolí */}
+     
       <g fill="#fff4d0">
         <ellipse cx="20" cy="41" rx="2.6" ry="1.5" transform="rotate(-20 20 41)" />
         <ellipse cx="80" cy="41" rx="2.6" ry="1.5" transform="rotate(20 80 41)" />
@@ -197,7 +197,7 @@ export function BurgiRobot({ size, uid }: { size: number; uid: string }) {
   );
 }
 
-/** Avatar de Burgi: mini orbe de cristal con el robot dentro */
+
 export function AvatarBurgi({ size, uid, online, className }: { size: number; uid: string; online?: boolean; className?: string }) {
   return (
     <span
@@ -223,7 +223,7 @@ export function AvatarBurgi({ size, uid, online, className }: { size: number; ui
   );
 }
 
-/** Chispas ✨ que titilan alrededor del orbe (posición relativa al botón de 52px) */
+
 export const CHISPAS = [
   { left: 41, top: -8, size: 12, color: '#ffb02e', dur: 2.6, delay: 0 },
   { left: 51, top: 31, size: 9, color: '#35d0e0', dur: 3.1, delay: 0.9 },
@@ -263,7 +263,7 @@ export default function AsistenteIA() {
     if (abierto) setTimeout(() => entrada.current?.focus(), 80);
   }, [abierto]);
 
-  // Burgi saluda una sola vez por sesión
+  
   useEffect(() => {
     let yaSaludo = false;
     try { yaSaludo = sessionStorage.getItem('burgiSaludo') === '1'; } catch { /* sin almacenamiento */ }
@@ -278,7 +278,7 @@ export default function AsistenteIA() {
     const mensaje = (pregunta ?? texto).trim();
     if (!mensaje || pensando) return;
 
-    // Los avisos de error no se mandan a la IA: la confunden y la hacen repetir el error
+   
     const historial = mensajes
       .filter((m) => !m.error)
       .slice(-10)
@@ -293,7 +293,7 @@ export default function AsistenteIA() {
         pagina: pathname,
         historial,
       }, {
-        timeout: 60000, // el backend puede consultar la base de datos varias veces antes de responder
+        timeout: 60000, 
       });
       setMensajes((m) => [...m, { role: 'assistant', content: data.respuesta, grafica: data.grafica ?? undefined }]);
     } catch (e) {
@@ -375,7 +375,7 @@ export default function AsistenteIA() {
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', borderRadius: 26.5, overflow: 'hidden', background: 'var(--surface)' }}>
-            {/* Encabezado */}
+           
             <div
               style={{
                 display: 'flex',
@@ -416,7 +416,7 @@ export default function AsistenteIA() {
               </button>
             </div>
 
-            {/* Mensajes */}
+           
             <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
               {mensajes.length === 0 && (
                 <>
@@ -506,7 +506,7 @@ export default function AsistenteIA() {
               <div ref={fin} />
             </div>
 
-            {/* Entrada */}
+           
             <div style={{ display: 'flex', gap: 10, padding: '12px 14px 14px', borderTop: '1px solid var(--border)', background: 'var(--surface)', alignItems: 'flex-end' }}>
               <textarea
                 ref={entrada}
@@ -541,7 +541,7 @@ export default function AsistenteIA() {
         </div>
       )}
 
-      {/* Globo de saludo */}
+     
       {saludo && !abierto && (
         <div
           className="burgi-globo"
@@ -567,12 +567,12 @@ export default function AsistenteIA() {
         </div>
       )}
 
-      {/* Botón flotante: orbe de cristal holográfico con Burgi dentro */}
+      
       <div
         className={`burgi-dock${pensando ? ' burgi-piensa' : ''}`}
         style={{ position: 'fixed', right: 22, bottom: 88, zIndex: 250, width: 52, height: 52 }}
       >
-        {/* Chispas alrededor */}
+        
         {CHISPAS.map((c, i) => (
           <span
             key={i}
@@ -621,12 +621,12 @@ export default function AsistenteIA() {
         >
           <BurgiRobot size={38} uid="burgiBtn" />
 
-          {/* Reflejo de cristal (fijo) */}
+         
           <span
             aria-hidden="true"
             style={{ position: 'absolute', top: 4, left: 9, width: 24, height: 12, borderRadius: '50%', background: 'linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,0))', transform: 'rotate(-24deg)', pointerEvents: 'none' }}
           />
-          {/* Destello holográfico que cruza el orbe */}
+         
           <span aria-hidden="true" className="burgi-brillo" style={{ position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none' }} />
         </button>
       </div>

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../components/Toast';
 import apiClient from '../../api/client';
-import HistorialModal from '../../components/HistorialModal';
+import HistorialPage from '../../components/HistorialModal';
 import { normalizarRol } from '../../utils/roles';
 import { mensajeError } from '../../utils/errores';
 import AdminLoading from '../../components/AdminLoading';
@@ -14,8 +14,6 @@ import {
   validarDatos,
   validarPassword,
 } from '../../utils/perfil';
-
-
 
 type UsuarioMe = {
   nombre?: string;
@@ -42,7 +40,6 @@ export default function ConfiguracionAdmin() {
   const [cargando, setCargando] = useState(true);
   const [verHistorial, setVerHistorial] = useState(false);
   const [guardando, setGuardando] = useState(false);
-
 
   const [actual, setActual] = useState('');
   const [nueva, setNueva] = useState('');
@@ -95,7 +92,7 @@ export default function ConfiguracionAdmin() {
             if (j.telefono) setTelefono(String(j.telefono));
           }
         } catch {
-          // sin datos extra guardados
+          
         }
       })
       .finally(() => {
@@ -167,6 +164,10 @@ export default function ConfiguracionAdmin() {
   const fuerza = Object.values(reglas).filter(Boolean).length;
   const claseBarra = fuerza <= 1 ? 'rojo' : fuerza === 2 ? 'amarillo' : 'verde';
 
+  if (verHistorial) {
+    return <HistorialPage onVolver={() => setVerHistorial(false)} />;
+  }
+
   return (
     <div className="page-inner">
       {cargando && <AdminLoading texto="Cargando configuración" subtexto="Revisando tus datos" />}
@@ -216,10 +217,10 @@ export default function ConfiguracionAdmin() {
             <h3 className="cfg-titulo">Información Personal</h3>
 
             <div className="grid-2col">
-              <div className="form-group">
+              <div className="form-group"> 
                 <label htmlFor="admin-nombre">Nombre <span className="cfg-req">*</span></label>
-                <input
-                  id="admin-nombre"
+                <input 
+                  id="admin-nombre" 
                   type="text"
                   value={nombre}
                   onChange={(e) => {
@@ -345,8 +346,6 @@ export default function ConfiguracionAdmin() {
               </div>
             </div>
 
-
-
             <div className="modal-actions">
               <button className="btn-save" type="submit" disabled={guardando || cargando}>
                 {guardando ? 'Guardando...' : 'Guardar cambios'}
@@ -447,8 +446,6 @@ export default function ConfiguracionAdmin() {
               {confirmar && confirmar === nueva && nueva && <span className="cfg-hint cfg-hint-ok">✓ Coinciden</span>}
             </div>
 
-
-
             <div className="modal-actions">
               <button className="btn-save" type="submit" disabled={actualizandoPwd}>
                 {actualizandoPwd ? 'Actualizando...' : 'Actualizar contraseña'}
@@ -457,8 +454,6 @@ export default function ConfiguracionAdmin() {
           </form>
         </div>
       </div>
-
-      {verHistorial && <HistorialModal onClose={() => setVerHistorial(false)} />}
     </div>
   );
 }

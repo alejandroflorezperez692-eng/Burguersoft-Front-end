@@ -16,7 +16,7 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
 
-  // Cloudflare Turnstile ("No soy un robot")
+  
   const [turnstileToken, setTurnstileToken] = useState('');
   const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -26,9 +26,7 @@ export default function Login() {
   const location = useLocation();
   const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
 
-  // Aviso flotante (estilo toast) en el login: contraseña cambiada, sesión
-  // cerrada o sesión expirada. Se lee también de sessionStorage para que el
-  // aviso sobreviva a la redirección (p. ej. al restablecer la contraseña).
+ 
   const MENSAJE_AVISO: Record<string, string> = {
     password_ok: 'Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
     logout_ok: 'Has cerrado sesión correctamente.',
@@ -42,10 +40,10 @@ export default function Login() {
     if (!clave) return;
     if (guardado) sessionStorage.removeItem('aviso_login');
     setAviso(MENSAJE_AVISO[clave] ?? null);
-    // Se mantiene visible 6 segundos para que se alcance a leer.
+   
     const t = setTimeout(() => setAviso(null), 6000);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+ 
   }, [tipoToast]);
 
   if (isAuthenticated) {
@@ -55,7 +53,7 @@ export default function Login() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Si faltan credenciales, mostramos el error y NO activamos el loading
+    
     const faltaCorreo = !email.trim();
     const faltaPassword = !password.trim();
 
@@ -84,7 +82,7 @@ export default function Login() {
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
       showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
-      // El token de Turnstile es de un solo uso: hay que pedir uno nuevo
+      
       setTurnstileToken('');
       turnstileRef.current?.reset();
     } finally {
@@ -154,7 +152,7 @@ export default function Login() {
             </button>
           </div>
 
-          {/* Verificación "No soy un robot" (Cloudflare Turnstile) */}
+        
           <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
             <Turnstile
               ref={turnstileRef}

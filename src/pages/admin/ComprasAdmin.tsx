@@ -113,7 +113,7 @@ function SelectorFechaCompras({ value, onChange, min, max }: {
   min?: string;
   max?: string;
 }) {
-  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+ const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
   const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
   const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
@@ -141,18 +141,7 @@ function SelectorFechaCompras({ value, onChange, min, max }: {
     };
   }, [abierto]);
 
-  if (!modoOscuro) {
-    return (
-      <input
-        type="date"
-        style={estiloFiltro}
-        value={value}
-        min={min}
-        max={max}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
-  }
+  
 
   const anio = mesVisible.getFullYear();
   const mes = mesVisible.getMonth();
@@ -259,7 +248,7 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
   }, []);
 
   return (
-    <div ref={ref} className={className} style={{ position: 'relative' }}>
+    <div ref={ref} className={className} style={{ position: 'relative', minWidth: className ? 170 : undefined }}>
       <button
         type="button"
         className={className ? `${className}-trigger` : undefined}
@@ -309,10 +298,11 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
             position: 'absolute',
             top: 'calc(100% + 6px)',
             left: 0,
-            right: 0,
+            ...(className ? { minWidth: '100%', width: 'max-content', maxWidth: 320 } : { right: 0 }),
             zIndex: 30,
             maxHeight: 220,
             overflowY: 'auto',
+            overflowX: 'hidden',
             margin: 0,
             padding: 6,
             listStyle: 'none',
@@ -423,7 +413,6 @@ export default function ComprasAdmin() {
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
 
-  // --- Estados de filtros ---
   const [q, setQ] = useState('');
   const [fDesde, setFDesde] = useState('');
   const [fHasta, setFHasta] = useState('');
@@ -500,7 +489,6 @@ const load = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [modalDetalle]);
 
-  // Si cambia cualquier filtro, reiniciamos a la página 1
   useEffect(() => { setPagina(1); }, [q, fDesde, fHasta, fMetodo, fInsumo, fMarca]);
 
   const hayFiltros = q !== '' || fDesde !== '' || fHasta !== '' || fMetodo !== '' || fInsumo !== '' || fMarca !== '';
@@ -514,7 +502,6 @@ const load = () => {
     setFMarca('');
   };
 
-  // Copia automática en este equipo mientras escribes
   useEffect(() => {
     if (!showForm || editId) return;
     const vacio = !metodoPago && !numeroFactura && !tipoFactura &&
@@ -523,7 +510,7 @@ const load = () => {
     try {
       localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ metodoPago, numeroFactura, tipoFactura, fechaIA, lineas }));
       setHayBorradorLocal(true);
-    } catch { /* sin almacenamiento disponible */ }
+    } catch { }
   }, [showForm, editId, metodoPago, numeroFactura, tipoFactura, fechaIA, lineas]);
 
   useEffect(() => {
@@ -542,7 +529,6 @@ const load = () => {
     [marcas],
   );
 
-  // --- Lógica de filtrado ---
   const filtered = useMemo(() => {
     const texto = q.toLowerCase();
     return items.filter((c) => {
@@ -613,7 +599,6 @@ const load = () => {
     setShowForm(true);
   };
 
-  // Precarga el formulario de compra con la lista sugerida ("Qué comprar esta semana")
   const agregarSugeridas = (sugeridas: ItemSugerido[]) => {
     if (!sugeridas.length) {
       showToast('No hay sugerencias para agregar', true);
@@ -768,18 +753,62 @@ const load = () => {
     marca: !l.marca_id,
   });
 
+  const nombreLinea = (l: Linea, i: number): string => {
+    const nombre = materias.find((x) => x.id === l.materia_prima_id)?.nombre ?? l.nombre_nuevo.trim();
+    return nombre ? `Insumo ${i + 1} (${nombre})` : `Insumo ${i + 1}`;
+  };
+
+  const listaErrores = (): { campo: string; msg: string; toast: string }[] => {
+    const out: { campo: string; msg: string; toast: string }[] = [];
+    if (!metodoPago) out.push({ campo: 'metodo', msg: 'Falta elegir el método de pago', toast: 'Falta elegir el método de pago (Efectivo, Nequi o Daviplata)' });
+    lineas.forEach((l, i) => {
+      const e = errLinea(l);
+      const add = (campo: string, msg: string, toast: string) =>
+        out.push({
+          campo: `${campo}-${i}`,
+          msg,
+          toast: lineas.length > 1 ? `${nombreLinea(l, i)}: ${toast}` : `${toast.charAt(0).toUpperCase()}${toast.slice(1)}`,
+        });
+      if (e.nombre) add('nombre', 'Falta el nombre del insumo', 'falta escribir el nombre del insumo nuevo');
+      if (e.cantidad) {
+        if (l.cantidad.trim() === '') add('cantidad', 'Falta la cantidad', 'falta escribir la cantidad');
+        else add('cantidad', 'Debe ser mayor a 0', `la cantidad es ${l.cantidad} y debe ser mayor a 0`);
+      }
+      if (e.unidad) add('unidad', 'Falta elegir la unidad', 'falta elegir la unidad de medida (Kg, Litros, Unidades...)');
+      if (e.precio) {
+        if (l.precio_unitario.trim() === '') add('precio', 'Falta el precio total', 'falta escribir el precio total');
+        else add('precio', 'Debe ser mayor a $0', 'el precio total debe ser mayor a $0');
+      }
+      if (e.marca) add('marca', 'Falta elegir el proveedor', 'falta elegir el proveedor');
+    });
+    return out;
+  };
+
+  const errMap = Object.fromEntries(listaErrores().map((e) => [e.campo, e.msg]));
+
+  const inv = (campo: string): 'true' | undefined => (intentado && errMap[campo] ? 'true' : undefined);
+
+  const msgCampo = (campo: string) =>
+    intentado && errMap[campo]
+      ? <small style={{ color: 'var(--danger)', fontSize: 12, fontWeight: 600, marginTop: 4, display: 'block' }}>{errMap[campo]}</small>
+      : null;
+
   const validar = (): boolean => {
-    if (!metodoPago) { showToast('Selecciona el método de pago', true); return false; }
-    for (let i = 0; i < lineas.length; i++) {
-      const l = lineas[i];
-      const n = `Insumo ${i + 1}`;
-      if (l.materia_prima_id === null && !l.nombre_nuevo.trim()) { showToast(`${n}: escribe el nombre del insumo nuevo`, true); return false; }
-      if (!(Number(l.cantidad) > 0)) { showToast(`${n}: escribe la cantidad`, true); return false; }
-      if (l.materia_prima_id === null && !l.unidad_medida.trim()) { showToast(`${n}: selecciona la unidad de medida`, true); return false; }
-      if (!(Number(l.precio_unitario) > 0)) { showToast(`${n}: escribe el precio total`, true); return false; }
-      if (!l.marca_id) { showToast(`${n}: selecciona el proveedor`, true); return false; }
-    }
-    return true;
+    const errs = listaErrores();
+    if (errs.length === 0) return true;
+
+    const resto = errs.length - 1;
+    const resumen = resto === 0
+      ? errs[0].toast
+      : `${errs[0].toast} (y ${resto} ${resto === 1 ? 'dato más' : 'datos más'})`;
+    showToast(resumen, true);
+
+    setTimeout(() => {
+      const primero = document.querySelector('[data-invalido="true"]') as HTMLElement | null;
+      primero?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 60);
+
+    return false;
   };
 
   const irARevision = () => {
@@ -788,7 +817,7 @@ const load = () => {
   };
 
   const borrarLocal = () => {
-    try { localStorage.removeItem(CLAVE_BORRADOR); } catch { /* nada */ }
+    try { localStorage.removeItem(CLAVE_BORRADOR); } catch { }
     setHayBorradorLocal(false);
   };
 
@@ -1021,7 +1050,7 @@ const load = () => {
       )}
 
       {!showForm && hayBorradorLocal && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 16px', marginBottom: 16, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface-2)', fontSize: 13, fontWeight: 600, color: 'var(--text-900)' }}>
+        <div className="compras-borrador" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 16px', marginBottom: 16, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface-2)', fontSize: 13, fontWeight: 600, color: 'var(--text-900)' }}>
           <span style={{ flex: 1 }}>Tienes una compra sin terminar guardada en este equipo.</span>
           <button className="btn-primary" onClick={continuarBorradorLocal}>Continuar</button>
           <button className="btn-cancel" onClick={borrarLocal}>Descartar</button>
@@ -1057,12 +1086,13 @@ const load = () => {
               <div>{aviso.texto}</div>
             </div>
           )}
-          <div className="form-group">
+          <div className="form-group" data-invalido={inv('metodo')}>
             <label>Método de pago <span className="mn-req">*</span></label>
             <SelectOscuro value={metodoPago} style={rojo(!metodoPago)} onChange={(e) => setMetodoPago(e.target.value)}>
               <option value="">Seleccionar...</option>
               {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
             </SelectOscuro>
+            {msgCampo('metodo')}
           </div>
 
           <div className="form-group">
@@ -1108,9 +1138,10 @@ const load = () => {
 
               {l.materia_prima_id === null && (
                 <>
-                  <div className="form-group" style={{ marginBottom: 0 }}>
-                    <label>Nombre del insumo<span className="mn-req">*</span></label>
+                  <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`nombre-${i}`)}>
+                    <label>Nombre del insumo <span className="mn-req">*</span></label>
                     <input value={l.nombre_nuevo} style={rojo(errLinea(l).nombre)} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
+                    {msgCampo(`nombre-${i}`)}
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label>Tipo (opcional)</label>
@@ -1133,15 +1164,16 @@ const load = () => {
                 </div>
               )}
 
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`cantidad-${i}`)}>
                 <label>Cantidad <span className="mn-req">*</span></label>
                 <input type="number" value={l.cantidad} style={rojo(errLinea(l).cantidad)} onChange={(e) => updateLinea(i, 'cantidad', e.target.value)} />
+                {msgCampo(`cantidad-${i}`)}
               </div>
 
               {l.materia_prima_id === null && (
-                <div className="form-group" style={{ marginBottom: 0 }}>
+                <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`unidad-${i}`)}>
                   <label>Unidad <span className="mn-req">*</span></label>
-                  <Desplegable value={l.unidad_medida} error={intentado && errLinea(l).unidad} onChange={(v) => updateLinea(i, 'unidad_medida', v)} opciones={UNIDADES} />
+                  <Desplegable className="compras-filter-dropdown" value={l.unidad_medida} error={intentado && errLinea(l).unidad} onChange={(v) => updateLinea(i, 'unidad_medida', v)} opciones={UNIDADES} />
                 </div>
               )}
 
@@ -1155,17 +1187,19 @@ const load = () => {
                 </div>
               )}
 
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`precio-${i}`)}>
                 <label>Precio total <span className="mn-req">*</span></label>
                 <input type="text" inputMode="numeric" placeholder="$ 0" style={rojo(errLinea(l).precio)} value={miles(l.precio_unitario)} onChange={(e) => updateLinea(i, 'precio_unitario', soloDigitos(e.target.value))} />
+                {msgCampo(`precio-${i}`)}
               </div>
 
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`marca-${i}`)}>
                 <label>Proveedor <span className="mn-req">*</span></label>
                 <SelectOscuro value={l.marca_id} style={rojo(errLinea(l).marca)} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
                   <option value={0}>Seleccionar...</option>
                   {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </SelectOscuro>
+                {msgCampo(`marca-${i}`)}
               </div>
 
               {lineas.length > 1 && (
@@ -1341,7 +1375,7 @@ const load = () => {
         return (
           <div className="modal-overlay open" onClick={() => setModalDetalle(null)}>
             <div className="modal-box" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()} role="dialog" aria-label={`Factura de compra ${modalDetalle.id}`}>
-              <button type="button" className="modal-x" onClick={() => setModalDetalle(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
+              <button type="button" className="modal-x" onClick={() => setModalDetalle(null)} aria-label="Cerrar">×</button>
               <div style={{ marginBottom: 20 }}>
                 <div>
                   <div style={etiquetaCol}>Factura de compra · N.º {modalDetalle.id}</div>
@@ -1356,10 +1390,11 @@ const load = () => {
                 </div>
               </div>
 
-              <div style={{ border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', background: 'var(--surface)' }}>
+              <div className="compras-factura-contador">{detalles.length} {detalles.length === 1 ? 'insumo' : 'insumos'}</div>
+              <div className="compras-factura-tabla" style={{ border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', background: 'var(--surface)' }}>
                 <div style={{ overflowX: 'auto' }}>
                   <div style={{ minWidth: 540 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '10px 18px', background: 'var(--surface-2)' }}>
+                    <div className="compras-factura-head" style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '10px 18px', background: 'var(--surface-2)' }}>
                       <span style={etiquetaCol}>Insumo</span>
                       <span style={etiquetaCol}>Proveedor</span>
                       <span style={etiquetaCol}>Cant.</span>
@@ -1372,10 +1407,11 @@ const load = () => {
                       detalles.map((d) => (
                         <div
                           key={d.id}
+                          className="compras-factura-fila"
                           style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '13px 18px', borderTop: '1px solid var(--border)', alignItems: 'center', fontSize: 14, color: 'var(--text-900)' }}
                         >
                           <span style={{ fontWeight: 600 }}>{d.materia_prima?.nombre ?? 'N/A'}</span>
-                          <span style={{ color: 'var(--text-400)' }}>{d.marca?.nombre ?? 'N/A'}</span>
+                          <span className="compras-factura-prov" style={{ color: 'var(--text-400)' }}>{d.marca?.nombre ?? 'N/A'}</span>
                           <span style={{ whiteSpace: 'nowrap' }}>
                             {Number(d.cantidad).toLocaleString('es-CO')}
                             {d.materia_prima?.unidad_medida ? ` ${d.materia_prima.unidad_medida}` : ''}
@@ -1389,10 +1425,7 @@ const load = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, margin: '20px 4px 0' }}>
-                <span style={{ fontSize: 13, color: 'var(--text-400)' }}>
-                  {detalles.length} {detalles.length === 1 ? 'insumo' : 'insumos'}
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: 16, margin: '20px 4px 0' }}>
                 <div style={{ textAlign: 'right' }}>
                   <div style={etiquetaCol}>Total</div>
                   <div style={{ fontFamily: 'var(--font-sans)', fontSize: 26, fontWeight: 800, color: 'var(--text-900)', lineHeight: 1.2 }}>

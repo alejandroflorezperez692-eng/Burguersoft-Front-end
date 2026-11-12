@@ -41,14 +41,14 @@ type PedidoUI = {
   comprobante_subido_en?: string;
 };
 
-/** Devuelve el texto limpio o undefined si viene vacío/null. */
+
 function texto(valor: unknown): string | undefined {
   if (valor === null || valor === undefined) return undefined;
   const limpio = String(valor).trim();
   return limpio !== '' ? limpio : undefined;
 }
 
-/** Convierte valores de Laravel (0/1, "true"/"false") a booleano o undefined. */
+
 function booleano(valor: unknown): boolean | undefined {
   if (valor === null || valor === undefined || valor === '') return undefined;
   if (typeof valor === 'boolean') return valor;
@@ -63,16 +63,13 @@ function numero(valor: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-// Reutiliza los mismos pasos que la vista PHP original
+
 const PASOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'];
 const PASOS_DOMICILIO = PASOS;
 const PASOS_RECOGER = PASOS;
 const PASOS_CONSUMIR = PASOS;
 const CANCELABLES = ['Registrado', 'Por verificar', 'Recepcionado'];
 const RECHAZABLES: string[] = [];
-
-// Orden global para estimar progreso cuando el estado no pertenece al flujo actual
-// (el backend permite cualquier estado en cualquier tipo de entrega).
 const ORDEN_GLOBAL = PASOS;
 
 function normalizarTipoEntrega(tipo?: string): string {
@@ -89,7 +86,7 @@ function pasosPara(tipoEntrega: string): string[] {
   return PASOS_CONSUMIR;
 }
 
-/** Progreso 0-100 sobre la línea, medido entre el primer y el último paso. */
+
 function calcularProgreso(pasoActual: number, totalPasos: number): number {
   if (totalPasos <= 1) return 100;
   if (pasoActual <= 0) return 0;
@@ -114,7 +111,7 @@ function formatoMoneda(valor: number): string {
   return `$${Number(valor ?? 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`;
 }
 
-/** Muestra el teléfono en formato legible (300 123 4567) cuando es posible. */
+
 function formatearTelefono(valor?: string): string | undefined {
   if (!valor) return undefined;
   let digitos = valor.replace(/\D/g, '');
@@ -125,19 +122,14 @@ function formatearTelefono(valor?: string): string | undefined {
   return valor;
 }
 
-// Acepta las formas que puede devolver el backend:
-// 1) filas planas estilo PHP (id_venta + producto + cantidad...)
-// 2) ventas Laravel con `detalles` (VentaAdmin)
-// 3) pedidos simples antiguos (productos: [{nombre, cantidad, precio}])
-// También tolera paginación Laravel: { data: [...] } o { data: { data: [...] } }
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 function normalizarPedidos(raw: any): PedidoUI[] {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const desanidar = (v: any): any[] => {
     if (Array.isArray(v)) return v;
     if (!v || typeof v !== 'object') return [];
     if (Array.isArray(v.data)) return desanidar(v.data);
-    // Paginador Laravel: { data: { data: [...] } }
+   
     if (v.data && typeof v.data === 'object' && Array.isArray(v.data.data)) return v.data.data;
     if (Array.isArray(v.pedidos)) return v.pedidos;
     if (Array.isArray(v.ventas)) return v.ventas;
@@ -147,11 +139,10 @@ function normalizarPedidos(raw: any): PedidoUI[] {
   const lista = desanidar(raw);
   if (lista.length === 0) return [];
 
-  // Caso 1: filas planas (vienen de la consulta JOIN del PHP)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
   const esFilaPlana = lista.some((r: any) => r && (r.id_venta !== undefined || r.producto !== undefined));
   if (esFilaPlana) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const mapa = new Map<number, PedidoUI & { valorTotalBD?: number }>();
     for (const f of lista as any[]) {
       const vid = Number(f.id_venta ?? f.venta_id ?? f.id);
@@ -197,7 +188,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
         if (Number.isFinite(vt)) p.valorTotalBD = vt;
       }
     }
-    // Prefiere el total guardado en BD cuando existe; si no, usa la suma.
+  
     for (const p of mapa.values()) {
       if (p.valorTotalBD !== undefined && Number.isFinite(p.valorTotalBD) && p.valorTotalBD > 0) {
         p.total = p.valorTotalBD;
@@ -207,13 +198,11 @@ function normalizarPedidos(raw: any): PedidoUI[] {
     return asignarSecuenciales([...mapa.values()]);
   }
 
-  // Caso 2 y 3: objetos de venta/pedido
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pedidos = (lista as any[])
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    
     .map((v: any): PedidoUI | null => {
       const detalles = Array.isArray(v.detalles)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
         ? v.detalles.map((d: any): ItemUI => {
             const cantidad = Number(d.cantidad ?? 1);
             const precio = Number(d.precio_unitario ?? d.precio ?? d.valor_producto ?? 0);
@@ -227,7 +216,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
             };
           })
         : Array.isArray(v.productos)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          
           ? v.productos.map((d: any): ItemUI => {
               const cantidad = Number(d.cantidad ?? 1);
               const precio = Number(d.precio ?? d.precio_unitario ?? 0);
@@ -239,7 +228,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
               };
             })
           : Array.isArray(v.items)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          
             ? v.items.map((d: any): ItemUI => {
                 const cantidad = Number(d.cantidad ?? 1);
                 const precio = Number(d.precio_unitario ?? d.precio ?? 0);
@@ -265,8 +254,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
         metodo_pago: v.metodo_pago ? String(v.metodo_pago) : undefined,
         total: Number.isFinite(totalBD) && totalBD > 0 ? totalBD : totalCalculado,
         items: detalles,
-        // Si la venta no guardó el teléfono (compras antiguas), se usa el del
-        // usuario registrado como respaldo.
+       
         telefono: texto(
           v.telefono_contacto ?? v.telefono ?? v.usuario?.telefono ?? v.usuario?.phone,
         ),
@@ -287,7 +275,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
     })
     .filter((p): p is PedidoUI => p !== null);
 
-  // Ordena como el PHP: fecha DESC, id DESC (por si el backend no lo hace)
+
   pedidos.sort((a, b) => {
     const fa = new Date(a.fecha).getTime();
     const fb = new Date(b.fecha).getTime();
@@ -298,7 +286,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
   return asignarSecuenciales(pedidos);
 }
 
-// Igual que el PHP: el más reciente (primero, ORDER BY fecha DESC) lleva el número más alto
+
 function asignarSecuenciales(pedidos: PedidoUI[]): PedidoUI[] {
   const ordenados = [...pedidos].sort((a, b) => {
     const fa = new Date(a.fecha).getTime();
@@ -329,19 +317,18 @@ export default function MisCompras() {
       setCargando(true);
     }
     try {
-      // 1) Ruta dedicada (si el backend Laravel la expone)
+      
       try {
         const { data } = await apiClient.get('/mis-pedidos');
         const normalizados = normalizarPedidos(data);
-        // Si la ruta existe pero viene vacía, igual intentamos el fallback a /ventas
-        // filtrado por usuario, porque algunos backends devuelven [] sin filtrar.
+       
         if (normalizados.length > 0) {
           setPedidos(normalizados);
           return;
         }
       } catch (e: unknown) {
         const status = (e as { response?: { status?: number } })?.response?.status;
-        // 401 sí es definitivo; 404 seguimos al fallback
+        
         if (status === 401) {
           if (!silencioso) {
             setError('Tu sesión expiró. Inicia sesión de nuevo para ver tus compras.');
@@ -351,34 +338,31 @@ export default function MisCompras() {
         }
       }
 
-      // 2) Fallback: /ventas y filtrar por usuario autenticado.
-      // El backend de admin devuelve todas las ventas con `usuario`.
+  
       const { data: ventasRaw } = await apiClient.get('/ventas');
       let lista = normalizarPedidos(ventasRaw);
       const userId = user?.id;
       if (userId) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
         const crudo: any[] = Array.isArray(ventasRaw)
           ? ventasRaw
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          
           : ((ventasRaw as any)?.data ?? []);
         if (Array.isArray(crudo) && crudo.length > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
           const mios = crudo.filter((v: any) => {
             const uid = Number(
               v.usuario_id ?? v.usuario?.id ?? v.usuario?.id_Usuario ?? v.user_id ?? NaN,
             );
             return Number.isFinite(uid) && uid === userId;
           });
-          // Solo filtramos si encontramos coincidencias; si no, mostramos todo
-          // para no dejar la pantalla vacía por un formato distinto.
+         
           if (mios.length > 0) lista = normalizarPedidos(mios);
         }
       }
       setPedidos(lista);
     } catch (e: unknown) {
-      // En un refresco automático no borramos lo que ya se está mostrando
-      // por un fallo puntual de red.
+ 
       if (silencioso) return;
       const err = e as { response?: { status?: number } };
       if (err?.response?.status === 401) {
@@ -394,7 +378,7 @@ export default function MisCompras() {
 
   useEffect(() => {
     if (!isAuthenticated) return;
-    // Token demo sin backend: no hay nada que pedir
+   
     if (sessionStorage.getItem('token') === 'demo-token-sin-backend') {
       setPedidos([]);
       return;
@@ -402,8 +386,7 @@ export default function MisCompras() {
 
     void cargar();
 
-    // Actualización instantánea: el administrador emite este evento al cambiar
-    // el estado de cualquier pedido (mismo canal que usa el tablero de cocina).
+   
     const echo = getEcho();
     const alCambiarEstado = (payload: {
       id?: number;
@@ -436,13 +419,12 @@ export default function MisCompras() {
     };
     echo?.channel('cocina').listen('.venta.actualizada', alCambiarEstado);
 
-    // Respaldo: sin websocket, refrescamos seguido para que el estado que
-    // cambia el administrador se refleje sin recargar la página.
+   
     const t = window.setInterval(() => {
       if (!document.hidden) void cargar(true);
     }, echo ? 60000 : 10000);
 
-    // Al volver a la pestaña, refrescamos de inmediato.
+ 
     const alVolver = () => {
       if (!document.hidden) void cargar(true);
     };
@@ -471,11 +453,11 @@ export default function MisCompras() {
     setError(null);
     try {
       const { data } = await apiClient.put(`/pedidos/${pedido.id}`, { estado: 'Cancelado', motivo });
-      // El backend puede devolver { success: true } o la venta actualizada
+     
       if (data && data.success === false) {
         throw new Error(String(data.error ?? data.message ?? 'No se pudo cancelar el pedido.'));
       }
-      // Actualización optimista inmediata + recarga de confirmación
+  
       setPedidos((prev) =>
         prev === null ? prev : prev.map((p) => (p.id === pedido.id ? { ...p, estado: 'Cancelado' } : p)),
       );
@@ -504,7 +486,7 @@ export default function MisCompras() {
       if (data && data.success === false) {
         throw new Error(String(data.error ?? data.message ?? 'No se pudo rechazar el pedido.'));
       }
-      // Actualización optimista inmediata + recarga de confirmación
+      
       setPedidos((prev) =>
         prev === null ? prev : prev.map((p) => (p.id === pedido.id ? { ...p, estado: 'Rechazada' } : p)),
       );
@@ -598,8 +580,7 @@ export default function MisCompras() {
             const pasos = pasosPara(p.tipo_entrega);
             let pasoActual = pasos.indexOf(estado);
             if (pasoActual === -1) {
-              // El estado existe pero es de otro flujo (ej. "En camino" en un pedido
-              // para recoger): estima la posición con el orden global.
+              
               const gActual = ORDEN_GLOBAL.indexOf(estado);
               if (gActual !== -1) {
                 const gIni = ORDEN_GLOBAL.indexOf(pasos[0]);
@@ -612,8 +593,7 @@ export default function MisCompras() {
               }
             }
             const totalPasos = pasos.length;
-            // Centro del primer y último círculo: la línea debe empezar y
-            // terminar exactamente ahí, no en los bordes del contenedor.
+            
             const halfStep = 50 / totalPasos;
             const anchoDisponible = 100 - 2 * halfStep;
             const fillWidth = sinProgreso
