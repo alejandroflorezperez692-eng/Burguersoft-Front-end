@@ -134,20 +134,20 @@ function encontrarElemento(target: EventTarget | null): Element | null {
   const accion = target.closest(SELECTOR_ACCIONES);
   if (accion?.getAttribute('aria-expanded') === 'true') return null;
 
-  // Iconos de contacto
+
   const cajaContacto = target.closest('.icon-box[data-tooltip]');
   if (cajaContacto) return cajaContacto;
 
-  // Enlace que envuelve un icono o un "+" (ej. el + que lleva al login)
+  
   const enlace = target.closest('a[data-tooltip]');
   if (enlace && sinTextoVisible(enlace)) return enlace;
 
-  // Botones o enlaces SOLO si son de icono (sin texto visible)
+
   if (accion && !(accion instanceof HTMLInputElement)) {
     return sinTextoVisible(accion) ? accion : null;
   }
 
-  // Icono suelto, fuera de cualquier botón o enlace
+
   return target.closest(SELECTOR_ICONOS);
 }
 

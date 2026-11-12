@@ -428,7 +428,7 @@ export default function Accesibilidad() {
     return () => document.removeEventListener('click', manejarClic);
   }, []);
 
-  // Cierra el panel con la tecla Escape, como se espera en cualquier panel/diálogo accesible.
+  
   useEffect(() => {
     if (!abierto) return;
     const manejarTecla = (event: KeyboardEvent) => {
@@ -440,8 +440,7 @@ export default function Accesibilidad() {
     return () => document.removeEventListener('keydown', manejarTecla);
   }, [abierto]);
 
-  // Mueve el foco de teclado al panel al abrirlo, y lo regresa al botón flotante al cerrarlo,
-  // para que la navegación por teclado no "se pierda" en la página.
+
   useEffect(() => {
     if (abierto) {
       const primerBoton = panelRef.current?.querySelector<HTMLElement>('button');

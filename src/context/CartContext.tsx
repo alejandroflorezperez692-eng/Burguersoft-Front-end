@@ -29,7 +29,7 @@ type CartContextValue = {
   actualizarCantidad: (uid: string | number, cantidad: number) => void;
   vaciar: () => void;
 
-  // Datos de entrega, compartidos entre el carrito y el checkout
+
   tipoEntrega: TipoEntrega;
   setTipoEntrega: (v: TipoEntrega) => void;
   cuando: CuandoOpcion;

@@ -53,12 +53,14 @@ const soloNumero = (v: string): string => {
   return dec.length ? `${ent}.${dec.join('')}` : ent;
 };
 
+
 const formatMiles = (v: string): string => {
   const limpio = v.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '');
   const [ent, ...dec] = limpio.split('.');
   const entFmt = ent.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
   return dec.length ? `${entFmt},${dec.join('')}` : entFmt;
 };
+
 
 const milesANumero = (v: string): number =>
   Number(v.replace(/\./g, '').replace(',', '.').replace(/[^0-9.]/g, '')) || 0;
@@ -132,6 +134,7 @@ export default function MateriaPrimaAdmin() {
 
   const marcaNombre = (id: unknown): string =>
     (marcas ?? []).find((x) => x?.id === id)?.nombre ?? '';
+
 
   const tipos = Array.from(new Set((items ?? []).map((m) => (m?.tipo ?? '').trim()).filter(Boolean)))
     .sort((a, b) => a.localeCompare(b, 'es'));
@@ -294,7 +297,7 @@ export default function MateriaPrimaAdmin() {
   ]);
 
   return (
-    <div className="page-inner">
+    <div className="page-inner materia-page">
       <div className="page-header">
         <div>
           <h1>Materia Prima</h1>

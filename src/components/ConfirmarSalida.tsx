@@ -61,7 +61,7 @@ export default function ConfirmarSalida({
           <button type="button" className="mn-btn-cancel" onClick={onCancelar}>
             Cancelar
           </button>
-          <button type="button" className="mn-btn-confirm" onClick={onConfirmar}>
+          <button type="button" className="mn-btn-confirm mn-btn-salir" onClick={onConfirmar}>
             Sí, salir
           </button>
         </div>

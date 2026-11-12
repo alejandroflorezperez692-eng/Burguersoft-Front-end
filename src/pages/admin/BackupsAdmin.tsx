@@ -21,6 +21,9 @@ const BACKUPS_CSS = `
 .bk-modo strong{display:block;font-size:13px;color:var(--text-900);margin-bottom:3px}
 .bk-modo p{margin:0;font-size:12px;color:var(--text-600);line-height:1.45}
 .bk-warn{font-size:12px;color:#a2651a;background:rgba(232,130,26,.1);border:1px solid rgba(232,130,26,.3);border-radius:var(--r-sm);padding:10px 12px;line-height:1.5;margin:0 0 14px}
+body.dark-mode .bk-confirmar{background:#e8821a !important;box-shadow:0 4px 14px rgba(232,130,26,.3) !important}
+body.dark-mode .bk-warn{color:#fff;background:#000;border:1px solid #e8821a}
+body.dark-mode .bk-modo,body.dark-mode .bk-modo.activo{background:#000;border-color:#e8821a}
 .bk-archivo{display:flex;justify-content:space-between;gap:10px;padding:9px 10px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text-900)}
 .bk-archivo span:last-child{color:var(--text-400);font-size:12px;white-space:nowrap}
 .bk-drive{display:flex;justify-content:space-between;align-items:center;gap:18px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px 26px;box-shadow:var(--shadow-sm)}
@@ -31,9 +34,7 @@ const BACKUPS_CSS = `
 .bk-check small{display:block;font-weight:400;font-size:12px;color:var(--text-600);margin-top:2px;line-height:1.45}
 `;
 
-/* ------------------------------------------------------------------ */
-/* Tipos de las respuestas del API                                      */
-/* ------------------------------------------------------------------ */
+
 interface Backup {
   id: number;
   nombre: string;
@@ -92,9 +93,7 @@ interface EstadoDrive {
 
 type ModoRestauracion = 'replace' | 'merge';
 
-/* ------------------------------------------------------------------ */
-/* Utilidades                                                           */
-/* ------------------------------------------------------------------ */
+
 const mensajeDeError = async (e: unknown): Promise<string> => {
   if (axios.isAxiosError(e)) {
     const status = e.response?.status;
@@ -179,32 +178,32 @@ export default function BackupsAdmin() {
   const [buscar, setBuscar] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-  // Paginación
+
   const [pagina, setPagina] = useState(1);
 
-  // Modal de generación (contraseña)
+ 
   const [modalGen, setModalGen] = useState(false);
   const [passGen, setPassGen] = useState('');
   const [verPassGen, setVerPassGen] = useState(false);
   const [generando, setGenerando] = useState(false);
 
-  // Modal de restauración
+
   const [restoreSel, setRestoreSel] = useState<Backup | null>(null);
   const [restoreModo, setRestoreModo] = useState<ModoRestauracion>('replace');
   const [restorePass, setRestorePass] = useState('');
   const [verRestorePass, setVerRestorePass] = useState(false);
   const [restaurando, setRestaurando] = useState(false);
 
-  // Descargas / subidas en curso
+ 
   const [descargandoId, setDescargandoId] = useState<number | null>(null);
   const [subiendoDrive, setSubiendoDrive] = useState<number | null>(null);
 
-  // Estado de la conexión con Google Drive
+
   const [drive, setDrive] = useState<EstadoDrive>({ configurada: false, conectada: false });
   const [subirAlGenerar, setSubirAlGenerar] = useState(false);
   const [desconectando, setDesconectando] = useState(false);
 
-  // Listado de copias en Google Drive
+  
   const [modalDrive, setModalDrive] = useState(false);
   useEscape([
     [modalGen && !generando, () => setModalGen(false)],
@@ -220,7 +219,7 @@ export default function BackupsAdmin() {
       .includes(buscar.toLowerCase())
   );
 
-  // Aplicamos la paginación a los items filtrados
+
   const { visibles: copiasVisibles, paginaActual } = paginar(filteredItems, pagina);
 
   const load = () => {
@@ -280,7 +279,7 @@ export default function BackupsAdmin() {
     return { texto: lista[0] ?? '—', titulo: lista[0] ?? '' };
   };
 
-  /* Generar copia */
+ 
   const abrirModalGen = () => {
     setPassGen('');
     setVerPassGen(false);
@@ -332,7 +331,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* Restaurar */
+
   const abrirModalRestore = (b: Backup) => {
     setRestoreSel(b);
     setRestoreModo('replace');
@@ -371,7 +370,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* Descargas */
+
   const descargarCifrado = async (b: Backup) => {
     setDescargandoId(b.id);
     try {
@@ -388,7 +387,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* Google Drive */
+
   const conectarDrive = async () => {
     try {
       const r = await apiClient.get<{ url?: string }>('/backups/drive/auth');
@@ -470,7 +469,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* Eliminar */
+  
   const del = async (b: Backup) => {
     const ok = await confirmar(
       b.subido_drive
@@ -489,7 +488,7 @@ export default function BackupsAdmin() {
     }
   };
 
-  /* UI auxiliar */
+
   const inputPassword = (
     valor: string,
     setValor: (v: string) => void,
@@ -521,7 +520,7 @@ export default function BackupsAdmin() {
   );
 
   return (
-    <div className="page-inner">
+    <div className="page-inner backups-page">
       <style>{BACKUPS_CSS}</style>
 
       <div className="page-header">
@@ -697,7 +696,7 @@ export default function BackupsAdmin() {
         )}
       </div>
 
-      {/* ===================== Modal: generar copia ===================== */}
+     
       {modalGen && (
         <div className="modal-overlay open" onClick={() => { if (!generando) setModalGen(false); }}>
           <div className="modal-box" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
@@ -735,7 +734,7 @@ export default function BackupsAdmin() {
         </div>
       )}
 
-      {/* ===================== Modal: restaurar ===================== */}
+     
       {restoreSel && (
         <div className="modal-overlay open" onClick={() => { if (!restaurando) setRestoreSel(null); }}>
           <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
@@ -791,7 +790,7 @@ export default function BackupsAdmin() {
             <div className="modal-actions">
               <button className="btn-cancel" onClick={() => setRestoreSel(null)} disabled={restaurando}>Cancelar</button>
               <button
-                className="btn-save"
+                className="btn-save bk-confirmar"
                 onClick={confirmarRestaurar}
                 disabled={restaurando}
                 style={restoreModo === 'replace' ? { background: 'var(--danger)', boxShadow: '0 4px 14px rgba(200,56,42,.3)' } : undefined}
@@ -803,7 +802,7 @@ export default function BackupsAdmin() {
         </div>
       )}
 
-      {/* ===================== Modal: copias en Drive ===================== */}
+     
       {modalDrive && (
         <div className="modal-overlay open" onClick={() => setModalDrive(false)}>
           <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>

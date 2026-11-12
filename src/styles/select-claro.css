@@ -1,0 +1,86 @@
+body:not(.dark-mode) .so-lista {
+  position: fixed;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  overflow-y: auto;
+  border: 1px solid #e8821a;
+  border-radius: 4px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  scrollbar-color: #e8821a #ffffff;
+  scrollbar-width: thin;
+}
+
+body:not(.dark-mode) .so-lista::-webkit-scrollbar {
+  width: 8px;
+}
+
+body:not(.dark-mode) .so-lista::-webkit-scrollbar-track {
+  background: #ffffff;
+}
+
+body:not(.dark-mode) .so-lista::-webkit-scrollbar-thumb {
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #e8821a;
+}
+
+body:not(.dark-mode) .so-opcion {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  padding: 7px 12px;
+  border: 0;
+  border-bottom: 1px solid #e8821a;   
+  border-radius: 0;
+  background: #ffffff;
+  color: #000000;
+  line-height: 1.25;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+body:not(.dark-mode) .so-opcion:last-child {
+  border-bottom: 0;
+}
+
+body:not(.dark-mode) .so-opcion:hover,
+body:not(.dark-mode) .so-opcion.so-activa {
+  background: #e8821a;                
+  color: #ffffff;
+}
+
+body:not(.dark-mode) .so-opcion[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+body:not(.dark-mode) .so-opcion[aria-disabled="true"]:hover {
+  background: #ffffff;
+  color: #000000;
+}
+
+
+/* ===== Flecha desplegable en todos los selects (solo modo claro) ===== */
+html body:not(.dark-mode) :is(select.so-select, .admin-body select, .public-body select):not([multiple]):not([size]) {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  padding-right: 38px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a08060' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 14px 14px !important;
+  cursor: pointer;
+}
+
+/* El select del perfil ya trae su flecha propia en el contenedor */
+html body:not(.dark-mode) .mp-select-wrap select {
+  background-image: none !important;
+  padding-right: 13px !important;
+}
+
+html body:not(.dark-mode) select.so-select:disabled {
+  cursor: not-allowed;
+}

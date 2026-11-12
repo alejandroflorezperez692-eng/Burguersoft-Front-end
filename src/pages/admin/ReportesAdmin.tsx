@@ -52,7 +52,7 @@ interface Compra {
   detalles: DetalleCompra[];
 }
 
-/* ---------- Configuración ---------- */
+
 const MAX_DIAS = 90;
 const ESTADOS_NO_CONTABLES = ['Cancelado', 'Reembolsada'];
 
@@ -72,7 +72,7 @@ const VISTAS: { id: Vista; label: string }[] = [
   { id: 'compras', label: 'Compras' },
 ];
 
-/* ---------- Utilidades ---------- */
+
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
 
@@ -100,11 +100,11 @@ const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const nombreCliente = (v: Venta) =>
   v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
-// Normaliza para buscar sin importar mayúsculas ni tildes
+
 const norm = (s: unknown) =>
   String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
-/* ---------- Componentes auxiliares ---------- */
+
 interface FilaBarra {
   id?: string;
   nombre: string;
@@ -165,7 +165,7 @@ function Seccion({ titulo, sub }: { titulo: string; sub?: string }) {
   );
 }
 
-/* ---------- Productos más vendidos con buscador ---------- */
+
 interface ProductoVendido {
   nombre: string;
   cantidad: number;
@@ -176,7 +176,7 @@ function PanelProductosVendidos({ productos }: { productos: ProductoVendido[] })
   const [busqueda, setBusqueda] = useState('');
   const q = norm(busqueda);
 
-  // Sin texto: top 10. Con texto: busca entre todos los productos del rango.
+ 
   const filas = q
     ? productos.filter((p) => norm(p.nombre).includes(q))
     : productos.slice(0, 10);
@@ -185,7 +185,7 @@ function PanelProductosVendidos({ productos }: { productos: ProductoVendido[] })
 
   return (
     <Panel titulo="Productos más vendidos" scroll>
-      <div style={{ position: 'relative', marginBottom: 14 }}>
+      <div className="rpt-buscador" style={{ position: 'relative', marginBottom: 14 }}>
         <input
           type="text"
           value={busqueda}
@@ -228,7 +228,7 @@ function PanelProductosVendidos({ productos }: { productos: ProductoVendido[] })
   );
 }
 
-/* ---------- Resumen de compras según el rango seleccionado ---------- */
+
 interface ResumenComprasProps {
   total: number;
   totalPrevio: number;
@@ -361,7 +361,7 @@ function ResumenCompras({ total, totalPrevio, barras, topMarca, topInsumo }: Res
   );
 }
 
-/* ---------- Página ---------- */
+
 export default function ReportesAdmin() {
   const hoy = aFechaISO(new Date());
 
@@ -395,7 +395,7 @@ export default function ReportesAdmin() {
     return () => { activo = false; };
   }, []);
 
-  /* ---------- Validación del rango ---------- */
+  
   const dias = desde && hasta ? diasEntre(desde, hasta) : 0;
 
   let errorRango = '';
@@ -413,7 +413,7 @@ export default function ReportesAdmin() {
 
   const presetActivo = (n: number) => hasta === hoy && desde === sumarDias(hoy, -(n - 1));
 
-  /* ---------- Reporte de ventas ---------- */
+ 
   const reporte = useMemo(() => {
     if (!rangoValido) return null;
 
@@ -467,7 +467,7 @@ export default function ReportesAdmin() {
       });
     });
 
-    // Lista completa de productos (el panel con buscador muestra el top 10 o filtra)
+   
     const productos = [...prodMap.entries()]
       .map(([nombre, d]) => ({ nombre, ...d }))
       .sort((a, b) => b.cantidad - a.cantidad);
@@ -496,7 +496,7 @@ export default function ReportesAdmin() {
     };
   }, [items, desde, hasta, rangoValido]);
 
-  /* ---------- Estadísticas de ventas para las gráficas ---------- */
+  
   const statsRango = useMemo<EstadisticasVentas | null>(() => {
     if (!rangoValido) return null;
 
@@ -558,7 +558,7 @@ export default function ReportesAdmin() {
     } as unknown as EstadisticasVentas;
   }, [items, desde, hasta, dias, hoy, rangoValido]);
 
-  /* ---------- Reporte de compras (mismo rango de fechas) ---------- */
+  
   const reporteCompras = useMemo(() => {
     if (!rangoValido) return null;
 
@@ -578,7 +578,7 @@ export default function ReportesAdmin() {
       })
       .reduce((a, c) => a + valorDe(c), 0);
 
-    // Barras de evolución: máximo 12 tramos dentro del rango
+   
     const tam = Math.ceil(dias / Math.min(dias, 12));
     const nBarras = Math.ceil(dias / tam);
     const barras = Array.from({ length: nBarras }, (_, i) => {
@@ -636,12 +636,12 @@ export default function ReportesAdmin() {
     };
   }, [compras, desde, hasta, dias, rangoValido]);
 
-  /* ---------- Exportar (según lo seleccionado en "Mostrar") ---------- */
+ 
   const hayVentas = !!reporte && reporte.enRango.length > 0;
   const hayProductos = !!reporte && reporte.productos.length > 0;
   const hayCompras = !!reporteCompras && reporteCompras.enRango.length > 0;
 
-  // ¿Hay algo que exportar con la vista actual?
+  
   const hayDatos =
     (ver('ventas') && hayVentas) ||
     (ver('productos') && hayProductos) ||
@@ -650,8 +650,7 @@ export default function ReportesAdmin() {
   const exportarExcel = () => {
     if (!reporte || !reporteCompras) return;
 
-    // Cada reporte se descarga como un archivo Excel independiente.
-    // En "Todo" salen los que tengan datos, con una pausa para que el navegador no bloquee las descargas.
+    
     const base = { desde, hasta };
     const tareas: (() => void)[] = [];
 
@@ -728,7 +727,7 @@ export default function ReportesAdmin() {
   const maxMarcaCompra = reporteCompras ? Math.max(1, ...reporteCompras.topMarcas.map((d) => d.valor)) : 1;
 
   return (
-    <div className="page-inner">
+    <div className="page-inner reportes-page">
       <div className="page-header">
         <div>
           <h1>Reportes</h1>
@@ -745,9 +744,9 @@ export default function ReportesAdmin() {
         </button>
       </div>
 
-      {/* ---------- Filtros ---------- */}
+      
       <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-lg)', padding: 22, marginBottom: 24, border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-        {/* Fila 1: período rápido + qué mostrar */}
+        
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20 }}>
           <div>
             <div style={etiquetaGrupo}>Período</div>
@@ -806,7 +805,7 @@ export default function ReportesAdmin() {
           </div>
         </div>
 
-        {/* Fila 2: rango personalizado */}
+        
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-end', marginTop: 20, paddingTop: 18, borderTop: '1px solid var(--border)' }}>
           <div className="form-group" style={{ margin: 0 }}>
             <label>Desde</label>
@@ -853,7 +852,7 @@ export default function ReportesAdmin() {
 
       {reporte && reporteCompras && (
         <>
-          {/* ================= VENTAS ================= */}
+          
           {ver('ventas') && (
             <>
               <Seccion titulo="Ventas" sub="Resumen del rango de fechas seleccionado" />
@@ -952,7 +951,7 @@ export default function ReportesAdmin() {
             </>
           )}
 
-          {/* ================= PRODUCTOS ================= */}
+          
           {ver('productos') && (
             <>
               <Seccion titulo="Productos" sub="Productos vendidos en el rango seleccionado" />
@@ -962,7 +961,7 @@ export default function ReportesAdmin() {
 
             {ver('productos') && <MargenProductos />}
 
-          {/* ================= COMPRAS ================= */}
+          
           {ver('compras') && (
             <>
               <Seccion titulo="Compras" sub="Resumen del rango de fechas seleccionado" />

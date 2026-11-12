@@ -113,7 +113,7 @@ function SelectorFechaCompras({ value, onChange, min, max }: {
   min?: string;
   max?: string;
 }) {
-  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+ const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
   const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
   const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
@@ -141,18 +141,7 @@ function SelectorFechaCompras({ value, onChange, min, max }: {
     };
   }, [abierto]);
 
-  if (!modoOscuro) {
-    return (
-      <input
-        type="date"
-        style={estiloFiltro}
-        value={value}
-        min={min}
-        max={max}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
-  }
+  
 
   const anio = mesVisible.getFullYear();
   const mes = mesVisible.getMonth();
@@ -1060,7 +1049,7 @@ const load = () => {
       )}
 
       {!showForm && hayBorradorLocal && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 16px', marginBottom: 16, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface-2)', fontSize: 13, fontWeight: 600, color: 'var(--text-900)' }}>
+        <div className="compras-borrador" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 16px', marginBottom: 16, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface-2)', fontSize: 13, fontWeight: 600, color: 'var(--text-900)' }}>
           <span style={{ flex: 1 }}>Tienes una compra sin terminar guardada en este equipo.</span>
           <button className="btn-primary" onClick={continuarBorradorLocal}>Continuar</button>
           <button className="btn-cancel" onClick={borrarLocal}>Descartar</button>
@@ -1183,8 +1172,7 @@ const load = () => {
               {l.materia_prima_id === null && (
                 <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`unidad-${i}`)}>
                   <label>Unidad <span className="mn-req">*</span></label>
-                  <Desplegable value={l.unidad_medida} error={intentado && errLinea(l).unidad} onChange={(v) => updateLinea(i, 'unidad_medida', v)} opciones={UNIDADES} />
-                  {msgCampo(`unidad-${i}`)}
+                  <Desplegable className="compras-filter-dropdown" value={l.unidad_medida} error={intentado && errLinea(l).unidad} onChange={(v) => updateLinea(i, 'unidad_medida', v)} opciones={UNIDADES} />
                 </div>
               )}
 
@@ -1401,10 +1389,11 @@ const load = () => {
                 </div>
               </div>
 
-              <div style={{ border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', background: 'var(--surface)' }}>
+              <div className="compras-factura-contador">{detalles.length} {detalles.length === 1 ? 'insumo' : 'insumos'}</div>
+              <div className="compras-factura-tabla" style={{ border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', background: 'var(--surface)' }}>
                 <div style={{ overflowX: 'auto' }}>
                   <div style={{ minWidth: 540 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '10px 18px', background: 'var(--surface-2)' }}>
+                    <div className="compras-factura-head" style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '10px 18px', background: 'var(--surface-2)' }}>
                       <span style={etiquetaCol}>Insumo</span>
                       <span style={etiquetaCol}>Proveedor</span>
                       <span style={etiquetaCol}>Cant.</span>
@@ -1417,10 +1406,11 @@ const load = () => {
                       detalles.map((d) => (
                         <div
                           key={d.id}
+                          className="compras-factura-fila"
                           style={{ display: 'grid', gridTemplateColumns: columnas, gap: 12, padding: '13px 18px', borderTop: '1px solid var(--border)', alignItems: 'center', fontSize: 14, color: 'var(--text-900)' }}
                         >
                           <span style={{ fontWeight: 600 }}>{d.materia_prima?.nombre ?? 'N/A'}</span>
-                          <span style={{ color: 'var(--text-400)' }}>{d.marca?.nombre ?? 'N/A'}</span>
+                          <span className="compras-factura-prov" style={{ color: 'var(--text-400)' }}>{d.marca?.nombre ?? 'N/A'}</span>
                           <span style={{ whiteSpace: 'nowrap' }}>
                             {Number(d.cantidad).toLocaleString('es-CO')}
                             {d.materia_prima?.unidad_medida ? ` ${d.materia_prima.unidad_medida}` : ''}
@@ -1434,10 +1424,7 @@ const load = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, margin: '20px 4px 0' }}>
-                <span style={{ fontSize: 13, color: 'var(--text-400)' }}>
-                  {detalles.length} {detalles.length === 1 ? 'insumo' : 'insumos'}
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: 16, margin: '20px 4px 0' }}>
                 <div style={{ textAlign: 'right' }}>
                   <div style={etiquetaCol}>Total</div>
                   <div style={{ fontFamily: 'var(--font-sans)', fontSize: 26, fontWeight: 800, color: 'var(--text-900)', lineHeight: 1.2 }}>

@@ -97,7 +97,7 @@ export default function AdminLayout() {
   setSaliendo(true);
   setTimeout(() => {
     logout();
-    navigate('/', { replace: true, state: { toast: 'logout_ok' } }); // ← antes era '/login'
+    navigate('/', { replace: true, state: { toast: 'logout_ok' } }); 
     setSaliendo(false);
   }, 500);
 };

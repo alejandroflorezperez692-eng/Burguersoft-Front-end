@@ -5,7 +5,7 @@ export type ToastPayload = { msg: string; error?: boolean; aviso?: boolean };
 
 export type IconoTipo = 'exito' | 'error' | 'aviso';
 
-/** Iconos SVG (sin emojis) de cada tipo de alerta. Heredan el color del texto. */
+
 export function IconoToast({ tipo, size = 18 }: { tipo: IconoTipo; size?: number }) {
   const base = {
     width: size,
@@ -35,7 +35,7 @@ export function IconoToast({ tipo, size = 18 }: { tipo: IconoTipo; size?: number
       </svg>
     );
   }
-  // aviso: icono de información
+
   return (
     <svg {...base}>
       <circle cx="12" cy="12" r="10" />
@@ -45,12 +45,12 @@ export function IconoToast({ tipo, size = 18 }: { tipo: IconoTipo; size?: number
   );
 }
 
-/** Tipo del toast a partir de sus banderas. */
+
 export function tipoDeToast(t: ToastPayload): IconoTipo {
   return t.error ? 'error' : t.aviso ? 'aviso' : 'exito';
 }
 
-/* Estilos del modal de confirmación (autocontenidos: no dependen de index.css) */
+
 const CONFIRM_CSS = `
 .confirm-modal-overlay{position:fixed;inset:0;background:rgba(22,8,0,.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:2147483646;animation:confirmFade .2s}
 @keyframes confirmFade{from{opacity:0}to{opacity:1}}
@@ -76,9 +76,7 @@ export default function ToastMessage({ toast }: { toast: ToastPayload | null }) 
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* Contexto global: un único toast + confirm, renderizados por portal  */
-/* ------------------------------------------------------------------ */
+
 
 interface ToastContextValue {
   toast: ToastPayload | null;
@@ -91,12 +89,11 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    // Fallback seguro por si se usa fuera del provider
-    // (no debería ocurrir, pero evita romper la app)
+    
     return {
       toast: null,
       showToast: (msg, error, aviso) => {
-        // eslint-disable-next-line no-console
+       
         console.warn('useToast fuera de ToastProvider:', msg, error, aviso);
       },
       confirmar: async () => false,
@@ -114,7 +111,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const showToast = useCallback((msg: string, error = false, aviso = false) => {
     setToast({ msg, error, aviso });
     window.clearTimeout(timer.current);
-    // Los mensajes largos duran más para que alcancen a leerse (mínimo 3.5s).
+
     const duracion = Math.min(8000, Math.max(3500, 3200 + msg.length * 25));
     timer.current = window.setTimeout(() => setToast(null), duracion);
   }, []);
@@ -131,7 +128,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     if (actual) actual.resolve(valor);
   };
 
-  // Esc cierra la confirmación (equivale a Cancelar)
+
   useEffect(() => {
     if (!confirmState) return;
     const onKey = (e: KeyboardEvent) => {

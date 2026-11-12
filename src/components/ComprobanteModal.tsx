@@ -10,11 +10,7 @@ interface ComprobanteModalProps {
   onSubido: () => void;
 }
 
-/**
- * Permite al cliente volver a subir el comprobante de pago cuando el
- * administrador lo devolvió. El backend valida con IA que la imagen sea
- * realmente un comprobante antes de guardarla.
- */
+
 export default function ComprobanteModal({
   ventaId,
   numero,

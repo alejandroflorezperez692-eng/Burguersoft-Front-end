@@ -92,7 +92,7 @@ export default function ConfiguracionAdmin() {
             if (j.telefono) setTelefono(String(j.telefono));
           }
         } catch {
-          // sin datos extra guardados
+          
         }
       })
       .finally(() => {

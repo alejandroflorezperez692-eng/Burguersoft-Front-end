@@ -33,7 +33,7 @@ body.dark-mode :is(
 }
 
 body.dark-mode :is(.mn-btn-edit, .btn-det-editar, .btn-icon-edit):hover:not(:disabled) {
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(47, 138, 240, 0.4);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(232, 130, 26, 0.5);
 }
 
 body.dark-mode :is(.mn-btn-del, .btn-det-eliminar, .btn-danger, .btn-icon-del):hover:not(:disabled) {
@@ -203,41 +203,29 @@ body.dark-mode .data-table tr.fila-inactiva td:has(.badge) {
 /* ---------------------------------------------------------------------
    8) ACCIONES (Usuarios y tablas): colores sólidos y visibles
    --------------------------------------------------------------------- */
-body.dark-mode .btn-icon.btn-icon-edit {
-  background: #2f8af0 !important;
+/* Botones de acción de colores (Editar, Eliminar, Activar/Desactivar y los de icono):
+   fondo negro y borde naranja desde el inicio; al pasar el cursor se llenan de naranja */
+body.dark-mode :is(
+  .mn-btn-edit, .mn-btn-del, .mn-btn-toggle,
+  .btn-det-editar, .btn-det-eliminar,
+  .btn-icon.btn-icon-edit, .btn-icon.btn-icon-del,
+  .btn-icon.btn-icon-estado, .btn-icon.btn-icon-restore
+) {
+  background: #000000 !important;
+  border: 1.5px solid #e8821a !important;
   color: #ffffff !important;
 }
-body.dark-mode .btn-icon.btn-icon-del {
-  background: #dc2626 !important;
-  color: #ffffff !important;
-}
-body.dark-mode .btn-icon.btn-icon-estado.estado-inactivar {
-  background: #d97706 !important;
-  color: #ffffff !important;
-}
-body.dark-mode .btn-icon.btn-icon-estado.estado-activar {
-  background: #16a34a !important;
-  color: #ffffff !important;
-}
-body.dark-mode .btn-icon.btn-icon-edit:hover:not(:disabled) { background: #1f77dc !important; }
-body.dark-mode .btn-icon.btn-icon-del:hover:not(:disabled) { background: #b91c1c !important; }
-body.dark-mode .btn-icon.btn-icon-estado.estado-inactivar:hover:not(:disabled) { background: #b45309 !important; }
-body.dark-mode .btn-icon.btn-icon-estado.estado-activar:hover:not(:disabled) { background: #15803d !important; }
 
-body.dark-mode .btn-icon.btn-icon-restore {
-  background: #16a34a !important;
+body.dark-mode :is(
+  .mn-btn-edit, .mn-btn-del, .mn-btn-toggle,
+  .btn-det-editar, .btn-det-eliminar,
+  .btn-icon.btn-icon-edit, .btn-icon.btn-icon-del,
+  .btn-icon.btn-icon-estado, .btn-icon.btn-icon-restore
+):hover:not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
   color: #ffffff !important;
-}
-body.dark-mode .btn-icon.btn-icon-restore:hover:not(:disabled) { background: #15803d !important; }
-
-/* Desactivar / Activar: sin borde naranja al pasar el cursor, solo flota */
-body.dark-mode .mn-btn-toggle,
-body.dark-mode .mn-btn-toggle:hover,
-body.dark-mode .mn-btn-toggle.desactivar,
-body.dark-mode .mn-btn-toggle.desactivar:hover,
-body.dark-mode .mn-btn-toggle.activar:hover {
-  border: none !important;
-  outline: none !important;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(232, 130, 26, 0.5) !important;
 }
 
 /* Método de pago (Ventas y Compras): fondo negro, borde naranja, letra blanca */
@@ -577,4 +565,115 @@ html body.dark-mode .admin-body .main-content .mn-modal-overlay [style*="var(--t
   background: #e8821a !important;
   border-color: #e8821a !important;
   color: #ffffff !important;
+}
+
+
+/* Insignias "Disponible" (Menú) y "Activa" (Promociones): fondo negro, borde naranja y letra blanca */
+html body.dark-mode .admin-body .main-content span.mn-card-estado.mn-estado-Disponible,
+html body.dark-mode .admin-body .main-content span.mn-card-estado.mn-estado-Activa {
+  background-color: #000000 !important;
+  border: 1px solid #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* ---------------------------------------------------------------------
+   Ventas > barra del día ("Hoy · lunes...") y modal "Cierre del día":
+   se quita el fondo blanco/crema; todo en negro con borde naranja y letra blanca.
+   --------------------------------------------------------------------- */
+html body.dark-mode .admin-body .data-table tr.vt-dia > td {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border-bottom: 1px solid #e8821a !important;
+}
+html body.dark-mode .admin-body .vt-dia-bar { background: #000000 !important; }
+html body.dark-mode .admin-body .vt-dia-label { color: #ffffff !important; }
+html body.dark-mode .admin-body .vt-dia-info,
+html body.dark-mode .admin-body .vt-dia-info b { color: #ffffff !important; }
+
+html body.dark-mode .modal-box .cierre-resumen div {
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+}
+html body.dark-mode .modal-box .cierre-resumen small { color: #ffffff !important; }
+html body.dark-mode .modal-box .cierre-resumen strong { color: #ffffff !important; }
+html body.dark-mode .modal-box .cierre-resumen div:first-child strong { color: #e8821a !important; }
+
+html body.dark-mode .modal-box .cierre-sub { color: #ffffff !important; }
+html body.dark-mode .modal-box .cierre-nota { color: #ffffff !important; }
+
+html body.dark-mode .modal-box .cierre-scroll {
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+}
+html body.dark-mode .modal-box .cierre-tabla { background: #000000 !important; }
+html body.dark-mode .modal-box .cierre-tabla th {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-bottom: 2px solid #e8821a !important;
+}
+html body.dark-mode .modal-box .cierre-tabla td {
+  background: #000000 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid rgba(232, 130, 26, 0.45) !important;
+}
+html body.dark-mode .modal-box .cierre-tabla .c { color: #ffffff !important; }
+
+html body.dark-mode .modal-box .cierre-metodos span {
+  background: #000000 !important;
+  border: 1px solid #e8821a !important;
+  color: #ffffff !important;
+}
+
+
+/* ---------------------------------------------------------------------
+   Insignias de estado (Finalizada, Activo, Pagado, Programada, etc.):
+   todas con fondo negro, borde naranja y letra blanca.
+   --------------------------------------------------------------------- */
+html body.dark-mode .admin-body :is(
+  .badge, .badge.badge-success, .badge.badge-warning, .badge.badge-danger,
+  .badge.badge-info, .badge.badge-gray,
+  span.mn-card-estado, .mn-estado-chip, .mn-badge-inactivo,
+  .detalle-estado, .vt-estado
+),
+html body.dark-mode .admin-body .main-content :is(
+  .badge, .badge.badge-success, .badge.badge-warning, .badge.badge-danger,
+  .badge.badge-info, .badge.badge-gray,
+  span.mn-card-estado, .mn-estado-chip, .mn-badge-inactivo,
+  .detalle-estado, .vt-estado,
+  .mn-estado-Disponible, .mn-estado-Agotado, .mn-estado-Por_agotarse,
+  .mn-estado-Activa, .mn-estado-Programada, .mn-estado-Inactiva, .mn-estado-Finalizada
+) {
+  background: #000000 !important;
+  background-color: #000000 !important;
+  border: 1px solid #e8821a !important;
+  color: #ffffff !important;
+}
+
+
+/* Reportes > "Productos más vendidos": buscador con el mismo estilo de los demás campos
+   (negro, borde naranja redondeado, espacio interno y letra blanca) */
+html body.dark-mode .admin-body .rpt-buscador input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 38px;
+  padding: 0 14px;
+  border: 1px solid #e8821a !important;
+  border-radius: 10px;
+  background: #000000 !important;
+  color: #ffffff !important;
+  font-size: 13px;
+  outline: none;
+}
+html body.dark-mode .admin-body .rpt-buscador input::placeholder { color: rgba(255, 255, 255, 0.55); }
+html body.dark-mode .admin-body .rpt-buscador input:focus {
+  box-shadow: 0 0 0 2px rgba(232, 130, 26, 0.35);
+}
+html body.dark-mode .admin-body .rpt-buscador button { color: #ffffff !important; }
+
+/* NOTIFICACIONES (modo oscuro): línea divisoria naranja sobre "Ver resumen en Inicio" y bajo el título */
+body.dark-mode .notif-panel .notif-head {
+  border-bottom: 1px solid #e8821a !important;
+}
+body.dark-mode .notif-panel .notif-pie {
+  border-top: 1px solid #e8821a !important;
 }

@@ -39,13 +39,13 @@ const ICONO: Record<Alerta['tipo'], string> = {
   pago: '💳',
 };
 
-/** Alertas inteligentes y resumen semanal del Inicio (solo admin). */
+
 export default function AlertasInicio() {
   const [datos, setDatos] = useState<RespuestaAlertas | null>(null);
   const [cargando, setCargando] = useState(true);
   const [recarga, setRecarga] = useState(0);
 
-  // Aviso en vivo por websocket
+ 
   useEffect(() => {
     const canal = conectarAlertas(() => setRecarga((n) => n + 1));
     return () => {
@@ -61,7 +61,7 @@ export default function AlertasInicio() {
         if (vivo) setDatos(data);
       })
       .catch(() => {
-        // Si falla (por ejemplo, sin permiso) el Inicio sigue funcionando sin este bloque
+      
         if (vivo) setDatos(null);
       })
       .finally(() => {

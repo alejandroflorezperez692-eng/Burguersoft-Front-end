@@ -1250,6 +1250,7 @@ body.dark-mode .btn-icon-estado:hover {
 }
 
 .btn-det-editar   { background: var(--info, #2d89ef); }
+body.dark-mode .btn-det-editar { background: #e8821a; }
 .btn-det-eliminar { background: var(--danger, #C8382A); }
 
 .btn-det-editar:hover,
@@ -1635,7 +1636,7 @@ body.dark-mode .header-sep {
 
 body.dark-mode .notif-btn,
 body.dark-mode .header-user {
-  background: rgba(232, 130, 26, 0.12);
+  background: #000000;
   border-color: #E8821A;
 }
 
@@ -1643,7 +1644,7 @@ body.dark-mode .notif-btn:hover,
 body.dark-mode .notif-btn.open,
 body.dark-mode .header-user:hover,
 body.dark-mode .header-user.active {
-  background: rgba(232, 130, 26, 0.24);
+  background: #E8821A;
   border-color: #E8821A;
 }
 
@@ -4394,9 +4395,7 @@ body.dark-mode .admin-body .main-content :is(
 
 body.dark-mode .admin-body .main-content :is(
   .mn-field select.est-Disponible,
-  .mn-field select.activo,
-  .mn-estado-Disponible,
-  .mn-estado-Activa
+  .mn-field select.activo
 ) {
   background-color: rgba(26, 122, 66, 0.24) !important;
   border-color: #1a7a42 !important;
@@ -4742,4 +4741,1235 @@ body.dark-mode .admin-body :is(input, textarea, select)::placeholder {
     height: 16px;
     opacity: 0.85;
   }
+}
+
+/* =====================================================================
+   MODO CLARO · Inicio del administrador: fondo totalmente blanco y bordes del color de cada elemento
+   (solo con body sin .dark-mode; el modo oscuro no se toca)
+   ===================================================================== */
+body:not(.dark-mode) .admin-body .dashboard-wrap {
+  background: #ffffff;
+}
+/* Tarjeta de bienvenida: borde naranja (como su barra lateral) */
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb {
+  background: #ffffff !important;
+  border: 1px solid #e8821a;
+}
+/* Panel "Burgi te avisa" y resumen de la semana: borde naranja */
+body:not(.dark-mode) .admin-body .dashboard-wrap .alertas-dashboard {
+  background: #ffffff !important;
+  border: 1px solid #e8821a !important;
+}
+body:not(.dark-mode) .admin-body .dashboard-wrap .alertas-resumen-semanal {
+  background: #ffffff !important;
+  border: 1px solid #e8821a !important;
+}
+/* Alertas: fondo blanco y borde del color de su nivel (rojo = alta, naranja = media, verde = baja) */
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item {
+  background: #ffffff !important;
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-left-width: 4px !important;
+}
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item.alerta-nivel-alta  { border-color: #c8382a !important; }
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item.alerta-nivel-media { border-color: #e8821a !important; }
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item.alerta-nivel-baja  { border-color: #2e9e5b !important; }
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-dashboard-item.alerta-stock       { border-color: #c8382a !important; }
+
+/* MODO CLARO · Inicio: textos en negro (rol, fecha, "Redactado por IA" y detalle de las alertas).
+   La hora y el punto siguen en naranja. */
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb-rol,
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb-fecha,
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-ia-tag,
+body:not(.dark-mode) .admin-body .dashboard-wrap .alerta-detalle {
+  color: #000000 !important;
+}
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb-punto,
+body:not(.dark-mode) .admin-body .dashboard-wrap .wb-hora {
+  color: #e8821a !important;
+}
+
+/* MODO CLARO · menú del usuario (Mi perfil / Cerrar sesión): línea divisoria y hover naranja / rojo.
+   Solo sin .dark-mode; el modo oscuro conserva sus reglas de dark-fixes.css */
+body:not(.dark-mode) .menu-usuario .menu-usuario-item {
+  transition: background 0.15s ease, color 0.15s ease;
+}
+body:not(.dark-mode) .menu-usuario .menu-usuario-item:not(.menu-usuario-salir) {
+  border-radius: 8px 8px 0 0 !important;
+}
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir {
+  border-top: 1px solid #e8821a !important;
+  border-radius: 0 0 8px 8px !important;
+}
+/* Mi perfil: fondo naranja y letra blanca */
+body:not(.dark-mode) .menu-usuario .menu-usuario-item:not(.menu-usuario-salir):hover,
+body:not(.dark-mode) .menu-usuario .menu-usuario-item:not(.menu-usuario-salir):focus-visible {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+/* Cerrar sesión: fondo rojo y letra e ícono blancos */
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir:hover,
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir:focus-visible {
+  background: #c8382a !important;
+  color: #ffffff !important;
+}
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir:hover img,
+body:not(.dark-mode) .menu-usuario .menu-usuario-salir:focus-visible img {
+  filter: brightness(0) invert(1);
+}
+
+/* MODO CLARO · panel de notificaciones: sin fondo al pasar por una notificación, pie naranja al pasar,
+   y texto del estado vacío en negro. Solo sin .dark-mode. */
+body:not(.dark-mode) .notif-panel .notif-item.con-enlace:not(.nueva):hover,
+body:not(.dark-mode) .notif-panel .notif-item.con-enlace:not(.nueva):focus-visible {
+  background: transparent !important;
+}
+body:not(.dark-mode) .notif-panel .notif-item.con-enlace.nueva:hover,
+body:not(.dark-mode) .notif-panel .notif-item.con-enlace.nueva:focus-visible {
+  background: rgba(232, 130, 26, 0.08) !important;
+}
+body:not(.dark-mode) .notif-panel .notif-pie {
+  transition: background 0.15s ease, color 0.15s ease;
+}
+body:not(.dark-mode) .notif-panel .notif-pie:hover,
+body:not(.dark-mode) .notif-panel .notif-pie:focus-visible {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+body:not(.dark-mode) .notif-panel .notif-vacio {
+  color: #000000 !important;
+}
+
+/* MODO CLARO · panel de notificaciones: borde y líneas divisorias en naranja. Solo sin .dark-mode. */
+body:not(.dark-mode) .notif-panel {
+  border: 1px solid #e8821a !important;
+}
+body:not(.dark-mode) .notif-panel .notif-head {
+  border-bottom: 1px solid #e8821a !important;
+}
+body:not(.dark-mode) .notif-panel .notif-item {
+  border-bottom-color: #e8821a !important;
+}
+body:not(.dark-mode) .notif-panel .notif-item:last-child {
+  border-bottom: none !important;
+}
+body:not(.dark-mode) .notif-panel .notif-pie {
+  border-top: 1px solid #e8821a !important;
+}
+
+/* ===== Contadores a la derecha, solo texto negro (solo modo claro) ===== */
+body:not(.dark-mode) .meta-bar span,          /* 4 PROVEEDORES, 134 USUARIOS */
+body:not(.dark-mode) .mn-cat-count,           /* 1 PROMOCIÓN */
+body:not(.dark-mode) .contador-lista {        /* 6 de 6 productos, 15 de 15 ventas */
+  display: inline-block;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: #000;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* Proveedores / Usuarios: la línea queda a la izquierda y el contador a la derecha */
+body:not(.dark-mode) .meta-bar span { order: 2; }
+body:not(.dark-mode) .meta-bar::after { order: 1; }
+
+/* Productos / Ventas: empujar a la derecha */
+body:not(.dark-mode) .contador-lista {
+  width: fit-content;
+  margin: 0 0 0 auto !important;
+}
+
+/* ===== Contadores a la derecha, solo texto negro (solo modo claro) ===== */
+body:not(.dark-mode) .meta-bar span,
+body:not(.dark-mode) .mn-cat-count,
+body:not(.dark-mode) .contador-lista {
+  display: inline-block;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: #000;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+body:not(.dark-mode) .meta-bar span { order: 2; }
+body:not(.dark-mode) .meta-bar::after { order: 1; }
+body:not(.dark-mode) .contador-lista {
+  width: fit-content;
+  margin: 0 0 0 auto !important;
+}
+
+/* ===== Compras: colores del modo claro ===== */
+body:not(.dark-mode) .compras-page .compras-filter-dropdown-trigger {
+  background: transparent !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+body:not(.dark-mode) .compras-page .compras-filter-dropdown-options {
+  border: 1.5px solid #e8821a !important;
+}
+body:not(.dark-mode) .compras-page .mn-search {
+  background: transparent;
+  border: 1.5px solid #e8821a;
+  color: #000000;
+}
+body:not(.dark-mode) .compras-page .mn-search:focus {
+  border-color: #e8821a;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18);
+}
+body:not(.dark-mode) .compras-page .btn-cancel,
+body:not(.dark-mode) .compras-page .compras-outline-btn {
+  background: transparent !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background 0.15s, color 0.15s;
+}
+body:not(.dark-mode) .compras-page .btn-cancel:hover:not(:disabled),
+body:not(.dark-mode) .compras-page .compras-outline-btn:hover:not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+body:not(.dark-mode) .compras-page .compras-borrador {
+  border: 1.5px solid #e8821a !important;
+  background: transparent !important;
+}
+
+/* ===== Compras: tarjeta "Qué comprar esta semana" ===== */
+body:not(.dark-mode) .compras-sug-tarjeta {
+  border: 1.5px solid #e8821a !important;
+}
+body:not(.dark-mode) .compras-sug-fila {
+  border-top: 1.5px solid #e8821a !important;
+}
+
+/* ===== Compras: tarjeta "Qué comprar esta semana" y cuadro de borrador (solo modo claro) ===== */
+body:not(.dark-mode) .compras-page > div[style*="var(--border)"] {
+  border: 1.5px solid #e8821a !important;
+}
+body:not(.dark-mode) .compras-page > div[style*="var(--border)"] div[style*="border-top"] {
+  border-top: 1.5px solid #e8821a !important;
+}
+
+body:not(.dark-mode) .admin-body .page-header {
+  border-bottom: 1.5px solid #e8821a !important;
+}
+
+/* ===== Compras: textos de la tarjeta "Qué comprar esta semana" en negro (solo modo claro) ===== */
+body:not(.dark-mode) .compras-page > div[style*="var(--border)"] > p,
+body:not(.dark-mode) .compras-page > div[style*="var(--border)"] > div:first-child > div:first-child > p,
+body:not(.dark-mode) .compras-page > div[style*="var(--border)"] > div:first-child > div:last-child > div:first-child {
+  color: #000000 !important;
+}
+
+/* ===== Compras: filtros desplegables del mismo tamaño que las fechas (solo modo claro) ===== */
+body:not(.dark-mode) .compras-page .compras-filter-dropdown {
+  min-width: 150px;
+}
+body:not(.dark-mode) .compras-page .compras-filter-dropdown-trigger {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 150px !important;
+  height: 40px !important;
+  padding: 0 12px !important;
+  gap: 12px !important;
+  border-radius: 10px !important;
+  font-size: 13.5px !important;
+}
+
+/* ===== Desplegables: mismo estilo en todo lado (solo modo claro) ===== */
+
+/* Botón que abre el desplegable */
+html body:not(.dark-mode) :is(
+  .compras-filter-dropdown-trigger,
+  .ventas-filter-dropdown-trigger,
+  .venta-estado-trigger,
+  .pm-filter-select-trigger,
+  .mn-form-select-trigger,
+  .custom-select-trigger,
+  .cfg-document-trigger,
+  .cart-cuando-trigger
+) {
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+}
+html body:not(.dark-mode) :is(
+  .compras-filter-dropdown-trigger,
+  .ventas-filter-dropdown-trigger,
+  .pm-filter-select-trigger,
+  .mn-form-select-trigger,
+  .custom-select-trigger,
+  .cfg-document-trigger
+) {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* Lista de opciones */
+html body:not(.dark-mode) :is(
+  .compras-filter-dropdown-options,
+  .ventas-filter-dropdown-options,
+  .venta-estado-options,
+  .pm-filter-select-options,
+  .mn-form-select-options,
+  .custom-select-options,
+  .cfg-document-options
+) {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 4px !important;
+  padding: 0 !important;
+  overflow-x: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* Cada opción, con línea naranja entre ellas */
+html body:not(.dark-mode) :is(
+  .compras-filter-dropdown-option,
+  .ventas-filter-dropdown-option,
+  .venta-estado-option,
+  .pm-filter-select-option,
+  .mn-form-select-option,
+  .custom-select-option,
+  .cfg-document-option
+) {
+  background: #ffffff !important;
+  color: #000000 !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e8821a !important;
+  border-radius: 0 !important;
+  padding: 7px 12px !important;
+  line-height: 1.25;
+  text-align: left;
+  cursor: pointer;
+}
+html body:not(.dark-mode) :is(
+  .compras-filter-dropdown-option,
+  .ventas-filter-dropdown-option,
+  .venta-estado-option,
+  .pm-filter-select-option,
+  .mn-form-select-option,
+  .custom-select-option,
+  .cfg-document-option
+):last-child {
+  border-bottom: 0 !important;
+}
+
+/* Naranja con letra blanca solo cuando pasas el cursor */
+html body:not(.dark-mode) :is(
+  .compras-filter-dropdown-option,
+  .ventas-filter-dropdown-option,
+  .venta-estado-option,
+  .pm-filter-select-option,
+  .mn-form-select-option,
+  .custom-select-option,
+  .cfg-document-option
+):is(:hover, :focus-visible) {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* La opción seleccionada queda sin relleno, solo en negrita */
+html body:not(.dark-mode) :is(
+  .compras-filter-dropdown-option,
+  .ventas-filter-dropdown-option,
+  .venta-estado-option,
+  .pm-filter-select-option,
+  .mn-form-select-option,
+  .custom-select-option,
+  .cfg-document-option
+).selected:not(:hover):not(:focus-visible) {
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+}
+
+/* Selects normales del admin: mismo borde y esquinas */
+body:not(.dark-mode) .admin-body select {
+  border: 1.5px solid #e8821a;
+  border-radius: 10px;
+}
+
+/* ===== Compras: etiquetas de los filtros en negro (solo modo claro) ===== */
+body:not(.dark-mode) .compras-page .compras-filtros > label {
+  color: #000000 !important;
+}
+
+/* ===== Compras: modal "Factura de compra" (solo modo claro) ===== */
+body:not(.dark-mode) .modal-box[aria-label^="Factura de compra"] div[style*="uppercase"],
+body:not(.dark-mode) .modal-box[aria-label^="Factura de compra"] .compras-factura-head span,
+body:not(.dark-mode) .modal-box[aria-label^="Factura de compra"] .compras-factura-prov,
+body:not(.dark-mode) .modal-box[aria-label^="Factura de compra"] div[style*="font-size: 22px"],
+body:not(.dark-mode) .modal-box[aria-label^="Factura de compra"] div[style*="font-size: 26px"] {
+  color: #000000 !important;
+}
+body:not(.dark-mode) .compras-factura-contador {
+  text-align: right;
+  margin: 0 4px 8px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #000000;
+}
+body:not(.dark-mode) .compras-factura-tabla {
+  border: 1.5px solid #e8821a !important;
+}
+body:not(.dark-mode) .compras-factura-fila {
+  border-top: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+body:not(.dark-mode) .badge.compras-factura-metodo {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+
+/* Daviplata / método de pago: como estaba originalmente (solo modo claro) */
+html body:not(.dark-mode) .badge.badge-info.compras-factura-metodo {
+  background: #dbeafe !important;
+  border: 0 !important;
+  color: #1a3f7e !important;
+}
+
+/* Modal "Factura de compra": línea naranja de extremo a extremo (solo modo claro) */
+body:not(.dark-mode) .modal-box[aria-label^="Factura de compra"] > div:first-of-type {
+  margin-left: -36px;
+  margin-right: -36px;
+  padding: 0 36px 16px;
+  border-bottom: 1.5px solid #e8821a;
+}
+
+/* Modal "Factura de compra": método de pago al lado de la fecha (solo modo claro) */
+body:not(.dark-mode) .modal-box[aria-label^="Factura de compra"] > div:first-of-type > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 14px;
+}
+body:not(.dark-mode) .modal-box[aria-label^="Factura de compra"] > div:first-of-type > div > div:first-child {
+  flex: 0 0 100%;
+}
+
+/* ===== Botones X de cierre: borde naranja, y al pasar el cursor fondo naranja con X blanca (solo modo claro) ===== */
+
+/* X de los modales del admin (las dibuja el CSS con currentColor) */
+html body:not(.dark-mode) :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar),
+html body:not(.dark-mode) .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button,
+html body:not(.dark-mode) .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  color: #000000 !important;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+html body:not(.dark-mode) :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar):is(:hover, :active, :focus-visible):not(:disabled),
+html body:not(.dark-mode) .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button:is(:hover, :active, :focus-visible):not(:disabled),
+html body:not(.dark-mode) .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button:is(:hover, :active, :focus-visible):not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Otras X: detalle de proveedor, nueva venta, perfil, personalizar, verificar correo, legal */
+html body:not(.dark-mode) :is(.detalle-close, .np-close, .mp-close, .pers-cerrar, .verify-modal-close, .legal-modal-cerrar) {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+html body:not(.dark-mode) .pers-cerrar {
+  border-radius: 10px !important;
+  font-size: 22px;
+}
+html body:not(.dark-mode) :is(.detalle-close, .np-close, .mp-close, .pers-cerrar, .verify-modal-close, .legal-modal-cerrar):is(:hover, :active, :focus-visible):not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Paginación en todo lado: al pasar el cursor solo se resalta el borde, la letra queda negra (solo modo claro) */
+html body:not(.dark-mode) :is(.pag-btn, .us-pag-btn):hover:not(:disabled):not(.activa) {
+  background: #ffffff !important;
+  border-color: #e8821a !important;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .np-pg:hover:not(:disabled):not(.on) {
+  background: #ffffff !important;
+  border-color: #e8821a !important;
+  color: #000000 !important;
+}
+
+/* Compras: cuadro de texto de "Dictar compra" con borde naranja (solo modo claro) */
+body:not(.dark-mode) .compras-page textarea[style*="var(--border)"] {
+  border: 1.5px solid #e8821a !important;
+  background: transparent !important;
+  color: #000000 !important;
+}
+body:not(.dark-mode) .compras-page textarea[style*="var(--border)"]:focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18);
+  outline: none;
+}
+
+/* ===== Compras: modal "Registrar Compra" (solo modo claro) ===== */
+
+/* Fondos blancos */
+body:not(.dark-mode) .compras-page .mn-modal-overlay > div,
+body:not(.dark-mode) .compras-page .mn-modal-overlay > div > div:nth-child(2) {
+  background: #ffffff !important;
+}
+
+/* Línea que divide el encabezado del resto */
+body:not(.dark-mode) .compras-page .mn-modal-overlay [style*="18px 28px"] {
+  background: #ffffff !important;
+  border-bottom: 1.5px solid #e8821a !important;
+}
+
+/* Letras negras */
+body:not(.dark-mode) .compras-page .mn-modal-overlay .form-group label,
+body:not(.dark-mode) .compras-page .mn-modal-overlay .modal-actions + *,
+body:not(.dark-mode) .compras-page .mn-modal-overlay span[style*="font-size: 18px"] {
+  color: #000000 !important;
+}
+
+/* Campos: fondo blanco, borde naranja, letra negra */
+body:not(.dark-mode) .compras-page .mn-modal-overlay .form-group :is(input, select, textarea) {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+body:not(.dark-mode) .compras-page .mn-modal-overlay .form-group :is(input, select, textarea)::placeholder {
+  color: #6b6b6b !important;
+}
+body:not(.dark-mode) .compras-page .mn-modal-overlay .form-group :is(input, select, textarea):focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18) !important;
+  outline: none;
+}
+
+/* Cuadro de cada insumo: fondo blanco y borde naranja */
+body:not(.dark-mode) .compras-page .mn-modal-overlay .grid-lineas {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+}
+
+/* ===== X de quitar insumo / adición: igual a las demás X (solo modo claro) ===== */
+html body:not(.dark-mode) :is(.grid-lineas > .btn-icon-del, .mn-adic-del) {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  color: #000000 !important;
+  box-shadow: none !important;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+html body:not(.dark-mode) :is(.grid-lineas > .btn-icon-del, .mn-adic-del):is(:hover, :active, :focus-visible):not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* ===== Materia Prima: colores del modo claro (igual que Compras y Ventas). Solo sin .dark-mode ===== */
+
+/* Buscador y filtros: fondo blanco, borde naranja, letra negra */
+html body:not(.dark-mode) .materia-page :is(.mn-search, .mn-field input, .mn-field select, .mn-field .so-select),
+html body:not(.dark-mode) .materia-page .mn-field select.activo {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .materia-page .mn-field select.activo {
+  font-weight: 700;
+}
+html body:not(.dark-mode) .materia-page .mn-search:focus,
+html body:not(.dark-mode) .materia-page .mn-field :is(input, select):focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18) !important;
+}
+
+/* Botón "Limpiar filtros" y "Cancelar": borde naranja, y al pasar el cursor fondo naranja con letra blanca */
+html body:not(.dark-mode) .materia-page :is(.btn-cancel, .mn-btn-cancel) {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background-color 0.15s, color 0.15s;
+}
+html body:not(.dark-mode) .materia-page :is(.btn-cancel, .mn-btn-cancel):hover:not(:disabled) {
+  background-color: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Letras de arriba de los filtros en negro */
+html body:not(.dark-mode) .materia-page .mn-field > label {
+  color: #000000 !important;
+}
+
+/* Tabla: fondo blanco */
+html body:not(.dark-mode) .materia-page .tabla-responsive {
+  background: #ffffff;
+}
+
+/* Modal "Editar Materia Prima": fondo blanco */
+html body:not(.dark-mode) .materia-page .modal-box,
+html body:not(.dark-mode) .materia-page .mn-modal-box {
+  background: #ffffff !important;
+}
+
+/* Línea bajo el título, de extremo a extremo del modal */
+html body:not(.dark-mode) .materia-page .modal-box > h2 {
+  margin-left: -32px;
+  margin-right: -32px;
+  padding-left: 32px;
+  padding-right: 32px;
+  color: #000000 !important;
+  border-bottom: 1.5px solid #e8821a !important;
+}
+
+/* Etiquetas negras */
+html body:not(.dark-mode) .materia-page .modal-box .form-group label {
+  color: #000000 !important;
+}
+
+/* Campos: fondo blanco, borde naranja, letra negra */
+html body:not(.dark-mode) .materia-page .modal-box .form-group :is(input, select, textarea, .so-select) {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .materia-page .modal-box .form-group :is(input, select, textarea)::placeholder {
+  color: #6b6b6b !important;
+}
+html body:not(.dark-mode) .materia-page .modal-box .form-group :is(input, select, textarea):focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18) !important;
+  outline: none;
+}
+
+/* Línea sobre los botones, de extremo a extremo del modal */
+html body:not(.dark-mode) .materia-page .modal-box .modal-actions {
+  margin-left: -32px;
+  margin-right: -32px;
+  margin-top: 22px;
+  padding: 20px 32px 0;
+  border-top: 1.5px solid #e8821a;
+}
+
+/* Cancelar (naranja con borde) y Actualizar (naranja sólido) */
+html body:not(.dark-mode) .materia-page .modal-box .btn-save {
+  background: #e8821a !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+html body:not(.dark-mode) .materia-page .modal-box .btn-save:hover:not(:disabled) {
+  background: #d4761a !important;
+}
+
+/* ===== ADMIN · modo claro en todas las páginas (solo sin .dark-mode) ===== */
+html body:not(.dark-mode) .admin-body .main-content :is(.mn-search, .mn-field input, .mn-field select, .mn-field .so-select),
+html body:not(.dark-mode) .admin-body .main-content .mn-field select.activo {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .admin-body .main-content .mn-field select.activo { font-weight: 700; }
+html body:not(.dark-mode) .admin-body .main-content :is(.mn-search, .mn-field input, .mn-field select):focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18) !important;
+  outline: none;
+}
+html body:not(.dark-mode) .admin-body .main-content .mn-field > label { color: #000000 !important; }
+html body:not(.dark-mode) .admin-body .main-content :is(.btn-cancel, .mn-btn-cancel) {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background-color 0.15s, color 0.15s;
+}
+html body:not(.dark-mode) .admin-body .main-content :is(.btn-cancel, .mn-btn-cancel):hover:not(:disabled) {
+  background-color: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+html body:not(.dark-mode) .admin-body .main-content .btn-save {
+  background-color: #e8821a !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+html body:not(.dark-mode) .admin-body .main-content .btn-save:hover:not(:disabled) { background-color: #d4761a !important; }
+html body:not(.dark-mode) .admin-body .main-content .tabla-responsive { background: #ffffff; }
+html body:not(.dark-mode) .admin-body .main-content .modal-box,
+html body:not(.dark-mode) .admin-body .main-content .mn-modal-box { background: #ffffff !important; }
+html body:not(.dark-mode) .admin-body .main-content .modal-box > h2 {
+  margin-left: -32px; margin-right: -32px; padding-left: 32px; padding-right: 32px;
+  color: #000000 !important;
+  border-bottom: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .admin-body .main-content .modal-box .form-group label { color: #000000 !important; }
+html body:not(.dark-mode) .admin-body .main-content .modal-box .form-group :is(input, select, textarea, .so-select) {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .admin-body .main-content .modal-box .form-group :is(input, select, textarea)::placeholder { color: #6b6b6b !important; }
+html body:not(.dark-mode) .admin-body .main-content .modal-box .form-group :is(input, select, textarea):focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18) !important;
+  outline: none;
+}
+html body:not(.dark-mode) .admin-body .main-content .modal-box .modal-actions {
+  margin-left: -32px; margin-right: -32px; margin-top: 22px;
+  padding: 20px 32px 0;
+  border-top: 1.5px solid #e8821a;
+}
+
+/* ===== Detalle de Inventario: título + línea ===== */
+.detalle-titulo { margin: 0 -32px 14px; padding: 0 44px 14px 32px; }
+html body:not(.dark-mode) .detalle-titulo { border-bottom: 1.5px solid #e8821a; }
+
+/* ===== Cierre de inventario: modo claro (solo sin .dark-mode) ===== */
+html body:not(.dark-mode) .cierre-page .page-header { border-bottom: 1.5px solid #e8821a !important; }
+html body:not(.dark-mode) .cierre-page :is(label, p, span, div, td)[style*="--text-400"] { color: #000000 !important; }
+html body:not(.dark-mode) .cierre-page .page-header .subtitulo { color: #000000 !important; }
+html body:not(.dark-mode) .cierre-page :is(input:not([type="checkbox"]), select, .so-select, textarea) {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .cierre-page :is(input, select, textarea)::placeholder { color: #6b6b6b !important; }
+html body:not(.dark-mode) .cierre-page :is(input, select, textarea):focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18) !important;
+  outline: none !important;
+}
+html body:not(.dark-mode) .cierre-page .data-table input.input-conteo { width: 110px; padding: 8px 10px; border-radius: 8px !important; }
+html body:not(.dark-mode) .cierre-page input[type="checkbox"] { accent-color: #e8821a; }
+html body:not(.dark-mode) .cierre-page .form-group label { color: #000000 !important; }
+html body:not(.dark-mode) .cierre-page .btn-cancel {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background-color 0.15s, color 0.15s;
+}
+html body:not(.dark-mode) .cierre-page .btn-cancel:hover:not(:disabled) {
+  background-color: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+html body:not(.dark-mode) .cierre-page .tabla-responsive { background: #ffffff; }
+html body:not(.dark-mode) .cierre-page > .modal-actions {
+  border-top: 1.5px solid #e8821a;
+  margin-top: 18px !important;
+  padding-top: 16px;
+}
+html body:not(.dark-mode) .cierre-page div[style*="margin-top: 40px"] {
+  margin-top: 28px !important;
+  padding-top: 24px;
+  border-top: 1.5px solid #e8821a;
+}
+html body:not(.dark-mode) .cierre-page .modal-box { background: #ffffff !important; }
+html body:not(.dark-mode) .cierre-page .modal-box > h2 {
+  margin-left: -32px; margin-right: -32px; padding-left: 32px; padding-right: 32px;
+  color: #000000 !important;
+  border-bottom: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .cierre-page .modal-box .modal-actions {
+  margin-left: -32px; margin-right: -32px; margin-top: 22px !important;
+  padding: 20px 32px 0;
+  border-top: 1.5px solid #e8821a;
+}
+html body:not(.dark-mode) .cierre-page .btn-save {
+  background-color: #e8821a !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+html body:not(.dark-mode) .cierre-page .btn-save:hover:not(:disabled) { background-color: #d4761a !important; }
+
+/* ===== Proveedores: colores del modo claro (solo sin .dark-mode) ===== */
+
+/* Letras de las etiquetas y textos en negro */
+html body:not(.dark-mode) .proveedores-page :is(.form-group > label, .subtitulo, .marca-nombre, .marca-id, .meta-bar span) {
+  color: #000000 !important;
+}
+
+/* Buscador y filtros: fondo blanco, borde naranja, letra negra */
+html body:not(.dark-mode) .proveedores-page :is(.mn-search, .form-group input, .form-group select, .form-group .so-select) {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .proveedores-page :is(.mn-search, .form-group input)::placeholder {
+  color: #6b6b6b !important;
+  opacity: 1;
+}
+html body:not(.dark-mode) .proveedores-page :is(.mn-search, .form-group input, .form-group select):focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18) !important;
+  outline: none;
+}
+
+/* Botones de vista (lista / tarjetas): borde naranja */
+html body:not(.dark-mode) .proveedores-page .mn-view-toggle {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .proveedores-page .mn-view-toggle button {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .proveedores-page .mn-view-toggle button + button {
+  border-left: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .proveedores-page .mn-view-toggle button.active {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Limpiar filtros */
+html body:not(.dark-mode) .proveedores-page .btn-cancel {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background-color 0.15s, color 0.15s;
+}
+html body:not(.dark-mode) .proveedores-page .btn-cancel:hover:not(:disabled) {
+  background-color: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Línea del contador ("4 PROVEEDORES") naranja, de extremo a extremo */
+html body:not(.dark-mode) .proveedores-page .meta-bar::after {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+}
+
+/* Tarjetas: fondo blanco y borde naranja */
+html body:not(.dark-mode) .proveedores-page .marca-card {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .proveedores-page .marca-img-wrap {
+  background: #ffffff !important;
+  border-bottom: 1.5px solid #e8821a !important;
+}
+
+/* Vista de lista: borde y líneas naranjas */
+html body:not(.dark-mode) .proveedores-page .mn-table-wrap {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .proveedores-page .mn-table th,
+html body:not(.dark-mode) .proveedores-page .mn-table td {
+  color: #000000;
+  border-bottom: 1px solid #e8821a !important;
+}
+html body:not(.dark-mode) .proveedores-page .mn-table thead th {
+  background: #ffffff !important;
+  border-bottom: 1.5px solid #e8821a !important;
+}
+
+/* ----- Modal Nuevo / Editar Proveedor ----- */
+
+/* Encabezado: fondo blanco, título negro y línea naranja de extremo a extremo */
+html body:not(.dark-mode) .proveedores-page .modal-box > div[style*="18px 28px"] {
+  background: #ffffff !important;
+  border-bottom: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .proveedores-page .modal-box > div[style*="18px 28px"] h3 {
+  color: #000000 !important;
+}
+
+/* Cuadro "Sin logo": borde naranja */
+html body:not(.dark-mode) .proveedores-page .logo-preview-wrap {
+  background: #ffffff !important;
+  border: 1.5px dashed #e8821a !important;
+}
+html body:not(.dark-mode) .proveedores-page .logo-preview-wrap span {
+  color: #000000 !important;
+}
+
+/* Cancelar y Crear / Actualizar */
+html body:not(.dark-mode) .proveedores-page .modal-box .btn-save {
+  background-color: #e8821a !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+html body:not(.dark-mode) .proveedores-page .modal-box .btn-save:hover:not(:disabled) {
+  background-color: #d4761a !important;
+}
+
+/* Proveedores: botones de vista como estaban originalmente (sin borde) */
+html body:not(.dark-mode) .proveedores-page .mn-view-toggle {
+  background: #ffffff !important;
+  border: none !important;
+}
+html body:not(.dark-mode) .proveedores-page .mn-view-toggle button {
+  background: transparent !important;
+  color: #000000 !important;
+  border: none !important;
+}
+html body:not(.dark-mode) .proveedores-page .mn-view-toggle button + button {
+  border-left: none !important;
+}
+html body:not(.dark-mode) .proveedores-page .mn-view-toggle button.active {
+  background: rgba(47, 138, 240, 0.15) !important;
+  color: var(--info) !important;
+}
+
+/* Tarjetas de proveedor: quitar la línea que divide la imagen del nombre */
+html body:not(.dark-mode) .proveedores-page .marca-img-wrap {
+  border-bottom: none !important;
+}
+
+/* Panel de notificaciones: quitar las líneas que dividen (solo modo claro) */
+html body:not(.dark-mode) .notif-panel .notif-head {
+  border-bottom: none !important;
+}
+html body:not(.dark-mode) .notif-panel .notif-item {
+  border-bottom: none !important;
+}
+html body:not(.dark-mode) .notif-panel .notif-pie {
+  border-top: none !important;
+}
+
+/* ===== Reportes: colores del modo claro (solo sin .dark-mode) ===== */
+
+/* Línea bajo el encabezado, naranja */
+html body:not(.dark-mode) .reportes-page .page-header {
+  border-bottom: 1.5px solid #e8821a !important;
+}
+
+/* Letras grises (Período, Mostrar, Desde, Hasta, subtítulos, "7 días de 90...") en negro */
+html body:not(.dark-mode) .reportes-page [style*="--text-400"],
+html body:not(.dark-mode) .reportes-page [style*="--text-600"],
+html body:not(.dark-mode) .reportes-page .form-group > label,
+html body:not(.dark-mode) .reportes-page .subtitulo,
+html body:not(.dark-mode) .reportes-page .stat-card .stat-label {
+  color: #000000 !important;
+}
+
+/* Bordes y líneas que dividen (tarjeta de filtros, grupo "Mostrar", tarjetas de gráficas): naranja */
+html body:not(.dark-mode) .reportes-page [style*="var(--border)"] {
+  border-color: #e8821a !important;
+}
+
+/* Tarjeta de filtros y demás cajas: fondo blanco, borde un poco más marcado */
+html body:not(.dark-mode) .reportes-page div[style*="var(--surface)"][style*="var(--border)"] {
+  background: #ffffff !important;
+  border-width: 1.5px !important;
+}
+
+/* Botones de período (Hoy, 7 días, 30 días, 90 días) */
+html body:not(.dark-mode) .reportes-page .btn-cancel {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background-color 0.15s, color 0.15s;
+}
+html body:not(.dark-mode) .reportes-page .btn-cancel:hover:not(:disabled) {
+  background-color: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Botones de "Mostrar" (Todo, Ventas, Productos, Compras): el activo naranja con letra blanca */
+html body:not(.dark-mode) .reportes-page [role="group"][aria-label="Mostrar"] {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .reportes-page [role="group"][aria-label="Mostrar"] button[aria-pressed="true"] {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Tarjetas de resumen (Ventas, Ingresos, Ticket promedio...) */
+html body:not(.dark-mode) .reportes-page .stat-card {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .reportes-page .stat-card .stat-val {
+  color: #000000 !important;
+}
+
+/* Botones 7 días / 30 días del análisis: el inactivo con borde naranja */
+html body:not(.dark-mode) .reportes-page button[style*="var(--surface)"] {
+  border-color: #e8821a !important;
+  color: #000000 !important;
+}
+
+/* ===== Reportes · gráficas: modo claro (solo sin .dark-mode) ===== */
+
+/* Tarjeta de la gráfica: borde naranja y más aire arriba para que el título no quede pegado */
+html body:not(.dark-mode) .admin-body .ventas-grafica {
+  background: #ffffff;
+  border: 1.5px solid #e8821a;
+  padding: 26px 24px 20px;
+  gap: 12px;
+}
+html body:not(.dark-mode) .admin-body .ventas-grafica.ventas-grafica-ancha {
+  justify-content: flex-start;
+}
+html body:not(.dark-mode) .admin-body .ventas-grafica-ancha svg {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Letras en negro: título, subtítulo, ejes y valores */
+html body:not(.dark-mode) .admin-body .ventas-grafica h4,
+html body:not(.dark-mode) .admin-body .ventas-grafica-sub,
+html body:not(.dark-mode) .admin-body .ventas-graficas-titulo,
+html body:not(.dark-mode) .admin-body .ventas-graficas-resumen,
+html body:not(.dark-mode) .admin-body .ventas-grafica-vacia,
+html body:not(.dark-mode) .admin-body .ventas-barra-label,
+html body:not(.dark-mode) .admin-body .ventas-barra-valor,
+html body:not(.dark-mode) .admin-body .ventas-leyenda-item,
+html body:not(.dark-mode) .admin-body .ventas-dona-total,
+html body:not(.dark-mode) .admin-body .ventas-dona-detalle {
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .admin-body .ventas-grafica .eje,
+html body:not(.dark-mode) .admin-body .ventas-grafica text {
+  fill: #000000 !important;
+}
+
+/* Líneas de guía de la gráfica en naranja suave */
+html body:not(.dark-mode) .admin-body .ventas-grafica .grid-linea {
+  stroke: #e8821a;
+  stroke-opacity: 0.35;
+}
+
+/* Botones 7 días / 30 días: inactivo con borde naranja, activo naranja sólido */
+html body:not(.dark-mode) .admin-body .ventas-periodo button {
+  background: #ffffff;
+  border: 1.5px solid #e8821a;
+  color: #000000;
+}
+html body:not(.dark-mode) .admin-body .ventas-periodo button.activo {
+  background: #e8821a;
+  border-color: #e8821a;
+  color: #ffffff;
+}
+
+/* Reportes: buscador de "Productos más vendidos" con borde naranja (solo modo claro) */
+html body:not(.dark-mode) .rpt-buscador input {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  color: #000000 !important;
+  padding: 10px 14px;
+  outline: none;
+}
+html body:not(.dark-mode) .rpt-buscador input::placeholder {
+  color: #6b6b6b;
+  opacity: 1;
+}
+html body:not(.dark-mode) .rpt-buscador input:focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18);
+}
+
+/* Reportes: separar la tabla "Productos más vendidos" de "Costo y margen por producto" (solo modo claro) */
+html body:not(.dark-mode) .reportes-page div[style*="padding: 22px"] + div[style*="padding: 20px"] {
+  margin-top: 28px;
+}
+
+/* Copias de seguridad: "Mostrar / Ocultar" en negro, sin fondo ni borde (solo modo claro) */
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle,
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle:hover,
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle:focus,
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle:active {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle:hover {
+  opacity: 0.7;
+}
+
+/* Copias de seguridad: "Mostrar / Ocultar" siempre negro y sin fondo, en todos los estados (solo modo claro) */
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle,
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle:hover,
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle:focus,
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle:focus-visible,
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle:active {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  color: #000000 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle::before,
+html body:not(.dark-mode) .bk-pw .bk-pw-toggle::after {
+  display: none !important;
+}
+
+/* Copias de seguridad: letras en negro (solo modo claro) */
+html body:not(.dark-mode) .bk-desc,
+html body:not(.dark-mode) .bk-modo strong,
+html body:not(.dark-mode) .bk-modo p,
+html body:not(.dark-mode) .bk-warn,
+html body:not(.dark-mode) .bk-check,
+html body:not(.dark-mode) .bk-check small,
+html body:not(.dark-mode) .bk-drive h3,
+html body:not(.dark-mode) .bk-drive p,
+html body:not(.dark-mode) .bk-archivo,
+html body:not(.dark-mode) .bk-archivo span:last-child,
+html body:not(.dark-mode) .bk-badge-no {
+  color: #000000 !important;
+}
+
+/* ===== Usuarios: colores del modo claro (solo sin .dark-mode) ===== */
+
+/* Línea bajo el encabezado */
+html body:not(.dark-mode) .usuarios-page .page-header {
+  border-bottom: 1.5px solid #e8821a !important;
+}
+
+/* Letras en negro: etiquetas de filtros, contador, subtítulo (la tabla no se toca) */
+html body:not(.dark-mode) .usuarios-page :is(.form-group > label, .subtitulo, .meta-bar span),
+html body:not(.dark-mode) .usuarios-page [style*="--text-400"]:not(.data-table *),
+html body:not(.dark-mode) .usuarios-page [style*="--text-600"]:not(.data-table *) {
+  color: #000000 !important;
+}
+
+/* Buscador y filtros: fondo blanco, borde naranja, letra negra */
+html body:not(.dark-mode) .usuarios-page :is(.mn-search, .form-group input, .form-group select, .form-group .so-select) {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .usuarios-page :is(.mn-search, .form-group input)::placeholder {
+  color: #6b6b6b !important;
+  opacity: 1;
+}
+html body:not(.dark-mode) .usuarios-page :is(.mn-search, .form-group input, .form-group select):focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18) !important;
+  outline: none;
+}
+
+/* Cuadros de confirmación: botón Cancelar con borde naranja y letra negra; al pasar, fondo naranja y letra blanca (solo modo claro) */
+html body:not(.dark-mode) .confirm-btn-cancel {
+  background-color: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background-color 0.15s, color 0.15s;
+}
+html body:not(.dark-mode) .confirm-btn-cancel:hover:not(:disabled),
+html body:not(.dark-mode) .confirm-btn-cancel:focus-visible {
+  background-color: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* ===== Centro de ayuda (administrador): fondo blanco y letra negra (solo modo claro) ===== */
+
+/* Fondos blancos */
+html body:not(.dark-mode) .admin-body .ayuda-pagina :is(
+  .ayuda-faq,
+  .ayuda-soporte,
+  .ayuda-panel,
+  .ayuda-articulo,
+  .ayuda-categoria,
+  .ayuda-buscador,
+  .ayuda-pregunta,
+  .ayuda-pregunta-boton,
+  .ayuda-respuesta
+) {
+  background: #ffffff !important;
+}
+
+/* Letras negras */
+html body:not(.dark-mode) .admin-body .ayuda-pagina :is(
+  .ayuda-encabezado h1,
+  .ayuda-encabezado p,
+  .ayuda-buscador input,
+  .ayuda-categoria-texto h3,
+  .ayuda-categoria-texto p,
+  .ayuda-faq-titulo h2,
+  .ayuda-faq-titulo p,
+  .ayuda-pregunta-boton,
+  .ayuda-respuesta,
+  .ayuda-respuesta p,
+  .ayuda-soporte-info h3,
+  .ayuda-soporte-info p,
+  .ayuda-panel h2,
+  .ayuda-articulo h4,
+  .ayuda-articulo p,
+  .ayuda-volver,
+  .ayuda-vacio
+) {
+  color: #000000 !important;
+}
+html body:not(.dark-mode) .admin-body .ayuda-pagina .ayuda-buscador input::placeholder {
+  color: #6b6b6b !important;
+  opacity: 1;
+}
+
+/* "Ver todas las preguntas": borde naranja y letra negra; al pasar, fondo naranja y letra blanca */
+html body:not(.dark-mode) .admin-body .ayuda-pagina .ayuda-boton-borde {
+  background: #ffffff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background-color 0.15s, color 0.15s;
+}
+html body:not(.dark-mode) .admin-body .ayuda-pagina .ayuda-boton-borde:is(:hover, :focus-visible) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Centro de ayuda (administrador): líneas que dividen en naranja (solo modo claro) */
+html body:not(.dark-mode) .admin-body .ayuda-pagina .ayuda-articulo {
+  border-top: 1.5px solid #e8821a !important;
+}
+html body:not(.dark-mode) .admin-body .ayuda-pagina .ayuda-panel {
+  border: 1.5px solid #e8821a !important;
+}
+
+/* Centro de ayuda (administrador): todos los bordes y líneas en naranja, letras en negro (solo modo claro) */
+html body:not(.dark-mode) .admin-body .ayuda-pagina {
+  --ayuda-borde: #e8821a;
+  --ayuda-texto: #000000;
+  --ayuda-texto-suave: #000000;
+}
+
+/* Un poco más gruesos para que se noten */
+html body:not(.dark-mode) .admin-body .ayuda-pagina :is(
+  .ayuda-buscador,
+  .ayuda-categoria,
+  .ayuda-faq,
+  .ayuda-pregunta,
+  .ayuda-soporte,
+  .ayuda-panel
+) {
+  border-width: 1.5px !important;
+}
+html body:not(.dark-mode) .admin-body .ayuda-pagina .ayuda-articulo {
+  border-top-width: 1.5px !important;
+}
+
+/* ===== Copias de seguridad (modo claro): sin la línea que separa los botones del resto ===== */
+html body:not(.dark-mode) .admin-body .main-content .backups-page .modal-box .modal-actions {
+  margin: 28px 0 0;
+  padding: 0;
+  border-top: 0;
 }

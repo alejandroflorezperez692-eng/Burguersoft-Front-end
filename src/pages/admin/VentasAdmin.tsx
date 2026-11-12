@@ -98,7 +98,7 @@ const METODOS_CON_COMPROBANTE = ['Nequi', 'Daviplata', 'Bancolombia', 'Transfere
 const requiereComprobante = (v: Venta): boolean =>
   METODOS_CON_COMPROBANTE.includes((v.metodo_pago ?? '').trim());
 
-// Estados que un mesero puede asignar (el resto queda deshabilitado)
+
 const ESTADOS_MESERO = ['Registrado', 'En preparación', 'Preparado', 'Servido', 'Cancelado'];
 
 const toArray = <T,>(v: unknown): T[] =>
@@ -147,9 +147,9 @@ function FiltroDesplegableVentas({ value, onChange, opciones }: {
 
   if (!modoOscuro) {
     return (
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <SelectOscuro value={value} onChange={(event) => onChange(event.target.value)}>
         {opciones.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
-      </select>
+      </SelectOscuro>
     );
   }
 
@@ -201,7 +201,7 @@ function SelectorFechaVentas({ value, onChange, min, max }: {
   min?: string;
   max?: string;
 }) {
-  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
   const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
   const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
@@ -229,17 +229,6 @@ function SelectorFechaVentas({ value, onChange, min, max }: {
     };
   }, [abierto]);
 
-  if (!modoOscuro) {
-    return (
-      <input
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
-  }
 
   const anio = mesVisible.getFullYear();
   const mes = mesVisible.getMonth();
@@ -381,7 +370,7 @@ export default function VentasAdmin() {
 const load = async (silencioso = false) => {
   if (!silencioso) setLoading(true);
 
-  // Se piden a la vez, pero el loader solo espera las ventas
+ 
   const extras = Promise.all([apiClient.get('/productos'), apiClient.get('/promociones')])
     .then(([r2, r3]) => {
       setProductos(toArray<Producto>(r2.data));
@@ -574,7 +563,7 @@ const load = async (silencioso = false) => {
       });
     };
 
-    // Misma lógica del PDF: ventas de mostrador (rol 1) = "Consumidor final"
+    
     const usu = v.usuario;
     const mostrador = Number(usu?.rol_id ?? 0) === 1;
     const nombre = mostrador
@@ -722,7 +711,7 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
     };
     const cerrarAlDesplazarse = (event: Event) => {
       const options = estadoOptionsRefs.current.get(estadoAbiertoId);
-      // El scroll dentro de la propia lista de estados no debe cerrarla.
+    
       if (options && event.target instanceof Node && options.contains(event.target)) return;
       setEstadoAbiertoId(null);
     };
@@ -770,7 +759,7 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
     }
   };
 
-    /* ===== Días, cierre del día e impresión ===== */
+   
   const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
   const esVendida = (v: Venta) => v?.estado === 'Pagado';
   const hoyStr = new Date().toLocaleDateString('en-CA');
@@ -982,11 +971,11 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <div className="cierre-filtros">
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Desde</label>
-                <input type="date" value={cierre.desde} max={cierre.hasta} onChange={(e) => setCierreDesde(e.target.value)} />
+                <SelectorFechaVentas value={cierre.desde} max={cierre.hasta} onChange={setCierreDesde} />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Hasta</label>
-                <input type="date" value={cierre.hasta} min={cierre.desde} onChange={(e) => setCierreHasta(e.target.value)} />
+                <SelectorFechaVentas value={cierre.hasta} min={cierre.desde} onChange={setCierreHasta} />
               </div>
               <p className="cierre-nota">
                 Solo cuenta ventas <b>Pagadas</b>
@@ -1236,7 +1225,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
 
       <div className="search-bar" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         
-        {/* Fila 1: Búsqueda */}
+        
         <div className="mn-search-wrap" style={{ marginBottom: 0 }}>
           <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1252,7 +1241,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           />
         </div>
 
-        {/* Fila 2: Filtros (Carlos) */}
+      
         <div className="ventas-filtros" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
           <div className="form-group ventas-filter-state" style={{ margin: 0 }}>
             <label>Estado</label>
@@ -1306,7 +1295,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           )}
         </div>
 
-        <p style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
+       <p className="contador-lista">
           {filtered.length} de {items.length} ventas
           {hayFiltros && ` · Total filtrado: $${Math.round(totalFiltrado).toLocaleString('es-CO')}`}
         </p>
@@ -1541,6 +1530,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               <span className="vt-estado" data-estado={detalle.estado}>{detalle.estado}</span>
             </div>
 
+            <div className="vt-det-body">
             <section className="vt-det-sec">
               <h4>Cliente</h4>
               <dl className="vt-det-grid">
@@ -1739,6 +1729,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
 
             <div className="modal-actions">
               <button type="button" className="btn-cancel" onClick={() => setDetalleId(null)}>Cerrar</button>
+            </div>
             </div>
           </div>
         </div>

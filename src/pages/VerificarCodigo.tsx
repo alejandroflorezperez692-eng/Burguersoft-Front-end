@@ -21,7 +21,7 @@ export default function VerificarCodigo() {
     return Number.isFinite(g) ? g : 0;
   });
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
-  // Guarda el último código que se envió automáticamente (evita dobles envíos)
+
   const ultimoCodigoAuto = useRef('');
 
   const expulsarAlCorreo = () => {
@@ -33,7 +33,7 @@ export default function VerificarCodigo() {
   };
 
   const dispararAgitado = () => {
-    // Reinicia la animación aunque ya esté activa
+    
     setAgitar(false);
     requestAnimationFrame(() => {
       requestAnimationFrame(() => setAgitar(true));
@@ -44,10 +44,10 @@ export default function VerificarCodigo() {
   const fallarConAnimacion = (mensaje: string) => {
     setError(mensaje);
     dispararAgitado();
-    // Limpia los slots y enfoca el primero para reintentar
+    
     setTimeout(() => {
       setDigitos(['', '', '', '', '', '']);
-      // Permite volver a auto-verificar cuando se reingrese un código
+      
       ultimoCodigoAuto.current = '';
       inputsRef.current[0]?.focus();
     }, 450);
@@ -120,13 +120,12 @@ export default function VerificarCodigo() {
       sessionStorage.setItem(`fallos_${correo}`, '0');
       setExito(true);
       setError('');
-      // replace:true para que el botón Atrás del navegador no vuelva al código
-      // después de verificar (igual que el botón REGRESAR).
+   
       setTimeout(() => navigate('/restablecer-contrasena', { replace: true }), 1400);
     } catch (err) {
       if (isAxiosError(err)) {
         const data = err.response?.data as { message?: string; segundos?: number; expulsar?: boolean } | undefined;
-        // Backend pide expulsar (3er fallo) → al correo + 1 min fijo.
+        
         if (err.response?.status === 429) {
           expulsarAlCorreo();
           return;
@@ -147,8 +146,7 @@ export default function VerificarCodigo() {
     }
   };
 
-  // Verificación automática: apenas se complete el 6º dígito se verifica
-  // el código sin necesidad de presionar el botón.
+  
   const codigoCompleto = digitos.every(Boolean);
   useEffect(() => {
     if (!codigoCompleto || bloqueado || exito) return;
@@ -156,7 +154,7 @@ export default function VerificarCodigo() {
     if (ultimoCodigoAuto.current === codigo) return;
     ultimoCodigoAuto.current = codigo;
     void handleSubmit();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [codigoCompleto]);
 
   return (

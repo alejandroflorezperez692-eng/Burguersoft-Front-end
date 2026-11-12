@@ -313,7 +313,7 @@ const load = async (silencioso = false) => {
   ]);
 
   return (
-    <div className="page-inner">
+    <div className="page-inner usuarios-page">
       <div className="page-header">
         <div>
           <h1>Gestión de Usuarios</h1>
@@ -321,8 +321,9 @@ const load = async (silencioso = false) => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
 
+    
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
             <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
