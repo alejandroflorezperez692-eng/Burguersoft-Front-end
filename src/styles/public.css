@@ -2180,3 +2180,212 @@ body.dark-mode .public-body .mn-modal-overlay .mn-btn-confirm:hover:not(:disable
   background: #d4761a !important;
   box-shadow: 0 8px 24px rgba(232, 130, 26, 0.5);
 }
+
+/* ===== Modal de personalizar producto (clientes): modo claro ===== */
+body:not(.dark-mode) .pers-header { border-bottom: 1.5px solid #e8821a; }
+body:not(.dark-mode) .pers-acc { border-bottom: 1.5px solid #e8821a; }
+body:not(.dark-mode) .pers-pie { border-top: 1.5px solid #e8821a; }
+body:not(.dark-mode) .pers-nota { border: 1.5px solid #e8821a; color: #000000; }
+body:not(.dark-mode) .pers-nota:focus { outline: none; box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18); }
+
+body:not(.dark-mode) .pers-header h3,
+body:not(.dark-mode) .pers-nombre,
+body:not(.dark-mode) .pers-desc,
+body:not(.dark-mode) .pers-acc-top,
+body:not(.dark-mode) .pers-acc-top strong,
+body:not(.dark-mode) .pers-acc-top small,
+body:not(.dark-mode) .pers-tag,
+body:not(.dark-mode) .pers-chev,
+body:not(.dark-mode) .pers-check,
+body:not(.dark-mode) .pers-check span,
+body:not(.dark-mode) .pers-extra,
+body:not(.dark-mode) .pers-extra span,
+body:not(.dark-mode) .pers-mini span,
+body:not(.dark-mode) .pers-mini button,
+body:not(.dark-mode) .pers-qty span,
+body:not(.dark-mode) .pers-qty button {
+  color: #000000;
+}
+
+body:not(.dark-mode) .pers-mini button,
+body:not(.dark-mode) .pers-qty button { border-color: #000000; }
+
+body:not(.dark-mode) .pers-img { border: 1.5px solid #e8821a; box-sizing: border-box; }
+
+body:not(.dark-mode) .pers-qty button,
+body:not(.dark-mode) .pers-mini button { transition: border-color 0.2s; }
+
+body:not(.dark-mode) .pers-qty button:hover,
+body:not(.dark-mode) .pers-mini button:hover { border-color: #e8821a; }
+
+/* ===== Carrito: selector "Cuándo" (modo claro) ===== */
+body:not(.dark-mode) .public-body .cart-cuando-row { border-bottom: 1.5px solid #e8821a; }
+body:not(.dark-mode) .public-body .cart-cuando-trigger {
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1.5px solid #e8821a;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #000000;
+  line-height: 1.2;
+}
+body:not(.dark-mode) .public-body .cart-cuando-arrow {
+  font-size: 12px;
+  line-height: 1;
+  color: #e8821a;
+  transition: transform 0.2s;
+}
+body:not(.dark-mode) .public-body .cart-cuando-trigger[aria-expanded="true"] .cart-cuando-arrow {
+  transform: rotate(180deg);
+}
+body:not(.dark-mode) .public-body .cart-cuando-lista {
+  border: 1.5px solid #e8821a;
+  border-radius: 10px;
+}
+body:not(.dark-mode) .public-body .cart-cuando-opcion + .cart-cuando-opcion {
+  border-top: 1.5px solid #e8821a;
+}
+body:not(.dark-mode) .public-body .cart-cuando-opcion:hover,
+body:not(.dark-mode) .public-body .cart-cuando-opcion:focus-visible {
+  border-top-color: #e8821a;
+}
+
+/* ===== Carrito: botones − y + (modo claro) ===== */
+body:not(.dark-mode) .public-body .qty-stepper button {
+  color: #000000;
+  border-color: #000000;
+  transition: border-color 0.2s;
+}
+body:not(.dark-mode) .public-body .qty-stepper button:hover {
+  border-color: #e8821a;
+}
+body:not(.dark-mode) .public-body .qty-stepper span { color: #000000; }
+
+/* Modal de perfil (modo claro): bordes naranja en las pestañas */
+body:not(.dark-mode) .mp-tabs-container { border: 1.5px solid #e8821a; }
+body:not(.dark-mode) .mp-tab-icon { border: 1.5px solid #e8821a; }
+
+/* Modal de perfil (modo claro): fondo blanco, bordes y líneas naranja, letras negras */
+body:not(.dark-mode) .mp-panel {
+  background: #ffffff;
+  border-color: #e8821a;
+  scrollbar-color: #e8821a transparent;
+}
+body:not(.dark-mode) .mp-panel::-webkit-scrollbar-thumb { background: #e8821a; }
+body:not(.dark-mode) .mp-head { background: #ffffff; border-bottom: 1.5px solid #e8821a; }
+body:not(.dark-mode) .mp-ava { background: #ffffff; border: 2px solid #e8821a; }
+body:not(.dark-mode) .mp-title,
+body:not(.dark-mode) .mp-sub { color: #000000; }
+body:not(.dark-mode) .mp-tab { color: #000000; }
+body:not(.dark-mode) .mp-tab-icon { color: #000000; }
+body:not(.dark-mode) .mp-tab-active .mp-tab-icon { color: #e8821a; }
+body:not(.dark-mode) .mp-panel input:disabled { background: #ffffff; }
+
+/* Barra de fuerza y requisitos de la contraseña (solo dentro del perfil) */
+body:not(.dark-mode) .mp-panel .barra-contrasena {
+  background: #ffffff;
+  border: 1.5px solid #e8821a;
+  box-sizing: border-box;
+}
+body:not(.dark-mode) .mp-panel .requisito:not(.cumple) { color: #000000; }
+
+/* Modal de perfil (modo claro): fondo blanco, bordes y líneas naranja, letras negras */
+body:not(.dark-mode) .mp-panel {
+  background: #ffffff;
+  border-color: #e8821a;
+  scrollbar-color: #e8821a transparent;
+}
+body:not(.dark-mode) .mp-panel::-webkit-scrollbar-thumb { background: #e8821a; }
+body:not(.dark-mode) .mp-head { background: #ffffff; border-bottom: 1.5px solid #e8821a; }
+body:not(.dark-mode) .mp-ava { background: #ffffff; border: 2px solid #e8821a; }
+body:not(.dark-mode) .mp-title,
+body:not(.dark-mode) .mp-sub { color: #000000; }
+body:not(.dark-mode) .mp-tab { color: #000000; }
+body:not(.dark-mode) .mp-tab-icon { color: #000000; }
+body:not(.dark-mode) .mp-tab-active .mp-tab-icon { color: #e8821a; }
+body:not(.dark-mode) .mp-panel input:disabled { background: #ffffff; }
+
+/* Barra de fuerza y requisitos de la contraseña (solo dentro del perfil) */
+body:not(.dark-mode) .mp-panel .barra-contrasena {
+  box-sizing: border-box;
+  width: 100%;
+  height: 14px;
+  padding: 0;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1.5px solid #e8821a;
+  border-radius: 999px;
+}
+body:not(.dark-mode) .mp-panel .barra-contrasena-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+body:not(.dark-mode) .mp-panel .requisito:not(.cumple) { color: #000000; }
+
+/* Barra de fuerza de la contraseña (perfil, modo claro) */
+body:not(.dark-mode) .mp-panel .barra-contrasena {
+  box-sizing: border-box;
+  width: 100%;
+  height: 14px;
+  padding: 0;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1.5px solid #e8821a;
+  border-radius: 999px;
+}
+body:not(.dark-mode) .mp-panel .barra-contrasena-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+body:not(.dark-mode) .mp-panel .barra-contrasena.rojo .barra-contrasena-fill { background: linear-gradient(90deg, #d93025, #f77e4f) !important; }
+body:not(.dark-mode) .mp-panel .barra-contrasena.amarillo .barra-contrasena-fill { background: linear-gradient(90deg, #f59e0b, #fbbf24) !important; }
+body:not(.dark-mode) .mp-panel .barra-contrasena.verde .barra-contrasena-fill { background: linear-gradient(90deg, #16a34a, #4ade80) !important; }
+
+/* Requisitos de la contraseña */
+body:not(.dark-mode) .mp-panel .requisito:not(.cumple) { color: #000000; }
+
+/* Barra de fuerza de la contraseña (perfil, modo claro): tamaño original */
+body:not(.dark-mode) .mp-panel .barra-contrasena {
+  box-sizing: border-box;
+  width: 100%;
+  height: 8px;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(44, 24, 16, 0.12);
+  border: 0;
+  border-radius: 999px;
+}
+
+/* Menú del usuario (clientes, modo claro): bordes y líneas naranja, hover naranja / rojo */
+body:not(.dark-mode) .public-body .dropdown-menu {
+  border: 1.5px solid #e8821a;
+  padding: 0;
+}
+body:not(.dark-mode) .public-body .dropdown-menu button {
+  border-radius: 0;
+  color: #000000;
+}
+body:not(.dark-mode) .public-body .dropdown-menu button + button {
+  border-top: 1.5px solid #e8821a;
+}
+body:not(.dark-mode) .public-body .dropdown-menu button:hover {
+  background: #e8821a;
+  color: #ffffff;
+}
+body:not(.dark-mode) .public-body .dropdown-menu button.cerrar-sesion {
+  color: #d32f2f;
+}
+body:not(.dark-mode) .public-body .dropdown-menu button.cerrar-sesion:hover {
+  background: #d32f2f;
+  color: #ffffff;
+}
+
+/* Carrito (clientes, modo claro): encabezado con fondo blanco y letra negra */
+body:not(.dark-mode) .public-body .cart-header-title {
+  background: #ffffff;
+  color: #000000;
+}
+body:not(.dark-mode) .public-body .close-cart { color: #000000; }

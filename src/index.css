@@ -1989,3 +1989,23 @@ html:not(#a1) body.dark-mode:not(#a2) :is(input, textarea):-webkit-autofill:focu
   caret-color: #ffffff;
   transition: background-color 600000s 0s, color 600000s 0s;
 }
+
+/* Panel de accesibilidad (modo claro): hover naranja y seleccionado solo con borde naranja */
+body:not(.dark-mode) .acc-btn-tile.activa {
+  background: #ffffff;
+  border: 1.5px solid #e8821a;
+  color: #000000;
+  box-shadow: none;
+}
+body:not(.dark-mode) .acc-btn-tile:hover,
+body:not(.dark-mode) .acc-btn-tile:active,
+body:not(.dark-mode) .acc-btn-tile.activa:hover,
+body:not(.dark-mode) .acc-btn-tile.activa:active {
+  background: #e8821a;
+  border-color: #e8821a;
+  color: #ffffff;
+  transform: none;
+}
+body:not(.dark-mode) .acc-btn-tile:focus:not(:focus-visible) {
+  box-shadow: none !important;
+}

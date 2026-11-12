@@ -520,7 +520,7 @@ export default function BackupsAdmin() {
   );
 
   return (
-    <div className="page-inner">
+    <div className="page-inner backups-page">
       <style>{BACKUPS_CSS}</style>
 
       <div className="page-header">

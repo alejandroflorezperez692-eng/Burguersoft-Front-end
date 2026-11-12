@@ -864,7 +864,7 @@ export default function MenuAdmin() {
         </div>
 
         {!loading && (
-          <p style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
+         <p className="contador-lista">
             {totalVisibles} de {productos.length} productos
           </p>
         )}

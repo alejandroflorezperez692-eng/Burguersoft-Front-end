@@ -727,7 +727,7 @@ export default function ReportesAdmin() {
   const maxMarcaCompra = reporteCompras ? Math.max(1, ...reporteCompras.topMarcas.map((d) => d.valor)) : 1;
 
   return (
-    <div className="page-inner">
+    <div className="page-inner reportes-page">
       <div className="page-header">
         <div>
           <h1>Reportes</h1>

@@ -1,4 +1,3 @@
-
 body:not(.dark-mode) .so-lista {
   position: fixed;
   z-index: 2147483647;
@@ -61,4 +60,27 @@ body:not(.dark-mode) .so-opcion[aria-disabled="true"] {
 body:not(.dark-mode) .so-opcion[aria-disabled="true"]:hover {
   background: #ffffff;
   color: #000000;
+}
+
+
+/* ===== Flecha desplegable en todos los selects (solo modo claro) ===== */
+html body:not(.dark-mode) :is(select.so-select, .admin-body select, .public-body select):not([multiple]):not([size]) {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  padding-right: 38px !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a08060' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 14px center !important;
+  background-size: 14px 14px !important;
+  cursor: pointer;
+}
+
+/* El select del perfil ya trae su flecha propia en el contenedor */
+html body:not(.dark-mode) .mp-select-wrap select {
+  background-image: none !important;
+  padding-right: 13px !important;
+}
+
+html body:not(.dark-mode) select.so-select:disabled {
+  cursor: not-allowed;
 }

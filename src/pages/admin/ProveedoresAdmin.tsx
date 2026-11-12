@@ -199,7 +199,7 @@ const load = async (silencioso = false) => {
   ]);
 
   return (
-    <div className="page-inner">
+    <div className="page-inner proveedores-page">
       <div className="page-header">
         <div>
           <h1>Gestión de Proveedores</h1>

@@ -261,7 +261,7 @@ export default function CierreInventarioAdmin() {
   ]);
 
   return (
-    <div className="page-inner">
+    <div className="page-inner cierre-page">
       <div className="page-header">
         <div>
           <h1>Cierre de inventario</h1>

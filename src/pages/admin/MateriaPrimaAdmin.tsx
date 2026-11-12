@@ -256,7 +256,7 @@ export default function MateriaPrimaAdmin() {
   ]);
 
   return (
-    <div className="page-inner">
+    <div className="page-inner materia-page">
       <div className="page-header">
         <div>
           <h1>Materia Prima</h1>

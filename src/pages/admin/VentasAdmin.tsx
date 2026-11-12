@@ -1295,7 +1295,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           )}
         </div>
 
-        <p style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
+       <p className="contador-lista">
           {filtered.length} de {items.length} ventas
           {hayFiltros && ` · Total filtrado: $${Math.round(totalFiltrado).toLocaleString('es-CO')}`}
         </p>
