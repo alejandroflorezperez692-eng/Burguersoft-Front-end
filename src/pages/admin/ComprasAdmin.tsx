@@ -102,7 +102,6 @@ const UNIDADES = ['Kg', 'Gramos', 'Libras', 'Litros', 'Mililitros', 'Unidades', 
 const soloDigitos = (v: string): string => v.replace(/\D/g, '');
 const miles = (v: string): string => v.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
-const estiloFiltro: CSSProperties = { padding: '8px 12px', minWidth: 0 };
 const estiloEtiqueta: CSSProperties = {
   display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, fontWeight: 600, color: 'var(--text-400)',
 };

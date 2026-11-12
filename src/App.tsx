@@ -9,7 +9,6 @@ import TooltipsGlobales from './components/TooltipsGlobales';
 import ScrollToTop from './components/ScrollToTop';
 import AvisoComprobanteDevuelto from './components/AvisoComprobanteDevuelto';
 import AdminLoading from './components/AdminLoading';
-import DemoAccess from './components/DemoAccess';
 import Accesibilidad from './components/Accesibilidad';
 
 /* Las páginas se cargan "por partes": cada una se descarga solo cuando
@@ -53,7 +52,6 @@ export default function App() {
   return (
     <ToastProvider>
       <TooltipsGlobales />
-      <DemoAccess />
       <AvisoComprobanteDevuelto />
       <Suspense fallback={<AdminLoading compact texto="Cargando" subtexto="Un momento, por favor" />}>
         <Routes>
