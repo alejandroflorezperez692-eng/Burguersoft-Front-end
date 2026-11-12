@@ -20,7 +20,7 @@ interface Usuario {
   rol: { nombre: string } | null;
 }
 
-const OPCIONES_POR_PAGINA = [10, 50, 100, 200, 500];
+const OPCIONES_POR_PAGINA = [15, 50, 100, 200, 500];
 
 const badgeClass = (e: string) =>
   e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
@@ -75,7 +75,7 @@ export default function UsuariosAdmin() {
   const [loading, setLoading] = useState(true);
   const [intentado, setIntentado] = useState(false);
   const [pagina, setPagina] = useState(1);
-  const [porPagina, setPorPagina] = useState(10);
+  const [porPagina, setPorPagina] = useState(15);
 
   // --- Estados de Filtros ---
   const [q, setQ] = useState('');

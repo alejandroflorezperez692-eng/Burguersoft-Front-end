@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
 import MotivoModal from '../components/MotivoModal';
 import ComprobanteModal from '../components/ComprobanteModal';
-import ArreglarPedidoModal from '../components/ArreglarPedidoModal';
 import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import { getEcho } from '../api/echo';
@@ -10,7 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 import '../styles/mis-pedidos.css';
 import { mensajeError } from '../utils/errores';
-
+import { useToast } from '../components/Toast';
 
 type ItemUI = {
   nombre: string;
@@ -316,8 +315,8 @@ export default function MisCompras() {
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoUI | null>(null);
   const [pedidoARechazar, setPedidoARechazar] = useState<PedidoUI | null>(null);
   const [pedidoComprobante, setPedidoComprobante] = useState<PedidoUI | null>(null);
-  const [pedidoAArreglar, setPedidoAArreglar] = useState<PedidoUI | null>(null);
   const [avisoComprobante, setAvisoComprobante] = useState<string | null>(null);
+  const { showToast } = useToast();
   const [pedidos, setPedidos] = useState<PedidoUI[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelandoId, setCancelandoId] = useState<number | null>(null);
@@ -806,11 +805,6 @@ export default function MisCompras() {
 
                 <div className="pedido-foot">
                   {esCancelable && (
-                    <button className="btn-comprobante" onClick={() => setPedidoAArreglar(p)}>
-                      Arreglar pedido
-                    </button>
-                  )}
-                  {esCancelable && (
                     <button
                       className="btn-cancelar-pedido"
                       onClick={() => cancelarPedido(p)}
@@ -859,25 +853,15 @@ export default function MisCompras() {
           onConfirm={(motivo) => void confirmarRechazo(pedidoARechazar, motivo)}
         />
       )}
-      {pedidoAArreglar && (
-        <ArreglarPedidoModal
-          ventaId={pedidoAArreglar.id}
-          numero={pedidoAArreglar.numero_secuencial}
-          onClose={() => setPedidoAArreglar(null)}
-          onAgregado={() => {
-            setPedidoAArreglar(null);
-            void cargar();
-          }}
-        />
-      )}
       {pedidoComprobante && (
         <ComprobanteModal
           ventaId={pedidoComprobante.id}
           numero={pedidoComprobante.numero_secuencial}
           onClose={() => setPedidoComprobante(null)}
           onSubido={() => {
-            setAvisoComprobante(
+            showToast(
               'Comprobante subido. La IA confirmó que es un comprobante de pago y quedó en revisión del administrador.',
+              false,
             );
             void cargar();
           }}

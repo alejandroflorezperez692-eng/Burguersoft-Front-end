@@ -55,15 +55,17 @@ export interface OpcionesReporte {
 
 /* ---------- Constantes y utilidades ---------- */
 const COLOR = 'FFE8821A'; // naranja de la marca
+// Contraseña para desbloquear las hojas (el archivo se entrega de solo lectura)
+const CLAVE_HOJAS = 'burguersoft-reportes';
 const FMT_MONEDA = '"$"#,##0';
 const FMT_FECHA = 'dd/mm/yyyy';
 const FMT_PCT = '0.0%';
-const NO_CONTABLES = ['Cancelado', 'Reembolsada'];
+const CONTABLES = ['Pagado'];
 
 const num = (v: unknown) => Number(v) || 0;
 const dia = (f?: string | null) => String(f ?? '').slice(0, 10);
 const dmy = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
-const noContable = (estado?: string) => NO_CONTABLES.includes(estado ?? '');
+const noContable = (estado?: string) => !CONTABLES.includes(estado ?? '');
 
 // Fecha real de Excel (UTC medianoche para que no se corra un día)
 const aFecha = (iso: string) => {
@@ -103,7 +105,9 @@ const nuevaHoja = (
   const ws = wb.addWorksheet(nombre);
   ws.columns = cols;
   estiloEncabezado(ws.getRow(1));
-  ws.views = [{ state: 'frozen', ySplit: 1 }];
+  ws.views = [{ state: 'frozen', ySplit: 1, showGridLines: false }];
+  ws.properties.tabColor = { argb: COLOR };
+  ws.pageSetup = { orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
   return ws;
 };
 
@@ -148,6 +152,9 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
 
   // El resumen va primero; se llena al final cuando ya se conocen las demás hojas
   const wsRes = wb.addWorksheet('Resumen');
+  wsRes.views = [{ showGridLines: false }];
+  wsRes.properties.tabColor = { argb: COLOR };
+  wsRes.pageSetup = { orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
 
   /* ===================== VENTAS ===================== */
   let ultV = 1;
@@ -182,7 +189,7 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
       r.getCell('fecha').alignment = { horizontal: 'center' };
       r.getCell('total').numFmt = FMT_MONEDA;
       bordeSuave(r);
-      // Canceladas / reembolsadas en gris para distinguirlas
+      // Sin pagar / anuladas en gris para distinguirlas
       if (noContable(v.estado)) {
         r.eachCell((c) => {
           c.font = { italic: true, color: { argb: 'FF999999' } };
@@ -192,9 +199,9 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
 
     ultV = ventas.length + 1;
     const rt = ws.getRow(ultV + 1);
-    rt.getCell(1).value = 'TOTAL (sin canceladas ni reembolsadas)';
+    rt.getCell(1).value = 'TOTAL (solo pedidos pagados)';
     rt.getCell(8).value = {
-      formula: `SUMIFS(H2:H${ultV},F2:F${ultV},"<>Cancelado",F2:F${ultV},"<>Reembolsada")`,
+      formula: `SUMIFS(H2:H${ultV},F2:F${ultV},"Pagado")`,
       result: ingresos,
     };
     rt.getCell(8).numFmt = FMT_MONEDA;
@@ -399,6 +406,7 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
     const b = wsRes.getCell(`B${f}`);
     b.value = valor;
     b.alignment = { horizontal: 'right' };
+    b.font = { bold: true, size: 12 };
     if (fmt) b.numFmt = fmt;
     bordeSuave(wsRes.getRow(f));
     return f++;
@@ -436,9 +444,9 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
   if (hayV) {
     seccion('Ventas');
     const rango = (col: string) => `Ventas!$${col}$2:$${col}$${ultV}`;
-    const crit = `${rango('F')},"<>Cancelado",${rango('F')},"<>Reembolsada"`;
+    const crit = `${rango('F')},"Pagado"`;
 
-    const rCant = kpi('Ventas (sin canceladas ni reembolsadas)', {
+    const rCant = kpi('Ventas pagadas', {
       formula: `COUNTIFS(${crit})`,
       result: validas.length,
     });
@@ -455,7 +463,7 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
       },
       FMT_MONEDA
     );
-    kpi('Canceladas / reembolsadas', {
+    kpi('Sin pagar / anuladas', {
       formula: `COUNTA(${rango('F')})-B${rCant}`,
       result: ventas.length - validas.length,
     });
@@ -562,6 +570,34 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
     const a = kpi('Ingresos por ventas', { formula: `B${refIngresos}`, result: ingresos }, FMT_MONEDA);
     const b = kpi('Invertido en compras', { formula: `B${refCompras}`, result: totalCompras }, FMT_MONEDA);
     kpi('Ventas menos compras', { formula: `B${a}-B${b}`, result: ingresos - totalCompras }, FMT_MONEDA);
+  }
+
+  /* ===================== ACABADO Y PROTECCIÓN ===================== */
+  // Filas alternas en gris muy suave para que se lea mejor (solo hojas de datos)
+  wb.worksheets.forEach((ws) => {
+    if (ws === wsRes) return;
+    ws.eachRow((row, n) => {
+      if (n <= 1 || n % 2 !== 0) return;
+      let tieneFondo = false;
+      row.eachCell((c) => {
+        if (c.fill && c.fill.type === 'pattern') tieneFondo = true;
+      });
+      if (tieneFondo) return;
+      row.eachCell((c) => {
+        c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFAF7F3' } };
+      });
+    });
+  });
+
+  // Solo lectura: se puede ver, seleccionar, copiar y ajustar el ancho de columnas,
+  // pero no editar celdas ni fórmulas.
+  for (const ws of wb.worksheets) {
+    await ws.protect(CLAVE_HOJAS, {
+      selectLockedCells: true,
+      selectUnlockedCells: true,
+      formatColumns: true,
+      formatRows: true,
+    });
   }
 
   /* ===================== DESCARGA ===================== */

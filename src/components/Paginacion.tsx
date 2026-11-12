@@ -1,6 +1,6 @@
 import '../styles/paginacion.css';
 
-export const POR_PAGINA = 10;
+export const POR_PAGINA = 15;
 
 /** Corta la lista en la página pedida. La página se ajusta sola si queda fuera de rango. */
 export function paginar<T>(lista: T[], pagina: number, porPagina: number = POR_PAGINA) {

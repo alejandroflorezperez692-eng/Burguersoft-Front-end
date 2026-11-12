@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import type React from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
@@ -7,6 +6,7 @@ import { useToast } from '../../components/Toast';
 import { useEscape } from '../../hooks/useEscape';
 import '../../styles/nu-admin.css';
 import SelectOscuro from '../../components/SelectOscuro';
+import MateriaPrimaHistorialModal from '../../components/MateriaPrimaHistorialModal';
 
 interface MateriaPrima {
   id: number;
@@ -25,7 +25,6 @@ interface Marca {
 }
 
 const num = (v: unknown): number => Number(v ?? 0) || 0;
-const moneda = (v: number) => `$${v.toLocaleString('es-CO')}`;
 
 type EstadoStock = 'disponible' | 'bajo' | 'agotado';
 
@@ -96,18 +95,6 @@ export default function InventarioAdmin() {
   const { visibles, paginaActual } = paginar(filtered, pagina);
   const esInactivo = (m: MateriaPrima) => m.estado === 'Inactivo';
   const hayFiltros = q !== '' || filtroEstado !== 'todos';
-
-  const filaDetalle = (etiqueta: string, valor: React.ReactNode) => (
-    <div
-      style={{
-        display: 'flex', justifyContent: 'space-between', gap: 16,
-        padding: '10px 0', borderBottom: '1px solid var(--border)',
-      }}
-    >
-      <span style={{ color: 'var(--text-400)', fontWeight: 600 }}>{etiqueta}</span>
-      <span style={{ fontWeight: 700, textAlign: 'right' }}>{valor}</span>
-    </div>
-  );
 
   return (
     <div className="page-inner">
@@ -217,40 +204,11 @@ export default function InventarioAdmin() {
       {!loading && <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} siempre />}
 
       {detalle && (
-        <div className="mn-modal-overlay" onClick={() => setDetalle(null)}>
-          <div
-            className="mn-modal-box"
-            style={{ maxWidth: 460, textAlign: 'left' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button type="button" className="modal-x" onClick={() => setDetalle(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
-            <h3 style={{ margin: '0 0 4px', fontSize: 20 }}>{detalle.nombre}</h3>
-            <div style={{ marginBottom: 14 }}>
-              <span className={`badge ${claseBadge(detalle.cantidad)}`}>{textoEstado(detalle.cantidad)}</span>
-            </div>
-
-            {filaDetalle('Tipo', detalle.tipo || '—')}
-            {filaDetalle(
-              'Cantidad en stock',
-              `${num(detalle.cantidad).toLocaleString('es-CO')}${detalle.unidad_medida ? ` ${detalle.unidad_medida}` : ''}`,
-            )}
-            {filaDetalle('Precio por unidad', moneda(num(detalle.valor)))}
-            {filaDetalle('Precio total', moneda(num(detalle.valor) * num(detalle.cantidad)))}
-            {filaDetalle('Proveedor', marcaNombre(detalle.marca_id) || '—')}
-            {filaDetalle(
-              'Estado',
-              <span className={`badge ${esInactivo(detalle) ? 'badge-danger' : 'badge-success'}`}>
-                {esInactivo(detalle) ? 'Inactivo' : 'Activo'}
-              </span>,
-            )}
-
-            <div className="mn-modal-actions" style={{ marginTop: 22 }}>
-              <button type="button" className="mn-btn-cancel" onClick={() => setDetalle(null)}>
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
+        <MateriaPrimaHistorialModal
+          insumo={detalle}
+          proveedor={marcaNombre(detalle.marca_id)}
+          onClose={() => setDetalle(null)}
+        />
       )}
     </div>
   );

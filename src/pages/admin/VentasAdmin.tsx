@@ -18,6 +18,8 @@ import ComprobanteModal from '../../components/ComprobanteModal';
 import { mensajeDeError } from '../../types/Trazabilidad';
 import SelectOscuro from '../../components/SelectOscuro';
 
+const MOTIVO_DEVOLUCION_DEFECTO =
+  'El comprobante no coincide con el valor del pedido. Por favor sube uno nuevo.';
 
 interface DetalleVenta {
   id: number;
@@ -396,8 +398,26 @@ const load = async (silencioso = false) => {
     });
 
   try {
-    const r1 = await apiClient.get('/ventas');
-    setItems(toArray<Venta>(r1.data));
+    // El backend puede entregar las ventas paginadas (solo 15 en la primera
+    // página). Si es así, se recorren todas las páginas hasta traerlas todas.
+    const { data } = await apiClient.get('/ventas', { params: { per_page: 500 } });
+    let lista: Venta[] = Array.isArray(data) ? data : data?.data ?? [];
+    const ultima = Number(data?.last_page ?? 1);
+    if (!Array.isArray(data) && Number.isFinite(ultima) && ultima > 1) {
+      const vistas = new Set(lista.map((v) => v?.id));
+      for (let p = 2; p <= ultima; p++) {
+        const { data: resp } = await apiClient.get('/ventas', { params: { page: p, per_page: 500 } });
+        const pagina: Venta[] = Array.isArray(resp) ? resp : resp?.data ?? [];
+        if (pagina.length === 0) break;
+        for (const v of pagina) {
+          if (!vistas.has(v?.id)) {
+            vistas.add(v?.id);
+            lista.push(v);
+          }
+        }
+      }
+    }
+    setItems(lista);
   } catch {
     setItems([]);
   } finally {
@@ -413,6 +433,9 @@ const load = async (silencioso = false) => {
     v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
   const textoBusqueda = normalizar(q).trim();
+
+  // Estados que NO cuentan como dinero vendido (no suman en totales ni cierre)
+  const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
 
   const filtered = (items ?? []).filter((v) => {
     if (textoBusqueda) {
@@ -452,7 +475,12 @@ const load = async (silencioso = false) => {
     setPagina(1);
   };
 
-  const totalFiltrado = filtered.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+  // El total filtrado solo suma ventas reales: lo cancelado/reembolsado/rechazado
+  // no cuenta (salvo que el usuario esté filtrando justo por uno de esos estados,
+  // para poder ver cuánto representan).
+  const totalFiltrado = filtered
+    .filter((v) => filtroEstado || !NO_VENDIDOS.includes(v?.estado))
+    .reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
   const { visibles, paginaActual } = paginar(filtered, pagina);
 
@@ -740,7 +768,6 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
   };
 
     /* ===== Días, cierre del día e impresión ===== */
-  const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
   const esVendida = (v: Venta) => v?.estado === 'Pagado';
   const hoyStr = new Date().toLocaleDateString('en-CA');
   const moneda = (n: number) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
@@ -762,7 +789,8 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
     const delDia = filtered.filter((v) => fechaLocal(v?.fecha) === clave);
     const vendidas = delDia.filter(esVendida);
     return {
-      ventas: delDia.length,
+      ventas: vendidas.length,
+      anuladas: delDia.filter((v) => NO_VENDIDOS.includes(v?.estado)).length,
       total: vendidas.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0),
     };
   };
@@ -997,6 +1025,9 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
 
             {cierre.pendientes.n > 0 && (
               <p className="cierre-nota">Pendientes de cobro: {cierre.pendientes.n} ({moneda(cierre.pendientes.total)}), no incluidos en el total.</p>
+            )}
+            {cierre.anuladas > 0 && (
+              <p className="cierre-nota">Canceladas / rechazadas: {cierre.anuladas}, no incluidas en el total.</p>
             )}
 
             <ArqueoCaja />
@@ -1308,7 +1339,10 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   <td colSpan={9}>
                     <div className="vt-dia-bar">
                       <span className="vt-dia-label">{etiquetaDia(clave)}</span>
-                      <span className="vt-dia-info">{r.ventas} ventas · Vendido: <b>{moneda(r.total)}</b></span>
+                      <span className="vt-dia-info">
+                        {r.ventas} ventas · Vendido: <b>{moneda(r.total)}</b>
+                        {r.anuladas > 0 && <> · {r.anuladas} cancelada{r.anuladas > 1 ? 's' : ''} (no suma{r.anuladas > 1 ? 'n' : ''})</>}
+                      </span>
                       <button type="button" className="btn-save vt-dia-btn" onClick={() => abrirCierre(clave, clave)}>
                         Cierre del día
                       </button>
@@ -1543,33 +1577,12 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                         className="btn-cancel"
                         style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                         disabled={procesandoComprobante}
-                        onClick={() => setComprobanteARechazar(detalle)}
+                        onClick={() => void revisarComprobante(detalle, 'Rechazado', MOTIVO_DEVOLUCION_DEFECTO)}
                       >
-                        Devolver comprobante
-                      </button>
-                    )}
-                    {esAdmin && (
-                      <button
-                        type="button"
-                        className="btn-cancel"
-                        onClick={() => setComprobanteASubir(detalle)}
-                      >
-                        Reemplazar comprobante
+                      {procesandoComprobante ? 'Guardando…' : 'Devolver comprobante'}
                       </button>
                     )}
                   </div>
-
-                  {!esAdmin && puedeSubirComprobante(detalle) && (
-                    <div className="vt-comprobante-acciones">
-                      <button
-                        type="button"
-                        className="btn-cancel"
-                        onClick={() => setComprobanteASubir(detalle)}
-                      >
-                        Reemplazar comprobante
-                      </button>
-                    </div>
-                  )}
                 </>
               )}
 

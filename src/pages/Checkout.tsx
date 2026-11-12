@@ -7,7 +7,6 @@ import '../styles/public.css';
 import '../styles/checkout.css';
 import PublicHeader from '../components/PublicHeader';
 import { useToast } from '../components/Toast';
-import ArreglarPedidoModal from '../components/ArreglarPedidoModal';
 import { mensajeError } from '../utils/errores';
 import Footer from '../components/Footer';
 import logoNequi from '../assets/img/nequi.png';
@@ -15,6 +14,8 @@ import logoDaviplata from '../assets/img/daviplata.png';
 import logoBancolombia from '../assets/img/bancolombia.svg';
 import logoEfectivo from '../assets/img/efectivo.svg';
 import logoUbicacion from '../assets/img/Ubicacion.png';
+import { comprimirImagen } from '../utils/comprimirImagen';
+import AdminLoading from '../components/AdminLoading';
 
 const IVA_RATE = 0.08;
 const TIPOS_DOCUMENTO = ['CC', 'CE', 'NIT', 'Pasaporte', 'Otro'];
@@ -512,7 +513,6 @@ export default function Checkout() {
       return null;
     }
   };
-  const [arreglando, setArreglando] = useState(false);
   const [pedidoConfirmado, setPedidoConfirmado] = useState<PedidoConfirmado | null>(leerPedidoGuardado);
 
   // Al salir de /checkout (navegación interna) se olvida el pedido confirmado.
@@ -539,7 +539,7 @@ export default function Checkout() {
     return () => URL.revokeObjectURL(url);
   }, [comprobante]);
 
-  const seleccionarComprobante = (file: File | null) => {
+  const seleccionarComprobante = async (file: File | null) => {
     if (!file) {
       setComprobante(null);
       return;
@@ -552,7 +552,7 @@ export default function Checkout() {
       alertar('El comprobante no puede superar los 8 MB.');
       return;
     }
-    setComprobante(file);
+    setComprobante(await comprimirImagen(file));
   };
 
   // Mapa promoción -> productos (el backend solo acepta producto_id en el
@@ -630,35 +630,6 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
   const [enviando, setEnviando] = useState(false);
 
     const enviandoRef = useRef(false);
-
-  // Reduce la imagen del comprobante: se sube y se verifica mucho más rápido.
-  const comprimirImagen = (archivo: File): Promise<File> =>
-    new Promise((resolve) => {
-      if (archivo.size < 400 * 1024) return resolve(archivo);
-      const url = URL.createObjectURL(archivo);
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 1400;
-        const escala = Math.min(1, MAX / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(img.width * escala);
-        canvas.height = Math.round(img.height * escala);
-        canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height);
-        URL.revokeObjectURL(url);
-        canvas.toBlob(
-          (blob) =>
-            resolve(
-              blob && blob.size < archivo.size
-                ? new File([blob], archivo.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' })
-                : archivo,
-            ),
-          'image/jpeg',
-          0.85,
-        );
-      };
-      img.onerror = () => { URL.revokeObjectURL(url); resolve(archivo); };
-      img.src = url;
-    });
 
   const subtotal = total / (1 + IVA_RATE);
   const impuestos = total - subtotal;
@@ -738,7 +709,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       form.append('cliente[telefono]', telefono);
 
       if (comprobante) {
-        form.append('comprobante', await comprimirImagen(comprobante));
+        form.append('comprobante', comprobante);
       }
 
       const respuesta = await apiClient.post('/ventas', form, {
@@ -885,12 +856,6 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                   </div>
 
                   <div className="checkout-confirm-acciones">
-                    {pedidoConfirmado.id && (
-                      <button type="button" className="btn-ubicacion" onClick={() => setArreglando(true)}>
-                        Arreglar pedido
-                      </button>
-                    )}
-
                     <button
                       type="button"
                       className="btn-ubicacion"
@@ -1186,7 +1151,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     style={{ display: 'none' }}
-                    onChange={(e) => seleccionarComprobante(e.target.files?.[0] ?? null)}
+                    onChange={(e) => void seleccionarComprobante(e.target.files?.[0] ?? null)}
                   />
 
                   {comprobantePreview ? (
@@ -1244,24 +1209,9 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
         )}
       </div>
       {enviando && (
-        <div className="checkout-cargando" role="status" aria-live="polite">
-          <div className="checkout-cargando-caja">
-            <span className="checkout-spinner" />
-            <strong>{comprobante ? 'Verificando tu comprobante…' : 'Registrando tu pedido…'}</strong>
-            <small>No cierres ni recargues esta página.</small>
-          </div>
-        </div>
-      )}
-      {arreglando && pedidoConfirmado?.id && (
-        <ArreglarPedidoModal
-          ventaId={pedidoConfirmado.id}
-          numero={pedidoConfirmado.numeroCliente ?? pedidoConfirmado.id}
-          onClose={() => setArreglando(false)}
-          onAgregado={(venta) => {
-            setArreglando(false);
-            setPedidoConfirmado((p) => (p ? { ...p, total: Number(venta?.valor_total ?? p.total) } : p));
-            showToastGlobal('Productos agregados a tu pedido.', false);
-          }}
+        <AdminLoading
+          texto={comprobante ? 'Verificando tu comprobante' : 'Registrando tu pedido'}
+          subtexto="No cierres ni recargues esta página."
         />
       )}
       <Footer />

@@ -238,6 +238,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    // Se lee el token ANTES de borrarlo (el cliente lo necesita para avisar al servidor)
+    const token = sessionStorage.getItem('token');
+    // Se avisa al servidor para que anule la llave y nadie pueda reutilizarla.
+    // Si el backend aún no tiene la ruta (o es el modo demo), se ignora el fallo:
+    // el cierre de sesión local nunca debe bloquearse por esto.
+    if (token && token !== 'demo-token-sin-backend') {
+      apiClient.post('/logout').catch(() => {});
+    }
     setLoading(true);
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('user');

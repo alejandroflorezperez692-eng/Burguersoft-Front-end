@@ -432,7 +432,7 @@ export default function ComprasAdmin() {
   const [fMarca, setFMarca] = useState('');
 
   // --- Estados de paginación ---
-  const DIAS_POR_PAGINA = 5;
+  const DIAS_POR_PAGINA = 15;
   const [pagina, setPagina] = useState(1);
 
   const [showForm, setShowForm] = useState(false);

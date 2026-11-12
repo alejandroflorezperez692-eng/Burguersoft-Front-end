@@ -907,12 +907,12 @@ body.dark-mode .admin-body:has(.mn-page) .mn-view-toggle button.active {
   color: #fff;
 }
 .mn-btn-toggle.desactivar {
-  background: #e5e7eb;         /* fondo gris */
-  color: #374151;              /* texto gris oscuro */
-  border: 2px solid #9ca3af;   /* borde gris */
+  background: #6b7280;         /* mismo gris que "Inactivar" en usuarios */
+  color: #fff;
+  border: none;
 }
 .mn-btn-toggle.desactivar:hover {
-  background: #d1d5db;
+  background: #4b5563;
 }
 .mn-btn-toggle.activar { background: #16a34a; color: #fff; }
 body.dark-mode .mn-btn-toggle.desactivar { background: #16a34a; color: #fff; }

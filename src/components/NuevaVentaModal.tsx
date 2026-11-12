@@ -15,7 +15,6 @@ interface PedidoMesa { id: number; estado: string; valor_total: number; items: {
 interface Mesa { numero: number; estado: 'Libre' | 'Ocupada' | 'Por cobrar'; total?: number; pedidos?: PedidoMesa[] }
 type Item = { tipo: 'producto' | 'combo'; id: number; nombre: string; precio: number; img?: string | null; agotado?: boolean; cat: string };
 
-const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS = [
   { v: 'Consumir', t: 'En el local' },
   { v: 'Domicilio', t: 'Domicilio' },
@@ -99,7 +98,8 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const [direccion, setDireccion] = useState('');
   const [telefono, setTelefono] = useState('');
   const [recibeNombre, setRecibeNombre] = useState('');
-  const [metodoPago, setMetodoPago] = useState('Efectivo');
+  // El método de pago va fijo en 'Efectivo': el pago real se confirma al verificar el comprobante
+  const [metodoPago] = useState('Efectivo');
   const [notas, setNotas] = useState('');
   const [buscar, setBuscar] = useState('');
   const [pagina, setPagina] = useState(1);

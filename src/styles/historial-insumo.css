@@ -1,0 +1,43 @@
+.mn-modal-box.hm-box {
+  max-width: 1120px;
+  width: 96%;
+  max-height: 90vh;
+  overflow-y: auto;
+  text-align: left;
+  position: relative;
+}
+.hm-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-right: 44px; flex-wrap: wrap; }
+.hm-titulo { margin: 0 0 6px; font-size: 22px; }
+.hm-badges { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.hm-tipo { font-size: 13px; color: var(--text-400); font-weight: 600; }
+
+.hm-btn-excel {
+  background: #1d7a46; color: #fff; border: 0; border-radius: 12px;
+  padding: 10px 18px; font-weight: 800; font-size: 14px; cursor: pointer;
+}
+.hm-btn-excel:hover:not(:disabled) { filter: brightness(1.08); }
+.hm-btn-excel:disabled { opacity: .55; cursor: not-allowed; }
+
+.hm-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 16px 0 18px; }
+.hm-kpi { background: var(--bg-soft, #f6f4f1); border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+.hm-kpi span { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-400); }
+.hm-kpi strong { font-size: 17px; }
+
+.hm-tabla { max-height: 52vh; overflow: auto; }
+
+/* Una sola tabla, dos bloques: COMPRAS vs CIERRE DE INVENTARIO */
+.hm-vs th.hm-g-periodo { vertical-align: middle; }
+.hm-vs th.hm-g-compras,
+.hm-vs th.hm-g-cierre {
+  text-align: center;
+  letter-spacing: .1em;
+  font-weight: 800;
+}
+.hm-vs th.hm-g-compras { background: #fdebd3; color: #b45f06; }
+.hm-vs th.hm-g-cierre  { background: #dff3e6; color: #1d7a46; }
+.hm-vs .hm-sep { border-left: 2px solid var(--border-strong, #d6d1cc); }
+
+.hm-sub { font-size: 12px; color: var(--text-400); margin-top: 2px; font-weight: 500; }
+.hm-pendiente { text-align: center; color: var(--text-400); font-style: italic; }
+.hm-vacio { text-align: center; padding: 30px; color: var(--text-400); }
+.hm-vs tr.hm-total td { font-weight: 800; background: #fdebd3; }
