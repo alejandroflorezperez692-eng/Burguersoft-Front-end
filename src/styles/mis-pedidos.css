@@ -1,669 +1,1015 @@
-.mis-pedidos-page {
-  --mp-primario: #3d2111;
-  --mp-secundario: #f18921;
-  --mp-alerta: #c3402a;
-  --mp-fondo: #f6f5e4;
-  --mp-border: #e8e0d4;
-  --mp-radius: 14px;
-  font-family: 'Lucida Sans', sans-serif;
-  max-width: 900px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 40px 20px 80px;
-  flex: 1;
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { ChangeEvent, FormEvent, CSSProperties } from 'react';
+import apiClient from '../../api/client';
+import { useToast } from '../../components/Toast';
+import AdminLoading from '../../components/AdminLoading';
+import '../../styles/nu-admin.css';
+import { useEscape } from '../../hooks/useEscape';
+import { useAuth } from '../../hooks/useAuth';
+import { normalizarRol } from '../../utils/roles';
+import { mensajeError as mensajeErrorBase } from '../../utils/errores';
+import { categoriaSinExtras } from '../../utils/categorias';
+import SelectOscuro from '../../components/SelectOscuro';
+
+type Estado = 'Disponible' | 'Agotado';
+
+interface Producto {
+  id: number;
+  nombre: string;
+  valor: number | string;
+  descripcion: string | null;
+  img: string | null;
+  categoria: string;
+  estado: Estado;
+  activo?: boolean;
+  requiere_cocina?: boolean;
+  adiciones?: { id: number; nombre: string; precio: number | string; tipo?: string }[];
 }
 
-.mis-pedidos-header { text-align: left; margin-bottom: 36px; }
-.mis-pedidos-page .mis-pedidos-header h1 {
-  font-family: 'Lato', sans-serif;
-  font-size: 40px;
-  font-weight: 800;
-  line-height: 1 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  color: var(--mp-primario);
-  letter-spacing: 1px;
-}
-.mis-pedidos-page .mis-pedidos-header h1::after {
-  content: '';
-  display: block;
-  width: 75px;
-  height: 5px;
-  margin: 4px 0 0 !important;
-  border-radius: 3px;
-  background: #E8821A;
-}
-.mis-pedidos-header p {
-  font-family: 'Lato', sans-serif;
-  color: #777;
-  margin-top: 16px;
-  font-size: 18px;
-  letter-spacing: 0.5px;
+const CATEGORIAS = [
+  'Hamburguesa', 'Perros Caliente', 'Salchipapa', 'Fritos',
+  'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
+];
+
+const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Agotado'];
+
+const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '', requiere_cocina: true };
+type CampoTexto = Exclude<keyof typeof emptyForm, 'requiere_cocina'>;
+
+const MAX_ADICIONES = 30;
+const MAX_QUITAR = 10;
+const MAX_PRECIO_ADICION = 50000;
+type FilaAdicion = { id?: number; nombre: string; precio: string; tipo: 'adicion' | 'quitar' };
+const miles = (v: string) => (v === '' ? '' : Number(v).toLocaleString('es-CO'));
+
+function MnFormSelect({
+  id,
+  label,
+  value,
+  onChange,
+  options,
+  style,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { value: string; label: string }[];
+  style?: CSSProperties;
+}) {
+  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [abierto, setAbierto] = useState(false);
+  const contenedorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setModoOscuro(document.body.classList.contains('dark-mode'));
+    });
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!abierto) return;
+    const cerrarFuera = (event: MouseEvent) => {
+      if (!contenedorRef.current?.contains(event.target as Node)) setAbierto(false);
+    };
+    const cerrarEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAbierto(false);
+    };
+    document.addEventListener('mousedown', cerrarFuera);
+    document.addEventListener('keydown', cerrarEscape);
+    return () => {
+      document.removeEventListener('mousedown', cerrarFuera);
+      document.removeEventListener('keydown', cerrarEscape);
+    };
+  }, [abierto]);
+
+  if (!modoOscuro) {
+    return (
+      <SelectOscuro id={id} value={value} onChange={(event) => onChange(event.target.value)} style={style}>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>{option.label}</option>
+        ))}
+      </SelectOscuro>
+    );
+  }
+
+  const seleccionada = options.find((option) => option.value === value);
+  return (
+    <div className="mn-form-select" ref={contenedorRef}>
+      <button
+        type="button"
+        id={id}
+        className="mn-form-select-trigger"
+        style={style}
+        aria-label={label}
+        aria-haspopup="listbox"
+        aria-expanded={abierto}
+        aria-controls={`${id}-options`}
+        onClick={() => setAbierto((actual) => !actual)}
+      >
+        <span>{seleccionada?.label ?? ''}</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+          <path d="M2 4l4 4 4-4" />
+        </svg>
+      </button>
+      {abierto && (
+        <div id={`${id}-options`} className="mn-form-select-options" role="listbox" aria-label={label}>
+          {options.map((option) => (
+            <button
+              type="button"
+              key={option.value}
+              className="mn-form-select-option"
+              role="option"
+              aria-selected={option.value === value}
+              onClick={() => {
+                onChange(option.value);
+                setAbierto(false);
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
-.mis-pedidos-error {
-  background: #fff0ee;
-  border: 1px solid rgba(195, 64, 42, 0.3);
-  color: #c3402a;
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 13px;
-  margin-bottom: 20px;
-  text-align: center;
+const normalizar = (s: unknown) =>
+  String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+// F-035: los productos ya no guardan cantidad propia; el estado es el dato real.
+const estadoVisible = (p: Producto): Estado => (p.estado === 'Agotado' ? 'Agotado' : 'Disponible');
+
+const estadoClase = (e: Estado) => `mn-estado-${e.replace(/ /g, '_')}`;
+
+const mensajeError = (err: unknown, porDefecto: string): string => {
+  const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
+  const primero = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined;
+  const msg = primero || data?.message || porDefecto;
+  if (/23503|foreign key|sale_details|llave for[aá]nea/i.test(msg)) {
+    return 'No se puede eliminar porque tiene ventas registradas. Puedes desactivarlo.';
+  }
+  return mensajeErrorBase(err, porDefecto);
+};
+
+const imgValida = (img: string | null | undefined): boolean =>
+  !!img && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(img);
+
+function CardImg({ img, nombre }: { img: string | null; nombre: string }) {
+  const [error, setError] = useState(false);
+  const [alta, setAlta] = useState(false);
+  if (!imgValida(img) || error) {
+    return <div className="mn-card-noimg">{(nombre || '?').charAt(0).toUpperCase()}</div>;
+  }
+  return (
+    <img
+      className={`mn-card-img${alta ? ' alta' : ''}`}
+      src={img ?? ''}
+      alt={nombre}
+      loading="lazy"
+      decoding="async"
+      onLoad={(e) => {
+        const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+        setAlta(h > 0 && w / h < 0.85);
+      }}
+      onError={() => setError(true)}
+    />
+  );
 }
 
-.pedido-card {
-  background: #fff;
-  border: 2px solid var(--mp-border);
-  border-radius: var(--mp-radius);
-  margin-bottom: 24px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(61, 33, 17, 0.05);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.pedido-card:hover {
-  border-color: var(--mp-secundario);
-  box-shadow: 0 12px 30px rgba(61, 33, 17, 0.1);
-}
+export default function MenuAdmin() {
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [vista, setVista] = useState<'tarjetas' | 'lista'>(() => {
+    try {
+      return localStorage.getItem('menuAdminVista') === 'lista' ? 'lista' : 'tarjetas';
+    } catch {
+      return 'tarjetas';
+    }
+  });
 
-.pedido-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 16px 22px;
-  border-bottom: 1px solid var(--mp-border);
-  background: #fff8ee;
-}
-.pedido-head-left { display: flex; flex-direction: column; gap: 3px; }
-.pedido-num { font-size: 16px; color: var(--mp-secundario); font-weight: 700; }
-.pedido-fecha { font-size: 12px; color: #777; }
-.pedido-metodo {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #7a6855;
-  background: #f5ede0;
-  border-radius: 20px;
-  padding: 5px 12px;
-}
+  const { user } = useAuth();
+  const esAdmin = normalizarRol(user?.role) === 'admin';
 
-.progreso-container { padding: 20px 22px 24px; border-bottom: 1px solid var(--mp-border); background: #fff; }
-.progreso-estado-label { font-size: 15px; color: var(--mp-secundario); font-weight: 700; margin-bottom: 4px; }
-.progreso-estado-label.cancelado { color: var(--mp-alerta); }
-.progreso-tipo { font-size: 12px; color: #888; margin-bottom: 4px; }
+  const [loading, setLoading] = useState(true);
+  const [guardando, setGuardando] = useState(false);
+  const [intentado, setIntentado] = useState(false);
+  const [buscar, setBuscar] = useState('');
 
-.progreso-barra-wrapper { display: flex; align-items: center; margin: 20px 0 8px; position: relative; }
-.progreso-linea-bg {
-  position: absolute; top: 12px; height: 4px; background: #e8e0d4;
-  transform: translateY(-50%); z-index: 0;
-}
-.progreso-linea-fill {
-  position: absolute; top: 12px; height: 4px; background: var(--mp-secundario);
-  transform: translateY(-50%); z-index: 1; transition: width 0.4s ease, left 0.4s ease;
-}
-.progreso-pasos { display: flex; justify-content: space-between; width: 100%; position: relative; z-index: 2; }
-.progreso-paso { display: flex; flex-direction: column; align-items: center; gap: 14px; flex: 1; margin: 0 4px; }
-.paso-circulo {
-  width: 24px; height: 24px; border-radius: 50%;
-  background: #fff; border: 2px solid #e8e0d4; transition: all 0.3s; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; color: #000000; line-height: 1;
-}
-.paso-circulo.activo {
-  background: var(--mp-secundario); border-color: var(--mp-secundario);
-  box-shadow: 0 0 0 4px rgba(241, 137, 33, 0.25);
-}
-.paso-circulo.completado { background: var(--mp-secundario); border-color: var(--mp-secundario); }
-.paso-label { margin-top: 0; font-size: 11px; color: #888; text-align: center; font-weight: 600; line-height: 1.3; }
-.paso-label.activo, .paso-label.completado { color: var(--mp-primario); }
+  const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('');
+  const [precioMin, setPrecioMin] = useState('');
+  const [precioMax, setPrecioMax] = useState('');
 
-.progreso-cancelado {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 14px; background: rgba(195, 64, 42, 0.05);
-  border: 1px solid rgba(195, 64, 42, 0.2); border-radius: 8px; margin-top: 12px;
-}
-.progreso-cancelado span { color: var(--mp-alerta); font-size: 13px; font-weight: 700; }
+  const [eliminar, setEliminar] = useState<Producto | null>(null);
+  const [cambiarEstado, setCambiarEstado] = useState<Producto | null>(null);
+  const [mostrarForm, setMostrarForm] = useState(false);
 
-/* Datos de contacto y entrega de la compra */
-.pedido-info {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 24px;
-  padding: 16px 22px;
-  background: #fffdf9;
-  border-bottom: 1px solid var(--mp-border);
-}
-.pedido-info-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.pedido-info-full { grid-column: 1 / -1; }
-.pedido-info-label {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: #8a7b6b;
-  font-weight: 700;
-}
-.pedido-info-valor {
-  font-size: 13px;
-  color: var(--mp-primario);
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
-.pedido-info-notas { font-weight: 400; color: #6b5b4b; }
+  const [editId, setEditId] = useState<number | null>(null);
+  const [form, setForm] = useState(emptyForm);
+  const [archivo, setArchivo] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [imgActual, setImgActual] = useState(false);
+  const [adiciones, setAdiciones] = useState<FilaAdicion[]>([]);
 
-.pedido-table { width: 100%; border-collapse: collapse; font-size: 13px; background: #fff; }
-.pedido-table thead tr { background: #fbfbfa; }
-.pedido-table th {
-  padding: 12px 16px; text-align: left; font-size: 11px; text-transform: uppercase;
-  letter-spacing: 0.6px; color: #777; font-weight: 700; border-bottom: 1px solid var(--mp-border);
-}
-.pedido-table th:last-child, .pedido-table td:last-child { text-align: right; }
-.pedido-table td { padding: 12px 16px; border-top: 1px solid #f0ebe3; color: #555; }
-.pedido-table tr:hover td { background: rgba(241, 137, 33, 0.03); }
-.producto-nombre { font-weight: 700; color: var(--mp-primario); }
-.precio-unit { color: #888; font-size: 12px; }
+  const panelRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { showToast } = useToast();
 
-.pedido-foot {
-  display: flex; justify-content: flex-end; align-items: center;
-  padding: 14px 22px; border-top: 1px solid var(--mp-border); gap: 8px; background: #fff8ee;
-  flex-wrap: wrap;
-}
-.pedido-foot .label { color: #666; font-size: 13px; }
-.pedido-foot .total { font-size: 18px; color: var(--mp-alerta); font-weight: bold; }
+  const cargarProductos = useCallback(async () => {
+    try {
+      const r = await apiClient.get<Producto[]>('/productos', { params: { todos: 1 } });
+      setProductos(Array.isArray(r.data) ? r.data : []);
+    } catch {
+      showToast('Error al cargar productos', true);
+      setProductos([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-.btn-cancelar-pedido {
-  margin-right: auto; padding: 8px 18px; background: transparent;
-  border: 2px solid rgba(195, 64, 42, 0.4); color: var(--mp-alerta);
-  border-radius: 8px; font-weight: 700; font-size: 11px; text-transform: uppercase;
-  cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-.btn-cancelar-pedido:hover:not(:disabled) { background: var(--mp-alerta); color: #fff; border-color: var(--mp-alerta); }
-.btn-cancelar-pedido:disabled { opacity: 0.6; cursor: wait; }
+  useEffect(() => {
+    cargarProductos();
+  }, [cargarProductos]);
 
-.pedidos-empty { text-align: center; padding: 80px 20px; color: #888; }
-.pedidos-empty p { font-size: 16px; }
-.pedidos-empty a {
-  display: inline-block; margin-top: 20px; padding: 11px 28px;
-  background: var(--mp-secundario); color: #fff; border-radius: 8px;
-  text-decoration: none; font-weight: 700; transition: background 0.2s;
-}
-.pedidos-empty a:hover { background: var(--mp-primario); }
+  useEffect(() => {
+    try {
+      localStorage.setItem('menuAdminVista', vista);
+    } catch {
 
-@media (max-width: 540px) {
-  .mis-pedidos-page .mis-pedidos-header h1 { font-size: 30px; }
-  .mis-pedidos-header p { font-size: 16px; }
-  .pedido-table th:nth-child(2), .pedido-table td:nth-child(2) { display: none; }
-  .paso-label { font-size: 9px; }
-  .pedido-info { grid-template-columns: 1fr; gap: 10px; }
-}
+    }
+  }, [vista]);
 
-.mis-pedidos-header { animation: fadeDown .5s ease both; }
-.pedido-card { animation: fadeUp .45s ease both; }
-.pedidos-empty { animation: fadeUp .5s ease both; }
+  useEffect(() => {
+    if (!archivo) return;
+    const url = URL.createObjectURL(archivo);
+    setPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [archivo]);
 
-@keyframes fadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeUp   { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+  const hayFiltros = Boolean(buscar || filtroCategoria || filtroEstado || precioMin || precioMax);
 
-/* Modo oscuro: saludo y estado vacío totalmente en blanco */
-body.dark-mode .mis-pedidos-header h1,
-body.dark-mode .mis-pedidos-header p,
-body.dark-mode .pedidos-empty,
-body.dark-mode .pedidos-empty p {
-  color: #ffffff !important;
-}
+  const limpiarFiltros = () => {
+    setBuscar('');
+    setFiltroCategoria('');
+    setFiltroEstado('');
+    setPrecioMin('');
+    setPrecioMax('');
+  };
 
-/* Modo oscuro: botones de acción con los colores de "Guardar cambios" */
-body.dark-mode .pedidos-empty a,
-body.dark-mode .mis-pedidos-page button:not(.btn-cancelar-pedido) {
-  background: #E8821A !important;
-  background-color: #E8821A !important;
-  color: #ffffff !important;
-  border-color: #E8821A !important;
-  box-shadow: 0 6px 20px rgba(232, 130, 26, 0.38) !important;
-  transition: all 0.2s !important;
-}
+  const grupos = useMemo(() => {
+    const fil = normalizar(buscar).trim();
+    const min = precioMin ? Number(precioMin) : null;
+    const max = precioMax ? Number(precioMax) : null;
 
-body.dark-mode .pedidos-empty a:hover,
-body.dark-mode .mis-pedidos-page button:not(.btn-cancelar-pedido):hover:not(:disabled) {
-  background: #d4761a !important;
-  background-color: #d4761a !important;
-  color: #ffffff !important;
-  border-color: #d4761a !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 28px rgba(232, 130, 26, 0.5) !important;
-}
+    const visibles = productos.filter((p) => {
+      if (fil) {
+        const haystack = normalizar(`${p.nombre} ${p.descripcion ?? ''} ${p.categoria ?? ''}`);
+        if (!haystack.includes(fil)) return false;
+      }
 
-/* Modo claro: textos en negro */
-body:not(.dark-mode) .mis-pedidos-page .mis-pedidos-header h1,
-body:not(.dark-mode) .mis-pedidos-page .mis-pedidos-header p,
-body:not(.dark-mode) .mis-pedidos-page .pedidos-empty,
-body:not(.dark-mode) .mis-pedidos-page .pedidos-empty p {
-  color: #000000 !important;
-}
+      if (filtroCategoria) {
+        if (filtroCategoria === 'Otras') {
+          if (CATEGORIAS.includes(p.categoria)) return false;
+        } else if (p.categoria !== filtroCategoria) {
+          return false;
+        }
+      }
 
-/* Modo claro: botones con el color y fondo de "Guardar cambios" */
-body:not(.dark-mode) .mis-pedidos-page .pedidos-empty a,
-body:not(.dark-mode) .mis-pedidos-page button:not(.btn-cancelar-pedido) {
-  background: #E8821A !important;
-  background-color: #E8821A !important;
-  color: #ffffff !important;
-  border-color: #E8821A !important;
-  box-shadow: 0 6px 20px rgba(232, 130, 26, 0.38) !important;
-  transition: all 0.2s !important;
-}
+      if (filtroEstado && estadoVisible(p) !== filtroEstado) return false;
 
-body:not(.dark-mode) .mis-pedidos-page .pedidos-empty a:hover,
-body:not(.dark-mode) .mis-pedidos-page button:not(.btn-cancelar-pedido):hover:not(:disabled) {
-  background: #d4761a !important;
-  background-color: #d4761a !important;
-  color: #ffffff !important;
-  border-color: #d4761a !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 10px 28px rgba(232, 130, 26, 0.5) !important;
-}
+      const valor = Number(p.valor) || 0;
+      if (min !== null && valor < min) return false;
+      if (max !== null && valor > max) return false;
 
-/* Modo oscuro: tarjetas de pedido */
-body.dark-mode .pedido-card {
-  background: #000000;
-  border-color: #333333;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-}
+      return true;
+    });
 
-body.dark-mode .pedido-card:hover {
-  border-color: #E8821A;
-  box-shadow: 0 12px 30px rgba(232, 130, 26, 0.18);
-}
+    const res: [string, Producto[]][] = [];
+    CATEGORIAS.forEach((cat) => {
+      const lista = visibles.filter((p) => p.categoria === cat);
+      if (lista.length) res.push([cat, lista]);
+    });
+    const otras = visibles.filter((p) => !CATEGORIAS.includes(p.categoria));
+    if (otras.length) res.push(['Otras', otras]);
+    return res;
+  }, [productos, buscar, filtroCategoria, filtroEstado, precioMin, precioMax]);
 
-body.dark-mode .pedido-head,
-body.dark-mode .pedido-foot {
-  background: #0d0d0d;
-  border-color: #333333;
-}
+  const totalVisibles = grupos.reduce((acc, [, lista]) => acc + lista.length, 0);
 
-body.dark-mode .progreso-container {
-  background: #000000;
-  border-color: #333333;
-}
+  const alternarActivo = async (p: Producto) => {
+    const nuevo = p.activo === false;
+    try {
+      await apiClient.patch(`/productos/${p.id}/activo`, { activo: nuevo });
+      showToast(nuevo ? 'Producto activado' : 'Producto desactivado');
+      await cargarProductos();
+    } catch (err) {
+      showToast(mensajeError(err, 'No se pudo cambiar el estado del producto'), true);
+    }
+  };
 
-body.dark-mode .pedido-info {
-  background: #080808;
-  border-color: #333333;
-}
+  const confirmarCambioActivo = async () => {
+    if (!cambiarEstado) return;
+    const p = cambiarEstado;
+    setCambiarEstado(null);
+    await alternarActivo(p);
+  };
 
-body.dark-mode .pedido-info-label { color: var(--text-600); }
-body.dark-mode .pedido-info-valor { color: var(--text-900); }
-body.dark-mode .pedido-info-notas { color: var(--text-400); }
+  /* ---------- Formulario ---------- */
+  const setCampo = (campo: CampoTexto) =>
+    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setForm((f) => ({ ...f, [campo]: e.target.value }));
 
-body.dark-mode .pedido-table,
-body.dark-mode .pedido-table thead tr {
-  background: #000000;
-}
+  const elegirArchivo = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    if (!f) return;
+    setArchivo(f);
+    setImgActual(false);
+  };
 
-body.dark-mode .pedido-table th {
-  color: #ffffff;
-  border-color: #333333;
-}
+  const limpiarFormulario = () => {
+    setIntentado(false);
+    setForm(emptyForm);
+    setEditId(null);
+    setArchivo(null);
+    setPreview(null);
+    setImgActual(false);
+    setAdiciones([]);
+    if (fileRef.current) fileRef.current.value = '';
+    setMostrarForm(false);
+  };
 
-body.dark-mode .pedido-table td {
-  color: #e0e0e0;
-  border-color: #222222;
-}
+  const prepararEdicion = (p: Producto) => {
+    setIntentado(false);
+    setEditId(p.id);
+    setForm({
+      nombre: p.nombre,
+      valor: String(Math.round(Number(p.valor))),
+      estado: p.estado === 'Agotado' ? 'Agotado' : 'Disponible',
+      categoria: p.categoria,
+      descripcion: p.descripcion ?? '',
+      requiere_cocina: p.requiere_cocina !== false,
+    });
+    setArchivo(null);
+    setPreview(imgValida(p.img) ? p.img : null);
+    setImgActual(!!p.img);
+    setAdiciones((p.adiciones ?? []).map((a) => ({
+      id: a.id,
+      nombre: a.nombre,
+      precio: String(Math.round(Number(a.precio))),
+      tipo: a.tipo === 'quitar' ? 'quitar' : 'adicion',
+    })));
+    if (fileRef.current) fileRef.current.value = '';
+    setMostrarForm(false);
+  };
 
-body.dark-mode .pedido-table tr:hover td {
-  background: rgba(232, 130, 26, 0.08);
-}
+  const errores = {
+    nombre: !form.nombre.trim(),
+    valor: form.valor === '' || Number(form.valor) <= 0,
+    categoria: !form.categoria,
+    estado: !form.estado,
+    descripcion: !form.descripcion.trim(),
+    imagen: !editId && !archivo,
+  };
 
-body.dark-mode .producto-nombre {
-  color: #ffffff;
-}
+  const rojo = (malo: boolean): CSSProperties | undefined =>
+    intentado && malo
+      ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
+      : undefined;
 
-body.dark-mode .pedido-fecha,
-body.dark-mode .progreso-tipo,
-body.dark-mode .pedido-foot .label,
-body.dark-mode .precio-unit {
-  color: rgba(255, 255, 255, 0.7);
-}
+  const nAdic = adiciones.filter((a) => a.tipo === 'adicion').length;
+  const nQuitar = adiciones.filter((a) => a.tipo === 'quitar').length;
+  const permiteExtras = !!form.categoria && !categoriaSinExtras(form.categoria);
 
-body.dark-mode .pedido-num,
-body.dark-mode .progreso-estado-label {
-  color: #E8821A;
-}
+  const sugeridas = useMemo(() => {
+    const vistos = new Set<string>();
+    const lista: FilaAdicion[] = [];
+    productos.forEach((p) =>
+      (p.adiciones ?? []).forEach((a) => {
+        const tipo = a.tipo === 'quitar' ? 'quitar' : 'adicion';
+        const precio = String(Math.round(Number(a.precio)));
+        const clave = `${tipo}|${a.nombre.toLowerCase()}|${precio}`;
+        if (vistos.has(clave)) return;
+        vistos.add(clave);
+        lista.push({ nombre: a.nombre, precio, tipo });
+      }),
+    );
+    return lista;
+  }, [productos]);
 
-body.dark-mode .paso-label {
-  color: rgba(255, 255, 255, 0.65);
-}
+  const yaEsta = (tipo: string, nombre: string) =>
+    adiciones.some((a) => a.tipo === tipo && a.nombre.trim().toLowerCase() === nombre.toLowerCase());
 
-body.dark-mode .paso-label.activo,
-body.dark-mode .paso-label.completado {
-  color: #ffffff;
-}
+  const sugAdic = sugeridas.filter((s) => s.tipo === 'adicion' && !yaEsta('adicion', s.nombre));
+  const sugQuitar = sugeridas.filter((s) => s.tipo === 'quitar' && !yaEsta('quitar', s.nombre));
 
-body.dark-mode .paso-circulo {
-  background: #000000;
-  border-color: #444444;
-}
+  const guardar = async (e: FormEvent) => {
+    e.preventDefault();
+    setIntentado(true);
+    if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
+    if (form.valor === '' || Number(form.valor) <= 0) { showToast('Ingresa un precio mayor a 0', true); return; }
+    if (!form.categoria) { showToast('Selecciona una categoría', true); return; }
+    if (!form.estado) { showToast('Selecciona un estado', true); return; }
+    if (!form.descripcion.trim()) { showToast('La descripción es obligatoria', true); return; }
+    if (!editId && !archivo) { showToast('La imagen es obligatoria', true); return; }
 
-body.dark-mode .paso-circulo.activo,
-body.dark-mode .paso-circulo.completado {
-  background: #E8821A;
-  border-color: #E8821A;
-  color: #ffffff;
-}
+    const filas = permiteExtras
+      ? adiciones.filter((a) => a.nombre.trim() || (a.tipo === 'adicion' && a.precio !== ''))
+      : [];
+    if (filas.some((a) => !a.nombre.trim() || (a.tipo === 'adicion' && (a.precio === '' || Number(a.precio) <= 0)))) {
+      showToast('Completa el nombre y el precio de cada adición', true);
+      return;
+    }
 
-body.dark-mode .progreso-linea-bg {
-  background: #333333;
-}
+    const fd = new FormData();
+    fd.append('nombre', form.nombre.trim());
+    fd.append('valor', form.valor);
+    fd.append('descripcion', form.descripcion.trim());
+    fd.append('categoria', form.categoria);
+    fd.append('estado', form.estado);
+    fd.append('requiere_cocina', form.requiere_cocina ? '1' : '0');
+    fd.append('adiciones', JSON.stringify(filas.map((a) => ({
+      id: a.id,
+      nombre: a.nombre.trim(),
+      precio: a.tipo === 'quitar' ? 0 : Number(a.precio),
+      tipo: a.tipo,
+    }))));
+    if (archivo) fd.append('imagen', archivo);
 
-body.dark-mode .pedido-metodo {
-  background: #000000 !important;
-  color: #E8821A;
-}
+    setGuardando(true);
+    try {
+      if (editId) {
+        fd.append('_method', 'PUT');
+        await apiClient.post(`/productos/${editId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      } else {
+        await apiClient.post('/productos', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      }
+      showToast(editId ? 'Producto actualizado' : 'Producto agregado');
+      limpiarFormulario();
+      setIntentado(false);
+      await cargarProductos();
+    } catch (err) {
+      showToast(mensajeError(err, 'Error al guardar el producto'), true);
+    } finally {
+      setGuardando(false);
+    }
+  };
 
-body.dark-mode .pedido-foot .total {
-  color: #ff8a65;
-}
+  const confirmarEliminar = async () => {
+    if (!eliminar) return;
+    const p = eliminar;
+    setEliminar(null);
+    try {
+      await apiClient.delete(`/productos/${p.id}`);
+      showToast('Producto eliminado');
+      if (editId === p.id) limpiarFormulario();
+      await cargarProductos();
+    } catch (err) {
+      showToast(mensajeError(err, 'No se pudo eliminar el producto'), true);
+    }
+  };
 
-body.dark-mode .mis-pedidos-error {
-  background: #2a1210;
-  border-color: rgba(255, 138, 101, 0.5);
-  color: #ff8a65;
-}
+  const panelFormulario = (
+    <div className="mn-form-panel" ref={panelRef} style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
+      <div className="mn-form-header">
+        <h3>{editId ? 'Editar producto' : 'Nuevo producto'}</h3>
+        <button type="button" className="mn-form-cerrar" onClick={limpiarFormulario} aria-label="Cerrar">×</button>
+      </div>
 
-body.dark-mode .progreso-cancelado {
-  background: rgba(195, 64, 42, 0.12);
-  border-color: rgba(255, 138, 101, 0.35);
-}
+      <form onSubmit={guardar} noValidate>
+        <div className="mn-form-body">
+          <div className="mn-form-grid">
 
-body.dark-mode .progreso-cancelado span,
-body.dark-mode .progreso-estado-label.cancelado {
-  color: #ff8a65;
-}
+            <div className="mn-form-left">
+              <div className="mn-field">
+                <label htmlFor="mn-nombre">Nombre <span className="mn-req">*</span></label>
+                <input id="mn-nombre" style={rojo(errores.nombre)} type="text" maxLength={40} placeholder="Ej: Hamburguesa Especial"
+                  value={form.nombre} onChange={setCampo('nombre')} />
+              </div>
 
-body.dark-mode .btn-cancelar-pedido {
-  color: #ff8a65;
-  border-color: rgba(255, 138, 101, 0.5);
-}
+              <div className="mn-row-3">
+                <div className="mn-field">
+                  <label htmlFor="mn-precio">Precio <span className="mn-req">*</span></label>
+                  <input id="mn-precio" style={rojo(errores.valor)} type="text" inputMode="numeric" placeholder="$ 0"
+                    value={form.valor ? Number(form.valor).toLocaleString('es-CO') : ''}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, valor: e.target.value.replace(/\D/g, '').slice(0, 9) }))
+                    } />
+                </div>
+                <div className="mn-field">
+                  <label htmlFor="mn-categoria">Categoría <span className="mn-req">*</span></label>
+                  <MnFormSelect
+                    id="mn-categoria"
+                    label="Categoría"
+                    style={rojo(errores.categoria)}
+                    value={form.categoria}
+                    onChange={(value) => setForm((actual) => ({ ...actual, categoria: value }))}
+                    options={[
+                      { value: '', label: 'Selecciona...' },
+                      ...CATEGORIAS.map((categoria) => ({ value: categoria, label: categoria })),
+                    ]}
+                  />
+                </div>
+                <div className="mn-field">
+                  <label htmlFor="mn-estado">Estado <span className="mn-req">*</span></label>
+                  <MnFormSelect
+                    id="mn-estado"
+                    label="Estado"
+                    style={rojo(errores.estado)}
+                    value={form.estado}
+                    onChange={(value) => setForm((actual) => ({ ...actual, estado: value }))}
+                    options={[
+                      { value: '', label: 'Selecciona...' },
+                      { value: 'Disponible', label: 'Disponible' },
+                      { value: 'Agotado', label: 'Agotado' },
+                    ]}
+                  />
+                </div>
+              </div>
 
-body.dark-mode .btn-cancelar-pedido:hover:not(:disabled) {
-  background: #c3402a;
-  border-color: #c3402a;
-  color: #ffffff;
-}
-/* ---- Aviso de comprobante / recarga ---- */
-.mis-pedidos-aviso {
-  background: #eefaf0;
-  border: 1px solid rgba(46, 125, 50, 0.3);
-  color: #2e7d32;
-  border-radius: 10px;
-  padding: 12px 16px;
-  font-size: 13px;
-  margin-bottom: 20px;
-  text-align: center;
-}
+              <div className="mn-field">
+                <label htmlFor="mn-desc">Descripción <span className="mn-req">*</span></label>
+                <textarea id="mn-desc" style={rojo(errores.descripcion)} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
+                  value={form.descripcion} onChange={setCampo('descripcion')} />
+                <span className="mn-counter">{form.descripcion.length}/255</span>
+              </div>
 
-.pedido-comprobante {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin: 0;
-  padding: 12px 22px;
-  border-bottom: 1px solid var(--mp-border);
-  background: #fffdf8;
-}
-.pedido-comprobante-texto { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.pedido-comprobante-texto strong { font-size: 13.5px; color: var(--mp-primario); }
-.pedido-comprobante-texto span { font-size: 12.5px; color: #6b5d4c; line-height: 1.45; }
-.pedido-comprobante-dato { font-size: 11.5px !important; color: #8a735c !important; font-style: italic; }
-.pedido-comprobante-pendiente { background: #fff9ec; }
-.pedido-comprobante-pendiente .pedido-comprobante-texto strong { color: #9a6a00; }
-.pedido-comprobante-aprobado { background: #f1fbf3; }
-.pedido-comprobante-aprobado .pedido-comprobante-texto strong { color: #2e7d32; }
-.pedido-comprobante-rechazado { background: #fff2ef; }
-.pedido-comprobante-rechazado .pedido-comprobante-texto strong { color: #c3402a; }
-.pedido-comprobante-rechazado .pedido-comprobante-texto span { color: #8d3d31; }
-.pedido-comprobante-sin-cargar { background: #fff9ec; }
+              <div className="mn-field">
+                <label htmlFor="mn-cocina" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    id="mn-cocina"
+                    type="checkbox"
+                    checked={form.requiere_cocina}
+                    onChange={(e) => setForm((f) => ({ ...f, requiere_cocina: e.target.checked }))}
+                  />
+                  <span>
+                    Requiere cocina{' '}
+                    <small>(desmárcalo para bebidas frías u otros productos listos)</small>
+                  </span>
+                </label>
+              </div>
 
-.btn-comprobante {
-  flex-shrink: 0;
-  border: 1.5px solid #E8821A;
-  background: #fff;
-  color: #b35c00;
-  border-radius: 8px;
-  padding: 8px 14px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-.btn-comprobante:hover { background: #E8821A; color: #fff; }
+              {permiteExtras && (
+                <>
+                  <div className="mn-field">
+                    <details className="mn-acc">
+                      <summary>
+                        Adiciones con precio <small>(opcional · {nAdic}/{MAX_ADICIONES})</small>
+                      </summary>
+                      <div className="mn-adic-list">
+                        {adiciones.map((a, i) =>
+                          a.tipo !== 'adicion' ? null : (
+                            <div key={i} className="mn-adic-row">
+                              <input
+                                type="text"
+                                maxLength={40}
+                                placeholder="Ej: Tocino"
+                                value={a.nombre}
+                                onChange={(e) =>
+                                  setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
+                                }
+                              />
+                              <div className="mn-adic-precio">
+                                <span>$</span>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  placeholder="2.000"
+                                  value={miles(a.precio)}
+                                  onChange={(e) => {
+                                    const n = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                    const valor = n === '' ? '' : String(Math.min(Number(n), MAX_PRECIO_ADICION));
+                                    setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, precio: valor } : x)));
+                                  }}
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                className="mn-adic-del"
+                                aria-label="Quitar adición"
+                                onClick={() => setAdiciones((l) => l.filter((_, j) => j !== i))}
+                              >
+                                &times;
+                              </button>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                      {nAdic < MAX_ADICIONES && sugAdic.length > 0 && (
+                        <div className="mn-adic-sug">
+                          <span>Guardadas:</span>
+                          {sugAdic.map((s) => (
+                            <button
+                              type="button"
+                              key={`${s.nombre}-${s.precio}`}
+                              className="mn-adic-chip"
+                              onClick={() => setAdiciones((l) => [...l, s])}
+                            >
+                              + {s.nombre} · ${miles(s.precio)}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {nAdic < MAX_ADICIONES ? (
+                        <button
+                          type="button"
+                          className="mn-adic-add"
+                          onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '', tipo: 'adicion' }])}
+                        >
+                          + Nueva adición
+                        </button>
+                      ) : (
+                        <div className="mn-adic-hint">Llegaste al máximo de {MAX_ADICIONES} adiciones.</div>
+                      )}
+                      <div className="mn-adic-hint">Precio máximo por adición: $50.000</div>
+                    </details>
+                  </div>
 
-/* ---- Modal para volver a subir el comprobante ---- */
-.comprobante-modal-adjuntar {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 22px 16px;
-  border: 2px dashed #e8c9a8;
-  border-radius: 12px;
-  background: #fffaf4;
-  color: #7a4a1e;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  text-align: center;
-}
-.comprobante-modal-adjuntar:hover { border-color: #E8821A; background: #fff3e6; }
-.comprobante-modal-adjuntar small { font-size: 11.5px; font-weight: 500; color: #9a8169; }
-.comprobante-modal-preview {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px;
-  border: 1.5px solid #f0dcc4;
-  border-radius: 12px;
-  background: #fffaf4;
-}
-.comprobante-modal-preview img {
-  width: 84px;
-  height: 84px;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #ead6bf;
-  flex-shrink: 0;
-}
-.comprobante-modal-preview strong { display: block; font-size: 13px; color: #3d2111; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.comprobante-modal-preview span { display: block; font-size: 11.5px; color: #8a735c; }
-.comprobante-modal-cambiar { display: inline-block; margin-top: 5px; font-size: 12px; font-weight: 700; color: #c3402a; cursor: pointer; text-decoration: underline; }
-.comprobante-modal-error { margin-top: 10px; padding: 9px 12px; border-radius: 8px; background: #fff0ee; border: 1px solid rgba(195, 64, 42, 0.3); color: #c3402a; font-size: 12.5px; }
+                  <div className="mn-field">
+                    <details className="mn-acc">
+                      <summary>
+                        Personalizaciones <small>(lo que el cliente puede quitar · {nQuitar}/{MAX_QUITAR})</small>
+                      </summary>
+                      <div className="mn-adic-list">
+                        {adiciones.map((a, i) =>
+                          a.tipo !== 'quitar' ? null : (
+                            <div key={i} className="mn-adic-row quitar">
+                              <input
+                                type="text"
+                                maxLength={40}
+                                placeholder="Ej: Salsa blanca (el cliente verá «Sin Salsa blanca»)"
+                                value={a.nombre}
+                                onChange={(e) =>
+                                  setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
+                                }
+                              />
+                              <button
+                                type="button"
+                                className="mn-adic-del"
+                                aria-label="Quitar personalización"
+                                onClick={() => setAdiciones((l) => l.filter((_, j) => j !== i))}
+                              >
+                                &times;
+                              </button>
+                            </div>
+                          ),
+                        )}
+                      </div>
+                      {nQuitar < MAX_QUITAR && sugQuitar.length > 0 && (
+                        <div className="mn-adic-sug">
+                          <span>Guardadas:</span>
+                          {sugQuitar.map((s) => (
+                            <button
+                              type="button"
+                              key={s.nombre}
+                              className="mn-adic-chip"
+                              onClick={() => setAdiciones((l) => [...l, s])}
+                            >
+                              + {s.nombre}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {nQuitar < MAX_QUITAR ? (
+                        <button
+                          type="button"
+                          className="mn-adic-add"
+                          onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '', tipo: 'quitar' }])}
+                        >
+                          + Nueva personalización
+                        </button>
+                      ) : (
+                        <div className="mn-adic-hint">Llegaste al máximo de {MAX_QUITAR} personalizaciones.</div>
+                      )}
+                    </details>
+                  </div>
+                </>
+              )}
+            </div>
 
-body.dark-mode .pedido-comprobante { background: #241d18; border-color: #3a3028; }
-body.dark-mode .pedido-comprobante-texto strong { color: #f5e6d8; }
-body.dark-mode .pedido-comprobante-texto span { color: #cbb8a4; }
-body.dark-mode .comprobante-modal-adjuntar,
-body.dark-mode .comprobante-modal-preview { background: #241d18; border-color: #4a3b2f; color: #f5e6d8; }
+            <div className="mn-form-right">
+              <div className="mn-field">
+                <label>Imagen del producto {!editId && <span className="mn-req">*</span>}</label>
+                <div className={`mn-upload${preview ? ' has-img' : ''}`} style={rojo(errores.imagen)} onClick={() => fileRef.current?.click()}>
+                  {preview ? (
+                    <img className="mn-upload-img" src={preview} alt="Vista previa" />
+                  ) : (
+                    <div className="mn-upload-empty">
+                      <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor"
+                        strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="3" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <path d="M21 15l-5-5L5 21" />
+                      </svg>
+                      <strong>Haz clic para subir una imagen</strong>
+                      <small>PNG, JPG o WEBP · máx. 4 MB</small>
+                    </div>
+                  )}
+                </div>
+                <div className="mn-upload-bar">
+                  <span className="mn-upload-name">
+                    {archivo ? archivo.name : imgActual ? 'Imagen actual' : 'Ningún archivo seleccionado'}
+                  </span>
+                  <button type="button" className="mn-btn-pick" onClick={() => fileRef.current?.click()}>
+                    {preview ? 'Cambiar' : 'Seleccionar'}
+                  </button>
+                </div>
+                <input ref={fileRef} className="mn-file-input" type="file" accept="image/*" onChange={elegirArchivo} />
+              </div>
+            </div>
 
-@media (max-width: 540px) {
-  .pedido-comprobante { flex-direction: column; align-items: flex-start; }
-  .btn-comprobante { width: 100%; }
-}
+          </div>
+        </div>
 
-/* ---- Botón "Ver detalle" y acciones del pie de la tarjeta ---- */
-.pedido-foot-acciones {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-right: auto;
-}
-.pedido-foot-acciones .btn-cancelar-pedido { margin-right: 0; }
-.btn-ver-detalle {
-  padding: 8px 18px;
-  background: #fff;
-  border: 2px solid rgba(232, 130, 26, 0.55);
-  color: #b35c00;
-  border-radius: 8px;
-  font-weight: 700;
-  font-size: 11px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
-}
-.btn-ver-detalle:hover { background: #E8821A; color: #fff; border-color: #E8821A; }
+        <div className="mn-form-footer">
+          <button type="submit" className="mn-btn-submit" disabled={guardando}>
+            {guardando ? 'Guardando…' : editId ? 'Guardar cambios' : 'Guardar Producto'}
+          </button>
+          <button type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
+        </div>
+      </form>
+    </div>
+  );
 
-/* ---- Modal de detalle del pedido (cliente) ---- */
-.mp-detalle-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1300;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(20, 12, 6, 0.55);
-}
-.mp-detalle-modal {
-  position: relative;
-  width: 100%;
-  max-width: 560px;
-  max-height: 90vh;
-  overflow-y: auto;
-  padding: 24px;
-  border-radius: 16px;
-  border: 2px solid var(--mp-border);
-  background: #fff;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
-  animation: mpDetalleIn 0.18s ease-out;
-}
-@keyframes mpDetalleIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.mp-detalle-cerrar {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  width: 32px;
-  height: 32px;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: #8a735c;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-}
-.mp-detalle-cerrar:hover { background: #f6ede2; color: #3d2111; }
-.mp-detalle-titulo {
-  margin: 0 40px 4px 0;
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--mp-primario);
-}
-.mp-detalle-sub { margin: 0 0 16px; font-size: 13px; color: #8a735c; }
+  useEscape([
+    [!!eliminar, () => setEliminar(null)],
+    [!!cambiarEstado, () => setCambiarEstado(null)],
+    [mostrarForm || editId !== null, limpiarFormulario],
+  ]);
 
-.mp-detalle-datos {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 16px;
-  margin: 0 0 18px;
-  padding: 14px 16px;
-  border-radius: 12px;
-  background: #fdf8f1;
-  border: 1px solid var(--mp-border);
-}
-.mp-detalle-datos dt {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #8a735c;
-}
-.mp-detalle-datos dd { margin: 3px 0 0; font-size: 14px; font-weight: 700; color: #3d2111; }
+  return (
+    <div className="page-inner mn-page mn-menu-admin">
+      <div className="page-header">
+        <div>
+          <h1>Gestión del Menú</h1>
+          <p className="subtitulo">Productos disponibles en el menú</p>
+        </div>
+        {esAdmin && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
+          >
+            {mostrarForm ? 'Cancelar' : '+ Agregar producto'}
+          </button>
+        )}
+      </div>
 
-.mp-detalle-comprobante h4 {
-  margin: 0 0 10px;
-  font-size: 13px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #8a735c;
-}
-.mp-detalle-estado {
-  margin: 0 0 4px;
-  font-size: 14px;
-  font-weight: 800;
-  color: #1e7a3c;
-}
-.mp-detalle-estado-pendiente { color: #b35c00; }
-.mp-detalle-estado-rechazado { color: var(--mp-alerta); }
-.mp-detalle-estado-detalle { margin: 0 0 12px; font-size: 12.5px; line-height: 1.5; color: #6b5d4c; }
-.mp-detalle-motivo {
-  margin: 10px 0 0;
-  padding: 9px 12px;
-  border-radius: 8px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--mp-alerta);
-  background: #fff0ee;
-  border: 1px solid rgba(195, 64, 42, 0.3);
-}
-.mp-detalle-dato { margin: 8px 0 0; font-size: 12px; color: #8a735c; }
-.mp-detalle-sin-comprobante {
-  margin: 0;
-  padding: 18px;
-  border-radius: 10px;
-  text-align: center;
-  font-size: 13px;
-  color: #8a735c;
-  background: #faf6f0;
-  border: 1px dashed var(--mp-border);
-}
-.mp-detalle-modal .comprobante-imagen-wrap { margin: 0; }
-.mp-detalle-modal .comprobante-imagen {
-  display: block;
-  width: 100%;
-  max-height: 420px;
-  object-fit: contain;
-  border-radius: 10px;
-  border: 1px solid var(--mp-border);
-  background: #fff;
-}
-.mp-detalle-acciones { display: flex; justify-content: flex-end; margin-top: 18px; }
-.mp-detalle-btn {
-  padding: 10px 22px;
-  border: 0;
-  border-radius: 8px;
-  background: #E8821A;
-  color: #fff;
-  font-weight: 800;
-  font-size: 12.5px;
-  cursor: pointer;
-}
-.mp-detalle-btn:hover { background: #c96f0d; }
+      {(mostrarForm || editId !== null) && (
+        <div className="mn-modal-overlay">
+          <div
+            className="mn-modal-box"
+            style={{ maxWidth: 980, width: '95%', maxHeight: '92vh', overflowY: 'auto', padding: 0, textAlign: 'left' }}
+          >
+            {panelFormulario}
+          </div>
+        </div>
+      )}
 
-body.dark-mode .btn-ver-detalle { background: #0d0d0d; border-color: #E8821A; color: #ffb066; }
-body.dark-mode .btn-ver-detalle:hover { background: #E8821A; color: #000; }
-body.dark-mode .mp-detalle-modal { background: #000; border-color: #333; }
-body.dark-mode .mp-detalle-titulo { color: #fff; }
-body.dark-mode .mp-detalle-sub,
-body.dark-mode .mp-detalle-dato { color: #cbb8a4; }
-body.dark-mode .mp-detalle-datos { background: #0d0d0d; border-color: #333; }
-body.dark-mode .mp-detalle-datos dt { color: #cbb8a4; }
-body.dark-mode .mp-detalle-datos dd { color: #fff; }
-body.dark-mode .mp-detalle-comprobante h4 { color: #cbb8a4; }
-body.dark-mode .mp-detalle-estado-detalle { color: #cbb8a4; }
-body.dark-mode .mp-detalle-sin-comprobante { background: #0d0d0d; border-color: #333; color: #cbb8a4; }
-body.dark-mode .mp-detalle-cerrar { color: #cbb8a4; }
-body.dark-mode .mp-detalle-cerrar:hover { background: #1a1a1a; color: #fff; }
-body.dark-mode .mp-detalle-motivo { background: rgba(195, 64, 42, 0.12); }
+      <div className="mn-toolbar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
 
-@media (max-width: 540px) {
-  .mp-detalle-datos { grid-template-columns: 1fr; }
-  .pedido-foot-acciones { width: 100%; }
-  .btn-ver-detalle { flex: 1; }
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
+            <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <input className="mn-search" type="text" placeholder="Buscar por nombre, descripción o categoría..."
+              value={buscar} onChange={(e) => setBuscar(e.target.value)} />
+          </div>
+
+          <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
+            <button type="button" className={vista === 'lista' ? 'active' : ''}
+              onClick={() => setVista('lista')} title="Vista de lista" data-tooltip="Vista de lista" aria-pressed={vista === 'lista'}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
+              </svg>
+            </button>
+            <button type="button" className={vista === 'tarjetas' ? 'active' : ''}
+              onClick={() => setVista('tarjetas')} title="Vista de tarjetas" data-tooltip="Vista de tarjeta" aria-pressed={vista === 'tarjetas'}>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
+                <rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-categoria">Categoría</label>
+            <SelectOscuro id="mn-f-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+              <option value="">Todas</option>
+              {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+              <option value="Otras">Otras</option>
+            </SelectOscuro>
+          </div>
+
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-estado">Estado</label>
+            <SelectOscuro id="mn-f-estado" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
+              <option value="">Todos</option>
+              {ESTADOS_FILTRO.map((e) => <option key={e} value={e}>{e}</option>)}
+            </SelectOscuro>
+          </div>
+
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-pmin">Precio mínimo</label>
+            <input
+              id="mn-f-pmin"
+              type="text"
+              inputMode="numeric"
+              placeholder="$ 0"
+              style={{ width: 120 }}
+              value={precioMin ? Number(precioMin).toLocaleString('es-CO') : ''}
+              onChange={(e) => setPrecioMin(e.target.value.replace(/\D/g, '').slice(0, 9))}
+            />
+          </div>
+
+          <div className="mn-field" style={{ margin: 0 }}>
+            <label htmlFor="mn-f-pmax">Precio máximo</label>
+            <input
+              id="mn-f-pmax"
+              type="text"
+              inputMode="numeric"
+              placeholder="$ 0"
+              style={{ width: 120 }}
+              value={precioMax ? Number(precioMax).toLocaleString('es-CO') : ''}
+              onChange={(e) => setPrecioMax(e.target.value.replace(/\D/g, '').slice(0, 9))}
+            />
+          </div>
+
+          {hayFiltros && (
+            <button type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>
+              Limpiar filtros
+            </button>
+          )}
+        </div>
+
+        {!loading && (
+         <p className="contador-lista">
+            {totalVisibles} de {productos.length} productos
+          </p>
+        )}
+      </div>
+
+      {loading ? (
+        <AdminLoading texto="Cargando menú" subtexto="Preparando tus productos" />
+      ) : grupos.length === 0 ? (
+        <div className="mn-empty">
+          No se encontraron productos
+          {buscar ? <> para "<strong>{buscar}</strong>"</> : ''}
+          {hayFiltros ? ' con los filtros seleccionados' : ''}.
+        </div>
+      ) : vista === 'lista' ? (
+        <div className="mn-table-wrap">
+          <table className="mn-table">
+            <thead>
+              <tr>
+                <th>Producto</th>
+                <th>Categoría</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Estado</th>
+                <th className="th-acciones">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {grupos.flatMap(([, lista]) => lista).map((p) => {
+                const est = estadoVisible(p);
+                return (
+                  <tr
+                    key={p.id}
+                    className={`${est === 'Agotado' ? 'agotado' : ''}${p.activo === false ? ' inactivo' : ''}`.trim()}
+                  >
+                    <td>
+                      <div className="mn-table-prod">
+                        <div className="mn-table-img"><CardImg img={p.img} nombre={p.nombre} /></div>
+                        <strong>{p.nombre}</strong>
+                      </div>
+                    </td>
+                    <td>{p.categoria}</td>
+                    <td className="mn-table-desc">{p.descripcion || '—'}</td>
+                    <td className="mn-table-price">${Number(p.valor).toLocaleString('es-CO')}</td>
+                    <td>
+                      <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
+                      {p.activo === false && <span className="mn-badge-inactivo">Inactivo</span>}
+                    </td>
+                    <td>
+                      {esAdmin && (
+                        <div className="mn-table-actions">
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+
+                          <button
+                            type="button"
+                            className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
+                            onClick={() => setCambiarEstado(p)}
+                          >
+                            {p.activo === false ? 'Activar' : 'Desactivar'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="mn-container">
+          {grupos.map(([cat, lista]) => (
+            <section key={cat}>
+              <div className="mn-cat-header">
+                <div className="mn-cat-name">{cat}</div>
+                <div className="mn-cat-count">{lista.length} {lista.length === 1 ? 'producto' : 'productos'}</div>
+              </div>
+              <div className="mn-grid">
+                {lista.map((p) => {
+                  const est = estadoVisible(p);
+                  return (
+                    <article
+                      key={p.id}
+                      className={`mn-card${est === 'Agotado' ? ' agotado' : ''}${p.activo === false ? ' inactivo' : ''}`}
+                    >
+                      <div className="mn-card-imgwrap"><CardImg img={p.img} nombre={p.nombre} /></div>
+                      <div className="mn-card-body">
+                        <div className="mn-card-name">{p.nombre}</div>
+                        <div className="mn-card-desc">{p.descripcion || ''}</div>
+                        <div className="mn-card-meta">
+                          <div className="mn-card-price">${Number(p.valor).toLocaleString('es-CO')}</div>
+                          <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
+                          {p.activo === false && <span className="mn-badge-inactivo">Inactivo</span>}
+                        </div>
+                      </div>
+                      {esAdmin && (
+                        <div className="mn-card-actions">
+                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
+                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+
+                          <button
+                            type="button"
+                            className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
+                            onClick={() => setCambiarEstado(p)}
+                          >
+                            {p.activo === false ? 'Activar' : 'Desactivar'}
+                          </button>
+                        </div>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      )}
+
+      {cambiarEstado && (
+        <div className="mn-modal-overlay" onClick={() => setCambiarEstado(null)}>
+          <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
+            <p>
+              {cambiarEstado.activo === false
+                ? `¿Activar "${cambiarEstado.nombre}"? Volverá a aparecer en el menú y se podrá vender.`
+                : `¿Desactivar "${cambiarEstado.nombre}"? Dejará de aparecer en el menú y no se podrá vender.`}
+            </p>
+            <div className="mn-modal-actions">
+              <button type="button" className="mn-btn-cancel" onClick={() => setCambiarEstado(null)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="mn-btn-confirm"
+                style={cambiarEstado.activo === false ? { background: '#16a34a', boxShadow: '0 4px 14px rgba(22,163,74,.3)' } : undefined}
+                onClick={confirmarCambioActivo}
+              >
+                {cambiarEstado.activo === false ? 'Sí, activar' : 'Sí, desactivar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {eliminar && (
+        <div className="mn-modal-overlay" onClick={() => setEliminar(null)}>
+          <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
+            <p>¿Eliminar "{eliminar.nombre}"? Esta acción no se puede deshacer.</p>
+            <div className="mn-modal-actions">
+              <button type="button" className="mn-btn-cancel" onClick={() => setEliminar(null)}>Cancelar</button>
+              <button type="button" className="mn-btn-confirm" onClick={confirmarEliminar}>Sí, eliminar</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

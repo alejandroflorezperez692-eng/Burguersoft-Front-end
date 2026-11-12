@@ -108,6 +108,71 @@
   border-color: #eee;
 }
 
+/* ===== WhatsApp: animación de botón con 2 números ===== */
+.wsp-button {
+  position: relative;
+}
+
+/* Onda que emana del ícono: invita a pulsarlo */
+.wsp-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: wsp-onda 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes wsp-onda {
+  0%   { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.55); }
+  70%  { box-shadow: 0 0 0 14px rgba(37, 211, 102, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+}
+
+/* Insignia con la cantidad de números disponibles */
+.wsp-badge {
+  position: absolute;
+  top: -4px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #25d366;
+  border: 2px solid #fff;
+  color: #fff;
+  font-family: var(--font-cuerpo);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  animation: wsp-salto 2.4s ease-in-out infinite;
+  animation-delay: 0.3s;
+  pointer-events: none;
+}
+
+@keyframes wsp-salto {
+  0%, 100% { transform: scale(1); }
+  12%      { transform: scale(1.25); }
+  24%      { transform: scale(1); }
+}
+
+/* Con el menú de números abierto, la onda descansa */
+.wsp-button[aria-expanded='true']::after {
+  animation: none;
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wsp-button::after,
+  .wsp-badge {
+    animation: none;
+  }
+}
+
 @media screen and (max-width: 768px) {
   .contact-section h1 {
     font-size: 36px;

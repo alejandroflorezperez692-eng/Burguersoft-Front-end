@@ -19,9 +19,9 @@ interface AvisoEmergente {
 }
 
 const CLAVE_LEIDAS = 'notificaciones_leidas';
-const CADA_MS = 60_000; // cada minuto
-const DURACION_AVISO = 3000; // el aviso se queda 3 segundos
-const DURACION_SALIDA = 300; // animación de subida
+const CADA_MS = 60_000; 
+const DURACION_AVISO = 3000; 
+const DURACION_SALIDA = 300; 
 
 const ICONO: Record<string, string> = {
   stock: '📦',
@@ -43,13 +43,13 @@ function leerLeidas(): string[] {
   }
 }
 
-/* ---------- Sonido de campanita (Web Audio, no necesita archivos) ---------- */
+
 let audioCtx: AudioContext | null = null;
 let sonidoPendiente = false;
 let gestoRealizado = false;
 
 function obtenerAudio(): AudioContext | null {
-  // El navegador no permite crear el AudioContext sin un gesto previo del usuario.
+
   if (!gestoRealizado) return null;
   try {
     const AC =
@@ -83,14 +83,14 @@ function reproducir(ctx: AudioContext) {
       osc.stop(t0 + inicio + 0.75);
     });
   } catch {
-    /* si falla el audio, no pasa nada */
+   
   }
 }
 
 function sonarCampanita() {
   const ctx = obtenerAudio();
   if (!ctx) {
-    // Aún no hubo gesto del usuario: el sonido queda pendiente para después.
+
     sonidoPendiente = true;
     return;
   }
@@ -100,7 +100,6 @@ function sonarCampanita() {
     return;
   }
 
-  // Intenta activarlo ahora mismo; si el navegador lo permite, suena al instante
   ctx
     .resume()
     .then(() => {
@@ -157,7 +156,7 @@ export default function NotificacionesBoton() {
       limpiarTimers();
       setAvisoSaliendo(false);
       setAviso({ alerta: nuevas[0], extra: nuevas.length - 1 });
-      // Los avisos informativos (por ejemplo, una bajada de precio) no suenan.
+ 
       if (nuevas.some((a) => a.nivel !== 'info')) sonarCampanita();
       sacudirCampana();
       timers.current.push(window.setTimeout(cerrarAviso, DURACION_AVISO));
@@ -165,7 +164,7 @@ export default function NotificacionesBoton() {
     [cerrarAviso, sacudirCampana],
   );
 
-  // Evita peticiones duplicadas: una sola en vuelo y, salvo que se fuerce, mínimo 10 s entre cargas
+  
   const enCurso = useRef(false);
   const ultimaCarga = useRef(0);
 
@@ -189,7 +188,7 @@ export default function NotificacionesBoton() {
         try {
             localStorage.setItem(CLAVE_LEIDAS, JSON.stringify(vigentes));
         } catch {
-            /* sin almacenamiento */
+            
         }
         }
 
@@ -220,12 +219,12 @@ export default function NotificacionesBoton() {
       cargarRef.current();
     };
     ejecutar();
-    // Con la pestaña oculta no se consulta nada
+
     const id = setInterval(() => {
       if (!document.hidden) ejecutar();
     }, CADA_MS);
 
-    // Al volver a la pestaña solo se consulta si pasó más de 1 minuto desde la última vez
+
     const alVolver = () => {
       if (!document.hidden && Date.now() - ultima > 60_000) ejecutar();
     };
@@ -237,7 +236,7 @@ export default function NotificacionesBoton() {
     };
   }, []);
 
-  // Aviso en vivo por websocket: cuando el backend avisa por Reverb, recargamos al instante.
+
   useEffect(() => {
     const alEvento = () => cargar(true);
     const canal = conectarAlertas(alEvento);
@@ -246,7 +245,7 @@ export default function NotificacionesBoton() {
     };
   }, [cargar]);
 
-  // Desbloquea el audio con el primer clic/tecla y toca el sonido que quedó pendiente
+
   useEffect(() => {
     const eventos = ['pointerdown', 'click', 'keydown', 'touchstart'] as const;
 
@@ -298,7 +297,7 @@ export default function NotificacionesBoton() {
     try {
       localStorage.setItem(CLAVE_LEIDAS, JSON.stringify(todas));
     } catch {
-      /* sin almacenamiento */
+  
     }
   };
 

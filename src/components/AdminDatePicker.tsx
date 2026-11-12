@@ -14,7 +14,7 @@ const fechaISO = (fecha: Date) =>
   `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
 
 export default function AdminDatePicker({ value, onChange, min, max, style, label }: AdminDatePickerProps) {
-  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef<HTMLDivElement>(null);
   const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
@@ -42,19 +42,7 @@ export default function AdminDatePicker({ value, onChange, min, max, style, labe
     };
   }, [abierto]);
 
-  if (!modoOscuro) {
-    return (
-      <input
-        type="date"
-        aria-label={label}
-        value={value}
-        min={min}
-        max={max}
-        style={style}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
-  }
+ 
 
   const anio = mesVisible.getFullYear();
   const mes = mesVisible.getMonth();

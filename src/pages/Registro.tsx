@@ -9,7 +9,7 @@ import { mensajeError } from '../utils/errores';
 
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
-// Tipo para window con reCAPTCHA
+
 declare global {
   interface Window {
     grecaptcha: any;
@@ -84,21 +84,25 @@ export default function Registro() {
     };
   }, [tipoOpen]);
 
-  // Cargar el script de reCAPTCHA de Google y renderizar el widget
+  // Cargar el script de reCAPTCHA v3 de Google
   useEffect(() => {
+    if (!RECAPTCHA_SITE_KEY) {
+      console.warn('VITE_RECAPTCHA_SITE_KEY no está definida en las variables de entorno.');
+      return;
+    }
     if (window.grecaptcha) return;
+
     const script = document.createElement('script');
     script.async = true;
     script.defer = true;
-    script.src = 'https://www.google.com/recaptcha/api.js?render=' + RECAPTCHA_SITE_KEY;
-    const firstScript = document.getElementsByTagName('script')[0];
-    firstScript.parentNode?.insertBefore(script, firstScript);
-    return () => {
-      firstScript.parentNode?.removeChild(script);
-    };
-  }, [RECAPTCHA_SITE_KEY]);
+    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+    document.head.appendChild(script);
 
-  // Renderizar el widget de reCAPTCHA después de cargar el script
+    return () => {
+      script.remove();
+    };
+  }, []);
+  
   useEffect(() => {
     if (!window.grecaptcha) return;
     const container = document.getElementById('recaptcha-container');
@@ -122,7 +126,6 @@ export default function Registro() {
   ];
 
   const cumpleRequisitos = requisitos.every((r) => r.cumple);
-
   const requisitosCumplidos = requisitos.filter((r) => r.cumple).length;
   const claseBarra =
     requisitosCumplidos === requisitos.length
@@ -130,51 +133,63 @@ export default function Registro() {
       : requisitosCumplidos >= 2
         ? 'amarillo'
         : 'rojo';
-  const porcentajeBarra =
-    (requisitosCumplidos / requisitos.length) * 100;
+  const porcentajeBarra = (requisitosCumplidos / requisitos.length) * 100;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-
+    // 1. Validar nombre
     if (!nombre.trim() || nombre.trim().length < 2) {
       showToast('Ingrese un nombre válido (solo letras, mínimo 2 caracteres).', true);
       return;
     }
+    // 2. Validar apellido
     if (!apellido.trim() || apellido.trim().length < 2) {
       showToast('Ingrese un apellido válido (solo letras, mínimo 2 caracteres).', true);
       return;
     }
+    // 3. Validar tipo de documento
     if (!tipoDocumento) {
       showToast('Seleccione el tipo de documento.', true);
       return;
     }
+    // 4. Validar número de documento
     if (!/^[0-9]{6,12}$/.test(numeroDocumento)) {
       showToast('El número de documento debe tener entre 6 y 12 dígitos (solo números).', true);
       return;
     }
+    // 5. Validar correo ANTES de la contraseña
+    if (!correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
+      showToast('Ingrese un correo electrónico válido.', true);
+      return;
+    }
+    // 6. Validar requisitos de contraseña
     if (!cumpleRequisitos) {
       showToast('La contraseña no cumple los requisitos de seguridad.', true);
       return;
     }
+    // 7. Validar coincidencia de contraseñas
     if (password !== confirmPassword) {
       showToast('Las contraseñas no coinciden.', true);
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
-      showToast('Ingrese un correo electrónico válido.', true);
-      return;
-    }
+    // 8. Validar términos y condiciones
     if (!aceptaTerminos) {
       showToast('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.', true);
       return;
     }
 
-    // Obtener token de reCAPTCHA - el widget debe estar renderizado primero
+    // Obtener token de reCAPTCHA v3 de forma segura
     let recaptchaToken = '';
-    if ((window as any).grecaptcha) {
-      recaptchaToken = await (window as any).grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'registro' });
+    try {
+      if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
+        await new Promise((resolve) => window.grecaptcha.ready(resolve));
+        recaptchaToken = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'registro' });
+      }
+    } catch (error) {
+      console.error('Error al ejecutar reCAPTCHA:', error);
     }
+
     sessionStorage.setItem('recaptcha_token', recaptchaToken);
     setModalAbierto(true);
   };
@@ -412,8 +427,6 @@ export default function Registro() {
             </div>
           </div>
 
-
-
           <div style={{ marginTop: 16, display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <input
               type="checkbox"
@@ -426,9 +439,6 @@ export default function Registro() {
               He leído y acepto los <Link to="/terminos" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('terminos'); }}>Términos y Condiciones</Link> y autorizo el tratamiento de mis datos personales conforme a la <Link to="/privacidad" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('privacidad'); }}>Política de Privacidad</Link>.
             </label>
           </div>
-
-          <div id="recaptcha-container" style={{ marginTop: 24 }}></div>
-
 
           <button type="submit" className="boton-registro" disabled={loading}>
             {loading ? 'REGISTRANDO…' : 'Registrarse'}

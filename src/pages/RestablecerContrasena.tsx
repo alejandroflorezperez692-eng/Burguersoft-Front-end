@@ -77,8 +77,7 @@ export default function RestablecerContrasena() {
       window.location.replace('/login');
 
 
-      // Este cambio viene del login: se cierra cualquier sesión previa y el
-      // aviso de éxito se guarda para que el login lo muestre al redirigir.
+     
       sessionStorage.setItem('aviso_login', 'password_ok');
       logout();
       navigate('/login', { replace: true, state: { toast: 'password_ok' } });

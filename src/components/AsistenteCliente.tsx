@@ -98,7 +98,7 @@ export default function AsistenteCliente() {
     return () => window.removeEventListener('keydown', onKey);
   }, [abierto]);
 
-  // Burgi saluda una sola vez por sesión
+ 
   useEffect(() => {
     let yaSaludo = false;
     try { yaSaludo = sessionStorage.getItem('burgiSaludoCliente') === '1'; } catch { /* sin almacenamiento */ }
@@ -175,7 +175,7 @@ export default function AsistenteCliente() {
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', borderRadius: 26.5, overflow: 'hidden', background: 'var(--surface, #fff)' }}>
-            {/* Encabezado */}
+        
             <div
               style={{
                 display: 'flex',
@@ -216,7 +216,7 @@ export default function AsistenteCliente() {
               </button>
             </div>
 
-            {/* Mensajes */}
+           
             <div style={{ flex: 1, overflowY: 'auto', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
               {mensajes.length === 0 && (
                 <>
@@ -307,7 +307,7 @@ export default function AsistenteCliente() {
               <div ref={fin} />
             </div>
 
-            {/* Entrada */}
+           
             <div style={{ display: 'flex', gap: 10, padding: '12px 14px 14px', borderTop: '1px solid var(--border, #f3dcc0)', background: 'var(--surface, #fff)', alignItems: 'flex-end' }}>
               <textarea
                 ref={entrada}
@@ -342,7 +342,7 @@ export default function AsistenteCliente() {
         </div>
       )}
 
-      {/* Globo de saludo */}
+      
       {saludo && !abierto && (
         <div
           className="burgi-globo"
@@ -368,7 +368,7 @@ export default function AsistenteCliente() {
         </div>
       )}
 
-      {/* Botón flotante: orbe de cristal holográfico con Burgi dentro */}
+     
       <div
         className={`burgi-dock${pensando ? ' burgi-piensa' : ''}`}
         style={{ position: 'fixed', right: 22, bottom: 88, zIndex: 250, width: 52, height: 52 }}

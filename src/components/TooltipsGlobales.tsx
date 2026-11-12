@@ -132,22 +132,28 @@ function sinTextoVisible(elemento: Element): boolean {
 function encontrarElemento(target: EventTarget | null): Element | null {
   if (!(target instanceof Element)) return null;
   const accion = target.closest(SELECTOR_ACCIONES);
-  if (accion?.getAttribute('aria-expanded') === 'true') return null;
 
-  // Iconos de contacto
+  const itemSidebar = target.closest('.sidebar-collapsed .sidebar-item > a');
+  if (itemSidebar) return itemSidebar;
+
+
   const cajaContacto = target.closest('.icon-box[data-tooltip]');
   if (cajaContacto) return cajaContacto;
+
+  // Chip de usuario del header (tiene texto, pero igual debe mostrar descripción)
+  const chipUsuario = target.closest('.header-user[data-tooltip]');
+  if (chipUsuario) return chipUsuario;
 
   // Enlace que envuelve un icono o un "+" (ej. el + que lleva al login)
   const enlace = target.closest('a[data-tooltip]');
   if (enlace && sinTextoVisible(enlace)) return enlace;
 
-  // Botones o enlaces SOLO si son de icono (sin texto visible)
+
   if (accion && !(accion instanceof HTMLInputElement)) {
     return sinTextoVisible(accion) ? accion : null;
   }
 
-  // Icono suelto, fuera de cualquier botón o enlace
+
   return target.closest(SELECTOR_ICONOS);
 }
 
@@ -192,7 +198,8 @@ export default function TooltipsGlobales() {
       280,
       aLaDerecha ? espacioDerecha : espacioIzquierda,
     );
-    const posicionLateral = !tarjetaPromocion && (esOpcionMenu || esBotonFlotante
+    const esItemSidebar = elemento.matches('.sidebar-item > a');
+    const posicionLateral = !tarjetaPromocion && (esOpcionMenu || esBotonFlotante || esItemSidebar
       || (esEnlaceSesion && !esSesionHeader))
       && anchoLateral >= 100;
     const posicion = posicionLateral ? 'lado' : 'vertical';

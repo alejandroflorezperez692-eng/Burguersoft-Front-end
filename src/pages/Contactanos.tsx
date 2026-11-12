@@ -27,10 +27,13 @@ export default function Contactanos() {
         <div className="icons-container">
           <div className="icon-box" data-tooltip="WhatsApp">
             <button
-              className="icon-button"
+              className="icon-button wsp-button"
               onClick={() => setShowWspMenu(!showWspMenu)}
+              aria-expanded={showWspMenu}
+              aria-label="WhatsApp: tenemos 2 números disponibles"
             >
               <img src="/estilos/img/whatsapp.png" alt="WhatsApp" />
+              <span className="wsp-badge" aria-hidden="true">2</span>
             </button>
 
             {showWspMenu && (

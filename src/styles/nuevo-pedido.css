@@ -19,7 +19,7 @@
 .np-panel .form-group label{font-size:11px;margin-bottom:5px}
 .np-panel .form-group input,.np-panel .form-group select{padding:10px 12px;height:auto;font-size:14px}
 
-/* Mesas */
+
 .np-mesas{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .np-mesa{border:1.5px solid #eadfce;background:#fff;border-radius:14px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:.15s}
 .np-mesa:hover{border-color:#e8821a;transform:translateY(-1px)}
@@ -32,7 +32,7 @@
 .np-mesa.sel{border-color:#e8821a;background:#fff8ef;box-shadow:0 0 0 3px rgba(232,130,26,.18)}
 .np-mesa.np-nueva{grid-column:1/-1;border-style:dashed;border-color:#e8821a;color:#e8821a;font-weight:800;flex-direction:row;justify-content:center;padding:12px}
 
-/* Cuenta previa de la mesa */
+
 .np-previo{background:#fff8ef;border:1px solid #f3d9b4;border-radius:12px;padding:10px 12px;margin:6px 0}
 .np-previo h5{margin:0 0 8px;font-size:12px;font-weight:800;color:#b85f0a;text-transform:uppercase;letter-spacing:.04em}
 .np-previo-item{font-size:12px;color:#5a4a3a;padding:6px 0;border-top:1px dashed #f0d6ae;display:flex;flex-direction:column;gap:2px}
@@ -40,7 +40,7 @@
 .np-previo-head{font-weight:700;color:#1a0f0a}
 .np-previo-total{display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid #f0d6ae;font-size:13px}
 
-/* Líneas del pedido */
+
 .np-line{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3ebdd;font-size:13px}
 .np-line-name{flex:1;min-width:0;font-weight:600}
 .np-line-price{min-width:64px;text-align:right;font-weight:700}
@@ -49,7 +49,7 @@
 .np-finalizar{width:100%;background:#e8821a;color:#fff;border:0;border-radius:12px;padding:13px;font-weight:800;font-size:15px;cursor:pointer;box-shadow:0 4px 14px rgba(232,130,26,.3)}
 .np-finalizar:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
 
-/* Productos */
+
 .np-tools{display:flex;gap:12px;align-items:center;margin-bottom:14px}
 .np-tools input{flex:1;min-width:0;padding:10px 14px;border:1.5px solid #eadfce;border-radius:12px;background:#fff;font-size:14px}
 .np-cats{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 12px;margin-bottom:8px;flex:none}
@@ -83,9 +83,7 @@
 .np-pg:hover{border-color:#e8821a}
 .np-pg.on{background:#e8821a;border-color:#e8821a;color:#fff}
 
-/* ===== Ajustes: tarjetas compactas, botones pequeños, paginación a la derecha ===== */
 
-/* Vista tarjetas */
 .np-grid{grid-template-columns:repeat(auto-fill,170px);justify-content:start;gap:14px}
 .np-img{aspect-ratio:auto;height:110px}
 .np-info{padding:10px 12px 4px}
@@ -94,7 +92,7 @@
 .np-ctrl{padding:6px 12px 12px}
 .np-add{padding:7px 12px;font-size:13px;border-radius:8px}
 
-/* Vista lista */
+
 .np-list .np-card{padding:4px 0}
 .np-list .np-img{width:56px;height:56px;aspect-ratio:auto;border-radius:10px;margin:6px 0 6px 10px;font-size:22px}
 .np-list .np-img img{border-radius:10px;object-fit:cover}
@@ -102,11 +100,11 @@
 .np-list .np-ctrl{width:auto;padding:0 12px}
 .np-list .np-add{width:auto;padding:6px 16px;font-size:13px}
 
-/* Paginación abajo a la derecha */
+
 .np-pager{justify-content:flex-end;margin-top:10px}
 .np-pg{min-width:34px;height:34px;padding:0 10px;font-size:13px;border-radius:10px}
 
-/* Adicionales por producto */
+
 .np-extras{background:#fff8ef;border:1px solid #f3d9b4;border-radius:10px;padding:8px 10px;margin:2px 0 8px;display:flex;flex-direction:column;gap:6px}
 .np-extras small{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:#b85f0a}
 .np-extra{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:600;color:#1a0f0a}
@@ -114,6 +112,12 @@
 .np-extra .np-step{gap:8px}
 .np-extra .np-step button{width:24px;height:24px;font-size:14px}
 .np-extra .np-step button:disabled{opacity:.35;cursor:not-allowed}
+
+/* Selector de vista lista/tarjetas (versión clara, sin depender de nu-admin) */
+.np-modal .mn-view-toggle{display:inline-flex;border:1.5px solid #eadfce;border-radius:999px;overflow:hidden;background:#fff;flex:none}
+.np-modal .mn-view-toggle button{display:flex;align-items:center;justify-content:center;width:52px;height:40px;border:none;background:transparent;color:#6b4a2b;cursor:pointer;transition:background .2s,color .2s}
+.np-modal .mn-view-toggle button+button{border-left:1.5px solid #eadfce}
+.np-modal .mn-view-toggle button.active{background:rgba(47,138,240,.15);color:#2f8af0}
 
 body.dark-mode .np-modal {
   background: #000;
@@ -265,4 +269,79 @@ body.dark-mode .np-modal :is(.np-scroll, .np-grid, .np-list, .np-cats)::-webkit-
   .np-modal{height:auto;max-height:96vh}
   .np-cols{grid-template-columns:1fr;overflow-y:auto}
   .np-panel{overflow:visible}
+}
+
+
+body:not(.dark-mode) .np-panel .form-group input,
+body:not(.dark-mode) .np-panel .form-group select {
+  background: transparent;
+  color: #000000;
+}
+body:not(.dark-mode) .np-panel .form-group label,
+body:not(.dark-mode) .np-panel .np-sub,
+body:not(.dark-mode) .np-panel .np-hint {
+  color: #000000;
+}
+
+
+body:not(.dark-mode) .np-bottom {
+  border-top: 1.5px solid #e8851a;
+}
+
+
+body:not(.dark-mode) .np-select {
+  background: transparent;
+  border: 1.5px solid #e8851a;
+}
+
+
+body:not(.dark-mode) .np-panel .form-group input,
+body:not(.dark-mode) .np-panel .form-group select {
+  border: 1.5px solid #e8851a;
+}
+body:not(.dark-mode) .np-panel .form-group input:focus,
+body:not(.dark-mode) .np-panel .form-group select:focus {
+  border-color: #e8851a;
+  box-shadow: 0 0 0 3px rgba(232, 133, 26, .18);
+}
+
+
+body:not(.dark-mode) .np-tools input {
+  border: 1.5px solid #e8851a;
+}
+body:not(.dark-mode) .np-tools input:focus {
+  outline: none;
+  border-color: #e8851a;
+  box-shadow: 0 0 0 3px rgba(232, 133, 26, .18);
+}
+
+
+body:not(.dark-mode) .np-modal .mn-view-toggle {
+  border: none;
+}
+body:not(.dark-mode) .np-modal .mn-view-toggle button,
+body:not(.dark-mode) .np-modal .mn-view-toggle button + button {
+  border: none;
+}
+
+
+body:not(.dark-mode) .np-modal .np-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 3px 0;      
+  line-height: 1;
+  background: #ffffff;
+  border: 1.5px solid #e8851a;
+  color: #000000;
+  transition: background .15s, color .15s;
+}
+body:not(.dark-mode) .np-modal .np-close:hover {
+  background: #e8851a;
+  color: #ffffff;
+}
+
+
+body:not(.dark-mode) .np-modal .np-top {
+  border-bottom: 1.5px solid #e8851a;
 }

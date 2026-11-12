@@ -6,7 +6,6 @@ import AdminLoading from '../../components/AdminLoading';
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
 import { exportarReporteExcel } from './exportarReporteExcel';
-import MargenProductos from '../../components/MargenProductos';
 
 interface DetalleVenta {
   id: number;
@@ -54,7 +53,7 @@ interface Compra {
 
 /* ---------- Configuración ---------- */
 const MAX_DIAS = 90;
-const ESTADOS_NO_CONTABLES = ['Cancelado', 'Reembolsada'];
+const ESTADOS_CONTABLES = ['Pagado'];
 
 const PRESETS = [
   { label: 'Hoy', dias: 1 },
@@ -421,7 +420,7 @@ export default function ReportesAdmin() {
       const f = fechaLocal(v?.fecha);
       return f >= desde && f <= hasta;
     });
-    const validas = enRango.filter((v) => !ESTADOS_NO_CONTABLES.includes(v?.estado));
+    const validas = enRango.filter((v) => ESTADOS_CONTABLES.includes(v?.estado));
     const valorDe = (v: Venta) => Number(v?.valor_total) || 0;
 
     const ingresos = validas.reduce((a, v) => a + valorDe(v), 0);
@@ -501,7 +500,7 @@ export default function ReportesAdmin() {
     if (!rangoValido) return null;
 
     const valorDe = (v: Venta) => Number(v?.valor_total) || 0;
-    const contables = items.filter((v) => !ESTADOS_NO_CONTABLES.includes(v?.estado));
+    const contables = items.filter((v) => ESTADOS_CONTABLES.includes(v?.estado));
     const entre = (v: Venta, d: string, h: string) => {
       const f = fechaLocal(v?.fecha);
       return f >= d && f <= h;
@@ -872,7 +871,7 @@ export default function ReportesAdmin() {
                   <span className="stat-val stat-val-dinero" title={moneda(reporte.ticketPromedio)}>{moneda(reporte.ticketPromedio)}</span>
                 </div>
                 <div className="stat-card">
-                  <span className="stat-label">Canceladas / reembolsadas</span>
+                  <span className="stat-label">Sin pagar / anuladas</span>
                   <span className="stat-val">{reporte.noContables}</span>
                 </div>
               </div>
@@ -959,8 +958,6 @@ export default function ReportesAdmin() {
               <PanelProductosVendidos productos={reporte.productos} />
             </>
           )}
-
-            {ver('productos') && <MargenProductos />}
 
           {/* ================= COMPRAS ================= */}
           {ver('compras') && (

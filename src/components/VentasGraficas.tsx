@@ -25,7 +25,7 @@ interface Props {
 }
 
 export default function VentasGraficas({ datos, cargando, error, dias, onCambiarDias }: Props) {
-  // Orden fijo: Ingresos por día (0) siempre primera y grande
+  
   const orden: number[] = [0, 1, 2];
 
   const serie = datos?.por_dia ?? [];

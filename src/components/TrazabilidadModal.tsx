@@ -17,7 +17,7 @@ const fmtDia = (f: string) =>
 const fmtHora = (f: string) =>
   f ? new Date(f).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }) : '';
 
-/** Color del badge según el estado del pedido. */
+
 const claseEstado = (estado: string) => {
   const e = (estado || '').toLowerCase();
   if (e.includes('cancel')) return 'badge-danger';
@@ -26,8 +26,7 @@ const claseEstado = (estado: string) => {
   return 'badge-info';
 };
 
-/** Muestra el historial de estados (trazabilidad) de un pedido.
- *  Prueba el endpoint de ventas y hace un intento adicional con pedidos. */
+
 export default function TrazabilidadModal({ ventaId, onClose }: TrazabilidadModalProps) {
   const [registros, setRegistros] = useState<RegistroTrazabilidad[]>([]);
   const [loading, setLoading] = useState(true);
@@ -46,7 +45,7 @@ export default function TrazabilidadModal({ ventaId, onClose }: TrazabilidadModa
             data = (await apiClient.get(ruta)).data;
             break;
           } catch {
-            // siguiente intento
+            
           }
         }
         if (!vivo) return;

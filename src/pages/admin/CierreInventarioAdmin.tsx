@@ -81,7 +81,7 @@ export default function CierreInventarioAdmin() {
   const [cargandoDetalle, setCargandoDetalle] = useState<number | null>(null);
   const { showToast, confirmar } = useToast();
 
-  // --- Estados de filtros (de la rama 'carlos') ---
+
   const [busqueda, setBusqueda] = useState('');
   const [estadoConteo, setEstadoConteo] = useState<EstadoConteo>('todos');
 
@@ -90,7 +90,7 @@ export default function CierreInventarioAdmin() {
   const [fResponsable, setFResponsable] = useState('');
   const [fSoloDiferencias, setFSoloDiferencias] = useState(false);
 
-  // --- Estados de paginación (de la rama 'develop') ---
+ 
   const [paginaConteo, setPaginaConteo] = useState(1);
   const [paginaCierres, setPaginaCierres] = useState(1);
 
@@ -120,7 +120,7 @@ export default function CierreInventarioAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  // Resetea la página a 1 cuando cambian los filtros
+
   useEffect(() => { setPaginaConteo(1); }, [busqueda, estadoConteo]);
   useEffect(() => { setPaginaCierres(1); }, [fDesde, fHasta, fResponsable, fSoloDiferencias]);
 
@@ -133,7 +133,6 @@ export default function CierreInventarioAdmin() {
 
   const contados = filas.filter(estaContada);
 
-  // 1. Filtramos las filas del conteo
   const filasVisibles = useMemo(() => {
     const q = normalizar(busqueda);
     return filas.filter((f) => {
@@ -145,7 +144,7 @@ export default function CierreInventarioAdmin() {
     });
   }, [filas, conteos, busqueda, estadoConteo]);
 
-  // 2. Paginamos las filas YA filtradas
+
   const conteoPag = paginar(filasVisibles, paginaConteo);
 
   const hayFiltroConteo = busqueda.trim() !== '' || estadoConteo !== 'todos';
@@ -155,7 +154,7 @@ export default function CierreInventarioAdmin() {
     [historial],
   );
 
-  // 3. Filtramos el historial
+ 
   const historialFiltrado = useMemo(
     () =>
       historial.filter((h) => {
@@ -169,7 +168,7 @@ export default function CierreInventarioAdmin() {
     [historial, fDesde, fHasta, fResponsable, fSoloDiferencias],
   );
 
-  // 4. Paginamos el historial YA filtrado
+
   const cierresPag = paginar(historialFiltrado, paginaCierres);
   const cierres = cierresPag.visibles;
 
@@ -262,7 +261,7 @@ export default function CierreInventarioAdmin() {
   ]);
 
   return (
-    <div className="page-inner">
+    <div className="page-inner cierre-page">
       <div className="page-header">
         <div>
           <h1>Cierre de inventario</h1>
@@ -376,7 +375,7 @@ export default function CierreInventarioAdmin() {
             </table>
           </div>
           
-          <Paginacion total={filasVisibles.length} pagina={conteoPag.paginaActual} onCambiar={setPaginaConteo} />
+          <Paginacion total={filasVisibles.length} pagina={conteoPag.paginaActual} onCambiar={setPaginaConteo} siempre />
 
           <div className="form-group" style={{ marginTop: 16 }}>
             <label>Observación (opcional)</label>
@@ -482,7 +481,7 @@ export default function CierreInventarioAdmin() {
             </table>
           </div>
 
-          <Paginacion total={historialFiltrado.length} pagina={cierresPag.paginaActual} onCambiar={setPaginaCierres} etiqueta="cierres" />
+          <Paginacion total={historialFiltrado.length} pagina={cierresPag.paginaActual} onCambiar={setPaginaCierres} etiqueta="cierres" siempre />
         </>
       )}
       {detalle && (

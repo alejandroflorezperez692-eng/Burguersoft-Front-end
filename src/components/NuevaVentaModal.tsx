@@ -17,6 +17,7 @@ interface Mesa { numero: number; estado: 'Libre' | 'Ocupada' | 'Por cobrar'; tot
 type Item = { tipo: 'producto' | 'combo'; id: number; nombre: string; precio: number; img?: string | null; agotado?: boolean; cat: string };
 
 const METODOS = METODOS_MOSTRADOR;
+
 const TIPOS = [
   { v: 'Consumir', t: 'En el local' },
   { v: 'Domicilio', t: 'Domicilio' },
@@ -55,7 +56,6 @@ const cache: {
   mesas: leerCache<Mesa[]>('nv:mesas'),
 };
 
-// Si ya hay productos en caché, las fotos empiezan a bajar apenas carga la app
 if (cache.productos) precargarImagenes(cache.productos);
 
 function fijar<K extends keyof typeof cache>(k: K, v: NonNullable<(typeof cache)[K]>) {
@@ -64,7 +64,6 @@ function fijar<K extends keyof typeof cache>(k: K, v: NonNullable<(typeof cache)
   if (k === 'productos') precargarImagenes(v as Producto[]);
 }
 
-/** Llamar antes de abrir el modal para que todo aparezca al instante. */
 export function precargarNuevaVenta() {
   apiClient.get('/productos').then(({ data }) => fijar('productos', toArray<Producto>(data))).catch(() => {});
   apiClient.get('/promociones').then(({ data }) => fijar('promociones', toArray<Promocion>(data))).catch(() => {});
@@ -101,7 +100,9 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const [cliente, setCliente] = useState('');
   const [direccion, setDireccion] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [metodoPago, setMetodoPago] = useState('Efectivo');
+  const [recibeNombre, setRecibeNombre] = useState('');
+  // El método de pago va fijo en 'Efectivo': el pago real se confirma al verificar el comprobante
+  const [metodoPago] = useState('Efectivo');
   const [notas, setNotas] = useState('');
   const [buscar, setBuscar] = useState('');
   const [pagina, setPagina] = useState(1);
@@ -133,12 +134,10 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     if (!abierto) return;
     let vivo = true;
 
-    // Lo que ya está en caché se muestra de inmediato
     if (cache.productos) setProductos(cache.productos);
     if (cache.promociones) setPromociones(cache.promociones);
     if (cache.mesas) setMesas(cache.mesas);
 
-    // Cada petición va por separado: nadie espera a nadie
     apiClient.get('/productos')
       .then(({ data }) => {
         fijar('productos', toArray<Producto>(data));
@@ -165,7 +164,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     return () => { vivo = false; };
   }, [abierto, mesaInicial, cargarMesas, puedeAsignarMesero]);
 
-  /* ---------- Items (productos + combos activos) ---------- */
   const todos = useMemo<Item[]>(() => [
     ...productos.map((p) => ({
       tipo: 'producto' as const, id: p.id, nombre: p.nombre, precio: Number(p.valor) || 0,
@@ -220,7 +218,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
         : [...l, { adicion_id: id, cantidad: nuevo }];
     });
 
-  // Si quitan un producto del pedido, se van también sus adicionales
   useEffect(() => {
     setExtras((l) => l.filter((e) =>
       productos.some((p) => carrito.some((c) => c.producto_id === p.id) && p.adiciones?.some((a) => a.id === e.adicion_id))
@@ -278,18 +275,23 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     }
   };
 
-  /* ---------- Guardar ---------- */
   const cerrar = () => {
     setCarrito([]); setCombos([]); setExtras([]); setMesa(null); setCliente(''); setDireccion('');
-    setTelefono(''); setNotas(''); setBuscar('');
+    setTelefono(''); setRecibeNombre(''); setNotas('');
     onClose();
   };
 
-    const guardar = () => {
+  const guardar = () => {
     if (enviando) return;
     if (tipoEntrega === 'Consumir' && !mesa) return alertar('Elige la mesa');
-    if (tipoEntrega === 'Domicilio' && !direccion.trim()) return alertar('Escribe la dirección de entrega');
+    if (tipoEntrega === 'Domicilio') {
+      if (!direccion.trim()) return alertar('Escribe la dirección de entrega');
+      if (!recibeNombre.trim()) return alertar('Escribe el nombre de quien recibe');
+      if (telefono.trim().length < 7) return alertar('Escribe un teléfono válido de quien recibe');
+    }
     if (lineas.length === 0) return alertar('Agrega al menos un producto');
+
+    setEnviando(true);
 
     const notasFinal = [
       tipoEntrega === 'Domicilio' ? `Dirección: ${direccion.trim()}` : '',
@@ -297,7 +299,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
       notas.trim(),
     ].filter(Boolean).join(' · ').slice(0, 255);
 
-    setEnviando(true);
     apiClient
       .post('/ventas', {
         carrito,
@@ -308,6 +309,11 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
         cliente_nombre: cliente.trim() || undefined,
         mesa: tipoEntrega === 'Consumir' ? mesa : undefined,
         notas: notasFinal || undefined,
+        direccion: tipoEntrega === 'Domicilio' ? {
+          linea1: direccion.trim(),
+          recibe_nombre: recibeNombre.trim(),
+          recibe_telefono: telefono.trim(),
+        } : undefined,
       })
       .then(() => { cerrar(); onCreada?.(); })
       .catch((e) => {
@@ -334,7 +340,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
         </header>
 
         <div className="np-cols">
-          {/* 1. Tipo de pedido y mesas */}
+       
           <aside className="np-panel">
             <h4><b>1</b> Tipo de pedido</h4>
             <SelectOscuro className="np-select" value={tipoEntrega} onChange={(e) => setTipoEntrega(e.target.value)}>
@@ -394,7 +400,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
             )}
           </aside>
 
-          {/* 2. Información del cliente + pedido */}
+        
           <section className="np-panel">
             <h4><b>2</b> Información del cliente</h4>
             <div className="np-scroll">
@@ -402,25 +408,36 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                 <label>Cliente (opcional)</label>
                 <input type="text" maxLength={150} value={cliente} onChange={(e) => setCliente(e.target.value)} />
               </div>
-              {tipoEntrega === 'Domicilio' && (
+                            {tipoEntrega === 'Domicilio' && (
                 <>
                   <div className="form-group">
-                    <label>Dirección *</label>
+                    <label>Dirección <span style={{ color: '#E8821A' }}>*</span></label>
                     <input type="text" maxLength={120} value={direccion} onChange={(e) => setDireccion(e.target.value)} />
                   </div>
                   <div className="form-group">
-                    <label>Teléfono</label>
-                    <input type="text" inputMode="numeric" maxLength={15} value={telefono}
-                      onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))} />
+                    <label>Nombre de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
+                    <input
+                      type="text"
+                      maxLength={150}
+                      value={recibeNombre}
+                      onChange={(e) => setRecibeNombre(e.target.value)}
+                      placeholder="Nombre y apellido"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Teléfono de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={15}
+                      value={telefono}
+                      onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
+                      placeholder="3001234567"
+                    />
                   </div>
                 </>
               )}
-              <div className="form-group">
-                <label>Método de pago</label>
-                <SelectOscuro value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
-                  {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-                </SelectOscuro>
-              </div>
+              
               <div className="form-group">
                 <label>Notas para cocina</label>
                 <input type="text" maxLength={120} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej: sin tomate" />
@@ -486,7 +503,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
             </div>
           </section>
 
-          {/* 3. Productos */}
+         
           <section className="np-panel">
             <h4><b>3</b> Productos</h4>
             <div className="np-tools">

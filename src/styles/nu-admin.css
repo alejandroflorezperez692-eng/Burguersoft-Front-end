@@ -1,8 +1,5 @@
-/* Gestión del Menú (admin) — prefijo mn- para no chocar con admin.css */
-
 .mn-page { padding-bottom: 60px; }
 
-/* ---------- Panel del formulario ---------- */
 .mn-form-panel {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -74,7 +71,7 @@
 .mn-field input::placeholder,
 .mn-field textarea::placeholder { color: var(--text-400); }
 
-/* Estado (calculado desde la cantidad) */
+
 .mn-estado-chip {
   display: inline-flex;
   align-items: center;
@@ -89,7 +86,7 @@
 .mn-estado-Agotado      { background: #fde8e8; color: #992222; }
 .mn-estado-Por_agotarse { background: rgba(232, 130, 26, 0.18); color: #8a4a10; }
 
-/* Subida de imagen */
+
 .mn-upload {
   border: 2px dashed var(--border-strong);
   border-radius: var(--r-md);
@@ -144,7 +141,7 @@
 .mn-btn-pick:hover { opacity: 0.75; }
 .mn-file-input { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; }
 
-/* Ingredientes */
+
 .mn-ing {
   border: 1px solid var(--border);
   border-radius: var(--r-md);
@@ -220,7 +217,7 @@
 }
 .mn-btn-del-ing:hover { background: var(--danger); color: #fff; }
 
-/* Pie del formulario */
+
 .mn-form-footer {
   padding: 14px 28px 22px;
   display: flex;
@@ -255,7 +252,7 @@
 }
 .mn-btn-cancel:hover { background: var(--surface-3); }
 
-/* ---------- Buscador y catálogo ---------- */
+
 .mn-toolbar { margin-bottom: 24px; }
 .mn-search {
   width: 100%;
@@ -350,7 +347,7 @@
   transition: transform 0.35s var(--ease);
 }
 
-/* Imágenes altas/angostas (botellas, etc.): se muestran completas */
+
 .mn-card-img.alta {
   object-fit: contain;
   padding: 6px;
@@ -424,11 +421,12 @@
   transition: filter 0.18s, transform 0.15s;
 }
 .mn-btn-edit { background: var(--info); }
+body.dark-mode .mn-btn-edit { background: #e8821a; }
 .mn-btn-del { background: var(--danger); }
 .mn-btn-edit:hover,
 .mn-btn-del:hover { filter: brightness(0.87); transform: translateY(-1px); }
 
-/* ---------- Modal de confirmación ---------- */
+
 .mn-modal-overlay {
   position: fixed;
   inset: 0;
@@ -467,7 +465,10 @@
 }
 .mn-btn-confirm:hover { background: #a82d22; }
 
-/* ---------- Responsive ---------- */
+body.dark-mode .mn-btn-confirm.mn-btn-salir { background: #e8821a !important; color: #fff !important; box-shadow: 0 4px 14px rgba(232, 130, 26, 0.35); }
+body.dark-mode .mn-btn-confirm.mn-btn-salir:hover:not(:disabled) { background: #d4761a !important; }
+
+
 @media (max-width: 1100px) {
   .mn-row-main { grid-template-columns: 1fr 1fr 1fr; }
   .mn-row-secondary { grid-template-columns: 1fr 1fr; }
@@ -478,7 +479,7 @@
   .mn-row-main { grid-template-columns: 1fr 1fr; }
   .mn-row-secondary { grid-template-columns: 1fr; }
 }
-/* ===== Formulario rediseñado ===== */
+
 .mn-form-header { padding: 18px 28px; }
 .mn-form-body { padding: 28px; }
 
@@ -501,7 +502,7 @@
 }
 .mn-field textarea { height: auto; min-height: 130px; padding: 12px 14px; }
 
-/* Selects con la misma apariencia que los campos de texto */
+
 .mn-field select {
   appearance: none;
   -webkit-appearance: none;
@@ -512,7 +513,7 @@
   background-position: right 14px center;
 }
 
-/* Prefijo $ en el precio */
+
 .mn-input-prefix { position: relative; }
 .mn-input-prefix > span {
   position: absolute;
@@ -527,7 +528,7 @@
 
 .mn-counter { align-self: flex-end; font-size: 11px; color: var(--text-400); }
 
-/* Zona de imagen */
+
 .mn-upload {
   display: flex;
   flex-direction: column;
@@ -621,15 +622,13 @@ body.dark-mode .admin-body:has(.mn-page) .mn-card-imgwrap::after {
   z-index: 1;
 }
 
-/* ===== Promociones (se apoya en las clases mn-* del Menú) ===== */
 
-/* Estado de la promoción en la tarjeta */
 .mn-estado-Activa     { background: #d5f5e3; color: #1a7a42; }
 .mn-estado-Programada { background: rgba(232, 130, 26, 0.18); color: #8a4a10; }
 .mn-estado-Inactiva   { background: #ece8e2; color: #6b6055; }
 .mn-estado-Finalizada { background: #fde8e8; color: #992222; }
 
-/* Tarjeta */
+
 .pm-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
 .pm-chip {
   font-size: 10.5px;
@@ -650,7 +649,7 @@ body.dark-mode .admin-body:has(.mn-page) .mn-card-imgwrap::after {
 .pm-soon { font-size: 11.5px; font-weight: 700; color: #8a4a10; margin-top: 6px; }
 .pm-save { font-size: 11.5px; font-weight: 700; color: #1a7a42; margin-top: 2px; }
 
-/* Formulario */
+
 .pm-count {
   margin-left: 8px;
   font-weight: 600;
@@ -686,7 +685,7 @@ body.dark-mode .admin-body:has(.mn-page) .mn-card-imgwrap::after {
 }
 .pm-desc-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
 
-/* Selector de productos */
+
 .pm-picker {
   max-height: 240px;
   overflow-y: auto;
@@ -731,7 +730,7 @@ body.dark-mode .admin-body:has(.mn-page) .mn-card-imgwrap::after {
   .pm-prod-cat { display: none; }
 }
 
-/* ===== Footer del panel admin ===== */
+
 .admin-footer {
   background: #2c1810;
   border-top: 1px solid #33261e;
@@ -750,7 +749,7 @@ body.dark-mode .admin-body .admin-footer {
   border-top-color: #ffffff;
 }
 
-/* ===== Paginación de usuarios ===== */
+
 .us-pag {
   display: flex;
   align-items: center;
@@ -809,7 +808,7 @@ body.dark-mode .admin-body .admin-footer {
   .us-pag { justify-content: center; }
 }
 
-/* ===== Filtros de Materia Prima (reutilizan .mn-field) ===== */
+
 .mn-filtros {
   display: flex;
   flex-wrap: wrap;
@@ -819,7 +818,7 @@ body.dark-mode .admin-body .admin-footer {
 }
 .mn-filtros .mn-field { flex: 1 1 180px; max-width: 260px; }
 
-/* Filtro con un valor elegido */
+
 .mn-field select.activo {
   border-color: var(--brand);
   background-color: var(--brand-glow);
@@ -837,12 +836,12 @@ body.dark-mode .admin-body .admin-footer {
   .mn-filtros .mn-field { flex: 1 1 calc(50% - 7px); max-width: none; }
 }
 
-/* Materia prima inactiva: atenúa los datos pero deja los botones con color normal */
+
 .data-table tr.fila-inactiva td:not(:last-child) {
   opacity: 0.55;
 }
 
-/* ---------- Toggle de vista + tabla ---------- */
+
 .mn-toolbar { display: flex; align-items: center; gap: 12px; }
 .mn-toolbar .mn-search-wrap { flex: 1; }
 
@@ -906,9 +905,17 @@ body.dark-mode .admin-body:has(.mn-page) .mn-view-toggle button.active {
   font-size: 12px;
   color: #fff;
 }
-.mn-btn-toggle.desactivar { background: #ffffff; color: #000; }
+.mn-btn-toggle.desactivar {
+  background: #6b7280;         /* mismo gris que "Inactivar" en usuarios */
+  color: #fff;
+  border: none;
+}
+.mn-btn-toggle.desactivar:hover {
+  background: #4b5563;
+}
 .mn-btn-toggle.activar { background: #16a34a; color: #fff; }
-body.dark-mode .mn-btn-toggle.desactivar { background: #16a34a; color: #fff; }
+body.dark-mode .mn-btn-toggle.activar { background: #e8821a; color: #fff; }
+body.dark-mode .mn-btn-toggle.desactivar { background: #e8821a; color: #fff; }
 body.dark-mode .mn-btn-toggle.desactivar:hover {
   border: 2px solid #E8821A;
   transform: translateY(-2px);
@@ -967,7 +974,7 @@ body.dark-mode .mn-btn-toggle.desactivar:hover {
 .mn-adic-chip:hover { background: #e8821a; color: #fff; }
 .mn-field > .mn-acc { margin-bottom: 0; }
 
-/* ===== Cabecera de modales unificada (estilo "Nuevo pedido") ===== */
+
 .mn-modal-box .mn-form-header,
 .modal-box .mm-head {
   background: linear-gradient(180deg, #fff, #fffaf3);
@@ -985,7 +992,7 @@ body.dark-mode .mn-btn-toggle.desactivar:hover {
 }
 .modal-box .mm-resumen { color: #8a7a68; }
 
-/* Botón X */
+
 .mn-form-cerrar,
 .modal-box .mm-cerrar {
   width: 36px; height: 36px;
@@ -995,7 +1002,7 @@ body.dark-mode .mn-btn-toggle.desactivar:hover {
 .mn-form-cerrar:hover,
 .modal-box .mm-cerrar:hover { background: #fff4e5; }
 
-/* Modales simples del admin (Compras, Usuarios, Marcas, etc.) */
+
 .modal-overlay .modal-box h2 {
   font-family: inherit;
   font-size: 24px;
@@ -1004,7 +1011,7 @@ body.dark-mode .mn-btn-toggle.desactivar:hover {
   border-bottom: 1px solid #f0e6d6;
 }
 
-/* Modo oscuro */
+
 body.dark-mode .mn-modal-box .mn-form-header,
 body.dark-mode .modal-box .mm-head { background: #000000 !important; border-bottom-color: var(--border); }
 body.dark-mode .mn-modal-box .mn-form-header h3,
@@ -1012,7 +1019,7 @@ body.dark-mode .modal-box .mm-titulo,
 body.dark-mode .modal-overlay .modal-box h2 { color: var(--text-900); }
 body.dark-mode .mn-form-cerrar { background: #000000 !important; border-color: var(--border); color: var(--text-900); } 
 
-/* ===== Cabeceras oscuras en línea (Registrar venta, Registrar compra, Proveedor, Historial) ===== */
+
 .modal-overlay [style*="var(--text-900)"][style*="18px 28px"],
 .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] {
   background: linear-gradient(180deg, #fff, #fffaf3) !important;
@@ -1028,7 +1035,7 @@ body.dark-mode .mn-form-cerrar { background: #000000 !important; border-color: v
   font-weight: 800 !important;
   color: #1a0f0a !important;
 }
-/* X del Historial (antes era blanca) */
+
 .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button {
   width: 36px; height: 36px;
   border: 1px solid #eadfce !important;
@@ -1038,14 +1045,14 @@ body.dark-mode .mn-form-cerrar { background: #000000 !important; border-color: v
   font-size: 16px !important;
 }
 
-/* ===== Scroll fino en TODOS los modales ===== */
+
 .modal-overlay *, .mn-modal-overlay * { scrollbar-width: thin; scrollbar-color: #e0c9a6 transparent; }
 .modal-overlay *::-webkit-scrollbar, .mn-modal-overlay *::-webkit-scrollbar { width: 8px; height: 8px; }
 .modal-overlay *::-webkit-scrollbar-track, .mn-modal-overlay *::-webkit-scrollbar-track { background: transparent; }
 .modal-overlay *::-webkit-scrollbar-thumb, .mn-modal-overlay *::-webkit-scrollbar-thumb { background: #e0c9a6; border-radius: 999px; }
 .modal-overlay *::-webkit-scrollbar-thumb:hover, .mn-modal-overlay *::-webkit-scrollbar-thumb:hover { background: #e8821a; }
 .modal-overlay *::-webkit-scrollbar-button, .mn-modal-overlay *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
-/* ===== Formularios de Menú y Promociones: cabecera y botones fijos, scroll solo en el cuerpo ===== */
+
 .mn-modal-box:has(.mn-form-panel) {
   overflow: hidden !important;
   display: flex;
@@ -1076,7 +1083,7 @@ body.dark-mode .mn-form-cerrar { background: #000000 !important; border-color: v
   flex: none;
 }
 
-/* X flotante para modales sin cabecera */
+
 .modal-box, .mn-modal-box { position: relative; }
 .modal-x {
   position: absolute; top: 14px; right: 14px; z-index: 5;
@@ -1089,7 +1096,7 @@ body.dark-mode .mn-form-cerrar { background: #000000 !important; border-color: v
 body.dark-mode .modal-x { background: #000000 !important; border-color: var(--border); color: var(--text-900); }
 .vt-det-head { padding-right: 48px; }
 
-/* ===== Requisitos de contraseña (mismo look que el registro) ===== */
+
 .barra-contrasena { width: 100%; height: 8px; border-radius: 999px; background: rgba(44, 24, 16, 0.12); overflow: hidden; margin-top: 12px; }
 .barra-contrasena-fill { display: block; height: 100%; border-radius: 999px; transition: width .35s ease, background .35s ease; }
 .barra-contrasena.rojo .barra-contrasena-fill { background: linear-gradient(90deg, #d93025, #f77e4f); }
@@ -1103,17 +1110,17 @@ body.dark-mode .modal-x { background: #000000 !important; border-color: var(--bo
 body.dark-mode .barra-contrasena { background: #000000; }
 body.dark-mode .requisito { color: var(--text-600); }
 
-/* ===== Tablas del admin (modo claro): cabecera blanca, cuadrícula y borde cerrado ===== */
+
 body:not(.dark-mode) .data-table {
   border-collapse: separate !important;
   border-spacing: 0;
-  border: 1px solid #e3d3bb;               /* borde exterior completo */
+  border: 1px solid #e3d3bb;               
   border-radius: 16px;
   overflow: hidden;
   box-shadow: none;
 }
 
-/* Cabecera blanca */
+
 body:not(.dark-mode) .data-table thead,
 body:not(.dark-mode) .data-table thead th {
   background: #fff !important;
@@ -1123,7 +1130,7 @@ body:not(.dark-mode) .data-table thead th {
   font-weight: 800;
 }
 
-/* Líneas verticales y horizontales entre celdas */
+
 body:not(.dark-mode) .data-table th,
 body:not(.dark-mode) .data-table td {
   border: none;
@@ -1131,15 +1138,15 @@ body:not(.dark-mode) .data-table td {
   border-bottom: 1px solid #eadfce;
 }
 body:not(.dark-mode) .data-table thead th {
-  border-bottom: 2px solid #e8821a;        /* línea naranja bajo la cabecera */
+  border-bottom: 2px solid #e8821a;        
 }
 
-/* Sin doble línea junto al borde exterior */
+
 body:not(.dark-mode) .data-table tr > *:last-child { border-right: none; }
 body:not(.dark-mode) .data-table tbody tr:last-child > * { border-bottom: none; }
 body:not(.dark-mode) .data-table tbody tr { border-bottom: none; }
 
-/* ===== Líneas negras en las tablas (modo claro) ===== */
+
 body:not(.dark-mode) .data-table {
   border-color: #1a0f0a;
 }
@@ -1149,10 +1156,10 @@ body:not(.dark-mode) .data-table td {
   border-bottom-color: #1a0f0a;
 }
 body:not(.dark-mode) .data-table thead th {
-  border-bottom: 2px solid #1a0f0a;   /* línea bajo la cabecera, también negra */
+  border-bottom: 2px solid #1a0f0a;   
 }
 
-/* ===== Tablas del admin: cuadrícula suave (recomendado) ===== */
+
 body:not(.dark-mode) .data-table {
   border: 1px solid #d9c6a8;
   border-radius: 16px;
@@ -1163,7 +1170,7 @@ body:not(.dark-mode) .data-table td {
   border-bottom: 1px solid #eadfce;
 }
 
-/* Cabecera crema con línea naranja */
+
 body:not(.dark-mode) .data-table thead,
 body:not(.dark-mode) .data-table thead th {
   background: #fffaf3 !important;
@@ -1174,46 +1181,46 @@ body:not(.dark-mode) .data-table thead th {
   border-right-color: #eadfce;
 }
 
-/* Fila al pasar el mouse */
+
 body:not(.dark-mode) .data-table tbody tr:hover > td {
   background: #fff8ef;
 }
 
-/* ===== Encabezados y celdas con el mismo espaciado en todas las tablas ===== */
+
 body:not(.dark-mode) .data-table thead th {
   padding: 16px 22px;
   font-size: 11px;
   letter-spacing: .08em;
   line-height: 1.2;
-  white-space: nowrap;          /* "DISPONIBILIDAD" ya no se pega a la línea */
+  white-space: nowrap;         
   vertical-align: middle;
 }
 body:not(.dark-mode) .data-table tbody td {
-  padding: 14px 22px;           /* el texto de las filas queda alineado con su encabezado */
+  padding: 14px 22px;           
   vertical-align: middle;
 }
 
-/* Columna Acciones centrada (encabezado y botones) */
+
 body:not(.dark-mode) .data-table thead th.th-acciones { text-align: center; }
 body:not(.dark-mode) .data-table:has(th.th-acciones) tbody td:last-child {
   text-align: center;
   white-space: nowrap;
 }
-/* Botones Editar / Eliminar centrados en las tarjetas */
+
 .mn-grid .mn-table-actions {
   justify-content: center;
   gap: 10px;
   padding: 12px 16px 18px;
 }
 
-/* ===== Tablas de Menú, Promociones y Proveedores (.mn-table), mismo estilo que .data-table ===== */
+
 body:not(.dark-mode) .mn-table-wrap {
   border: 1px solid #d9c6a8;
   border-radius: 16px;
   background: #fff;
 }
 
-/* Cabecera crema con línea naranja */
+
 body:not(.dark-mode) .mn-table thead th {
   background: #fffaf3;
   color: #6b4a2b;
@@ -1227,7 +1234,7 @@ body:not(.dark-mode) .mn-table thead th {
   border-bottom: 2px solid #e8821a;
 }
 
-/* Cuadrícula (líneas verticales y horizontales) */
+
 body:not(.dark-mode) .mn-table th,
 body:not(.dark-mode) .mn-table td {
   border-right: 1px solid #eadfce;
@@ -1241,18 +1248,18 @@ body:not(.dark-mode) .mn-table tr > *:last-child { border-right: none; }
 body:not(.dark-mode) .mn-table tbody tr:last-child td { border-bottom: none; }
 body:not(.dark-mode) .mn-table tbody tr:hover > td { background: #fff8ef; }
 
-/* Columna Acciones centrada */
+
 body:not(.dark-mode) .mn-table thead th.th-acciones { text-align: center; }
 .mn-table .mn-table-actions { justify-content: center; }
 
-/* ===== Scroll fino en todos los modales, sin tocar las esquinas redondeadas ===== */
+
 .modal-overlay *::-webkit-scrollbar,
 .mn-modal-overlay *::-webkit-scrollbar { width: 8px; height: 8px; }
 
 .modal-overlay *::-webkit-scrollbar-track,
 .mn-modal-overlay *::-webkit-scrollbar-track {
   background: transparent;
-  margin: 20px 0;               /* separa la barra de las esquinas redondeadas */
+  margin: 20px 0;               
 }
 
 .modal-overlay *::-webkit-scrollbar-thumb,
@@ -1266,11 +1273,11 @@ body:not(.dark-mode) .mn-table thead th.th-acciones { text-align: center; }
 .modal-overlay *::-webkit-scrollbar-button,
 .mn-modal-overlay *::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
 
-/* Firefox (no entiende ::-webkit-scrollbar) */
+
 @supports not selector(::-webkit-scrollbar) {
   .modal-overlay *, .mn-modal-overlay * { scrollbar-width: thin; scrollbar-color: #e0c9a6 transparent; }
 }
-/* ===== Barra de día en la tabla de ventas ===== */
+
 .data-table tr.vt-dia > td { padding: 0 !important; background: #fff4e5 !important; border-right: none !important; }
 .vt-dia-bar { display: flex; align-items: center; gap: 16px; padding: 10px 22px; }
 .vt-dia-label { display: inline-block; font-weight: 800; font-size: 14px; color: #1a0f0a; }
@@ -1278,7 +1285,7 @@ body:not(.dark-mode) .mn-table thead th.th-acciones { text-align: center; }
 .vt-dia-info { margin-left: auto; font-size: 13px; color: #6b4a2b; }
 .vt-dia-btn { padding: 6px 14px; font-size: 12px; }
 
-/* ===== Modal Cierre del día ===== */
+
 .cierre-filtros { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 6px 0 14px; }
 .cierre-nota { font-size: 12.5px; color: #6b4a2b; margin: 0; }
 .cierre-resumen { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
@@ -1296,7 +1303,7 @@ body:not(.dark-mode) .mn-table thead th.th-acciones { text-align: center; }
 .cierre-tabla .c { text-align: center; color: #8a7a68; }
 .cierre-metodos { display: flex; flex-wrap: wrap; gap: 8px; }
 .cierre-metodos span { background: #fffaf3; border: 1px solid #eadfce; border-radius: 999px; padding: 6px 12px; font-size: 13px; }
-/* ===== Modal de trazabilidad ===== */
+
 .tz-box { max-width: 640px; width: 96%; max-height: 80vh; display: flex; flex-direction: column; }
 .tz-title { font-family: var(--font-sans); font-size: 18px; font-weight: 800; margin: 0; padding-right: 36px; color: var(--text-900); flex-shrink: 0; }
 .tz-sub { font-size: 12.5px; color: var(--text-400); margin: 6px 0 16px; flex-shrink: 0; }
@@ -1327,7 +1334,7 @@ body:not(.dark-mode) .mn-table thead th.th-acciones { text-align: center; }
 }
 @media (max-width: 560px) { .cierre-resumen { grid-template-columns: 1fr; } }
 
-/* ===== Ajustes de botones de cierre ===== */
+
 .ventas-page .page-header > .btn-save { width: auto !important; flex: 0 0 auto; align-self: center; padding: 10px 22px; white-space: nowrap; }
 .vt-dia-btn { width: auto !important; flex: 0 0 auto; background: transparent !important; color: #e8821a !important; border: 1px solid #e8821a !important; box-shadow: none !important; padding: 5px 12px !important; font-size: 12px !important; border-radius: 8px; white-space: nowrap; }
 .vt-dia-btn:hover { background: #e8821a !important; color: #fff !important; }
@@ -1602,7 +1609,7 @@ body.dark-mode .admin-body .main-content .mn-modal-box .mn-form-panel .mn-field 
   caret-color: #ffffff;
 }
 
-/* Menú (admin) en modo oscuro: superficies totalmente negras */
+
 body.dark-mode .admin-body:has(.mn-page) .main-content .page-inner,
 body.dark-mode .admin-body:has(.mn-page) .main-content .mn-page,
 body.dark-mode .admin-body:has(.mn-page) .main-content .mn-toolbar,
@@ -1723,10 +1730,7 @@ body.dark-mode .admin-body .main-content .mn-card:has(.pm-chips) :is(
   color: #ffffff;
 }
 
-/* =====================================================================
-   Modo oscuro: X centrada, tablas con borde naranja y letras blancas
-   (mismo look que Menú / Promociones). No afecta a esas páginas.
-   ===================================================================== */
+
 body.dark-mode .modal-x {
   width: 36px; height: 36px; min-width: 36px;
   padding: 0 !important;
@@ -1768,7 +1772,917 @@ body.dark-mode .admin-body .main-content .tabla-responsive > .data-table tbody t
   border-bottom: 0 !important;
 }
 
-/* Ventas: fecha en una línea y textos pequeños en blanco */
+
 body.dark-mode .admin-body .main-content .vt-fecha span { white-space: nowrap; }
 body.dark-mode .admin-body .main-content .vt-fecha small,
 body.dark-mode .admin-body .main-content .vt-cliente small { color: #ffffff; }
+
+
+body:not(.dark-mode) .mn-page .page-header {
+  border-bottom-color: #e8821a !important;
+}
+
+body:not(.dark-mode) .mn-page .mn-search,
+body:not(.dark-mode) .mn-page .mn-field input,
+body:not(.dark-mode) .mn-page .mn-field select,
+body:not(.dark-mode) .mn-page .mn-field .so-select {
+  border-color: #e8821a !important;
+  color: #000000 !important;
+}
+body:not(.dark-mode) .mn-page .mn-search::placeholder,
+body:not(.dark-mode) .mn-page .mn-field input::placeholder {
+  color: #000000 !important;
+  opacity: 1 !important;
+}
+body:not(.dark-mode) .mn-page .mn-search-icon {
+  color: #000000 !important;
+  stroke: #000000;
+}
+
+body:not(.dark-mode) .mn-page .mn-field > label {
+  color: #000000 !important;
+}
+body:not(.dark-mode) .mn-page .mn-toolbar > p {
+  color: #000000 !important;
+}
+
+body:not(.dark-mode) .mn-page .mn-view-toggle {
+  border: none !important;
+}
+body:not(.dark-mode) .mn-page .mn-view-toggle button {
+  color: #000000;
+}
+body:not(.dark-mode) .mn-page .mn-view-toggle button + button {
+  border-left: none !important;
+}
+body:not(.dark-mode) .mn-page .mn-view-toggle button.active {
+  background: rgba(47, 138, 240, 0.15);
+  color: var(--info);
+}
+
+
+body:not(.dark-mode) .mn-menu-admin .mn-table tbody tr:hover,
+body:not(.dark-mode) .mn-menu-admin .mn-table tbody tr:hover > td {
+  background: transparent !important;
+}
+
+
+body.dark-mode .mn-menu-admin .mn-table thead th {
+  padding: 16px 22px;
+}
+body.dark-mode .mn-menu-admin .mn-table tbody td {
+  padding: 14px 22px;
+}
+
+
+body:not(.dark-mode) .mn-form-header {
+  border-bottom: 1.5px solid #e8821a !important;
+}
+
+
+body:not(.dark-mode) .mn-form-footer {
+  border-top: 1.5px solid #e8821a !important;
+}
+
+
+body:not(.dark-mode) .mn-form-cerrar {
+  background: #fff !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+body:not(.dark-mode) .mn-form-cerrar:hover,
+body:not(.dark-mode) .mn-form-cerrar:active,
+body:not(.dark-mode) .mn-form-cerrar:focus-visible {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+
+body:not(.dark-mode) .mn-upload {
+  border-color: #e8821a !important;
+}
+
+
+body:not(.dark-mode) .mn-field textarea {
+  border-color: #e8821a !important;
+}
+
+
+body:not(.dark-mode) .mn-upload-name {
+  color: #000000 !important;
+}
+
+
+body:not(.dark-mode) .mn-btn-cancel {
+  background: transparent !important;
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+body:not(.dark-mode) .mn-btn-cancel:hover:not(:disabled) {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+
+body:not(.dark-mode) .mn-page .mn-toolbar .form-group label {
+  color: #000000 !important;
+}
+
+
+body:not(.dark-mode) .mn-page .mn-toolbar .form-group select,
+body:not(.dark-mode) .mn-page .mn-toolbar .form-group .so-select {
+  background-color: #ffffff !important;
+}
+
+
+body:not(.dark-mode) .mn-page .mn-toolbar .form-group select,
+body:not(.dark-mode) .mn-page .mn-toolbar .form-group .so-select {
+  border: 1.5px solid #e8821a !important;
+}
+
+
+body:not(.dark-mode) .mn-page .mn-table tbody tr:hover,
+body:not(.dark-mode) .mn-page .mn-table tbody tr:hover > td {
+  background: transparent !important;
+}
+
+
+body:not(.dark-mode) .pm-picker {
+  scrollbar-width: thin;
+  scrollbar-color: #e8821a transparent;
+}
+body:not(.dark-mode) .pm-picker::-webkit-scrollbar {
+  width: 8px;
+}
+body:not(.dark-mode) .pm-picker::-webkit-scrollbar-track {
+  background: transparent;
+}
+body:not(.dark-mode) .pm-picker::-webkit-scrollbar-thumb {
+  background: #e8821a;
+  border-radius: 999px;
+}
+
+
+body:not(.dark-mode) .pm-prod,
+body:not(.dark-mode) .pm-prod:hover,
+body:not(.dark-mode) .pm-prod.on,
+body:not(.dark-mode) .pm-prod.on:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+
+
+body:not(.dark-mode) .pm-picker {
+  border: 1.5px solid #e8821a !important;
+}
+
+
+html:has(body:not(.dark-mode)) {
+  scrollbar-width: thin;
+  scrollbar-color: #e8821a transparent;
+}
+
+
+body:not(.dark-mode),
+body:not(.dark-mode) * {
+  scrollbar-width: thin !important;
+  scrollbar-color: #e8821a transparent !important;
+}
+
+
+body:not(.dark-mode) ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+body:not(.dark-mode) ::-webkit-scrollbar-track {
+  background: transparent;
+}
+body:not(.dark-mode) ::-webkit-scrollbar-thumb {
+  background: #e8821a;
+  border-radius: 999px;
+}
+body:not(.dark-mode) ::-webkit-scrollbar-thumb:hover {
+  background: #cf6f0f;
+}
+
+
+body:not(.dark-mode) .pm-hint {
+  color: #000000 !important;
+}
+
+
+body:not(.dark-mode) .pm-date-picker {
+  position: relative;
+}
+
+
+body:not(.dark-mode) .pm-date-picker .compras-date-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-sizing: border-box;
+  border: 1.5px solid #e8821a;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #000000;
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar {
+  position: absolute;
+  z-index: 2100;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 270px;
+  padding: 10px;
+  box-sizing: border-box;
+  border: 1.5px solid #e8821a;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar,
+body:not(.dark-mode) .pm-date-picker .compras-calendar :is(strong, span, button) {
+  color: #000000 !important;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+body:not(.dark-mode) .pm-date-picker .compras-calendar-header strong {
+  font-size: 14px;
+}
+body:not(.dark-mode) .pm-date-picker .compras-calendar-weekdays span {
+  color: #000000 !important;
+  font-weight: 700;
+}
+
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar-grid span,
+body:not(.dark-mode) .pm-date-picker .compras-calendar-grid button {
+  height: 30px;
+}
+
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar-grid button:disabled {
+  color: #b5b5b5 !important;
+}
+
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar-grid button:hover:not(:disabled),
+body:not(.dark-mode) .pm-date-picker .compras-calendar-grid button.selected,
+body:not(.dark-mode) .pm-date-picker .compras-calendar-header button:hover:not(:disabled),
+body:not(.dark-mode) .pm-date-picker .compras-calendar-footer button:hover {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar-footer {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1.5px solid #e8821a;
+}
+
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar {
+  top: calc(100% + 5px);
+  width: 190px;
+  padding: 6px;
+  border-width: 1px;
+  border-radius: 8px;
+}
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar,
+body:not(.dark-mode) .pm-date-picker .compras-calendar :is(strong, span, button) {
+  font-size: 10px !important;
+  line-height: 1.2;
+}
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar-header {
+  margin-bottom: 5px;
+}
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar-header strong {
+  font-size: 10px !important;
+}
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar-grid span,
+body:not(.dark-mode) .pm-date-picker .compras-calendar-grid button {
+  height: 22px;
+}
+
+body:not(.dark-mode) .pm-date-picker .compras-calendar-footer {
+  margin-top: 5px;
+  padding-top: 0;
+  border-top: 1px solid #e8821a;
+}
+
+
+body:not(.dark-mode) .mn-acc .mn-adic-add,
+body:not(.dark-mode) .mn-adic-add {
+  border: 2px dashed #e8851a;
+  color: #000000;
+  font-weight: 700;
+}
+
+
+body:not(.dark-mode) .mn-acc {
+  border: 1.5px solid #e8851a;
+}
+body:not(.dark-mode) .mn-acc[open] > summary {
+  border-bottom: 1.5px solid #e8851a;
+}
+body:not(.dark-mode) .mn-acc > summary,
+body:not(.dark-mode) .mn-acc > summary * ,
+body:not(.dark-mode) .mn-acc .mn-adic-hint,
+body:not(.dark-mode) .mn-acc .mn-adic-sug > span,
+body:not(.dark-mode) .mn-acc .mn-adic-precio span {
+  color: #000000;
+}
+body:not(.dark-mode) .mn-acc .mn-adic-row input,
+body:not(.dark-mode) .mn-field .mn-adic-row input {
+  border: 1.5px solid #e8851a;
+  color: #000000;
+}
+body:not(.dark-mode) .mn-acc .mn-adic-add,
+body:not(.dark-mode) .mn-adic-add {
+  border: 2px dashed #e8851a;
+  color: #000000;
+  font-weight: 700;
+}
+body:not(.dark-mode) .mn-acc .mn-adic-chip {
+  border: 1.5px solid #e8851a;
+  color: #000000;
+}
+
+
+body:not(.dark-mode) .mn-acc .mn-adic-del,
+body:not(.dark-mode) .mn-adic-del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 3px 0;      
+  line-height: 1;
+  background: #fbe3e0;
+  border: 1.5px solid #e8851a;
+  color: #000000;
+  transition: background .15s, color .15s;
+}
+body:not(.dark-mode) .mn-acc .mn-adic-del:hover,
+body:not(.dark-mode) .mn-adic-del:hover {
+  background: #e8851a;
+  color: #ffffff;
+}
+
+
+body:not(.dark-mode) .mn-acc .mn-adic-del,
+body:not(.dark-mode) .mn-adic-del {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 3px 0;
+  line-height: 1;
+  background: #ffffff;
+  border: 1.5px solid #e8851a;
+  color: #000000;
+  transition: background .15s, color .15s;
+}
+body:not(.dark-mode) .mn-acc .mn-adic-del:hover,
+body:not(.dark-mode) .mn-adic-del:hover {
+  background: #e8851a;
+  color: #ffffff;
+}
+
+
+body:not(.dark-mode) .pm-readonly {
+  border: 1.5px dashed #e8851a;
+}
+
+
+body:not(.dark-mode) .ventas-page .mn-search {
+  border: 1.5px solid #e8851a;
+  background: transparent;
+  color: #000000;
+}
+body:not(.dark-mode) .ventas-page .mn-search:focus {
+  border-color: #e8851a;
+  box-shadow: 0 0 0 3px rgba(232, 133, 26, .18);
+}
+
+
+body:not(.dark-mode) .ventas-page .ventas-filtros .form-group label,
+body:not(.dark-mode) .ventas-page .search-bar > p {
+  color: #000000;
+}
+
+
+body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-trigger,
+body:not(.dark-mode) .ventas-page .ventas-date-trigger,
+body:not(.dark-mode) .ventas-page .ventas-filtros select {
+  background: transparent;
+  border: 1.5px solid #e8851a;
+  color: #000000;
+}
+
+
+body:not(.dark-mode) .compras-date-picker {
+  position: relative;
+}
+
+
+body:not(.dark-mode) .compras-date-picker .compras-date-trigger {
+  border: 1.5px solid #e8821a;
+  color: #000000;
+}
+
+
+body:not(.dark-mode) .compras-date-picker .compras-calendar {
+  position: absolute;
+  z-index: 2100;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 190px;
+  padding: 6px;
+  box-sizing: border-box;
+  border: 1px solid #e8821a;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+
+body:not(.dark-mode) .compras-date-picker .compras-calendar,
+body:not(.dark-mode) .compras-date-picker .compras-calendar :is(strong, span, button) {
+  color: #000000 !important;
+  font-family: var(--font-sans);
+  font-size: 10px !important;
+  line-height: 1.2;
+}
+body:not(.dark-mode) .compras-date-picker .compras-calendar-weekdays span {
+  font-weight: 700;
+}
+body:not(.dark-mode) .compras-date-picker .compras-calendar-header {
+  margin-bottom: 5px;
+}
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid span,
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid button {
+  height: 22px;
+}
+
+
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid button:disabled {
+  color: #b5b5b5 !important;
+}
+
+
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid button:hover:not(:disabled),
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid button.selected,
+body:not(.dark-mode) .compras-date-picker .compras-calendar-header button:hover:not(:disabled),
+body:not(.dark-mode) .compras-date-picker .compras-calendar-footer button:hover {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+
+body:not(.dark-mode) .compras-date-picker .compras-calendar-footer {
+  margin-top: 5px;
+  padding-top: 0;
+  border-top: 1px solid #e8821a;
+}
+
+
+body:not(.dark-mode) .ventas-page .ventas-filtros .ventas-date-trigger,
+body:not(.dark-mode) .ventas-page .ventas-filtros .compras-date-trigger,
+body:not(.dark-mode) .ventas-page .ventas-filtros .ventas-filter-dropdown-trigger,
+body:not(.dark-mode) .ventas-page .ventas-filtros select {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 1.5px solid #e8851a !important;
+  color: #000000 !important;
+}
+
+
+body:not(.dark-mode) .compras-date-picker { position: relative; }
+body:not(.dark-mode) .compras-date-picker .compras-date-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 150px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px;
+  background: transparent !important;
+  color: #000000 !important;
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+
+body:not(.dark-mode) .compras-date-picker .compras-calendar {
+  position: absolute;
+  z-index: 2100;
+  top: calc(100% + 5px);
+  left: 0;
+  width: 190px;
+  padding: 6px;
+  box-sizing: border-box;
+  border: 1px solid #e8821a;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+body:not(.dark-mode) .compras-date-picker .compras-calendar,
+body:not(.dark-mode) .compras-date-picker .compras-calendar :is(strong, span, button) {
+  color: #000000 !important;
+  font-family: var(--font-sans);
+  font-size: 10px !important;
+  line-height: 1.2;
+}
+body:not(.dark-mode) .compras-date-picker .compras-calendar-weekdays span { font-weight: 700; }
+body:not(.dark-mode) .compras-date-picker .compras-calendar-header { margin-bottom: 5px; }
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid span,
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid button { height: 22px; }
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid button:disabled { color: #b5b5b5 !important; }
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid button:hover:not(:disabled),
+body:not(.dark-mode) .compras-date-picker .compras-calendar-grid button.selected,
+body:not(.dark-mode) .compras-date-picker .compras-calendar-header button:hover:not(:disabled),
+body:not(.dark-mode) .compras-date-picker .compras-calendar-footer button:hover {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+body:not(.dark-mode) .compras-date-picker .compras-calendar-footer {
+  margin-top: 5px;
+  padding-top: 0;
+  border-top: 1px solid #e8821a;
+}
+
+
+body:not(.dark-mode) .ventas-page .ventas-filtros .compras-date-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-sizing: border-box;
+  width: auto;
+  min-width: 140px;
+  height: auto;
+  padding: 11px 14px;
+  border: 1.5px solid #e8851a !important;
+  border-radius: var(--r-sm);
+  background: transparent !important;
+  color: #000000 !important;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: normal;
+  cursor: pointer;
+}
+
+
+body:not(.dark-mode) .data-table tbody tr:not(.vt-dia):hover,
+body:not(.dark-mode) .data-table tbody tr:not(.vt-dia):hover > td,
+body:not(.dark-mode) .mn-table tbody tr:hover,
+body:not(.dark-mode) .mn-table tbody tr:hover > td,
+body:not(.dark-mode) .pedido-table tr:hover td {
+  background: transparent !important;
+}
+
+
+body:not(.dark-mode) .ventas-table .btn-cancel,
+body:not(.dark-mode) .tv-ver-detalle {
+  background: transparent !important;
+  border: 1.5px solid #e8851a !important;
+  color: #000000 !important;
+  transition: background .15s, color .15s;
+}
+body:not(.dark-mode) .ventas-table .btn-cancel:hover,
+body:not(.dark-mode) .tv-ver-detalle:hover {
+  background: #e8851a !important;
+  color: #ffffff !important;
+}
+
+
+body:not(.dark-mode) .ventas-table .venta-estado-trigger {
+  border: 1.5px solid #e8851a !important;
+}
+
+body:not(.dark-mode) .venta-estado-options {
+  border: 1.5px solid #e8851a !important;
+}
+
+
+body:not(.dark-mode) .venta-estado-option {
+  border-bottom: 1px solid #e8851a !important;
+}
+body:not(.dark-mode) .venta-estado-option:last-child {
+  border-bottom: 0 !important;
+}
+
+
+body:not(.dark-mode) .vt-det .vt-det-grid {
+  background: #ffffff;
+  border: 1.5px solid #e8851a;
+}
+
+
+body:not(.dark-mode) .vt-det .vt-det-head {
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid #e8851a;
+}
+
+
+body:not(.dark-mode) .vt-det .modal-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 3px 0;
+  line-height: 1;
+  background: #ffffff;
+  border: 1.5px solid #e8851a;
+  color: #000000;
+  transition: background .15s, color .15s;
+}
+body:not(.dark-mode) .vt-det .modal-x:hover {
+  background: #e8851a;
+  color: #ffffff;
+}
+
+
+body:not(.dark-mode) .vt-det {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+}
+body:not(.dark-mode) .vt-det .vt-det-head {
+  padding: 26px 62px 14px 26px;
+  border-bottom: 1.5px solid #e8851a;
+}
+body:not(.dark-mode) .vt-det .vt-det-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 16px 26px 26px;
+  overflow-y: auto;
+}
+
+
+body.dark-mode .vt-det-body {
+  display: contents;
+}
+
+
+body:not(.dark-mode) .vt-det .vt-det-head h3,
+body:not(.dark-mode) .vt-det .vt-det-head p,
+body:not(.dark-mode) .vt-det .vt-det-sec h4,
+body:not(.dark-mode) .vt-det .vt-det-grid dt,
+body:not(.dark-mode) .vt-det .vt-det-grid dd,
+body:not(.dark-mode) .vt-det .vt-det-linea,
+body:not(.dark-mode) .vt-det .vt-det-linea span,
+body:not(.dark-mode) .vt-det .vt-det-linea b,
+body:not(.dark-mode) .vt-det .vt-det-linea strong,
+body:not(.dark-mode) .vt-det .vt-det-pu,
+body:not(.dark-mode) .vt-det .vt-det-total,
+body:not(.dark-mode) .vt-det .vt-det-total span,
+body:not(.dark-mode) .vt-det .vt-det-total strong,
+body:not(.dark-mode) .vt-det .vt-comprobante-vacio,
+body:not(.dark-mode) .vt-det .vt-comprobante-fecha,
+body:not(.dark-mode) .vt-det .vt-comprobante-motivo,
+body:not(.dark-mode) .vt-det .vt-comprobante-aviso {
+  color: #000000 !important;
+}
+
+
+body:not(.dark-mode) .vt-det .vt-det-lineas {
+  border: none;
+}
+
+
+body:not(.dark-mode) .comprobante-modal-adjuntar,
+body:not(.dark-mode) .comprobante-modal-preview {
+  background: #ffffff;
+  border: 1.5px dashed #e8851a;
+}
+body:not(.dark-mode) .comprobante-modal-adjuntar:hover {
+  background: #ffffff;
+  border-color: #e8851a;
+}
+
+
+body:not(.dark-mode) .modal-box:has(.comprobante-modal-adjuntar) .btn-cancel {
+  background: transparent !important;
+  border: 1.5px solid #e8851a !important;
+  color: #000000 !important;
+  transition: background .15s, color .15s;
+}
+body:not(.dark-mode) .modal-box:has(.comprobante-modal-adjuntar) .btn-cancel:hover:not(:disabled) {
+  background: #e8851a !important;
+  color: #ffffff !important;
+}
+
+
+body:not(.dark-mode) .cierre-box h2 {
+  border-bottom: 1.5px solid #e8851a;
+  color: #000000;
+}
+
+
+body:not(.dark-mode) .cierre-box .modal-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 3px 0;
+  line-height: 1;
+  background: #ffffff;
+  border: 1.5px solid #e8851a;
+  color: #000000;
+  transition: background .15s, color .15s;
+}
+body:not(.dark-mode) .cierre-box .modal-x:hover {
+  background: #e8851a;
+  color: #ffffff;
+}
+
+
+body:not(.dark-mode) .cierre-box .cierre-resumen div,
+body:not(.dark-mode) .cierre-box .cierre-metodos span,
+body:not(.dark-mode) .cierre-box .cierre-scroll {
+  background: #ffffff;
+  border: 1.5px solid #e8851a;
+}
+
+
+body:not(.dark-mode) .cierre-box .cierre-tabla th {
+  background: #ffffff;
+  border-bottom: 1.5px solid #e8851a;
+}
+body:not(.dark-mode) .cierre-box .cierre-tabla td {
+  border-bottom-color: #e8851a;
+}
+
+
+body:not(.dark-mode) .cierre-box .cierre-filtros input {
+  background: #ffffff;
+  border: 1.5px solid #e8851a;
+  color: #000000;
+}
+
+
+body:not(.dark-mode) .cierre-box .cierre-filtros label,
+body:not(.dark-mode) .cierre-box .cierre-nota,
+body:not(.dark-mode) .cierre-box .cierre-resumen small,
+body:not(.dark-mode) .cierre-box .cierre-resumen div:not(:first-child) strong,
+body:not(.dark-mode) .cierre-box .cierre-sub,
+body:not(.dark-mode) .cierre-box .cierre-tabla th,
+body:not(.dark-mode) .cierre-box .cierre-tabla td,
+body:not(.dark-mode) .cierre-box .cierre-tabla .c,
+body:not(.dark-mode) .cierre-box .cierre-metodos span {
+  color: #000000;
+}
+
+
+body:not(.dark-mode) .cierre-box .btn-cancel {
+  background: transparent !important;
+  border: 1.5px solid #e8851a !important;
+  color: #000000 !important;
+  transition: background .15s, color .15s;
+}
+body:not(.dark-mode) .cierre-box .btn-cancel:hover {
+  background: #e8851a !important;
+  color: #ffffff !important;
+}
+
+
+body:not(.dark-mode) .tz-box .tz-sub {
+  padding-bottom: 14px;
+  border-bottom: 1.5px solid #e8851a;
+}
+
+
+body:not(.dark-mode) .tz-box .modal-x {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 3px 0;
+  line-height: 1;
+  background: #ffffff;
+  border: 1.5px solid #e8851a;
+  color: #000000;
+  transition: background .15s, color .15s;
+}
+body:not(.dark-mode) .tz-box .modal-x:hover {
+  background: #e8851a;
+  color: #ffffff;
+}
+
+
+body:not(.dark-mode) .tz-box .tz-list {
+  background: #ffffff;
+  border: 1.5px solid #e8851a;
+}
+body:not(.dark-mode) .tz-box .tz-item {
+  border-bottom: 1px solid #e8851a;
+}
+body:not(.dark-mode) .tz-box .tz-item:last-child {
+  border-bottom: none;
+}
+
+
+body:not(.dark-mode) .tz-box .tz-title,
+body:not(.dark-mode) .tz-box .tz-sub,
+body:not(.dark-mode) .tz-box .tz-linea,
+body:not(.dark-mode) .tz-box .tz-motivo,
+body:not(.dark-mode) .tz-box .tz-user,
+body:not(.dark-mode) .tz-box .tz-fecha,
+body:not(.dark-mode) .tz-box .tz-fecha small,
+body:not(.dark-mode) .tz-box .tz-msg {
+  color: #000000;
+}
+
+
+body:not(.dark-mode) .vt-det .modal-actions .btn-cancel {
+  background: #ffffff;
+  color: #000000;
+  border: 1.5px solid #e8851a;
+  transition: background .2s ease, color .2s ease;
+}
+
+body:not(.dark-mode) .vt-det .modal-actions .btn-cancel:hover {
+  background: #e8851a;
+  color: #ffffff;
+}
+
+
+body:not(.dark-mode) .tz-box { --tz-pad: 36px; }
+@media (max-width: 768px) { body:not(.dark-mode) .tz-box { --tz-pad: 16px; } }
+@media (max-width: 640px) { body:not(.dark-mode) .tz-box { --tz-pad: 24px; } }
+
+
+body:not(.dark-mode) .tz-box .tz-sub {
+  margin-left: calc(var(--tz-pad) * -1);
+  margin-right: calc(var(--tz-pad) * -1);
+  padding: 0 var(--tz-pad) 14px;
+  border-bottom: 1.5px solid #e8851a;
+}
+
+
+body:not(.dark-mode) .tz-box .tz-list {
+  background: #ffffff;
+  border: none;
+}
+
+
+body:not(.dark-mode) .ventas-page .page-header {
+  border-bottom-color: #e8851a;
+}
+
+
+body:not(.dark-mode) .tz-box .tz-list {
+  margin-left: calc(var(--tz-pad) * -1);
+  margin-right: calc(var(--tz-pad) * -1);
+  padding: 0;
+  background: #ffffff;
+  border: none;
+}
+
+
+body:not(.dark-mode) .tz-box .tz-item {
+  padding: 13px var(--tz-pad);
+}
+
+
+body:not(.dark-mode) .tz-box .tz-item {
+  border-bottom: none;
+}
+
+
+body:not(.dark-mode) .cierre-box { --cb-pad: 36px; }
+@media (max-width: 768px) { body:not(.dark-mode) .cierre-box { --cb-pad: 16px; } }
+@media (max-width: 640px) { body:not(.dark-mode) .cierre-box { --cb-pad: 24px; } }
+
+
+body:not(.dark-mode) .cierre-box h2 {
+  margin-left: calc(var(--cb-pad) * -1);
+  margin-right: calc(var(--cb-pad) * -1);
+  padding-left: var(--cb-pad);
+  padding-right: var(--cb-pad);
+}
+
+
+body:not(.dark-mode) .cierre-box .cierre-metodos span {
+  border: none;
+}

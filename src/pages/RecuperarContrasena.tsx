@@ -54,7 +54,7 @@ export default function RecuperarContrasena() {
     try {
       await apiClient.post('/recuperar-contrasena', { email: emailLimpio, correo: emailLimpio });
       sessionStorage.setItem('correo_recuperacion', emailLimpio);
-      // Pasa directo sin mensaje intermedio.
+      
       navigate('/verificar-codigo');
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 429) {

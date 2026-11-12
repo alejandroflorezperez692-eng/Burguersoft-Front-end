@@ -1,8 +1,8 @@
 import '../styles/paginacion.css';
 
-export const POR_PAGINA = 10;
+export const POR_PAGINA = 15;
 
-/** Corta la lista en la página pedida. La página se ajusta sola si queda fuera de rango. */
+
 export function paginar<T>(lista: T[], pagina: number, porPagina: number = POR_PAGINA) {
   const totalPaginas = Math.max(1, Math.ceil(lista.length / porPagina));
   const paginaActual = Math.min(Math.max(1, pagina), totalPaginas);
@@ -10,7 +10,7 @@ export function paginar<T>(lista: T[], pagina: number, porPagina: number = POR_P
   return { visibles: lista.slice(inicio, inicio + porPagina), paginaActual, totalPaginas, inicio };
 }
 
-// [1, '…', 4, 5, 6, '…', 12]
+
 const numerosPagina = (actual: number, total: number): (number | '…')[] => {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const out: (number | '…')[] = [1];
@@ -28,11 +28,13 @@ interface Props {
   pagina: number;
   onCambiar: (n: number) => void;
   porPagina?: number;
-  /** Texto después del total, ej: "días" -> "Mostrando 1–5 de 12 días" */
+
   etiqueta?: string;
+  /** Muestra los botones de página aunque haya una sola. */
+  siempre?: boolean;
 }
 
-export default function Paginacion({ total, pagina, onCambiar, porPagina = POR_PAGINA, etiqueta }: Props) {
+export default function Paginacion({ total, pagina, onCambiar, porPagina = POR_PAGINA, etiqueta, siempre }: Props) {
   if (total === 0) return null;
 
   const totalPaginas = Math.max(1, Math.ceil(total / porPagina));
@@ -46,7 +48,7 @@ export default function Paginacion({ total, pagina, onCambiar, porPagina = POR_P
         Mostrando {inicio + 1}–{Math.min(inicio + porPagina, total)} de {total}{etiqueta ? ` ${etiqueta}` : ''}
       </span>
 
-      {totalPaginas > 1 && (
+      {(totalPaginas > 1 || siempre) && (
         <nav className="pag-nav" aria-label="Paginación">
           <button type="button" className="pag-btn" onClick={() => ir(actual - 1)} disabled={actual === 1}>
             ‹ Anterior

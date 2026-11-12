@@ -8,6 +8,7 @@ import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import SelectOscuro from '../../components/SelectOscuro';
+import Paginacion, { paginar } from '../../components/Paginacion';
 
 interface Proveedor {
   id: number;
@@ -56,6 +57,7 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
   const [closing, setClosing] = useState(false);
   const [confirmDel, setConfirmDel] = useState<Proveedor | null>(null);
   const [eliminando, setEliminando] = useState(false);
+  const [pagina, setPagina] = useState(1);
   const { showToast } = useToast();
 
 const load = async (silencioso = false) => {
@@ -76,11 +78,11 @@ const load = async (silencioso = false) => {
     try {
       localStorage.setItem('proveedoresAdminVista', vista);
     } catch {
-      /* si el navegador bloquea localStorage, simplemente no se guarda */
+     
     }
   }, [vista]);
 
-  // --- Lógica de Filtros Combinada ---
+  
   const proveedoresOrdenados = [...items].sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'));
 
   const hayFiltros = q !== '' || filtroProveedor !== '' || filtroNombre !== '';
@@ -92,17 +94,22 @@ const load = async (silencioso = false) => {
   };
 
   const filtered = items.filter((m) => {
-    // 1. Filtro de texto general
+    
     if (q) {
       const coincideTexto = [m.nombre, m.correo, m.telefono].some((v) => v?.toLowerCase().includes(q.toLowerCase()));
       if (!coincideTexto) return false;
     }
-    // 2. Filtros avanzados
+    
     if (filtroProveedor && String(m.id) !== filtroProveedor) return false;
     if (filtroNombre && !(m.nombre ?? '').toLowerCase().includes(filtroNombre.trim().toLowerCase())) return false;
 
     return true;
   });
+
+  // Al cambiar los filtros, volver a la primera página
+  useEffect(() => { setPagina(1); }, [q, filtroProveedor, filtroNombre]);
+
+  const { visibles: proveedoresPagina, paginaActual: paginaProveedores } = paginar(filtered, pagina);
 
   const openNew = () => { setForm(empty); setEditId(null); setIntentado(false); setModal(true); };
 
@@ -199,7 +206,7 @@ const load = async (silencioso = false) => {
   ]);
 
   return (
-    <div className="page-inner">
+    <div className="page-inner proveedores-page">
       <div className="page-header">
         <div>
           <h1>Gestión de Proveedores</h1>
@@ -210,10 +217,10 @@ const load = async (silencioso = false) => {
         )}
       </div>
 
-      {/* Barra de herramientas superior + Filtros */}
+      
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
 
-        {/* Fila 1: Búsqueda y Vista */}
+       
         <div className="mn-toolbar" style={{ marginBottom: 0 }}>
           <div className="mn-search-wrap">
             <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
@@ -249,7 +256,7 @@ const load = async (silencioso = false) => {
           </div>
         </div>
 
-        {/* Fila 2: Filtros */}
+        
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
             <label>Proveedores</label>
@@ -301,7 +308,7 @@ const load = async (silencioso = false) => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((m) => (
+                {proveedoresPagina.map((m) => (
                   <tr key={m.id}>
                     <td>
                       <div className="mn-table-prod">
@@ -337,7 +344,7 @@ const load = async (silencioso = false) => {
         )
       ) : (
         <div className="marcas-grid">
-          {filtered.map((m) => (
+          {proveedoresPagina.map((m) => (
             <article className="marca-card" key={m.id} onClick={() => verDetalle(m)}>
               <div className="marca-img-wrap">
                 <img
@@ -360,6 +367,16 @@ const load = async (silencioso = false) => {
             <div className="empty-state">No se encontraron proveedores</div>
           )}
         </div>
+      )}
+
+      {!loading && filtered.length > 0 && (
+        <Paginacion
+          total={filtered.length}
+          pagina={paginaProveedores}
+          onCambiar={setPagina}
+          etiqueta="proveedores"
+          siempre
+        />
       )}
 
       <div className={`detalle-overlay${detalle ? ' show' : ''}${closing ? ' closing' : ''}`} onClick={closeDetail}>

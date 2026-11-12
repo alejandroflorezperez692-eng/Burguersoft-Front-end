@@ -33,7 +33,7 @@ function precioNormal(promo: Promocion): number {
   return (promo.productos ?? []).reduce((s, x) => s + (Number(x.valor) || 0), 0);
 }
 
-// ← NUEVO: adicionales de los productos del combo (sin las de "quitar")
+
 function adicionesCombo(promo: Promocion): AdicionCombo[] {
   const mapa = new Map<number, AdicionCombo>();
   (promo.productos ?? []).forEach((p) =>
@@ -59,7 +59,7 @@ export default function Home() {
   const [personalizando, setPersonalizando] = useState<ItemPersonalizar | null>(null);
   const location = useLocation();
 
-  // Aviso flotante al cerrar sesión (vuelve a la Home con toast: 'logout_ok')
+  
   const [avisoSesion, setAvisoSesion] = useState<string | null>(() =>
     (location.state as { toast?: string } | null)?.toast === 'logout_ok'
       ? 'Has cerrado sesión correctamente.'
@@ -70,7 +70,7 @@ export default function Home() {
     setAvisoSesion('Has cerrado sesión correctamente.');
     const t = setTimeout(() => setAvisoSesion(null), 6000);
     return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   useEffect(() => {
@@ -172,8 +172,8 @@ export default function Home() {
                               precio: Number(promo.precio),
                               imagen: promo.imagen,
                               descripcion: promo.descripcion,
-                              adiciones: adicionesCombo(promo), // ← NUEVO
-                              esCombo: true,                    // ← NUEVO
+                              adiciones: adicionesCombo(promo), 
+                              esCombo: true,                    
                             })
                           }
                         >

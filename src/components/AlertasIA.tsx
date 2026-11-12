@@ -31,7 +31,7 @@ export default function AlertasIA() {
   const [cargando, setCargando] = useState(true);
   const [recarga, setRecarga] = useState(0);
 
-  // Aviso en vivo por websocket
+  
   useEffect(() => {
     const canal = conectarAlertas(() => setRecarga((n) => n + 1));
     return () => {
@@ -41,7 +41,7 @@ export default function AlertasIA() {
 
   useEffect(() => {
     let vivo = true;
-    // Si ya hay una petición en curso (StrictMode), se comparte en vez de repetirla
+
     const peticion =
       peticionEnCurso ??
       (peticionEnCurso = apiClient.get<RespuestaAlertas>('/asistente/alertas').finally(() => {
@@ -98,7 +98,7 @@ export default function AlertasIA() {
                 {datos.titulo_resumen ?? 'Resumen de la semana'}
               </span>
               {datos.resumen_ia && (
-                <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-400)' }}>Redactado por IA</span>
+                <span className="alerta-ia-tag" style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-400)' }}>Redactado por IA</span>
               )}
             </div>
             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, fontWeight: 500, color: 'var(--text-900)' }}>{datos.resumen}</p>
@@ -124,7 +124,7 @@ export default function AlertasIA() {
                 <span aria-hidden="true" style={{ fontSize: 20, lineHeight: 1.2 }}>{a.icono}</span>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-900)' }}>{a.titulo}</div>
-                  <div style={{ fontSize: 12.5, fontWeight: 500, lineHeight: 1.5, color: 'var(--text-400)', marginTop: 2 }}>{a.detalle}</div>
+                  <div className="alerta-detalle" style={{ fontSize: 12.5, fontWeight: 500, lineHeight: 1.5, color: 'var(--text-400)', marginTop: 2 }}>{a.detalle}</div>
                 </div>
               </li>
             ))}

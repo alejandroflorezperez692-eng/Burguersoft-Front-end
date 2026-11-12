@@ -36,9 +36,7 @@ const estadoEsInactivo = (estado?: string | null) =>
 
 const MSG_INACTIVO = 'Tu cuenta está inactiva. Contacta al administrador.';
 
-/** Pregunta el estado de la cuenta ya con token, para no dejar entrar a usuarios inactivos.
- *  1) GET /me (lo devuelve el backend con token)
- *  2) Si no trae estado y es personal, intenta GET /usuarios buscando por id. */
+
 async function verificarEstadoCuenta(id?: number, permitirUsuarios = false): Promise<void> {
   let idActual = id;
   let estado: string | undefined;
@@ -48,7 +46,7 @@ async function verificarEstadoCuenta(id?: number, permitirUsuarios = false): Pro
     estado = data?.estado;
     idActual = idActual ?? data?.id_Usuario ?? data?.id;
   } catch {
-    // /me no disponible: intentamos con /usuarios si el rol lo permite
+   
   }
 
   if (!estado && permitirUsuarios) {
@@ -62,7 +60,7 @@ async function verificarEstadoCuenta(id?: number, permitirUsuarios = false): Pro
       );
       estado = actual?.estado;
     } catch {
-      // sin acceso a la lista: no bloqueamos
+      
     }
   }
 
@@ -127,8 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [loading, setLoading] = useState(false);
 
-  // Si hay una sesión guardada, la revalida al abrir la app: si el usuario
-  // fue inactivado mientras tanto, se cierra la sesión de inmediato.
+
   useEffect(() => {
     if (!sessionStorage.getItem('token')) return;
     let vivo = true;
@@ -142,7 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       })
       .catch(() => {
-        /* sin sesión válida se deja como está */
+     
       });
     return () => {
       vivo = false;
@@ -163,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const u = data.usuario ?? data.user;
 
-      // El backend ya puede marcar el estado en la respuesta del login
+      
       if (estadoEsInactivo(u?.estado)) {
         throw new Error(MSG_INACTIVO);
       }
@@ -177,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       sessionStorage.setItem('token', data.token);
       try {
-        // Doble verificación con el backend (por si el login no trae estado)
+       
         await verificarEstadoCuenta(nextUser.id, !nextUser.role || nextUser.role !== 'cliente');
       } catch (e) {
         sessionStorage.removeItem('token');
@@ -191,15 +188,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Usado por el login social (Google/Facebook): ya tenemos el token
-  // (viene en la URL tras el redirect de Laravel), así que solo hay que
-  // guardarlo y pedir los datos del usuario a /me para completar la sesión.
+  
   const loginWithToken = useCallback(async (token: string) => {
     sessionStorage.setItem('token', token);
 
     try {
       const { data } = await apiClient.get<UsuarioApi>('/me');
-      // No permitir entrar con cuentas inactivas por login social
+      
       if (estadoEsInactivo(data?.estado)) {
         sessionStorage.removeItem('token');
         throw new Error(MSG_INACTIVO);
@@ -237,6 +232,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
+    // Se lee el token ANTES de borrarlo (el cliente lo necesita para avisar al servidor)
+    const token = sessionStorage.getItem('token');
+    // Se avisa al servidor para que anule la llave y nadie pueda reutilizarla.
+    // Si el backend aún no tiene la ruta (o es el modo demo), se ignora el fallo:
+    // el cierre de sesión local nunca debe bloquearse por esto.
+    if (token && token !== 'demo-token-sin-backend') {
+      apiClient.post('/logout').catch(() => {});
+    }
     setLoading(true);
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('user');
