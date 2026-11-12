@@ -1037,7 +1037,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                       {esPagoElectronico(metodoPago) ? (
                         <span className="checkout-required">*</span>
                       ) : (
-                        <small style={{ fontWeight: 500, color: '#888' }}>(opcional)</small>
+                        <small style={{ fontWeight: 500, color: '#8f0b0b' }}>*</small>
                       )}
                     </h3>
                   </div>

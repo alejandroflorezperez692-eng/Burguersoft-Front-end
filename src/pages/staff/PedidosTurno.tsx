@@ -42,19 +42,19 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   },
   meseros: {
     titulo: 'Meseros',
-    subtitulo: 'Pedidos de la web por recibir y pedidos listos para llevar a la mesa.',
-    estados: ['Por verificar', 'Preparado'],
+    subtitulo: 'Pedidos preparados para servir en las mesas.',
+    estados: ['Preparado'],
     acciones: {
-      'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
       Preparado: { sig: 'Servido', texto: 'Marcar servido' },
     },
   },
   cajero: {
     titulo: 'Cajero',
-    subtitulo: 'Entrega pedidos de domicilio o para recoger y cobra los pagos pendientes.',
-    estados: ['Preparado', 'Servido', 'Pendiente de pago'],
+    subtitulo: 'Verifica pedidos, entrega pedidos listos y cobra las mesas pendientes.',
+    estados: ['Por verificar', 'Preparado', 'Pendiente de pago'],
     acciones: {
-      Servido: { sig: 'Pagado', texto: 'Registrar pago' },
+      'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
+      Preparado: { sig: 'Servido', texto: 'Entregar' },
       'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
     },
   },
@@ -78,7 +78,7 @@ const VISTA_INICIAL: Record<string, Vista> = { admin: 'todos', cocinero: 'cocina
 
 const ETIQUETA: Partial<Record<Vista, Record<string, string>>> = {
   cocina: { Recepcionado: 'Por tomar' },
-  cajero: { Servido: 'Por cobrar' },
+  cajero: { Preparado: 'Por entregar' },
 };
 interface ItemVenta {
   cantidad?: number;
@@ -164,7 +164,7 @@ export default function PedidosTurno() {
 
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
-  const puedeVerComprobante = esAdmin || rol === 'cajero' || rol === 'cocinero';
+  const puedeVerComprobante = esAdmin || rol === 'cajero';
   const puedeRevisarComprobante = esAdmin || rol === 'cajero';
   const puedeCrear = rol === 'admin' || rol === 'mesero';
   const vistaInicial = VISTA_INICIAL[rol] ?? 'cocina';
@@ -348,6 +348,9 @@ export default function PedidosTurno() {
   };
 
   const visibles = items.filter((v) => {
+    if (rol === 'mesero' && v.tipo_entrega !== 'Consumir') return false;
+    if (rol === 'cajero' && v.estado === 'Preparado' && v.tipo_entrega === 'Consumir') return false;
+    if (rol === 'cajero' && v.estado === 'Pendiente de pago' && v.tipo_entrega !== 'Consumir') return false;
     if (filtroEntrega !== 'todos' && v.tipo_entrega !== filtroEntrega) return false;
     const q = busqueda.trim().toLowerCase().replace('#', '');
     if (!q) return true;
