@@ -420,7 +420,8 @@ export default function ComprasAdmin() {
   const [fInsumo, setFInsumo] = useState('');
   const [fMarca, setFMarca] = useState('');
 
-  const DIAS_POR_PAGINA = 5;
+  // --- Estados de paginación ---
+  const DIAS_POR_PAGINA = 15;
   const [pagina, setPagina] = useState(1);
 
   const [showForm, setShowForm] = useState(false);
@@ -1357,7 +1358,7 @@ const load = () => {
             </table>
           </div>
 
-          <Paginacion total={grupos.length} pagina={paginaActual} porPagina={DIAS_POR_PAGINA} etiqueta="días" onCambiar={setPagina} />
+          <Paginacion total={grupos.length} pagina={paginaActual} porPagina={DIAS_POR_PAGINA} etiqueta="días" onCambiar={setPagina} siempre />
         </>
       )}
 

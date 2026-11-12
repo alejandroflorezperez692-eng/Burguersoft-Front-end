@@ -15,7 +15,6 @@ interface PedidoMesa { id: number; estado: string; valor_total: number; items: {
 interface Mesa { numero: number; estado: 'Libre' | 'Ocupada' | 'Por cobrar'; total?: number; pedidos?: PedidoMesa[] }
 type Item = { tipo: 'producto' | 'combo'; id: number; nombre: string; precio: number; img?: string | null; agotado?: boolean; cat: string };
 
-const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
 const TIPOS = [
   { v: 'Consumir', t: 'En el local' },
   { v: 'Domicilio', t: 'Domicilio' },
@@ -98,7 +97,9 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const [cliente, setCliente] = useState('');
   const [direccion, setDireccion] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [metodoPago, setMetodoPago] = useState('Efectivo');
+  const [recibeNombre, setRecibeNombre] = useState('');
+  // El método de pago va fijo en 'Efectivo': el pago real se confirma al verificar el comprobante
+  const [metodoPago] = useState('Efectivo');
   const [notas, setNotas] = useState('');
   const [buscar, setBuscar] = useState('');
   const [pagina, setPagina] = useState(1);
@@ -248,15 +249,39 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
 
   const cerrar = () => {
     setCarrito([]); setCombos([]); setExtras([]); setMesa(null); setCliente(''); setDireccion('');
-    setTelefono(''); setNotas(''); setBuscar('');
+       setTelefono(''); setRecibeNombre(''); setNotas('');
     onClose();
   };
 
     const guardar = () => {
     if (enviando) return;
     if (tipoEntrega === 'Consumir' && !mesa) return alertar('Elige la mesa');
-    if (tipoEntrega === 'Domicilio' && !direccion.trim()) return alertar('Escribe la dirección de entrega');
+    if (tipoEntrega === 'Domicilio') {
+      if (!direccion.trim()) return alertar('Escribe la dirección de entrega');
+      if (!recibeNombre.trim()) return alertar('Escribe el nombre de quien recibe');
+      if (telefono.trim().length < 7) return alertar('Escribe un teléfono válido de quien recibe');
+    }
     if (lineas.length === 0) return alertar('Agrega al menos un producto');
+
+    setEnviando(true);
+    apiClient
+      .post('/ventas', {
+        carrito,
+        combos: combos.length ? combos : undefined,
+        adiciones: extras.length ? extras : undefined,
+        metodo_pago: metodoPago,
+        tipo_entrega: tipoEntrega,
+        cliente_nombre: cliente.trim() || undefined,
+        mesa: tipoEntrega === 'Consumir' ? mesa : undefined,
+        notas: notas.trim() || undefined,
+        direccion: tipoEntrega === 'Domicilio'
+          ? {
+              linea1: direccion.trim(),
+              recibe_nombre: recibeNombre.trim(),
+              recibe_telefono: telefono.trim(),
+            }
+          : undefined,
+      })
 
     const notasFinal = [
       tipoEntrega === 'Domicilio' ? `Dirección: ${direccion.trim()}` : '',
@@ -351,25 +376,36 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                 <label>Cliente (opcional)</label>
                 <input type="text" maxLength={150} value={cliente} onChange={(e) => setCliente(e.target.value)} />
               </div>
-              {tipoEntrega === 'Domicilio' && (
+                            {tipoEntrega === 'Domicilio' && (
                 <>
                   <div className="form-group">
-                    <label>Dirección *</label>
+                    <label>Dirección <span style={{ color: '#E8821A' }}>*</span></label>
                     <input type="text" maxLength={120} value={direccion} onChange={(e) => setDireccion(e.target.value)} />
                   </div>
                   <div className="form-group">
-                    <label>Teléfono</label>
-                    <input type="text" inputMode="numeric" maxLength={15} value={telefono}
-                      onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))} />
+                    <label>Nombre de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
+                    <input
+                      type="text"
+                      maxLength={150}
+                      value={recibeNombre}
+                      onChange={(e) => setRecibeNombre(e.target.value)}
+                      placeholder="Nombre y apellido"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Teléfono de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={15}
+                      value={telefono}
+                      onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
+                      placeholder="3001234567"
+                    />
                   </div>
                 </>
               )}
-              <div className="form-group">
-                <label>Método de pago</label>
-                <SelectOscuro value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
-                  {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
-                </SelectOscuro>
-              </div>
+              
               <div className="form-group">
                 <label>Notas para cocina</label>
                 <input type="text" maxLength={120} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej: sin tomate" />

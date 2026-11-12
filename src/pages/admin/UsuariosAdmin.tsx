@@ -7,6 +7,8 @@ import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
+import Paginacion from '../../components/Paginacion';
+import usuarioPerfil from '../../assets/img/usuario-perfil.png';
 
 interface Usuario {
   id: number;
@@ -18,7 +20,7 @@ interface Usuario {
   rol: { nombre: string } | null;
 }
 
-const OPCIONES_POR_PAGINA = [10, 50, 100, 200, 500];
+const OPCIONES_POR_PAGINA = [15, 50, 100, 200, 500];
 
 const badgeClass = (e: string) =>
   e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
@@ -63,13 +65,15 @@ const textosNombre = (p: ProblemaNombre, campo: 'nombre' | 'apellido'): { msg: s
 function Avatar({ nombre, apellido, estado }: { nombre: string; apellido: string; estado: string }) {
   return (
     <span style={{
-      width: 38, height: 38, borderRadius: '50%', flexShrink: 0,
-      background: estado === 'Activo' ? 'var(--brand)' : 'var(--surface-3)',
-      color: estado === 'Activo' ? '#fff' : 'var(--text-400)',
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      fontWeight: 800, fontSize: 15,
+      width: 38, height: 38, borderRadius: '50%', flexShrink: 0, overflow: 'hidden',
+      border: estado === 'Activo' ? '2px solid var(--brand)' : '2px solid var(--surface-3)',
+      display: 'inline-flex',
     }}>
-      {(nombre.charAt(0) + (apellido?.charAt(0) ?? '')).toUpperCase()}
+      <img
+        src={usuarioPerfil}
+        alt={`${nombre} ${apellido}`.trim()}
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
     </span>
   );
 }
@@ -88,7 +92,7 @@ export default function UsuariosAdmin() {
   const [loading, setLoading] = useState(true);
   const [intentado, setIntentado] = useState(false);
   const [pagina, setPagina] = useState(1);
-  const [porPagina, setPorPagina] = useState(10);
+  const [porPagina, setPorPagina] = useState(15);
 
   const [q, setQ] = useState('');
   const [filtroRol, setFiltroRol] = useState('');
@@ -439,29 +443,14 @@ const load = async (silencioso = false) => {
           </table>
         </div>
 
-        {totalPaginas > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 14, marginTop: 18 }}>
-            <button
-              type="button"
-              className="btn-cancel"
-              disabled={paginaActual <= 1}
-              onClick={() => setPagina(paginaActual - 1)}
-            >
-              Anterior
-            </button>
-            <span style={{ fontSize: 14, color: 'var(--text-600)' }}>
-              Página {paginaActual} de {totalPaginas}
-            </span>
-            <button
-              type="button"
-              className="btn-cancel"
-              disabled={paginaActual >= totalPaginas}
-              onClick={() => setPagina(paginaActual + 1)}
-            >
-              Siguiente
-            </button>
-          </div>
-        )}
+        <Paginacion
+          total={filtered.length}
+          pagina={paginaActual}
+          porPagina={porPagina}
+          onCambiar={setPagina}
+          etiqueta="usuarios"
+          siempre
+        />
 
         </>
       )}

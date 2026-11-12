@@ -459,7 +459,7 @@ export default function MateriaPrimaAdmin() {
         </div>
       )}
 
-      {!loading && <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />}
+      {!loading && <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} siempre />}
 
       {modal && (
       <div className="modal-overlay open" onClick={() => setModal(false)}>

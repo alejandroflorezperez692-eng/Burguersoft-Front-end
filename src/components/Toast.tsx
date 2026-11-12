@@ -80,7 +80,7 @@ export default function ToastMessage({ toast }: { toast: ToastPayload | null }) 
 
 interface ToastContextValue {
   toast: ToastPayload | null;
-  showToast: (msg: string, error?: boolean, aviso?: boolean) => void;
+  showToast: (msg: string, error?: boolean, aviso?: boolean, duracionMs?: number) => void;
   confirmar: (msg: string, textoConfirmar?: string, peligro?: boolean) => Promise<boolean>;
 }
 
@@ -108,11 +108,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const [confirmState, setConfirmState] = useState<{ msg: string; textoConfirmar: string; peligro: boolean; resolve: (v: boolean) => void } | null>(null);
 
-  const showToast = useCallback((msg: string, error = false, aviso = false) => {
+  const showToast = useCallback((msg: string, error = false, aviso = false, duracionMs?: number) => {
     setToast({ msg, error, aviso });
     window.clearTimeout(timer.current);
-
-    const duracion = Math.min(8000, Math.max(3500, 3200 + msg.length * 25));
+    // Los mensajes largos duran más para que alcancen a leerse (mínimo 3.5s).
+    const duracion = duracionMs ?? Math.min(8000, Math.max(3500, 3200 + msg.length * 25));
     timer.current = window.setTimeout(() => setToast(null), duracion);
   }, []);
 

@@ -9,7 +9,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 import '../styles/mis-pedidos.css';
 import { mensajeError } from '../utils/errores';
-
+import { useToast } from '../components/Toast';
 
 type ItemUI = {
   nombre: string;
@@ -69,17 +69,14 @@ const PASOS_DOMICILIO = PASOS;
 const PASOS_RECOGER = PASOS;
 const PASOS_CONSUMIR = PASOS;
 const CANCELABLES = ['Registrado', 'Por verificar', 'Recepcionado'];
-
-const RECHAZABLES = ['Pendiente de pago'];
-
-
+const RECHAZABLES: string[] = [];
 const ORDEN_GLOBAL = PASOS;
 
 function normalizarTipoEntrega(tipo?: string): string {
   const t = (tipo ?? '').trim().toLowerCase();
   if (t.includes('domi')) return 'Domicilio';
   if (t.includes('recog') || t.includes('llevar')) return 'Para recoger';
-  return 'En restaurante';
+  return 'En el local';
 }
 
 function pasosPara(tipoEntrega: string): string[] {
@@ -307,6 +304,7 @@ export default function MisCompras() {
   const [pedidoARechazar, setPedidoARechazar] = useState<PedidoUI | null>(null);
   const [pedidoComprobante, setPedidoComprobante] = useState<PedidoUI | null>(null);
   const [avisoComprobante, setAvisoComprobante] = useState<string | null>(null);
+  const { showToast } = useToast();
   const [pedidos, setPedidos] = useState<PedidoUI[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelandoId, setCancelandoId] = useState<number | null>(null);
@@ -841,8 +839,9 @@ export default function MisCompras() {
           numero={pedidoComprobante.numero_secuencial}
           onClose={() => setPedidoComprobante(null)}
           onSubido={() => {
-            setAvisoComprobante(
+            showToast(
               'Comprobante subido. La IA confirmó que es un comprobante de pago y quedó en revisión del administrador.',
+              false,
             );
             void cargar();
           }}

@@ -14,6 +14,8 @@ import logoDaviplata from '../assets/img/daviplata.png';
 import logoBancolombia from '../assets/img/bancolombia.svg';
 import logoEfectivo from '../assets/img/efectivo.svg';
 import logoUbicacion from '../assets/img/Ubicacion.png';
+import { comprimirImagen } from '../utils/comprimirImagen';
+import AdminLoading from '../components/AdminLoading';
 
 const IVA_RATE = 0.08;
 const TIPOS_DOCUMENTO = ['CC', 'CE', 'NIT', 'Pasaporte', 'Otro'];
@@ -374,6 +376,38 @@ export default function Checkout() {
   const [apellido] = useState(apellidoInicial);
   const [correo] = useState(user?.email ?? '');
   const [telefono, setTelefono] = useState('');
+  const [recibeNombre, setRecibeNombre] = useState('');
+  const [recibeTelefono, setRecibeTelefono] = useState('');
+
+  // ---- Mesas (solo si el cliente come en el local) ----
+  const [mesas, setMesas] = useState<{ numero: number; estado: string }[]>([]);
+  const [mesaSel, setMesaSel] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (tipoEntrega !== 'En restaurante') return;
+    let vivo = true;
+    const cargarMesas = () => {
+      apiClient
+        .get('/mesas/disponibilidad')
+        .then(({ data }) => {
+          if (!vivo) return;
+          const lista = Array.isArray(data) ? data : [];
+          setMesas(lista);
+          setMesaSel((actual) =>
+            actual && lista.find((m: { numero: number; estado: string }) => m.numero === actual && m.estado === 'Libre')
+              ? actual
+              : null,
+          );
+        })
+        .catch(() => {});
+    };
+    cargarMesas();
+    const t = window.setInterval(cargarMesas, 15000);
+    return () => {
+      vivo = false;
+      window.clearInterval(t);
+    };
+  }, [tipoEntrega]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -412,15 +446,37 @@ export default function Checkout() {
   const [metodoPago, setMetodoPago] = useState<'nequi' | 'daviplata' | 'bancolombia' | 'efectivo'>('nequi');
   const [qrNoDisponible, setQrNoDisponible] = useState<Record<string, boolean>>({});
 
-
-  const [pedidoConfirmado, setPedidoConfirmado] = useState<{
+  // Pedido ya registrado: se muestra el panel de confirmacion con el boton
+  // para abrir el chat de WhatsApp y el acceso al estado del pedido.
+  // Se guarda en sessionStorage para que sobreviva a una recarga de la página.
+  const PEDIDO_KEY = 'checkout_pedido_confirmado';
+  type PedidoConfirmado = {
     id: number | null;
+    numeroCliente: number | null;
     total: number;
     url: string;
     correo: string | null;
     comprobanteCargado: boolean;
     metodoPago: string;
-  } | null>(null);
+  };
+  const leerPedidoGuardado = (): PedidoConfirmado | null => {
+    try {
+      const raw = sessionStorage.getItem(PEDIDO_KEY);
+      return raw ? (JSON.parse(raw) as PedidoConfirmado) : null;
+    } catch {
+      return null;
+    }
+  };
+  const [pedidoConfirmado, setPedidoConfirmado] = useState<PedidoConfirmado | null>(leerPedidoGuardado);
+
+  // Al salir de /checkout (navegación interna) se olvida el pedido confirmado.
+  // Recargar la página no dispara esto: la confirmación sigue disponible.
+  useEffect(() => {
+    return () => {
+      try { sessionStorage.removeItem(PEDIDO_KEY); } catch { /* sin storage */ }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
  
   const [comprobante, setComprobante] = useState<File | null>(null);
@@ -437,7 +493,7 @@ export default function Checkout() {
     return () => URL.revokeObjectURL(url);
   }, [comprobante]);
 
-  const seleccionarComprobante = (file: File | null) => {
+  const seleccionarComprobante = async (file: File | null) => {
     if (!file) {
       setComprobante(null);
       return;
@@ -450,7 +506,7 @@ export default function Checkout() {
       alertar('El comprobante no puede superar los 8 MB.');
       return;
     }
-    setComprobante(file);
+    setComprobante(await comprimirImagen(file));
   };
 
  
@@ -526,6 +582,8 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
 
   const [enviando, setEnviando] = useState(false);
 
+    const enviandoRef = useRef(false);
+
   const subtotal = total / (1 + IVA_RATE);
   const impuestos = total - subtotal;
 
@@ -535,6 +593,12 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     if (items.length === 0) return 'Tu carrito está vacío.';
     if (requiereDireccion && (!direccion.linea1 || !direccion.barrio)) {
       return 'Completa la dirección de entrega (o usa el botón de ubicación actual).';
+    }
+    if (requiereDireccion && (!recibeNombre.trim() || !recibeTelefono.trim())) {
+      return 'Indica el nombre y el teléfono de quien recibe el pedido.';
+    }
+    if (tipoEntrega === 'En restaurante' && !mesaSel) {
+      return 'Elige una mesa disponible para tu pedido.';
     }
     if (!numeroDocumento || !nombre || !apellido || !correo || !telefono) {
       return 'Completa todos los datos de la compra.';
@@ -551,12 +615,14 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       navigate('/login');
       return;
     }
+    if (enviandoRef.current) return;
     const error = validar();
     if (error) {
       alertar(error);
       return;
     }
 
+    enviandoRef.current = true;
     setEnviando(true);
     try {
       
@@ -571,6 +637,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       });
 
       form.append('tipo_entrega', TIPO_ENTREGA_BACKEND[tipoEntrega] ?? 'Domicilio');
+      if (tipoEntrega === 'En restaurante' && mesaSel) form.append('mesa', String(mesaSel));
       form.append('metodo_pago', METODO_PAGO_BACKEND[metodoPago] ?? 'Efectivo');
       form.append('notas', construirNotas() ?? '');
       form.append('total', String(total));
@@ -583,6 +650,8 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
         form.append('direccion[linea1]', direccion.linea1);
         form.append('direccion[barrio]', direccion.barrio);
         form.append('direccion[referencia]', direccion.referencia);
+        form.append('direccion[recibe_nombre]', recibeNombre.trim());
+        form.append('direccion[recibe_telefono]', recibeTelefono.trim());
       }
 
       form.append('cliente[tipoDocumento]', tipoDocumento);
@@ -609,18 +678,22 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       vaciar();
       setComprobante(null);
 
-      setPedidoConfirmado({
+      const confirmado: NonNullable<typeof pedidoConfirmado> = {
         id: idVenta,
+        numeroCliente: respuesta.data?.numero_cliente ?? null,
         total,
         url: urlWsp,
         correo: respuesta.data?.recibo_correo ?? null,
         comprobanteCargado: Boolean(respuesta.data?.tiene_comprobante),
         metodoPago,
-      });
+      };
+      setPedidoConfirmado(confirmado);
+      try { sessionStorage.setItem(PEDIDO_KEY, JSON.stringify(confirmado)); } catch { /* sin storage */ }
       window.scrollTo(0, 0);
     } catch (err) {
       alertar(mensajeErrorPago(err));
     } finally {
+      enviandoRef.current = false;
       setEnviando(false);
     }
   };
@@ -729,36 +802,46 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                   <div className="checkout-info-row">
                     <span className="checkout-info-icon">🧾</span>
                     <div>
-                      <strong>Pedido {pedidoConfirmado.id ? `#${pedidoConfirmado.id}` : 'registrado'}</strong>
+                      <strong>Pedido {(pedidoConfirmado.numeroCliente ?? pedidoConfirmado.id) ? `#${pedidoConfirmado.numeroCliente ?? pedidoConfirmado.id}` : 'registrado'}</strong>
                       <p>Total a pagar: {fmtCOP(pedidoConfirmado.total)}</p>
                     </div>
                   </div>
 
-                  <a
-                    className="btn-pagar-ahora"
-                    href={pedidoConfirmado.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {pedidoConfirmado.metodoPago === 'efectivo'
-                      ? 'Escribir por WhatsApp'
-                      : 'Enviar comprobante por WhatsApp'}
-                  </a>
+                  <div className="checkout-confirm-acciones">
+                    <button
+                      type="button"
+                      className="btn-ubicacion"
+                      onClick={() => navigate('/mis-compras')}
+                    >
+                      Ver el estado de mis compras
+                    </button>
 
-                  <button
-                    type="button"
-                    className="btn-ubicacion"
-                    onClick={() => navigate('/mis-compras')}
-                  >
-                    Ver el estado de mi pedido
-                  </button>
-
+                    <button
+                      type="button"
+                      className="btn-ubicacion"
+                      onClick={() => navigate('/menu-publico')}
+                    >
+                      Hacer otro pedido
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          ) : items.length === 0 ? (
+            /* ---- Carrito vacío: no mostrar el formulario de pago con $0 ---- */
+            <section className="checkout-card">
+              <div className="checkout-encabezado">
+                <h2>Tu carrito está vacío</h2>
+                <p>Agrega productos desde el menú para continuar con el pago.</p>
+              </div>
+              <div className="checkout-seccion">
+                <div className="checkout-form">
                   <button
                     type="button"
                     className="btn-ubicacion"
                     onClick={() => navigate('/menu-publico')}
                   >
-                    Hacer otro pedido
+                    Ir al menú
                   </button>
                 </div>
               </div>
@@ -812,6 +895,28 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                       />
                       <span className="checkout-hint">Puedes arrastrar la esquina inferior para agrandar el campo.</span>
                     </div>
+                    <div className="checkout-grid-2">
+                      <div className="form-group">
+                        <label>Nombre de quien recibe <span className="checkout-required">*</span></label>
+                        <input
+                          value={recibeNombre}
+                          onChange={(e) => setRecibeNombre(e.target.value)}
+                          placeholder="Nombre y apellido"
+                          maxLength={150}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Teléfono de quien recibe <span className="checkout-required">*</span></label>
+                        <input
+                          value={recibeTelefono}
+                          onChange={(e) => setRecibeTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                          placeholder="3001234567"
+                          inputMode="numeric"
+                          required
+                        />
+                      </div>
+                    </div>
 
                 </div>
               ) : (
@@ -820,6 +925,47 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                   <div>
                     <strong>{resumenEntrega}</strong>
                     <p>{cuando === 'Lo antes posible' ? 'Lo antes posible' : `${fechaProgramada} · ${horaProgramada}`}</p>
+                  </div>
+                </div>
+              )}
+
+              {tipoEntrega === 'En restaurante' && (
+                <div style={{ marginTop: 14 }}>
+                  <strong style={{ display: 'block', marginBottom: 8 }}>
+                    Elige tu mesa <span className="checkout-required">*</span>
+                  </strong>
+                  {mesas.length === 0 && <p className="checkout-hint">Cargando mesas…</p>}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
+                    {mesas.map((m) => {
+                      const libre = m.estado === 'Libre';
+                      const seleccionada = mesaSel === m.numero;
+                      return (
+                        <button
+                          type="button"
+                          key={m.numero}
+                          disabled={!libre}
+                          onClick={() => setMesaSel(m.numero)}
+                          style={{
+                            padding: '12px 8px',
+                            borderRadius: 12,
+                            border: `2px solid ${seleccionada ? '#e8821a' : libre ? '#bfe3cb' : '#eee'}`,
+                            background: seleccionada ? '#fff3e6' : libre ? '#f2fbf5' : '#f5f5f5',
+                            color: libre ? '#1a1a1a' : '#9a9a9a',
+                            cursor: libre ? 'pointer' : 'not-allowed',
+                            fontFamily: 'inherit',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <strong>Mesa {m.numero}</strong>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: libre ? '#1a7a42' : '#b45309' }}>
+                            {libre ? '● Disponible' : '● Ocupada'}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -898,7 +1044,10 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                         type="radio"
                         name="metodo"
                         checked={metodoPago === m.id}
-                        onChange={() => setMetodoPago(m.id)}
+                        onChange={() => {
+                          setMetodoPago(m.id);
+                          if (m.id === 'efectivo') setComprobante(null);
+                        }}
                       />
                       <span className={`pago-icono pago-icono-${m.id}`}>{m.icono}</span>
                       <span className="pago-chip-texto">{m.etiqueta}</span>
@@ -934,13 +1083,13 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                   </div>
                 )}
 
+                {metodoPago !== 'efectivo' && (
                 <div className="checkout-comprobante">
                   <div className="checkout-seccion-titulo" style={{ marginBottom: 8 }}>
                     <span className="checkout-paso">4</span>
-                    <h3>
-                      Comprobante de pago{' '}
-                      <span className="checkout-required">*</span>
-                    </h3>
+                   <h3>
+                    Comprobante de pago <span className="checkout-required">*</span>
+                  </h3>
                   </div>
                   <p className="checkout-comprobante-texto">
                     Sube una foto o captura del comprobante de tu pago. La IA verificará que la imagen
@@ -954,7 +1103,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
                     style={{ display: 'none' }}
-                    onChange={(e) => seleccionarComprobante(e.target.files?.[0] ?? null)}
+                    onChange={(e) => void seleccionarComprobante(e.target.files?.[0] ?? null)}
                   />
 
                   {comprobantePreview ? (
@@ -981,14 +1130,15 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                     </label>
                   )}
                 </div>
+                )}
               </div>
             </div>
           </section>
           )}
         </div>
 
-        
-        {!pedidoConfirmado && (
+        {/* ---- Resumen / botón pagar ---- */}
+        {!pedidoConfirmado && items.length > 0 && (
         <aside className="checkout-resumen">
           <div className="checkout-resumen-titulo">Tu pedido</div>
           <div className="checkout-resumen-items">
@@ -1010,6 +1160,12 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
         </aside>
         )}
       </div>
+      {enviando && (
+        <AdminLoading
+          texto={comprobante ? 'Verificando tu comprobante' : 'Registrando tu pedido'}
+          subtexto="No cierres ni recargues esta página."
+        />
+      )}
       <Footer />
     </div>
   );

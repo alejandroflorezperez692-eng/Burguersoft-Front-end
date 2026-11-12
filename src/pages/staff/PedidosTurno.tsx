@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import apiClient from '../../api/client';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
@@ -26,6 +26,7 @@ interface VistaConfig {
   titulo: string;
   subtitulo: string;
   estados: string[];
+  columnas?: string[];
   acciones: Record<string, Accion>;
 }
 
@@ -49,14 +50,15 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
     },
   },
   cajero: {
-    titulo: 'Cajero',
-    subtitulo: 'Pedidos servidos y pagos pendientes por cobrar.',
-    estados: ['Servido', 'Pendiente de pago'],
-    acciones: {
-      Servido: { sig: 'Pagado', texto: 'Registrar pago' },
-      'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
-    },
+  titulo: 'Cajero',
+  subtitulo: 'Pedidos por cobrar y pedidos ya pagados por el cliente.',
+  estados: ['Servido', 'Pendiente de pago'],      
+  columnas: ['Pendiente de pago', 'Ya pagados'],    
+  acciones: {
+    Servido: { sig: 'Pagado', texto: 'Registrar pago' },
+    'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
   },
+},
   todos: {
     titulo: 'Todos',
     subtitulo: 'Vista completa del flujo de pedidos.',
@@ -77,7 +79,6 @@ const VISTA_INICIAL: Record<string, Vista> = { admin: 'todos', cocinero: 'cocina
 
 const ETIQUETA: Partial<Record<Vista, Record<string, string>>> = {
   cocina: { Recepcionado: 'Por tomar' },
-  cajero: { Servido: 'Por cobrar' },
 };
 interface ItemVenta {
   cantidad?: number;
@@ -89,6 +90,7 @@ interface PromoVenta {
 interface Venta {
   id: number;
   fecha?: string;
+  fecha_programada?: string | null;
   estado?: string;
   tipo_entrega?: string | null;
   metodo_pago?: string | null;
@@ -97,7 +99,13 @@ interface Venta {
   mesa?: number | null;
   notas?: string | null;
   usuario_id?: number | null;
-  usuario?: { nombre?: string; apellido?: string } | null;
+  usuario?: { nombre?: string; apellido?: string; rol_id?: number; telefono?: string | null; phone?: string | null } | null;
+  telefono_contacto?: string | null;
+  direccion?: string | null;
+  barrio?: string | null;
+  referencia?: string | null;
+  recibe_nombre?: string | null;
+  recibe_telefono?: string | null;
   detalles?: ItemVenta[];
   promociones?: PromoVenta[];
   tiene_comprobante?: boolean;
@@ -118,6 +126,8 @@ interface CambioConMotivo {
   venta: Venta;
   accion: Accion;
 }
+
+const METODOS_COBRO = ['Efectivo', 'Nequi', 'Daviplata', 'Bancolombia'];
 
 const aFecha = (f: string) => new Date((f || '').replace(' ', 'T'));
 
@@ -140,6 +150,23 @@ const requiereComprobante = (v: Venta): boolean =>
 
 const comprobanteAprobado = (v: Venta): boolean => v.comprobante_estado === 'Aprobado';
 
+const ROL_CLIENTE = 2;
+const creoCliente = (v: Venta) => Number(v.usuario?.rol_id) === ROL_CLIENTE;
+
+// Cliente que pagó de forma electrónica y con comprobante aprobado
+const yaPagado = (v: Venta): boolean =>
+  creoCliente(v) &&
+  (v.metodo_pago ?? '').trim().toLowerCase() !== 'efectivo' &&
+  v.comprobante_estado === 'Aprobado';
+
+// Cualquier pedido (cliente, admin o mesero) con comprobante electrónico aprobado
+const pagoConComprobanteAprobado = (v: Venta): boolean =>
+  (v.metodo_pago ?? '').trim().toLowerCase() !== 'efectivo' &&
+  v.comprobante_estado === 'Aprobado';
+
+const columnaDe = (v: Venta, vista: Vista): string =>
+  vista === 'cajero' ? (yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago') : (v.estado ?? '');
+
 const FILTROS_ENTREGA: { valor: Entrega; texto: string }[] = [
   { valor: 'todos', texto: 'Todos' },
   { valor: 'Domicilio', texto: 'Domicilio' },
@@ -156,12 +183,25 @@ const separarNotas = (n?: string | null): string[] =>
 const nombreCliente = (v: Venta): string =>
   v.cliente_nombre || [v.usuario?.nombre, v.usuario?.apellido].filter(Boolean).join(' ').trim() || 'Cliente';
 
+const telefonoCliente = (v: Venta): string =>
+  v.telefono_contacto || v.usuario?.telefono || v.usuario?.phone || '';
+
+const Fila = ({ k, v }: { k: string; v: ReactNode }) => (
+  <div className="tv-fila">
+    <span className="tv-fila-k">{k}</span>
+    <span className="tv-fila-v">{v}</span>
+  </div>
+);
+
 export default function PedidosTurno() {
   const { user } = useAuth();
-  const { showToast } = useToast();
+  const { showToast, confirmar } = useToast();
+
+  const alertar = (m: string) => showToast(m, true);
 
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
+  const puedeRevisar = esAdmin || rol === 'cajero';
   const puedeVerComprobante = esAdmin || rol === 'cajero' || rol === 'cocinero';
   const puedeCrear = rol === 'admin' || rol === 'mesero';
   const vistaInicial = VISTA_INICIAL[rol] ?? 'cocina';
@@ -183,6 +223,25 @@ export default function PedidosTurno() {
   const [comprobanteARechazar, setComprobanteARechazar] = useState<Venta | null>(null);
   const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
   const [procesandoComprobante, setProcesandoComprobante] = useState(false);
+  const [cobro, setCobro] = useState<{ venta: Venta; accion: Accion } | null>(null);
+  const [metodoCobro, setMetodoCobro] = useState('Efectivo');
+  const [archivoCobro, setArchivoCobro] = useState<File | null>(null);
+  const [pagando, setPagando] = useState(false);
+  const pagandoRef = useRef(false);
+  const colsRef = useRef<HTMLDivElement>(null);
+  const moverColumnas = (dir: 1 | -1) =>
+  colsRef.current?.scrollBy({ left: dir * 420, behavior: 'smooth' });
+  const refArchivoCobro = useRef<HTMLInputElement>(null);
+  const previewCobro = useMemo(
+    () => (archivoCobro ? URL.createObjectURL(archivoCobro) : null),
+    [archivoCobro],
+  );
+  useEffect(() => () => { if (previewCobro) URL.revokeObjectURL(previewCobro); }, [previewCobro]);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(() => setTick((x) => x + 1), 30000);
+    return () => window.clearInterval(t);
+  }, []);
 
   const version = useRef(0);
 
@@ -200,7 +259,8 @@ export default function PedidosTurno() {
         ? res.data
         : ((res.data as { data?: unknown })?.data as Venta[]) ?? [];
       const turno = lista.filter((v) => config.estados.includes(v.estado ?? ''));
-      turno.sort((a, b) => aFecha(a.fecha ?? '').getTime() - aFecha(b.fecha ?? '').getTime());
+      turno.sort((a, b) =>
+        aFecha(a.fecha_programada ?? a.fecha ?? '').getTime() - aFecha(b.fecha_programada ?? b.fecha ?? '').getTime());
       setItems(turno);
     } catch {
       setError('No se pudo cargar la lista de pedidos.');
@@ -249,21 +309,59 @@ export default function PedidosTurno() {
   }, [load]);
 
   const intentarCambio = (venta: Venta, accion: Accion) => {
+    if (accion.sig === 'Pagado' && pagoConComprobanteAprobado(venta)) {
+      void ejecutarCambio(venta, accion, undefined, venta.metodo_pago ?? undefined);
+      return;
+    }
+    // Efectivo: se registra directo, sin abrir el modal
+    if (accion.sig === 'Pagado' && (venta.metodo_pago ?? '').trim().toLowerCase() === 'efectivo') {
+      void ejecutarCambio(venta, accion, undefined, 'Efectivo');
+      return;
+    }
     setError(null);
     const actual = venta.estado ?? '';
     const t = transiciones?.[actual];
     if (t && !t.directas.includes(accion.sig) && !t.con_motivo.includes(accion.sig)) {
-      setError(`El sistema no permite pasar de «${actual}» a «${accion.sig}».`);
+      alertar(`El sistema no permite pasar de «${actual}» a «${accion.sig}».`);
       return;
     }
     if (t?.con_motivo.includes(accion.sig)) {
       setCambioConMotivo({ venta, accion });
       return;
     }
+    if (actual === 'Registrado' && accion.sig === 'Por verificar') {
+      const metodo = (venta.metodo_pago ?? '').trim();
+      if (!metodo) {
+        alertar(`El pedido #${venta.id} no tiene método de pago. Verifícalo antes de avanzar.`);
+        return;
+      }
+      if (requiereComprobante(venta) && venta.comprobante_estado === 'Rechazado') {
+        alertar(`El comprobante del pedido #${venta.id} fue devuelto. Espera a que el cliente suba uno nuevo.`);
+        return;
+      }
+      if (requiereComprobante(venta) && !comprobanteAprobado(venta)) {
+        alertar(
+          venta.tiene_comprobante
+            ? `Aprueba el comprobante de ${metodo} del pedido #${venta.id} antes de avanzar.`
+            : `El pedido #${venta.id} (${metodo}) no tiene comprobante de pago.`,
+        );
+        return;
+      }
+    }
+    if (accion.sig === 'Pagado') {
+      pagandoRef.current = false;
+      setPagando(false);
+      const m = (venta.metodo_pago ?? '').trim();
+      // Siempre abre el modal para elegir método (el "ya pagado" del cliente se cerró arriba)
+      setMetodoCobro(METODOS_COBRO.includes(m) ? m : 'Efectivo');
+      setArchivoCobro(null);
+      setCobro({ venta, accion });
+      return;
+    }
     void ejecutarCambio(venta, accion, undefined);
   };
 
- const ejecutarCambio = async (venta: Venta, accion: Accion, motivo?: string) => {
+ const ejecutarCambio = async (venta: Venta, accion: Accion, motivo?: string, metodo?: string) => {
   const anterior = items;
   pendientes.current += 1;
   version.current += 1;            // ← NUEVA: invalida recargas en vuelo
@@ -276,10 +374,10 @@ export default function PedidosTurno() {
   showToast(`Pedido #${venta.id}: ${accion.sig.toLowerCase()}`, false);
 
   try {
-    await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo });
+    await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo, metodo_pago: metodo });
   } catch (e) {
     setItems(anterior);
-    setError(mensajeDeError(e, `No se pudo marcar el pedido #${venta.id} como «${accion.sig}».`));
+    alertar(mensajeDeError(e, `No se pudo marcar el pedido #${venta.id} como «${accion.sig}».`));
   } finally {
     pendientes.current -= 1;
     version.current += 1;          // ← NUEVA: la recarga siguiente sí es válida
@@ -328,7 +426,7 @@ export default function PedidosTurno() {
       );
       await load();
     } catch (e: unknown) {
-      setError(
+      alertar(
         mensajeDeError(e, `No se pudo revisar el comprobante del pedido #${venta.id}.`),
       );
     } finally {
@@ -337,12 +435,13 @@ export default function PedidosTurno() {
   };
 
   const soltarEn = (estadoDestino: string) => {
-    const venta = items.find((x) => x.id === arrastrandoId);
-    setArrastrandoId(null);
-    setColHover(null);
-    if (!venta || venta.estado === estadoDestino) return;
-    intentarCambio(venta, { sig: estadoDestino, texto: `Mover a ${estadoDestino}` });
-  };
+  const venta = items.find((x) => x.id === arrastrandoId);
+  setArrastrandoId(null);
+  setColHover(null);
+  if (!venta || venta.estado === estadoDestino) return;
+  if (vista === 'cajero') return; // columnas virtuales: se cobra con el botón
+  intentarCambio(venta, { sig: estadoDestino, texto: `Mover a ${estadoDestino}` });
+};
 
   const visibles = items.filter((v) => {
     if (filtroEntrega !== 'todos' && v.tipo_entrega !== filtroEntrega) return false;
@@ -360,36 +459,107 @@ export default function PedidosTurno() {
   });
 
   const puedeSubirComprobante = (v: Venta) =>
-    esAdmin || Number(v.usuario_id) === Number(user?.id);
+    puedeRevisar || Number(v.usuario_id) === Number(user?.id);
+  const esEfectivo = (v: Venta) => (v.metodo_pago || '').toLowerCase() === 'efectivo';
 
   const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
   useEscape([
+    [cobro !== null, () => setCobro(null)],
     [comprobanteASubir !== null, () => setComprobanteASubir(null)],
     [comprobanteARechazar !== null, () => setComprobanteARechazar(null)],
     [detalle !== null, () => setDetalleId(null)],
   ]);
+    const exigeComprobante =
+    !!cobro && METODOS_CON_COMPROBANTE.includes(metodoCobro) && !comprobanteAprobado(cobro.venta);
+  const confirmarPago = async () => {
+    if (!cobro || pagandoRef.current) return;
+    const { venta, accion } = cobro;
+
+    if (exigeComprobante && !archivoCobro) {
+      alertar('Adjunta la imagen del comprobante de pago.');
+      return;
+    }
+
+    pagandoRef.current = true;
+    setPagando(true);
+    try {
+      // 1. Solo se guarda aparte si hay comprobante; si no, va en el PATCH de estado
+      if (exigeComprobante && (venta.metodo_pago ?? '').trim() !== metodoCobro) {
+        await apiClient.patch(`/ventas/${venta.id}/metodo-pago`, { metodo_pago: metodoCobro });
+      }
+
+      // 2. Sube el comprobante (la IA lo verifica)
+      if (exigeComprobante && archivoCobro) {
+        const form = new FormData();
+        form.append('comprobante', archivoCobro);
+        const { data } = await apiClient.post(`/ventas/${venta.id}/comprobante`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 90000,
+        });
+
+        // Si el valor no coincide, no se aprueba solo: el cajero debe confirmar
+        if (data?.venta?.comprobante_estado !== 'Aprobado') {
+          const valor = data?.venta?.comprobante_valor;
+          const seguir = await confirmar(
+          `El valor del comprobante${valor != null ? ` ($${Number(valor).toLocaleString('es-CO')})` : ''} ` +
+          `no coincide con el total del pedido.\n¿Registrar el pago de todas formas?`,
+          'Sí, registrar pago',
+        );
+          if (!seguir) {
+            pagandoRef.current = false;
+            setPagando(false);
+            return;
+          }
+          await apiClient.patch(`/ventas/${venta.id}/comprobante/revisar`, { estado: 'Aprobado' });
+        }
+      }
+
+      // 3. Marca el pedido como pagado (el bloqueo se mantiene hasta cerrar el modal)
+      setCobro(null);
+      setArchivoCobro(null);
+      void ejecutarCambio(venta, accion, undefined, metodoCobro);
+      pagandoRef.current = false;
+      setPagando(false);
+    } catch (e) {
+      alertar(mensajeDeError(e, 'No se pudo registrar el pago.'));
+      pagandoRef.current = false;
+      setPagando(false);
+    }
+  };
 
   const tarjeta = (v: Venta) => {
-    const accion = config.acciones[v.estado ?? ''];
+    let accion = config.acciones[v.estado ?? ''];
+    if (vista === 'cajero' && accion && yaPagado(v)) {
+      accion = { ...accion, texto: 'Cerrar pedido' };
+    }
     const esOcupado = ocupadoId === v.id;
-    const min = minutosDesde(v.fecha ?? '');
+    const min = minutosDesde(v.fecha_programada ?? v.fecha ?? '');
     const enMesa = v.tipo_entrega === 'Consumir' && !!v.mesa;
+    const FINALES = ['Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
+    const hermanos = enMesa
+      ? items
+          .filter((o) => o.tipo_entrega === 'Consumir' && o.mesa === v.mesa && !FINALES.includes(o.estado ?? ''))
+          .sort((a, b) => a.id - b.id)
+      : [];
+    const nPedido = hermanos.findIndex((o) => o.id === v.id) + 1;
+    const colorMesa =
+      enMesa && hermanos.length > 1
+        ? ['#2563eb', '#e67e22', '#1d7a46', '#8b5cf6', '#db2777'][(Number(v.mesa) - 1) % 5]
+        : undefined;
+
 
     // El pago electrónico no se puede confirmar hasta aprobar el comprobante.
     const vaAPagar = accion?.sig === 'Pagado';
     const faltaComprobante = vaAPagar && requiereComprobante(v) && !comprobanteAprobado(v);
-    const textoAccion = faltaComprobante
-      ? esAdmin
-        ? 'Aprobar comprobante'
-        : 'Comprobante pendiente'
-      : accion?.texto;
-    const accionDeshabilitada = esOcupado || (faltaComprobante && !esAdmin);
+    const textoAccion = accion?.texto;
+    const accionDeshabilitada = esOcupado;
 
     return (
       <div
         className={`tv-card${accion ? ' arrastrable' : ''}${arrastrandoId === v.id ? ' arrastrando' : ''}`}
         key={v.id}
         draggable={!!accion && !esOcupado}
+        style={colorMesa ? { borderLeftColor: colorMesa } : undefined}
         onDragStart={(e) => {
           e.dataTransfer.setData('text/plain', String(v.id));
           e.dataTransfer.effectAllowed = 'move';
@@ -414,6 +584,22 @@ export default function PedidosTurno() {
 
         <div className="tv-card-body">
           <span className="tv-cliente">{enMesa ? `Mesa ${v.mesa}` : nombreCliente(v)}</span>
+          {colorMesa && nPedido > 0 && (
+            <span className="tv-mesa-grupo" style={{ color: colorMesa, borderColor: colorMesa }}>
+              {nPedido}º pedido de la mesa
+            </span>
+          )}
+
+          {v.fecha_programada && (() => {
+            const t = new Date(v.fecha_programada);
+            const hora = t.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            const faltan = Math.round((t.getTime() - Date.now()) / 60000);
+            return faltan <= 30 ? (
+              <span className="tv-pago-bloqueado">¡Preparar ya! Para las {hora}</span>
+            ) : (
+              <span className="tv-tag">Programado: {hora}</span>
+            );
+          })()}
 
           <button type="button" className="tv-ver-detalle" onClick={() => setDetalleId(v.id)}>
             Ver detalle
@@ -432,30 +618,26 @@ export default function PedidosTurno() {
 
         <div className="tv-card-foot">
           <span className="tv-total">${Number(v.valor_total || 0).toLocaleString('es-CO')}</span>
-          {accion ? (
-            <button
-              type="button"
-              className="tv-btn"
-              disabled={accionDeshabilitada}
-              title={faltaComprobante && !esAdmin
-                ? 'El administrador debe aprobar el comprobante antes de confirmar el pago.'
-                : undefined}
-              onClick={() =>
-                faltaComprobante ? setDetalleId(v.id) : intentarCambio(v, accion)
-              }
-            >
-              {esOcupado ? 'Guardando…' : textoAccion}
-            </button>
-          ) : (
-            <span className="tv-espera">Sin acción disponible</span>
-          )}
+           {accion ? (
+              <button
+                type="button"
+                className="tv-btn"
+                disabled={accionDeshabilitada}
+                onClick={() => (v.estado === 'Registrado' ? setDetalleId(v.id) : intentarCambio(v, accion))}
+              >
+                {esOcupado ? 'Guardando…' : textoAccion}
+              </button>
+            ) : (
+              <span className="tv-espera">Sin acción disponible</span>
+            )}
         </div>
       </div>
     );
   };
 
-  return (
-    <div className="tv-wrap">
+const columnas = config.columnas ?? config.estados;
+ return (
+  <div className="tv-wrap">
       <div className="tv-head">
         <div>
           <h1 className="tv-titulo">{config.titulo}</h1>
@@ -519,14 +701,22 @@ export default function PedidosTurno() {
             {f.texto}
           </button>
         ))}
+
+        {columnas.length > 3 && (
+          <div className="tv-flechas">
+            <button type="button" onClick={() => moverColumnas(-1)} aria-label="Columnas anteriores">‹</button>
+            <button type="button" onClick={() => moverColumnas(1)} aria-label="Columnas siguientes">›</button>
+          </div>
+        )}
       </div>
 
-      <div
-        className="tv-cols"
-        style={{ gridTemplateColumns: `repeat(${config.estados.length}, minmax(320px, 1fr))` }}
-      >
-        {config.estados.map((estado) => {
-          const col = visibles.filter((v) => v.estado === estado);
+          <div
+            ref={colsRef}
+            className="tv-cols"
+            style={{ gridTemplateColumns: `repeat(${columnas.length}, minmax(320px, 1fr))` }}
+          >
+            {columnas.map((estado) => {
+              const col = visibles.filter((v) => columnaDe(v, vista) === estado);
           return (
             <section
               className={`tv-col${colHover === estado ? ' soltar' : ''}`}
@@ -587,26 +777,59 @@ export default function PedidosTurno() {
               </div>
               <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>
             </div>
-            <dl className="tv-det-info">
-              <div><dt>Cliente</dt><dd>{nombreCliente(detalle)}</dd></div>
-              <div><dt>Estado</dt><dd>{detalle.estado ?? '—'}</dd></div>
-              <div>
-                <dt>Entrega</dt>
-                <dd>{ETIQUETA_ENTREGA[detalle.tipo_entrega ?? ''] ?? detalle.tipo_entrega ?? '—'}</dd>
-              </div>
-              {detalle.tipo_entrega === 'Consumir' && detalle.mesa ? (
-                <div><dt>Mesa</dt><dd>{detalle.mesa}</dd></div>
-              ) : null}
-              <div><dt>Método de pago</dt><dd>{detalle.metodo_pago || '—'}</dd></div>
-              <div>
-                <dt>Hora</dt>
-                <dd>
-                  {Number.isFinite(aFecha(detalle.fecha ?? '').getTime())
-                    ? aFecha(detalle.fecha ?? '').toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
-                    : '—'}
-                </dd>
-              </div>
-            </dl>
+            {(() => {
+              const fmt = (f?: string | null) =>
+                f && Number.isFinite(aFecha(f).getTime())
+                  ? aFecha(f).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+                  : '—';
+              const entrega = ETIQUETA_ENTREGA[detalle.tipo_entrega ?? ''] ?? detalle.tipo_entrega ?? '—';
+              const esDomicilio = detalle.tipo_entrega === 'Domicilio';
+              const esRecoger = detalle.tipo_entrega === 'Recoger';
+              const esLocal = detalle.tipo_entrega === 'Consumir';
+
+              return (
+                <div className="tv-info">
+                  <div className="tv-info-chips">
+                    <span className="tv-info-chip entrega">{entrega}</span>
+                  </div>
+
+                  <section className="tv-info-sec">
+                    <h4>Cliente</h4>
+                    <Fila k="Nombre" v={nombreCliente(detalle)} />
+                    {telefonoCliente(detalle) && <Fila k="Teléfono" v={telefonoCliente(detalle)} />}
+                  </section>
+
+                  <section className="tv-info-sec">
+                    <h4>{esDomicilio ? 'Entrega a domicilio' : esRecoger ? 'Para recoger' : 'En el local'}</h4>
+                    {esLocal && <Fila k="Mesa" v={detalle.mesa ?? '—'} />}
+                    {esRecoger && (
+                      <Fila k="Recoge a nombre de" v={detalle.recibe_nombre || nombreCliente(detalle)} />
+                    )}
+                    {esDomicilio && (
+                      <>
+                        <Fila k="Nombre de quien recibe" v={detalle.recibe_nombre || nombreCliente(detalle)} />
+                        <Fila k="Teléfono de quien recibe" v={detalle.recibe_telefono || telefonoCliente(detalle) || '—'} />
+                        <Fila k="Dirección" v={detalle.direccion || '—'} />
+                        <Fila k="Barrio" v={detalle.barrio || '—'} />
+                        {detalle.referencia && <Fila k="Referencia" v={detalle.referencia} />}
+                      </>
+                    )}
+                    {!esLocal && (
+                      <Fila
+                        k="Hora que lo quieren"
+                        v={detalle.fecha_programada ? fmt(detalle.fecha_programada) : 'Lo antes posible'}
+                      />
+                    )}
+                  </section>
+
+                  <section className="tv-info-sec">
+                    <h4>Pedido</h4>
+                    <Fila k="Método de pago" v={detalle.metodo_pago || '—'} />
+                    <Fila k="Hora del pedido" v={fmt(detalle.fecha)} />
+                  </section>
+                </div>
+              );
+            })()}
 
             {(() => {
               const agrupados = new Map<string, { nombre: string; cantidad: number; subtotal: number }>();
@@ -661,9 +884,11 @@ export default function PedidosTurno() {
                 {!detalle.tiene_comprobante ? (
                   <>
                     <p className="vt-comprobante-vacio">
-                      Este pedido no tiene comprobante de pago cargado.
+                      {esEfectivo(detalle)
+                        ? 'Pago en efectivo contra entrega: no requiere comprobante.'
+                        : 'Este pedido no tiene comprobante de pago cargado.'}
                     </p>
-                    {puedeSubirComprobante(detalle) && (
+                    {!esEfectivo(detalle) && puedeSubirComprobante(detalle) && (
                       <div className="vt-comprobante-acciones">
                         <button
                           type="button"
@@ -732,7 +957,7 @@ export default function PedidosTurno() {
                       alt={`Comprobante de pago del pedido ${detalle.id}`}
                     />
 
-                    {esAdmin && (
+                    {esAdmin && !comprobanteAprobado(detalle) && detalle.comprobante_estado !== 'Rechazado' && (
                       <div className="vt-comprobante-acciones">
                         {detalle.comprobante_estado !== 'Aprobado' && (
                           <button
@@ -755,31 +980,14 @@ export default function PedidosTurno() {
                             Devolver comprobante
                           </button>
                         )}
-                        <button
-                          type="button"
-                          className="btn-cancel"
-                          onClick={() => setComprobanteASubir(detalle)}
-                        >
-                          Reemplazar comprobante
-                        </button>
+
                       </div>
                     )}
 
-                    {!esAdmin && puedeSubirComprobante(detalle) && (
-                      <div className="vt-comprobante-acciones">
-                        <button
-                          type="button"
-                          className="btn-cancel"
-                          onClick={() => setComprobanteASubir(detalle)}
-                        >
-                          Reemplazar comprobante
-                        </button>
-                      </div>
-                    )}
                   </>
                 )}
 
-                {requiereComprobante(detalle) && !comprobanteAprobado(detalle) && (
+                {requiereComprobante(detalle) && !comprobanteAprobado(detalle) && detalle.comprobante_estado !== 'Rechazado' && (
                   <p className="tv-pago-aviso">
                     Pago electrónico: para confirmar el pago primero debe estar aprobado el
                     comprobante.
@@ -792,6 +1000,37 @@ export default function PedidosTurno() {
               <span>Total</span>
               <strong>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</strong>
             </div>
+
+            {detalle.estado === 'Registrado' && (() => {
+              const devuelto = requiereComprobante(detalle) && detalle.comprobante_estado === 'Rechazado';
+              const bloqueado =
+                !detalle.metodo_pago ||
+                devuelto ||
+                (requiereComprobante(detalle) && !comprobanteAprobado(detalle));
+
+              return (
+                <div className="vt-comprobante-acciones" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                  {devuelto && (
+                    <p className="tv-pago-aviso">
+                      Comprobante devuelto: espera a que el cliente suba uno nuevo para continuar.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    className="btn-save"
+                    disabled={bloqueado}
+                    style={bloqueado ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                    onClick={() => {
+                      const v = detalle;
+                      setDetalleId(null);
+                      intentarCambio(v, { sig: 'Por verificar', texto: 'Verificar' });
+                    }}
+                  >
+                    Verificar y continuar
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -833,6 +1072,86 @@ export default function PedidosTurno() {
             void ejecutarCambio(venta, accion, motivo);
           }}
         />
+      )}
+
+      {cobro && (
+        <div className="modal-overlay open" onClick={() => !pagando && setCobro(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="tv-det-head">
+              <h3 className="tv-det-titulo">Registrar pago del pedido #{cobro.venta.id}</h3>
+              <button type="button" className="modal-x" onClick={() => setCobro(null)} aria-label="Cerrar">×</button>
+            </div>
+
+            <div className="tv-cobro-resumen">
+              <div>
+                <span className="tv-cobro-etq">
+                  {cobro.venta.tipo_entrega === 'Consumir' && cobro.venta.mesa
+                    ? `Mesa ${cobro.venta.mesa}`
+                    : ETIQUETA_ENTREGA[cobro.venta.tipo_entrega ?? ''] ?? 'Pedido'}
+                </span>
+              </div>
+              <div className="tv-cobro-total">
+                <span className="tv-cobro-etq">Total a cobrar</span>
+                <strong>${Number(cobro.venta.valor_total).toLocaleString('es-CO')}</strong>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Método de pago</label>
+              <select value={metodoCobro} onChange={(e) => setMetodoCobro(e.target.value)} disabled={pagando}>
+                {METODOS_COBRO.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+                        {exigeComprobante && (
+              <div className="form-group">
+                <label>Comprobante de pago <span style={{ color: '#E8821A' }}>*</span></label>
+                <input
+                  ref={refArchivoCobro}
+                  id="comprobante-cobro"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={(e) => setArchivoCobro(e.target.files?.[0] ?? null)}
+                />
+                {previewCobro ? (
+                  <div className="tv-drop-preview">
+                    <img src={previewCobro} alt="Vista previa del comprobante" />
+                    <div className="tv-drop-info">
+                      <strong>{archivoCobro?.name}</strong>
+                      <span>{((archivoCobro?.size ?? 0) / 1024 / 1024).toFixed(2)} MB</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setArchivoCobro(null);
+                          if (refArchivoCobro.current) refArchivoCobro.current.value = '';
+                        }}
+                      >
+                        Quitar y elegir otra
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label htmlFor="comprobante-cobro" className="tv-drop">
+                    <span>📎 Adjuntar imagen del comprobante</span>
+                    <small>JPG, PNG o WEBP · máximo 8 MB</small>
+                  </label>
+                )}
+              </div>
+            )}
+
+            <div className="vt-comprobante-acciones">
+              <button type="button" className="btn-cancel" onClick={() => setCobro(null)} disabled={pagando}>
+                Cancelar
+              </button>
+              <button type="button" className="btn-save" onClick={confirmarPago} disabled={pagando}>
+                {pagando ? 'Registrando…' : 'Registrar pago'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

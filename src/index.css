@@ -1971,6 +1971,20 @@ body.dark-mode textarea.burgi-input {
 body.dark-mode textarea.burgi-input::placeholder {
   color: rgba(255, 255, 255, 0.6);
 }
+@media (max-width: 768px) {
+  .acc-panel {
+    top: 96px !important;
+    bottom: 16px !important;
+    max-height: calc(100dvh - 96px - 16px) !important;
+  }
+}
+.acc-panel {
+  top: auto !important;
+  bottom: 80px !important;
+  max-height: calc(100dvh - 80px - 120px) !important;
+  overflow-y: auto !important;
+}
+
 
 
 html:not(#a1) body.dark-mode:not(#a2) :is(input, textarea)::placeholder {
@@ -2009,3 +2023,4 @@ body:not(.dark-mode) .acc-btn-tile.activa:active {
 body:not(.dark-mode) .acc-btn-tile:focus:not(:focus-visible) {
   box-shadow: none !important;
 }
+

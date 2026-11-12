@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import { useEscape } from '../hooks/useEscape';
 import { mensajeError } from '../utils/errores';
+import { comprimirImagen } from '../utils/comprimirImagen';
+import AdminLoading from './AdminLoading';
 
 interface ComprobanteModalProps {
   ventaId: number;
@@ -9,7 +11,6 @@ interface ComprobanteModalProps {
   onClose: () => void;
   onSubido: () => void;
 }
-
 
 export default function ComprobanteModal({
   ventaId,
@@ -34,34 +35,38 @@ export default function ComprobanteModal({
     return () => URL.revokeObjectURL(url);
   }, [archivo]);
 
-  const elegir = (file: File | null) => {
-    setError(null);
-    if (!file) {
-      setArchivo(null);
-      return;
-    }
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      setError('El comprobante debe ser una imagen JPG, PNG o WEBP.');
-      return;
-    }
-    if (file.size > 8 * 1024 * 1024) {
-      setError('El comprobante no puede superar los 8 MB.');
-      return;
-    }
-    setArchivo(file);
-  };
+const elegir = async (file: File | null) => {
+  setError(null);
+  if (!file) {
+    setArchivo(null);
+    return;
+  }
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    setError('El comprobante debe ser una imagen JPG, PNG o WEBP.');
+    return;
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    setError('El comprobante no puede superar los 8 MB.');
+    return;
+  }
+  const comprimido = await comprimirImagen(file);
+  setArchivo(comprimido);
+  // Un solo click: al elegir la imagen se sube y verifica automáticamente.
+  void enviar(comprimido);
+};
 
-  const enviar = async () => {
-    if (!archivo) {
+  const enviar = async (archivoAEnviar: File | null = archivo) => {
+    if (!archivoAEnviar) {
       setError('Debes adjuntar la imagen del comprobante de pago.');
       return;
     }
+    if (enviando) return;
 
     setEnviando(true);
     setError(null);
     try {
       const form = new FormData();
-      form.append('comprobante', archivo);
+      form.append('comprobante', archivoAEnviar);
 
       await apiClient.post(`/ventas/${ventaId}/comprobante`, form, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -78,6 +83,13 @@ export default function ComprobanteModal({
   };
 
   return (
+     <>
+      {enviando && (
+        <AdminLoading
+          texto="Verificando comprobante"
+          subtexto="La IA está revisando tu pago"
+        />
+      )}
     <div className="modal-overlay open" onClick={onClose}>
       <div
         className="modal-box"
@@ -97,7 +109,13 @@ export default function ComprobanteModal({
           type="file"
           accept="image/jpeg,image/png,image/webp"
           style={{ display: 'none' }}
-          onChange={(e) => elegir(e.target.files?.[0] ?? null)}
+          onChange={(e) => {
+            const input = e.target;
+            const file = input.files?.[0] ?? null;
+            void elegir(file);
+            // Permite volver a elegir el mismo archivo si falla.
+            input.value = '';
+          }}
         />
 
         {preview ? (
@@ -127,13 +145,14 @@ export default function ComprobanteModal({
           <button
             type="button"
             className="btn-save"
-            onClick={() => void enviar()}
+            onClick={() => void enviar(archivo)}
             disabled={enviando || !archivo}
           >
-            {enviando ? 'Verificando con IA…' : 'Subir comprobante'}
+            {enviando ? 'Verificando con IA…' : error ? 'Reintentar' : 'Subir comprobante'}
           </button>
         </div>
-      </div>
+         </div>
     </div>
+    </>
   );
 }

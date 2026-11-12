@@ -659,7 +659,7 @@ export default function BackupsAdmin() {
           </div>
           
           {/* Componente de paginación */}
-          <Paginacion total={filteredItems.length} pagina={paginaActual} onCambiar={setPagina} />
+          <Paginacion total={filteredItems.length} pagina={paginaActual} onCambiar={setPagina} siempre />
         </>
       )}
 

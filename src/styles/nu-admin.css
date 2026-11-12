@@ -905,7 +905,14 @@ body.dark-mode .admin-body:has(.mn-page) .mn-view-toggle button.active {
   font-size: 12px;
   color: #fff;
 }
-.mn-btn-toggle.desactivar { background: #ffffff; color: #000; }
+.mn-btn-toggle.desactivar {
+  background: #6b7280;         /* mismo gris que "Inactivar" en usuarios */
+  color: #fff;
+  border: none;
+}
+.mn-btn-toggle.desactivar:hover {
+  background: #4b5563;
+}
 .mn-btn-toggle.activar { background: #16a34a; color: #fff; }
 body.dark-mode .mn-btn-toggle.activar { background: #e8821a; color: #fff; }
 body.dark-mode .mn-btn-toggle.desactivar { background: #e8821a; color: #fff; }

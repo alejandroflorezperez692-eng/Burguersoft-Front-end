@@ -1,5 +1,4 @@
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { createPortal } from 'react-dom';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
@@ -19,6 +18,8 @@ import ComprobanteModal from '../../components/ComprobanteModal';
 import { mensajeDeError } from '../../types/Trazabilidad';
 import SelectOscuro from '../../components/SelectOscuro';
 
+const MOTIVO_DEVOLUCION_DEFECTO =
+  'El comprobante no coincide con el valor del pedido. Por favor sube uno nuevo.';
 
 interface DetalleVenta {
   id: number;
@@ -98,8 +99,14 @@ const METODOS_CON_COMPROBANTE = ['Nequi', 'Daviplata', 'Bancolombia', 'Transfere
 const requiereComprobante = (v: Venta): boolean =>
   METODOS_CON_COMPROBANTE.includes((v.metodo_pago ?? '').trim());
 
-
-const ESTADOS_MESERO = ['Registrado', 'En preparación', 'Preparado', 'Servido', 'Cancelado'];
+// Color de la etiqueta según el estado de la venta
+const claseEstado = (estado?: string | null) => {
+  const e = (estado ?? '').trim();
+  if (e === 'Pagado') return 'badge-success';
+  if (e === 'Pendiente de pago') return 'badge-warning';
+  if (e === 'Cancelado' || e === 'Reembolsada' || e === 'Rechazada') return 'badge-danger';
+  return 'badge-info';
+};
 
 const toArray = <T,>(v: unknown): T[] =>
   Array.isArray(v) ? (v as T[]) : ((v as { data?: unknown })?.data as T[] ?? []);
@@ -147,9 +154,9 @@ function FiltroDesplegableVentas({ value, onChange, opciones }: {
 
   if (!modoOscuro) {
     return (
-      <SelectOscuro value={value} onChange={(event) => onChange(event.target.value)}>
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
         {opciones.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
-      </SelectOscuro>
+      </select>
     );
   }
 
@@ -201,7 +208,7 @@ function SelectorFechaVentas({ value, onChange, min, max }: {
   min?: string;
   max?: string;
 }) {
-  const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
   const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
   const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
@@ -229,6 +236,17 @@ function SelectorFechaVentas({ value, onChange, min, max }: {
     };
   }, [abierto]);
 
+  if (!modoOscuro) {
+    return (
+      <input
+        type="date"
+        value={value}
+        min={min}
+        max={max}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    );
+  }
 
   const anio = mesVisible.getFullYear();
   const mes = mesVisible.getMonth();
@@ -324,6 +342,7 @@ export default function VentasAdmin() {
   const esMesero = normalizarRol(user?.role) === 'mesero';
   const puedeSubirComprobante = (v: Venta) =>
     esAdmin || Number(v.usuario_id) === Number(user?.id);
+  const esEfectivo = (v: Venta) => (v.metodo_pago || '').toLowerCase() === 'efectivo';
 
   
   const [items, setItems] = useState<Venta[]>([]);
@@ -336,10 +355,7 @@ export default function VentasAdmin() {
   const [filtroEntrega, setFiltroEntrega] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
-  const [estadoAbiertoId, setEstadoAbiertoId] = useState<number | null>(null);
-  const [estadoDropdownPos, setEstadoDropdownPos] = useState<{ top: number; left: number; width: number } | null>(null);
-  const estadoDropdownRefs = useRef(new Map<number, HTMLDivElement>());
-  const estadoOptionsRefs = useRef(new Map<number, HTMLDivElement>());
+  const [cambioMotivo, setCambioMotivo] = useState<{ id: number; estado: string } | null>(null);
 
   const [pagina, setPagina] = useState(1);
 
@@ -370,7 +386,7 @@ export default function VentasAdmin() {
 const load = async (silencioso = false) => {
   if (!silencioso) setLoading(true);
 
- 
+  // Se piden a la vez, pero el loader solo espera las ventas
   const extras = Promise.all([apiClient.get('/productos'), apiClient.get('/promociones')])
     .then(([r2, r3]) => {
       setProductos(toArray<Producto>(r2.data));
@@ -382,8 +398,26 @@ const load = async (silencioso = false) => {
     });
 
   try {
-    const r1 = await apiClient.get('/ventas');
-    setItems(toArray<Venta>(r1.data));
+    // El backend puede entregar las ventas paginadas (solo 15 en la primera
+    // página). Si es así, se recorren todas las páginas hasta traerlas todas.
+    const { data } = await apiClient.get('/ventas', { params: { per_page: 500 } });
+    let lista: Venta[] = Array.isArray(data) ? data : data?.data ?? [];
+    const ultima = Number(data?.last_page ?? 1);
+    if (!Array.isArray(data) && Number.isFinite(ultima) && ultima > 1) {
+      const vistas = new Set(lista.map((v) => v?.id));
+      for (let p = 2; p <= ultima; p++) {
+        const { data: resp } = await apiClient.get('/ventas', { params: { page: p, per_page: 500 } });
+        const pagina: Venta[] = Array.isArray(resp) ? resp : resp?.data ?? [];
+        if (pagina.length === 0) break;
+        for (const v of pagina) {
+          if (!vistas.has(v?.id)) {
+            vistas.add(v?.id);
+            lista.push(v);
+          }
+        }
+      }
+    }
+    setItems(lista);
   } catch {
     setItems([]);
   } finally {
@@ -399,6 +433,9 @@ const load = async (silencioso = false) => {
     v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
   const textoBusqueda = normalizar(q).trim();
+
+  // Estados que NO cuentan como dinero vendido (no suman en totales ni cierre)
+  const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
 
   const filtered = (items ?? []).filter((v) => {
     if (textoBusqueda) {
@@ -438,7 +475,12 @@ const load = async (silencioso = false) => {
     setPagina(1);
   };
 
-  const totalFiltrado = filtered.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
+  // El total filtrado solo suma ventas reales: lo cancelado/reembolsado/rechazado
+  // no cuenta (salvo que el usuario esté filtrando justo por uno de esos estados,
+  // para poder ver cuánto representan).
+  const totalFiltrado = filtered
+    .filter((v) => filtroEstado || !NO_VENDIDOS.includes(v?.estado))
+    .reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
   const { visibles, paginaActual } = paginar(filtered, pagina);
 
@@ -563,7 +605,7 @@ const load = async (silencioso = false) => {
       });
     };
 
-    
+    // Misma lógica del PDF: ventas de mostrador (rol 1) = "Consumidor final"
     const usu = v.usuario;
     const mostrador = Number(usu?.rol_id ?? 0) === 1;
     const nombre = mostrador
@@ -652,8 +694,8 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
 </body></html>`;
   };
 
-  const updateEstado = (id: number, estado: string) => {
-    apiClient.patch(`/ventas/${id}/estado`, { estado })
+  const updateEstado = (id: number, estado: string, motivo?: string) => {
+    apiClient.patch(`/ventas/${id}/estado`, { estado, motivo })
       .then(() => { setVersion((v) => v + 1); load(); })
       .catch((e: unknown) =>
         alertar(mensajeDeError(e, 'No se pudo cambiar el estado.')),
@@ -700,40 +742,6 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
     return 'badge-info';
   };
 
-  useEffect(() => {
-    if (estadoAbiertoId === null) return;
-    const cerrarAlHacerClickFuera = (event: MouseEvent) => {
-      const root = estadoDropdownRefs.current.get(estadoAbiertoId);
-      const options = estadoOptionsRefs.current.get(estadoAbiertoId);
-      if (!root?.contains(event.target as Node) && !options?.contains(event.target as Node)) {
-        setEstadoAbiertoId(null);
-      }
-    };
-    const cerrarAlDesplazarse = (event: Event) => {
-      const options = estadoOptionsRefs.current.get(estadoAbiertoId);
-    
-      if (options && event.target instanceof Node && options.contains(event.target)) return;
-      setEstadoAbiertoId(null);
-    };
-    document.addEventListener('mousedown', cerrarAlHacerClickFuera);
-    window.addEventListener('scroll', cerrarAlDesplazarse, true);
-    window.addEventListener('resize', cerrarAlDesplazarse);
-    return () => {
-      document.removeEventListener('mousedown', cerrarAlHacerClickFuera);
-      window.removeEventListener('scroll', cerrarAlDesplazarse, true);
-      window.removeEventListener('resize', cerrarAlDesplazarse);
-    };
-  }, [estadoAbiertoId]);
-
-  useEffect(() => {
-    if (estadoAbiertoId === null) return;
-    estadoOptionsRefs.current
-      .get(estadoAbiertoId)
-      ?.querySelector<HTMLButtonElement>('[role="option"][aria-selected="true"], [role="option"]:not(:disabled)')
-      ?.focus();
-  }, [estadoAbiertoId]);
-
-
   const verFactura = async (id: number) => {
     const ventana = window.open('', '_blank');
 
@@ -759,8 +767,7 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
     }
   };
 
-   
-  const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
+    /* ===== Días, cierre del día e impresión ===== */
   const esVendida = (v: Venta) => v?.estado === 'Pagado';
   const hoyStr = new Date().toLocaleDateString('en-CA');
   const moneda = (n: number) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
@@ -782,7 +789,8 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
     const delDia = filtered.filter((v) => fechaLocal(v?.fecha) === clave);
     const vendidas = delDia.filter(esVendida);
     return {
-      ventas: delDia.length,
+      ventas: vendidas.length,
+      anuladas: delDia.filter((v) => NO_VENDIDOS.includes(v?.estado)).length,
       total: vendidas.reduce((a, v) => a + (Number(v?.valor_total) || 0), 0),
     };
   };
@@ -971,11 +979,11 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <div className="cierre-filtros">
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Desde</label>
-                <SelectorFechaVentas value={cierre.desde} max={cierre.hasta} onChange={setCierreDesde} />
+                <input type="date" value={cierre.desde} max={cierre.hasta} onChange={(e) => setCierreDesde(e.target.value)} />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Hasta</label>
-                <SelectorFechaVentas value={cierre.hasta} min={cierre.desde} onChange={setCierreHasta} />
+                <input type="date" value={cierre.hasta} min={cierre.desde} onChange={(e) => setCierreHasta(e.target.value)} />
               </div>
               <p className="cierre-nota">
                 Solo cuenta ventas <b>Pagadas</b>
@@ -1017,6 +1025,9 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
 
             {cierre.pendientes.n > 0 && (
               <p className="cierre-nota">Pendientes de cobro: {cierre.pendientes.n} ({moneda(cierre.pendientes.total)}), no incluidos en el total.</p>
+            )}
+            {cierre.anuladas > 0 && (
+              <p className="cierre-nota">Canceladas / rechazadas: {cierre.anuladas}, no incluidas en el total.</p>
             )}
 
             <ArqueoCaja />
@@ -1225,7 +1236,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
 
       <div className="search-bar" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         
-        
+        {/* Fila 1: Búsqueda */}
         <div className="mn-search-wrap" style={{ marginBottom: 0 }}>
           <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
             stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1241,7 +1252,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           />
         </div>
 
-      
+        {/* Fila 2: Filtros (Carlos) */}
         <div className="ventas-filtros" style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
           <div className="form-group ventas-filter-state" style={{ margin: 0 }}>
             <label>Estado</label>
@@ -1295,7 +1306,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           )}
         </div>
 
-       <p className="contador-lista">
+        <p style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
           {filtered.length} de {items.length} ventas
           {hayFiltros && ` · Total filtrado: $${Math.round(totalFiltrado).toLocaleString('es-CO')}`}
         </p>
@@ -1328,7 +1339,10 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   <td colSpan={9}>
                     <div className="vt-dia-bar">
                       <span className="vt-dia-label">{etiquetaDia(clave)}</span>
-                      <span className="vt-dia-info">{r.ventas} ventas · Vendido: <b>{moneda(r.total)}</b></span>
+                      <span className="vt-dia-info">
+                        {r.ventas} ventas · Vendido: <b>{moneda(r.total)}</b>
+                        {r.anuladas > 0 && <> · {r.anuladas} cancelada{r.anuladas > 1 ? 's' : ''} (no suma{r.anuladas > 1 ? 'n' : ''})</>}
+                      </span>
                       <button type="button" className="btn-save vt-dia-btn" onClick={() => abrirCierre(clave, clave)}>
                         Cierre del día
                       </button>
@@ -1357,139 +1371,34 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   >
                     Ver detalle
                   </button>
-                  {v?.tiene_comprobante && (
-                    <span
-                      className={`badge ${claseComprobante(v.comprobante_estado)}`}
-                      style={{ display: 'block', marginTop: 6, fontSize: 10, textAlign: 'center' }}
-                    >
-                      {v.comprobante_estado === 'Aprobado'
-                        ? 'Pago aprobado'
-                        : v.comprobante_estado === 'Rechazado'
-                          ? 'Comprobante devuelto'
-                          : 'Comprobante pendiente'}
-                    </span>
-                  )}
                 </td>
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
 
                 <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
                 <td className="vt-estado-celda">
-                  <div
-                    className="venta-estado-dropdown"
-                    ref={(element) => {
-                      if (element) estadoDropdownRefs.current.set(v.id, element);
-                      else estadoDropdownRefs.current.delete(v.id);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Escape') {
-                        setEstadoAbiertoId(null);
-                        estadoDropdownRefs.current.get(v.id)
-                          ?.querySelector<HTMLButtonElement>('.venta-estado-trigger')
-                          ?.focus();
-                        return;
-                      }
-                      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-                      event.preventDefault();
-                      if (estadoAbiertoId !== v.id) {
-                        const rect = event.currentTarget.getBoundingClientRect();
-                        const menuHeight = ESTADOS.length * 38;
-                        const width = Math.max(rect.width, 180);
-                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
-                          ? rect.bottom + 4
-                          : Math.max(8, rect.top - menuHeight - 4);
-                        setEstadoDropdownPos({
-                          top,
-                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
-                          width,
-                        });
-                        setEstadoAbiertoId(v.id);
-                        return;
-                      }
-                      const options = Array.from(
-                        estadoOptionsRefs.current.get(v.id)?.querySelectorAll<HTMLButtonElement>('[role="option"]:not(:disabled)') ?? [],
-                      );
-                      const currentIndex = options.indexOf(document.activeElement as HTMLButtonElement);
-                      const increment = event.key === 'ArrowDown' ? 1 : -1;
-                      options[(currentIndex + increment + options.length) % options.length]?.focus();
-                    }}
-                  >
-                    <button
-                      type="button"
-                      className="venta-estado-trigger"
-                      aria-haspopup="listbox"
-                      aria-expanded={estadoAbiertoId === v.id}
-                      onClick={(event) => {
-                        if (estadoAbiertoId === v.id) {
-                          setEstadoAbiertoId(null);
-                          return;
-                        }
-                        const rect = event.currentTarget.getBoundingClientRect();
-                        const menuHeight = ESTADOS.length * 38;
-                        const width = Math.max(rect.width, 180);
-                        const top = rect.bottom + menuHeight + 4 <= window.innerHeight
-                          ? rect.bottom + 4
-                          : Math.max(8, rect.top - menuHeight - 4);
-                        setEstadoDropdownPos({
-                          top,
-                          left: Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
-                          width,
-                        });
-                        setEstadoAbiertoId(v.id);
-                      }}
-                    >
-                      {v?.estado ?? ''}
-                      <span aria-hidden="true">▾</span>
-                    </button>
-                    {estadoAbiertoId === v.id && estadoDropdownPos && createPortal(
-                      <div
-                        className="venta-estado-options"
-                        ref={(element) => {
-                          if (element) estadoOptionsRefs.current.set(v.id, element);
-                          else estadoOptionsRefs.current.delete(v.id);
-                        }}
-                        role="listbox"
-                        aria-label={`Estado de la venta ${v.id}`}
-                        style={{
-                          position: 'fixed',
-                          top: estadoDropdownPos.top,
-                          left: estadoDropdownPos.left,
-                          width: estadoDropdownPos.width,
-                        }}
-                      >
-                        {ESTADOS.map((estado) => {
-                          const seleccionado = estado === v?.estado;
-                          const deshabilitado = (!esAdmin && estado === 'Reembolsada') || (esMesero && !ESTADOS_MESERO.includes(estado));
-                          return (
-                            <button
-                              key={estado}
-                              type="button"
-                              role="option"
-                              aria-selected={seleccionado}
-                              className={`venta-estado-option${seleccionado ? ' selected' : ''}`}
-                              disabled={deshabilitado}
-                              onClick={() => {
-                                updateEstado(v.id, estado);
-                                setEstadoAbiertoId(null);
-                              }}
-                            >
-                              {estado}
-                            </button>
-                          );
-                        })}
-                      </div>,
-                      document.body,
-                    )}
-                  </div>
+                  <span className={`badge ${claseEstado(v?.estado)}`}>{v?.estado ?? '—'}</span>
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    className="btn-cancel"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
-                    onClick={() => setHistorialId(v.id)}
-                  >
-                    Ver historial
-                  </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+                    <button
+                      type="button"
+                      className="btn-cancel"
+                      style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+                      onClick={() => setHistorialId(v.id)}
+                    >
+                      Ver historial
+                    </button>
+                                        {esAdmin && !['Servido', 'Pendiente de pago', 'Pagado'].includes(v?.estado) && !NO_VENDIDOS.includes(v?.estado) && (
+                      <button
+                        type="button"
+                        className="btn-cancel"
+                        style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                        onClick={() => setCambioMotivo({ id: v.id, estado: 'Cancelado' })}
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
                 </td>
                 <td>
                   <button
@@ -1512,7 +1421,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
         </table>
       </div>
 
-      <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} />
+      <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} siempre />
 
       {historialId !== null && (
         <TrazabilidadModal ventaId={historialId} onClose={() => setHistorialId(null)} />
@@ -1530,7 +1439,6 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               <span className="vt-estado" data-estado={detalle.estado}>{detalle.estado}</span>
             </div>
 
-            <div className="vt-det-body">
             <section className="vt-det-sec">
               <h4>Cliente</h4>
               <dl className="vt-det-grid">
@@ -1568,9 +1476,11 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               {!detalle.tiene_comprobante ? (
                 <>
                   <p className="vt-comprobante-vacio">
-                    Este pedido no tiene comprobante de pago cargado.
+                    {esEfectivo(detalle)
+                      ? 'Pago en efectivo contra entrega: no requiere comprobante.'
+                      : 'Este pedido no tiene comprobante de pago cargado.'}
                   </p>
-                  {puedeSubirComprobante(detalle) && (
+                  {!esEfectivo(detalle) && puedeSubirComprobante(detalle) && (
                     <div className="vt-comprobante-acciones">
                       <button
                         type="button"
@@ -1667,33 +1577,12 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                         className="btn-cancel"
                         style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                         disabled={procesandoComprobante}
-                        onClick={() => setComprobanteARechazar(detalle)}
+                        onClick={() => void revisarComprobante(detalle, 'Rechazado', MOTIVO_DEVOLUCION_DEFECTO)}
                       >
-                        Devolver comprobante
-                      </button>
-                    )}
-                    {esAdmin && (
-                      <button
-                        type="button"
-                        className="btn-cancel"
-                        onClick={() => setComprobanteASubir(detalle)}
-                      >
-                        Reemplazar comprobante
+                      {procesandoComprobante ? 'Guardando…' : 'Devolver comprobante'}
                       </button>
                     )}
                   </div>
-
-                  {!esAdmin && puedeSubirComprobante(detalle) && (
-                    <div className="vt-comprobante-acciones">
-                      <button
-                        type="button"
-                        className="btn-cancel"
-                        onClick={() => setComprobanteASubir(detalle)}
-                      >
-                        Reemplazar comprobante
-                      </button>
-                    </div>
-                  )}
                 </>
               )}
 
@@ -1730,7 +1619,6 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <div className="modal-actions">
               <button type="button" className="btn-cancel" onClick={() => setDetalleId(null)}>Cerrar</button>
             </div>
-            </div>
           </div>
         </div>
       )}
@@ -1759,6 +1647,25 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           onConfirm={(motivo) =>
             void revisarComprobante(comprobanteARechazar, 'Rechazado', motivo)
           }
+        />
+      )}
+
+      {cambioMotivo && (
+        <MotivoModal
+          titulo={cambioMotivo.estado === 'Reembolsada'
+            ? `Reembolsar el pedido #${cambioMotivo.id}`
+            : `Cancelar el pedido #${cambioMotivo.id}`}
+          descripcion={cambioMotivo.estado === 'Reembolsada'
+            ? 'Indica por qué se devuelve el dinero. Quedará anotado el monto y el método de pago en el historial.'
+            : 'Indica el motivo de la cancelación. Quedará registrado en el historial del pedido.'}
+          confirmarTexto={cambioMotivo.estado === 'Reembolsada' ? 'Reembolsar' : 'Cancelar pedido'}
+          peligro
+          onClose={() => setCambioMotivo(null)}
+          onConfirm={(motivo) => {
+            const c = cambioMotivo;
+            setCambioMotivo(null);
+            updateEstado(c.id, c.estado, motivo);
+          }}
         />
       )}
     </div>

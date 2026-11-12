@@ -27,12 +27,13 @@ import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
 import ConfirmarSalida from '../components/ConfirmarSalida';
+import pedidosIcono from '../assets/img/pedidos.svg';
 
 const todosLosItems = [
   { to: '/inicio', label: 'Inicio', icono: casa, roles: ACCESO.personal },
   { to: '/menu', label: 'Menú', icono: cena, roles: ACCESO.menu },
   { to: '/promociones', label: 'Promociones', icono: promocion, roles: ACCESO.menu },
-  { to: '/pedidos-en-vivo', label: 'Pedidos', icono: cena, roles: ACCESO.pedidos },
+  { to: '/pedidos-en-vivo', label: 'Pedidos', icono: pedidosIcono, roles: ACCESO.pedidos },
   { to: '/ventas', label: 'Ventas', icono: insignia, roles: ACCESO.ventas },
   { to: '/compras', label: 'Compras', icono: buy, roles: ACCESO.inventario },
   { to: '/materia-prima', label: 'Materia Prima', icono: hierbas, roles: ACCESO.inventario },

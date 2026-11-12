@@ -13,6 +13,7 @@ import {
 } from '../utils/perfil';
 import { mensajeError } from '../utils/errores';
 import SelectOscuro from './SelectOscuro';
+import usuarioPerfil from '../assets/img/usuario-perfil.png';
 
 
 type Tab = 'datos' | 'pwd' | 'info';
@@ -157,15 +158,19 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
   if (!isOpen) return null;
 
-  const iniciales = (nombre?.[0] ?? user?.name?.[0] ?? 'U').toUpperCase();
-
   return (
     <>
       <div className="mp-overlay mp-show" onClick={onClose} />
       <div className="mp-panel mp-show" role="dialog" aria-modal="true" aria-label="Mi perfil">
         <div className="mp-head">
           <div className="mp-head-left">
-            <div className="mp-ava">{iniciales}</div>
+            <div className="mp-ava">
+              <img
+                src={usuarioPerfil}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            </div>
             <div>
               <div className="mp-title">{[nombre, apellido].filter(Boolean).join(' ') || user?.name || 'Usuario'}</div>
               <div className="mp-sub">{correo}</div>

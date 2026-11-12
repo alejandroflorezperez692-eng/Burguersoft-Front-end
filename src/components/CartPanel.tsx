@@ -152,15 +152,15 @@ export default function CartPanel() {
 
         <div className="cart-entrega-toggle">
           {TIPOS_ENTREGA.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={tipoEntrega === t ? 'active' : ''}
-              onClick={() => setTipoEntrega(t)}
-            >
-              {t}
-            </button>
-          ))}
+          <button
+            key={t}
+            type="button"
+            className={tipoEntrega === t ? 'active' : ''}
+            onClick={() => setTipoEntrega(t)}
+          >
+            {t === 'En restaurante' ? 'En el local' : t}
+          </button>
+        ))}
         </div>
 
         <div className="cart-cuando-row">
