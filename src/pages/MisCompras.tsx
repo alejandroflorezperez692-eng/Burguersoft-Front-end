@@ -9,6 +9,7 @@ import { getEcho } from '../api/echo';
 import { etiquetaEstado } from '../utils/estados';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
+import '../styles/public.css';
 import '../styles/mis-pedidos.css';
 import { mensajeError } from '../utils/errores';
 import { useToast } from '../components/Toast';
@@ -71,7 +72,6 @@ const CANCELABLES = ['Registrado', 'Por verificar', 'Recepcionado'];
 
 // Orden global para estimar progreso cuando el estado no pertenece al flujo actual
 // (el backend permite cualquier estado en cualquier tipo de entrega).
-const RECHAZABLES: string[] = [];
 const ORDEN_GLOBAL = PASOS;
 
 function normalizarTipoEntrega(tipo?: string): string {
@@ -761,13 +761,6 @@ export default function MisCompras() {
 
                 <div className="pedido-foot">
                   <div className="pedido-foot-acciones">
-                    <button
-                      type="button"
-                      className="btn-ver-detalle"
-                      onClick={() => setPedidoDetalle(p)}
-                    >
-                      Ver detalle
-                    </button>
                     {esCancelable && (
                       <button
                         className="btn-cancelar-pedido"
