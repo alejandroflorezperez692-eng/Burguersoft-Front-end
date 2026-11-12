@@ -10,6 +10,8 @@ import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
 import ComprasSugeridas, { type ItemSugerido } from '../../components/ComprasSugeridas';
 import SelectOscuro from '../../components/SelectOscuro';
+import { useAuth } from '../../hooks/useAuth';
+import { normalizarRol } from '../../utils/roles';
 
 interface DetalleCompra {
   id: number;
@@ -409,6 +411,9 @@ const comprimirImagen = async (archivo: File): Promise<File> => {
 const CLAVE_BORRADOR = 'compra_borrador_local';
 
 export default function ComprasAdmin() {
+  const { user } = useAuth();
+  // F-021: el cocinero consulta compras y costos, pero no los modifica.
+  const soloLectura = normalizarRol(user?.role) === 'cocinero';
   const [items, setItems] = useState<Compra[]>([]);
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
@@ -985,24 +990,28 @@ const load = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button
-            className="btn-primary compras-outline-btn"
-            disabled={escaneando}
-            style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
-            onClick={() => inputFactura.current?.click()}
-          >
-            Escanear factura
-          </button>
-          <button
-            className="btn-primary compras-outline-btn"
-            style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
-            onClick={() => setMostrarDictado((v) => !v)}
-          >
-            Dictar compra
-          </button>
-          <button className="btn-primary" onClick={abrirNuevo}>
-            + Nueva compra
-          </button>
+          {!soloLectura && (
+            <>
+              <button
+                className="btn-primary compras-outline-btn"
+                disabled={escaneando}
+                style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
+                onClick={() => inputFactura.current?.click()}
+              >
+                Escanear factura
+              </button>
+              <button
+                className="btn-primary compras-outline-btn"
+                style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
+                onClick={() => setMostrarDictado((v) => !v)}
+              >
+                Dictar compra
+              </button>
+              <button className="btn-primary" onClick={abrirNuevo}>
+                + Nueva compra
+              </button>
+            </>
+          )}
           <input
             ref={inputFactura}
             type="file"
@@ -1319,7 +1328,7 @@ const load = () => {
                         <td>
                           <div style={{ display: 'flex', gap: 8 }}>
                             <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)} data-tooltip="Ver detalle">Ver detalle</button>
-                            {c.estado !== 'Finalizada' && (
+                            {!soloLectura && c.estado !== 'Finalizada' && (
                               <>
                                 <button
                                   type="button"

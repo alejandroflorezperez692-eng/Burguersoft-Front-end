@@ -11,7 +11,7 @@ import { mensajeError as mensajeErrorBase } from '../../utils/errores';
 import { categoriaSinExtras } from '../../utils/categorias';
 import SelectOscuro from '../../components/SelectOscuro';
 
-type Estado = 'Disponible' | 'Agotado' | 'Por agotarse';
+type Estado = 'Disponible' | 'Agotado';
 
 interface Producto {
   id: number;
@@ -19,10 +19,10 @@ interface Producto {
   valor: number | string;
   descripcion: string | null;
   img: string | null;
-  cantidad: number | string | null;
   categoria: string;
   estado: Estado;
   activo?: boolean;
+  requiere_cocina?: boolean;
   adiciones?: { id: number; nombre: string; precio: number | string; tipo?: string }[];
 }
 
@@ -31,9 +31,10 @@ const CATEGORIAS = [
   'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
 ];
 
-const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Por agotarse', 'Agotado'];
+const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Agotado'];
 
-const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '' };
+const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '', requiere_cocina: true };
+type CampoTexto = Exclude<keyof typeof emptyForm, 'requiere_cocina'>;
 
 const MAX_ADICIONES = 30;
 const MAX_QUITAR = 10;
@@ -136,23 +137,14 @@ function MnFormSelect({
   );
 }
 
-
 const normalizar = (s: unknown) =>
   String(s ?? '')
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-const calcularEstado = (cantidad: number | string | null | undefined): Estado => {
-  const n = parseInt(String(cantidad ?? ''), 10) || 0;
-  return n === 0 ? 'Agotado' : 'Disponible';
-};
-
-
-const estadoVisible = (p: Producto): Estado => {
-  if (!p.estado) return calcularEstado(p.cantidad);
-  return p.estado === 'Agotado' ? 'Agotado' : 'Disponible';
-};
+// F-035: los productos ya no guardan cantidad propia; el estado es el dato real.
+const estadoVisible = (p: Producto): Estado => (p.estado === 'Agotado' ? 'Agotado' : 'Disponible');
 
 const estadoClase = (e: Estado) => `mn-estado-${e.replace(/ /g, '_')}`;
 
@@ -165,7 +157,6 @@ const mensajeError = (err: unknown, porDefecto: string): string => {
   }
   return mensajeErrorBase(err, porDefecto);
 };
-
 
 const imgValida = (img: string | null | undefined): boolean =>
   !!img && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(img);
@@ -210,7 +201,6 @@ export default function MenuAdmin() {
   const [intentado, setIntentado] = useState(false);
   const [buscar, setBuscar] = useState('');
 
-
   const [filtroCategoria, setFiltroCategoria] = useState('');
   const [filtroEstado, setFiltroEstado] = useState('');
   const [precioMin, setPrecioMin] = useState('');
@@ -230,7 +220,6 @@ export default function MenuAdmin() {
   const panelRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { showToast } = useToast();
-
 
   const cargarProductos = useCallback(async () => {
     try {
@@ -256,7 +245,6 @@ export default function MenuAdmin() {
     }
   }, [vista]);
 
-
   useEffect(() => {
     if (!archivo) return;
     const url = URL.createObjectURL(archivo);
@@ -264,7 +252,6 @@ export default function MenuAdmin() {
     return () => URL.revokeObjectURL(url);
   }, [archivo]);
 
- 
   const hayFiltros = Boolean(buscar || filtroCategoria || filtroEstado || precioMin || precioMax);
 
   const limpiarFiltros = () => {
@@ -274,7 +261,6 @@ export default function MenuAdmin() {
     setPrecioMin('');
     setPrecioMax('');
   };
-
 
   const grupos = useMemo(() => {
     const fil = normalizar(buscar).trim();
@@ -295,7 +281,6 @@ export default function MenuAdmin() {
         }
       }
 
-      
       if (filtroEstado && estadoVisible(p) !== filtroEstado) return false;
 
       const valor = Number(p.valor) || 0;
@@ -317,7 +302,6 @@ export default function MenuAdmin() {
 
   const totalVisibles = grupos.reduce((acc, [, lista]) => acc + lista.length, 0);
 
-
   const alternarActivo = async (p: Producto) => {
     const nuevo = p.activo === false;
     try {
@@ -336,8 +320,8 @@ export default function MenuAdmin() {
     await alternarActivo(p);
   };
 
-
-  const setCampo = (campo: keyof typeof emptyForm) =>
+  /* ---------- Formulario ---------- */
+  const setCampo = (campo: CampoTexto) =>
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [campo]: e.target.value }));
 
@@ -369,6 +353,7 @@ export default function MenuAdmin() {
       estado: p.estado === 'Agotado' ? 'Agotado' : 'Disponible',
       categoria: p.categoria,
       descripcion: p.descripcion ?? '',
+      requiere_cocina: p.requiere_cocina !== false,
     });
     setArchivo(null);
     setPreview(imgValida(p.img) ? p.img : null);
@@ -401,7 +386,6 @@ export default function MenuAdmin() {
   const nQuitar = adiciones.filter((a) => a.tipo === 'quitar').length;
   const permiteExtras = !!form.categoria && !categoriaSinExtras(form.categoria);
 
- 
   const sugeridas = useMemo(() => {
     const vistos = new Set<string>();
     const lista: FilaAdicion[] = [];
@@ -424,7 +408,6 @@ export default function MenuAdmin() {
   const sugAdic = sugeridas.filter((s) => s.tipo === 'adicion' && !yaEsta('adicion', s.nombre));
   const sugQuitar = sugeridas.filter((s) => s.tipo === 'quitar' && !yaEsta('quitar', s.nombre));
 
-
   const guardar = async (e: FormEvent) => {
     e.preventDefault();
     setIntentado(true);
@@ -435,7 +418,6 @@ export default function MenuAdmin() {
     if (!form.descripcion.trim()) { showToast('La descripción es obligatoria', true); return; }
     if (!editId && !archivo) { showToast('La imagen es obligatoria', true); return; }
 
-  
     const filas = permiteExtras
       ? adiciones.filter((a) => a.nombre.trim() || (a.tipo === 'adicion' && a.precio !== ''))
       : [];
@@ -450,6 +432,7 @@ export default function MenuAdmin() {
     fd.append('descripcion', form.descripcion.trim());
     fd.append('categoria', form.categoria);
     fd.append('estado', form.estado);
+    fd.append('requiere_cocina', form.requiere_cocina ? '1' : '0');
     fd.append('adiciones', JSON.stringify(filas.map((a) => ({
       id: a.id,
       nombre: a.nombre.trim(),
@@ -477,7 +460,6 @@ export default function MenuAdmin() {
     }
   };
 
-
   const confirmarEliminar = async () => {
     if (!eliminar) return;
     const p = eliminar;
@@ -492,7 +474,6 @@ export default function MenuAdmin() {
     }
   };
 
-
   const panelFormulario = (
     <div className="mn-form-panel" ref={panelRef} style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
       <div className="mn-form-header">
@@ -504,7 +485,6 @@ export default function MenuAdmin() {
         <div className="mn-form-body">
           <div className="mn-form-grid">
 
-        
             <div className="mn-form-left">
               <div className="mn-field">
                 <label htmlFor="mn-nombre">Nombre <span className="mn-req">*</span></label>
@@ -557,6 +537,21 @@ export default function MenuAdmin() {
                 <textarea id="mn-desc" style={rojo(errores.descripcion)} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
                   value={form.descripcion} onChange={setCampo('descripcion')} />
                 <span className="mn-counter">{form.descripcion.length}/255</span>
+              </div>
+
+              <div className="mn-field">
+                <label htmlFor="mn-cocina" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    id="mn-cocina"
+                    type="checkbox"
+                    checked={form.requiere_cocina}
+                    onChange={(e) => setForm((f) => ({ ...f, requiere_cocina: e.target.checked }))}
+                  />
+                  <span>
+                    Requiere cocina{' '}
+                    <small>(desmárcalo para bebidas frías u otros productos listos)</small>
+                  </span>
+                </label>
               </div>
 
               {permiteExtras && (
@@ -697,7 +692,6 @@ export default function MenuAdmin() {
               )}
             </div>
 
-            
             <div className="mn-form-right">
               <div className="mn-field">
                 <label>Imagen del producto {!editId && <span className="mn-req">*</span>}</label>
@@ -748,7 +742,6 @@ export default function MenuAdmin() {
     [mostrarForm || editId !== null, limpiarFormulario],
   ]);
 
- 
   return (
     <div className="page-inner mn-page mn-menu-admin">
       <div className="page-header">
@@ -780,7 +773,6 @@ export default function MenuAdmin() {
 
       <div className="mn-toolbar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
 
-       
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
             <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
@@ -811,7 +803,6 @@ export default function MenuAdmin() {
           </div>
         </div>
 
-        
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
           <div className="mn-field" style={{ margin: 0 }}>
             <label htmlFor="mn-f-categoria">Categoría</label>
@@ -983,7 +974,6 @@ export default function MenuAdmin() {
         </div>
       )}
 
-      
       {cambiarEstado && (
         <div className="mn-modal-overlay" onClick={() => setCambiarEstado(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
@@ -1009,7 +999,6 @@ export default function MenuAdmin() {
         </div>
       )}
 
-     
       {eliminar && (
         <div className="mn-modal-overlay" onClick={() => setEliminar(null)}>
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>

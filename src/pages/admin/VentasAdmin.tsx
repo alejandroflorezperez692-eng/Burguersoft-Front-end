@@ -17,6 +17,8 @@ import ComprobanteImagen from '../../components/ComprobanteImagen';
 import ComprobanteModal from '../../components/ComprobanteModal';
 import { mensajeDeError } from '../../types/Trazabilidad';
 import SelectOscuro from '../../components/SelectOscuro';
+import { nuevaClaveIdempotencia } from '../../utils/idempotencia';
+import { METODOS_MOSTRADOR, esPagoElectronico } from '../../utils/pagos';
 
 const MOTIVO_DEVOLUCION_DEFECTO =
   'El comprobante no coincide con el valor del pedido. Por favor sube uno nuevo.';
@@ -91,13 +93,11 @@ interface Promocion {
   estado?: string;
 }
 
-const METODOS = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
+const METODOS = METODOS_MOSTRADOR;
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
 const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
 
-const METODOS_CON_COMPROBANTE = ['Nequi', 'Daviplata', 'Bancolombia', 'Transferencia', 'Tarjeta', 'PSE'];
-const requiereComprobante = (v: Venta): boolean =>
-  METODOS_CON_COMPROBANTE.includes((v.metodo_pago ?? '').trim());
+const requiereComprobante = (v: Venta): boolean => esPagoElectronico(v.metodo_pago);
 
 // Color de la etiqueta según el estado de la venta
 const claseEstado = (estado?: string | null) => {
@@ -366,6 +366,10 @@ export default function VentasAdmin() {
   const [mesa, setMesa] = useState('');
   const [notas, setNotas] = useState('');
   const [intentado, setIntentado] = useState(false);
+  // F-028: evita que un doble clic registre dos ventas.
+  const [guardando, setGuardando] = useState(false);
+  // F-012: una clave por intento de venta; se renueva tras un registro exitoso.
+  const claveIdempotencia = useRef(nuevaClaveIdempotencia());
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
   const [carrito, setCarrito] = useState<{ producto_id: number; cantidad: number }[]>([]);
@@ -490,7 +494,8 @@ const load = async (silencioso = false) => {
       ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
       : undefined;
 
-  const save = () => {
+  const save = async () => {
+    if (guardando) return;
     setIntentado(true);
     if (sinNada) return;
     if (tipoEntrega === 'Consumir' && !mesa) return;
@@ -503,14 +508,21 @@ const load = async (silencioso = false) => {
       mesa: tipoEntrega === 'Consumir' ? Number(mesa) : undefined,
       notas: notas.trim() || undefined,
     };
-    apiClient.post('/ventas', body).then(() => {
+    setGuardando(true);
+    try {
+      await apiClient.post('/ventas', body, {
+        headers: { 'Idempotency-Key': claveIdempotencia.current },
+      });
+      claveIdempotencia.current = nuevaClaveIdempotencia();
       cerrarFormulario();
       load(true);
-    }).catch((e) => {
+    } catch (e) {
       const d = (e as any)?.response?.data;
       const msg = d?.error || d?.message || (Object.values(d?.errors ?? {}) as string[][])[0]?.[0];
       alertar(msg || 'No se pudo registrar la venta. Revisa los datos.');
-    });
+    } finally {
+      setGuardando(false);
+    }
   };
 
   const cerrarFormulario = () => {
@@ -1227,7 +1239,9 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           ) : null}
           <div className="modal-actions" style={{ marginTop: 8 }}>
             <button className="btn-cancel" onClick={cerrarFormulario}>Cancelar</button>
-            <button className="btn-save" onClick={save}>Registrar</button>
+            <button className="btn-save" onClick={save} disabled={guardando}>
+              {guardando ? 'Guardando...' : 'Registrar'}
+            </button>
           </div>
           </div>
         </div>

@@ -7,13 +7,16 @@ import { normalizarRol } from '../utils/roles';
 import '../styles/nu-admin.css';
 import '../styles/nuevo-pedido.css';
 import SelectOscuro from './SelectOscuro';
+import { METODOS_MOSTRADOR } from '../utils/pagos';
 
 interface Adicion { id: number; nombre: string; precio: number | string; tipo?: string; estado?: string }
 interface Producto { id: number; nombre: string; valor: number; img?: string | null; estado?: string; categoria?: string; adiciones?: Adicion[] }
 interface Promocion { id: number; nombre: string; precio: number; estado?: string }
 interface PedidoMesa { id: number; estado: string; valor_total: number; items: { nombre: string; cantidad: number }[] }
-interface Mesa { numero: number; estado: 'Libre' | 'Ocupada' | 'Por cobrar'; total?: number; pedidos?: PedidoMesa[] }
+interface Mesa { numero: number; estado: 'Libre' | 'Ocupada' | 'Por cobrar'; total?: number; pedidos?: PedidoMesa[]; mesero?: { id: number; nombre: string; apellido: string } | null }
 type Item = { tipo: 'producto' | 'combo'; id: number; nombre: string; precio: number; img?: string | null; agotado?: boolean; cat: string };
+
+const METODOS = METODOS_MOSTRADOR;
 
 const TIPOS = [
   { v: 'Consumir', t: 'En el local' },
@@ -53,7 +56,6 @@ const cache: {
   mesas: leerCache<Mesa[]>('nv:mesas'),
 };
 
-
 if (cache.productos) precargarImagenes(cache.productos);
 
 function fijar<K extends keyof typeof cache>(k: K, v: NonNullable<(typeof cache)[K]>) {
@@ -61,7 +63,6 @@ function fijar<K extends keyof typeof cache>(k: K, v: NonNullable<(typeof cache)
   try { sessionStorage.setItem('nv:' + k, JSON.stringify(v)); } catch { /* sin storage */ }
   if (k === 'productos') precargarImagenes(v as Producto[]);
 }
-
 
 export function precargarNuevaVenta() {
   apiClient.get('/productos').then(({ data }) => fijar('productos', toArray<Producto>(data))).catch(() => {});
@@ -83,10 +84,12 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const rol = normalizarRol(user?.role);
   const esMesero = rol === 'mesero';
   const esAdmin = rol === 'admin';
+  const puedeAsignarMesero = rol === 'admin' || rol === 'cajero';
 
   const [productos, setProductos] = useState<Producto[]>(cache.productos ?? []);
   const [promociones, setPromociones] = useState<Promocion[]>(cache.promociones ?? []);
   const [mesas, setMesas] = useState<Mesa[]>(cache.mesas ?? []);
+  const [meseros, setMeseros] = useState<{ id: number; nombre: string; apellido: string }[]>([]);
   const [cargandoProd, setCargandoProd] = useState(!cache.productos);
 
   const [enviando, setEnviando] = useState(false);
@@ -131,12 +134,10 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     if (!abierto) return;
     let vivo = true;
 
-
     if (cache.productos) setProductos(cache.productos);
     if (cache.promociones) setPromociones(cache.promociones);
     if (cache.mesas) setMesas(cache.mesas);
 
-  
     apiClient.get('/productos')
       .then(({ data }) => {
         fijar('productos', toArray<Producto>(data));
@@ -151,11 +152,17 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
       .catch(() => {});
     cargarMesas();
 
+    // F-036: admin y cajero pueden asignar el mesero de cada mesa.
+    if (puedeAsignarMesero) {
+      apiClient.get('/mesas/meseros')
+        .then(({ data }) => { if (vivo) setMeseros(Array.isArray(data) ? data : []); })
+        .catch(() => {});
+    }
+
     setTipoEntrega('Consumir');
     if (mesaInicial) setMesa(mesaInicial);
     return () => { vivo = false; };
-  }, [abierto, mesaInicial, cargarMesas]);
-
+  }, [abierto, mesaInicial, cargarMesas, puedeAsignarMesero]);
 
   const todos = useMemo<Item[]>(() => [
     ...productos.map((p) => ({
@@ -211,7 +218,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
         : [...l, { adicion_id: id, cantidad: nuevo }];
     });
 
-
   useEffect(() => {
     setExtras((l) => l.filter((e) =>
       productos.some((p) => carrito.some((c) => c.producto_id === p.id) && p.adiciones?.some((a) => a.id === e.adicion_id))
@@ -233,7 +239,30 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     tipoEntrega === 'Consumir' ? (mesa ? `Mesa ${mesa}` : '—')
     : tipoEntrega === 'Domicilio' ? 'Domicilio' : 'Para recoger';
 
- 
+  /* ---------- Mesas ---------- */
+  const asignarMesero = async (numero: number, meseroId: string) => {
+    try {
+      const { data } = await apiClient.patch(`/mesas/${numero}/mesero`, {
+        mesero_id: meseroId ? Number(meseroId) : null,
+      });
+
+      const actualizadas = mesas.map((m) =>
+        m.numero === numero ? { ...m, mesero: data.mesero ?? null } : m,
+      );
+      setMesas(actualizadas);
+      fijar('mesas', actualizadas);
+
+      showToast(
+        data.mesero
+          ? `Mesa ${numero}: ${data.mesero.nombre} ${data.mesero.apellido}`
+          : `Mesa ${numero} sin mesero`,
+      );
+    } catch (e) {
+      const d = (e as { response?: { data?: { error?: string; message?: string } } })?.response?.data;
+      alertar(d?.error || d?.message || 'No se pudo asignar el mesero');
+    }
+  };
+
   const crearMesa = async () => {
     try {
       const { data } = await apiClient.post('/mesas');
@@ -246,14 +275,13 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     }
   };
 
-
   const cerrar = () => {
     setCarrito([]); setCombos([]); setExtras([]); setMesa(null); setCliente(''); setDireccion('');
-       setTelefono(''); setRecibeNombre(''); setNotas('');
+    setTelefono(''); setRecibeNombre(''); setNotas('');
     onClose();
   };
 
-    const guardar = () => {
+  const guardar = () => {
     if (enviando) return;
     if (tipoEntrega === 'Consumir' && !mesa) return alertar('Elige la mesa');
     if (tipoEntrega === 'Domicilio') {
@@ -264,24 +292,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     if (lineas.length === 0) return alertar('Agrega al menos un producto');
 
     setEnviando(true);
-    apiClient
-      .post('/ventas', {
-        carrito,
-        combos: combos.length ? combos : undefined,
-        adiciones: extras.length ? extras : undefined,
-        metodo_pago: metodoPago,
-        tipo_entrega: tipoEntrega,
-        cliente_nombre: cliente.trim() || undefined,
-        mesa: tipoEntrega === 'Consumir' ? mesa : undefined,
-        notas: notas.trim() || undefined,
-        direccion: tipoEntrega === 'Domicilio'
-          ? {
-              linea1: direccion.trim(),
-              recibe_nombre: recibeNombre.trim(),
-              recibe_telefono: telefono.trim(),
-            }
-          : undefined,
-      })
 
     const notasFinal = [
       tipoEntrega === 'Domicilio' ? `Dirección: ${direccion.trim()}` : '',
@@ -289,7 +299,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
       notas.trim(),
     ].filter(Boolean).join(' · ').slice(0, 255);
 
-    setEnviando(true);
     apiClient
       .post('/ventas', {
         carrito,
@@ -300,6 +309,11 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
         cliente_nombre: cliente.trim() || undefined,
         mesa: tipoEntrega === 'Consumir' ? mesa : undefined,
         notas: notasFinal || undefined,
+        direccion: tipoEntrega === 'Domicilio' ? {
+          linea1: direccion.trim(),
+          recibe_nombre: recibeNombre.trim(),
+          recibe_telefono: telefono.trim(),
+        } : undefined,
       })
       .then(() => { cerrar(); onCreada?.(); })
       .catch((e) => {
@@ -350,6 +364,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                       >
                         <strong>Mesa {m.numero}</strong>
                         <span className="np-pill"><i />{m.estado}</span>
+                        {m.mesero && <small>Mesero: {m.mesero.nombre} {m.mesero.apellido}</small>}
                         {m.estado !== 'Libre' && <small>{money(Number(m.total) || 0)}</small>}
                       </button>
                     ))}
@@ -358,6 +373,23 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                     )}
                   </div>
                 </div>
+
+                {puedeAsignarMesero && mesa && (
+                  <div style={{ marginTop: 12 }}>
+                    <label htmlFor="np-mesero" className="np-hint">Mesero de la mesa {mesa}</label>
+                    <SelectOscuro
+                      id="np-mesero"
+                      className="np-select"
+                      value={mesas.find((m) => m.numero === mesa)?.mesero?.id ?? ''}
+                      onChange={(e) => void asignarMesero(mesa, e.target.value)}
+                    >
+                      <option value="">Sin asignar</option>
+                      {meseros.map((m) => (
+                        <option key={m.id} value={m.id}>{m.nombre} {m.apellido}</option>
+                      ))}
+                    </SelectOscuro>
+                  </div>
+                )}
               </>
             ) : (
               <p className="np-hint" style={{ marginTop: 14 }}>

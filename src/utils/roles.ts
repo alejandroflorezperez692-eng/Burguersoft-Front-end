@@ -20,7 +20,9 @@ export const ACCESO: Record<'personal' | 'menu' | 'pedidos' | 'ventas' | 'invent
   personal: ['admin', 'cajero', 'cocinero', 'mesero'],
   menu: ['admin', 'cajero', 'cocinero', 'mesero'],
   pedidos: ['admin', 'cajero', 'cocinero', 'mesero'],
-  ventas: ['admin', 'cajero', 'mesero'],
+  // F-022: el mesero usa "Pedidos" (Nuevo pedido y Mesas); el historial de
+  // ventas es solo para admin y cajero.
+  ventas: ['admin', 'cajero'],
   inventario: ['admin', 'cajero', 'cocinero'],
   cierre: ['admin', 'cajero'],
   soloAdmin: ['admin'],

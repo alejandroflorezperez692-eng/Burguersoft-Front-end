@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import FacturaModal from './FacturaModal';
 import { useToast } from './Toast';
+import { useTasaImpuesto } from '../hooks/useTasaImpuesto';
 
 const TIPOS_ENTREGA = ['Domicilio', 'Para recoger', 'En restaurante'] as const;
 const CUANDO_OPCIONES = ['Lo antes posible', 'Programar para más tarde'] as const;
-const IVA_RATE = 0.08;
 const ZONA_HORARIA = 'America/Bogota';
 
 const HORARIOS: Record<number, { inicio: string; fin: string } | null> = {
@@ -83,6 +83,7 @@ export default function CartPanel() {
     horaProgramada: horaSeleccionada, setHoraProgramada: setHoraSeleccionada,
   } = useCart();
   const navigate = useNavigate();
+  const tasaImpuesto = useTasaImpuesto();
 
   const [showFactura, setShowFactura] = useState(false);
   const { showToast: showToastGlobal, confirmar } = useToast();
@@ -113,7 +114,7 @@ export default function CartPanel() {
   const hoyStr = hoyColombiaStr();
 
   const descuentos = 0;
-  const subtotal = total / (1 + IVA_RATE);
+  const subtotal = total / (1 + tasaImpuesto);
   const impuestos = total - subtotal;
 
 

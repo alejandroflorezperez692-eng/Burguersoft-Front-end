@@ -1,6 +1,6 @@
-import { Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { type RolNormalizado } from '../utils/roles';
+import { normalizarRol, type RolNormalizado } from '../utils/roles';
 
 type ProtectedRouteProps = {
   roles?: RolNormalizado[];
@@ -9,15 +9,23 @@ type ProtectedRouteProps = {
 };
 
 export default function ProtectedRoute({
+  roles,
+  redirect = '/login',
   allowGuest = false,
 }: ProtectedRouteProps) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
+
+  if (loading) return null;
 
   if (!isAuthenticated) {
-    if (allowGuest) {
-      return <Outlet />;
-    }
-    return null;
+    return allowGuest ? <Outlet /> : <Navigate to="/login" replace />;
+  }
+
+  const rol = normalizarRol(user?.role);
+
+  // Si la ruta exige roles y el usuario no tiene uno permitido, se redirige.
+  if (roles && (!rol || !roles.includes(rol))) {
+    return <Navigate to={redirect} replace />;
   }
 
   return <Outlet />;

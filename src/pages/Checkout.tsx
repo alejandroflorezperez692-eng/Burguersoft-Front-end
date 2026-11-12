@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import apiClient from '../api/client';
@@ -14,10 +14,12 @@ import logoDaviplata from '../assets/img/daviplata.png';
 import logoBancolombia from '../assets/img/bancolombia.svg';
 import logoEfectivo from '../assets/img/efectivo.svg';
 import logoUbicacion from '../assets/img/Ubicacion.png';
+import { useTasaImpuesto } from '../hooks/useTasaImpuesto';
+import { nuevaClaveIdempotencia } from '../utils/idempotencia';
+import { esPagoElectronico } from '../utils/pagos';
 import { comprimirImagen } from '../utils/comprimirImagen';
 import AdminLoading from '../components/AdminLoading';
 
-const IVA_RATE = 0.08;
 const TIPOS_DOCUMENTO = ['CC', 'CE', 'NIT', 'Pasaporte', 'Otro'];
 
 function IconoNequi() {
@@ -46,12 +48,9 @@ type Direccion = {
 
 const direccionVacia: Direccion = { linea1: '', barrio: '', referencia: '', lat: null, lng: null };
 
-
-
 const ARCGIS_REVERSE = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode';
 const NOMINATIM_REVERSE = 'https://nominatim.openstreetmap.org/reverse';
 const GOOGLE_REVERSE = 'https://maps.googleapis.com/maps/api/geocode/json';
-
 
 const ABREVIATURAS_VIA: Array<[RegExp, string]> = [
   [/^(cl|cll|calle)\.?\s+/i, 'Calle '],
@@ -65,10 +64,8 @@ const ABREVIATURAS_VIA: Array<[RegExp, string]> = [
 
 type GeoResultado = { linea1: string; barrio: string };
 
-
 const TIPO_VIA =
   '(?:Calle|Carrera|Cra|Cl|Avenida|Av|Diagonal|Diag|Circular|Circ|V[ií]a|Carril|Carretera|Transversal|Manzana|Manz)';
-
 
 function normalizarVia(via: string): string {
   const v = via.trim().replace(/\s+/g, ' ');
@@ -78,12 +75,10 @@ function normalizarVia(via: string): string {
   return v;
 }
 
-
 function formatearDireccionColombia(address: string, addNum: string): string {
   const limpio = address.trim().replace(/\s+/g, ' ');
   if (!limpio) return '';
 
-  
   if (limpio.includes('#')) {
     const [via, ...resto] = limpio.split('#');
     const casa = resto.join('#').trim();
@@ -91,7 +86,6 @@ function formatearDireccionColombia(address: string, addNum: string): string {
     return casa ? `${v} # ${casa}` : v;
   }
 
-  
   const tokens: string[] = [];
   for (const t of limpio.split(' ')) {
     const prev = tokens[tokens.length - 1];
@@ -99,7 +93,6 @@ function formatearDireccionColombia(address: string, addNum: string): string {
     else tokens.push(t);
   }
 
-  
   const ultimo = tokens[tokens.length - 1];
   let casa = '';
   if (/^\d/.test(ultimo)) {
@@ -111,23 +104,19 @@ function formatearDireccionColombia(address: string, addNum: string): string {
 
   const resto = tokens.join(' ');
 
-  
   if (casa && !/\d/.test(resto) && new RegExp(`${TIPO_VIA}$`, 'i').test(resto)) {
     return `${resto} ${casa}`;
   }
 
- 
   const m = resto.match(new RegExp(`^(.*\\b${TIPO_VIA}\\s+\\d+[A-Za-z]?)\\s+(\\d+[A-Za-z]?)$`, 'i'));
   if (m) return casa ? `${m[1]} # ${m[2]}-${casa}` : `${m[1]} # ${m[2]}`;
 
   return casa ? `${resto} # ${casa}` : resto;
 }
 
-
 function tieneNumero(linea1: string): boolean {
   return /\d/.test(linea1);
 }
-
 
 async function reverseGeocodeGoogle(latitude: number, longitude: number): Promise<GeoResultado | null> {
   const key = import.meta.env.VITE_GOOGLE_MAPS_KEY as string | undefined;
@@ -155,7 +144,6 @@ async function reverseGeocodeGoogle(latitude: number, longitude: number): Promis
   return { linea1, barrio };
 }
 
-
 async function reverseGeocodeArcGIS(latitude: number, longitude: number): Promise<GeoResultado | null> {
   const url = new URL(ARCGIS_REVERSE);
   url.searchParams.set('location', `${longitude},${latitude}`);
@@ -177,7 +165,6 @@ async function reverseGeocodeArcGIS(latitude: number, longitude: number): Promis
 
   return { linea1, barrio };
 }
-
 
 async function reverseGeocodeOSM(latitude: number, longitude: number): Promise<GeoResultado | null> {
   const url = new URL(NOMINATIM_REVERSE);
@@ -210,7 +197,6 @@ async function reverseGeocodeOSM(latitude: number, longitude: number): Promise<G
     linea1 = String(data.display_name ?? '').split(',')[0].trim();
   }
 
-
   const barrio =
     a.neighbourhood || a.quarter || a.residential ||
     a.suburb || a.city_district || a.hamlet ||
@@ -218,7 +204,6 @@ async function reverseGeocodeOSM(latitude: number, longitude: number): Promise<G
 
   return { linea1, barrio };
 }
-
 
 async function obtenerDireccion(latitude: number, longitude: number): Promise<GeoResultado> {
   let linea1 = '';
@@ -244,7 +229,6 @@ async function obtenerDireccion(latitude: number, longitude: number): Promise<Ge
   return { linea1, barrio };
 }
 
-
 const WHATSAPP_LOCAL = '573142208706';
 
 const ETIQUETA_PAGO: Record<string, string> = {
@@ -254,13 +238,11 @@ const ETIQUETA_PAGO: Record<string, string> = {
   efectivo: 'Efectivo (contra entrega)',
 };
 
-
 const QR_RUTAS: Record<string, string> = {
   nequi: '/estilos/img/qr-breb.png',
   daviplata: '/estilos/img/qr-breb.png',
   bancolombia: '/estilos/img/qr-breb.png',
 };
-
 
 const CUENTA_QR: Record<string, { titular: string; llave: string }> = {
   nequi: { titular: 'Flor Avella', llave: '@3115387534' },
@@ -276,7 +258,6 @@ const NOMBRE_QR: Record<string, string> = {
 
 const fmtCOP = (v: number) => `$${Math.round(v).toLocaleString('es-CO')}`;
 
-
 function formatearTelefono(v: string): string {
   const limpio = v.replace(/\D/g, '').slice(0, 10);
   if (limpio.length <= 3) return limpio;
@@ -290,12 +271,17 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { showToast: showToastGlobal } = useToast();
   const alertar = (msg: any) => showToastGlobal(String(msg), true);
+  const tasaImpuesto = useTasaImpuesto();
 
- 
+  // F-006: la mesa puede venir en el QR de cada mesa (?mesa=N).
+  const [searchParams] = useSearchParams();
+  const mesaUrl = Number(searchParams.get('mesa'));
+  const mesaDesdeUrl = Number.isInteger(mesaUrl) && mesaUrl > 0;
+  const [mesa, setMesa] = useState<number | ''>(mesaDesdeUrl ? mesaUrl : '');
+
   const partesNombre = (user?.name ?? '').trim().split(' ');
   const nombreInicial = partesNombre[0] ?? '';
   const apellidoInicial = partesNombre.slice(1).join(' ');
-
 
   const [direccion, setDireccion] = useState<Direccion>(direccionVacia);
   const [buscandoUbicacion, setBuscandoUbicacion] = useState(false);
@@ -305,9 +291,6 @@ export default function Checkout() {
   const showToastUbicacion = (msg: string) => {
     showToastGlobal(msg, false, true);
   };
-
-
-
 
   useEffect(() => {
     const el = refReferencia.current;
@@ -330,7 +313,6 @@ export default function Checkout() {
       async (pos) => {
         const { latitude, longitude } = pos.coords;
 
-      
         setDireccion((prev) => ({ ...prev, lat: latitude, lng: longitude }));
 
         try {
@@ -436,19 +418,14 @@ export default function Checkout() {
     });
   }, []);
 
-
   const [usarMismosDatos, setUsarMismosDatos] = useState(true);
   const [facturaNombre, setFacturaNombre] = useState('');
   const [facturaApellido, setFacturaApellido] = useState('');
   const [facturaDocumento, setFacturaDocumento] = useState('');
 
-
   const [metodoPago, setMetodoPago] = useState<'nequi' | 'daviplata' | 'bancolombia' | 'efectivo'>('nequi');
   const [qrNoDisponible, setQrNoDisponible] = useState<Record<string, boolean>>({});
 
-  // Pedido ya registrado: se muestra el panel de confirmacion con el boton
-  // para abrir el chat de WhatsApp y el acceso al estado del pedido.
-  // Se guarda en sessionStorage para que sobreviva a una recarga de la página.
   const PEDIDO_KEY = 'checkout_pedido_confirmado';
   type PedidoConfirmado = {
     id: number | null;
@@ -469,8 +446,6 @@ export default function Checkout() {
   };
   const [pedidoConfirmado, setPedidoConfirmado] = useState<PedidoConfirmado | null>(leerPedidoGuardado);
 
-  // Al salir de /checkout (navegación interna) se olvida el pedido confirmado.
-  // Recargar la página no dispara esto: la confirmación sigue disponible.
   useEffect(() => {
     return () => {
       try { sessionStorage.removeItem(PEDIDO_KEY); } catch { /* sin storage */ }
@@ -478,7 +453,6 @@ export default function Checkout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
- 
   const [comprobante, setComprobante] = useState<File | null>(null);
   const [comprobantePreview, setComprobantePreview] = useState<string | null>(null);
   const refComprobante = useRef<HTMLInputElement | null>(null);
@@ -509,7 +483,6 @@ export default function Checkout() {
     setComprobante(await comprimirImagen(file));
   };
 
- 
   const [mapaPromoProductos, setMapaPromoProductos] = useState<Map<number, number[]>>(new Map());
 
   useEffect(() => {
@@ -526,7 +499,6 @@ export default function Checkout() {
     }).catch(() => { /* si falla, se valida al pagar */ });
   }, []);
 
-  
   const TIPO_ENTREGA_BACKEND: Record<string, string> = {
     Domicilio: 'Domicilio',
     'Para recoger': 'Recoger',
@@ -539,27 +511,27 @@ export default function Checkout() {
     efectivo: 'Efectivo',
   };
 
-const construirNotas = (): string | null => {
-  const partes = items
-    .filter((i) => (i.sin?.length ?? 0) > 0 || (i.extras?.length ?? 0) > 0 || i.nota)
-    .map((i) => {
-      const det = [
-        ...(i.sin ?? []).map((s) => `SIN ${s}`),
-        ...(i.extras ?? []).map((e) => `+${e.cantidad} ${e.nombre}`),
-        i.nota,
-      ].filter(Boolean).join(', ');
-      return `${i.cantidad}x ${i.nombre}: ${det}`;
-    });
-  return partes.length ? partes.join(' | ').slice(0, 255) : null;
-};
+  const construirNotas = (): string | null => {
+    const partes = items
+      .filter((i) => (i.sin?.length ?? 0) > 0 || (i.extras?.length ?? 0) > 0 || i.nota)
+      .map((i) => {
+        const det = [
+          ...(i.sin ?? []).map((s) => `SIN ${s}`),
+          ...(i.extras ?? []).map((e) => `+${e.cantidad} ${e.nombre}`),
+          i.nota,
+        ].filter(Boolean).join(', ');
+        return `${i.cantidad}x ${i.nombre}: ${det}`;
+      });
+    return partes.length ? partes.join(' | ').slice(0, 255) : null;
+  };
 
-const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
-  const mapa = new Map<number, number>();
-  items.forEach((i) =>
-    (i.extras ?? []).forEach((e) => mapa.set(e.id, (mapa.get(e.id) ?? 0) + e.cantidad * i.cantidad)),
-  );
-  return [...mapa.entries()].map(([adicion_id, cantidad]) => ({ adicion_id, cantidad }));
-};
+  const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
+    const mapa = new Map<number, number>();
+    items.forEach((i) =>
+      (i.extras ?? []).forEach((e) => mapa.set(e.id, (mapa.get(e.id) ?? 0) + e.cantidad * i.cantidad)),
+    );
+    return [...mapa.entries()].map(([adicion_id, cantidad]) => ({ adicion_id, cantidad }));
+  };
 
   const expandirCarrito = (): { producto_id: number; cantidad: number }[] => {
     const combinado = new Map<number, number>();
@@ -581,10 +553,10 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     mensajeError(err, 'No se pudo procesar el pago');
 
   const [enviando, setEnviando] = useState(false);
+  const enviandoRef = useRef(false);
+  const claveIdempotencia = useRef(nuevaClaveIdempotencia());
 
-    const enviandoRef = useRef(false);
-
-  const subtotal = total / (1 + IVA_RATE);
+  const subtotal = total / (1 + tasaImpuesto);
   const impuestos = total - subtotal;
 
   const requiereDireccion = tipoEntrega === 'Domicilio';
@@ -597,13 +569,13 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     if (requiereDireccion && (!recibeNombre.trim() || !recibeTelefono.trim())) {
       return 'Indica el nombre y el teléfono de quien recibe el pedido.';
     }
-    if (tipoEntrega === 'En restaurante' && !mesaSel) {
-      return 'Elige una mesa disponible para tu pedido.';
+    if (tipoEntrega === 'En restaurante' && !mesa && !mesaSel) {
+      return 'Indica el número de mesa o elige una mesa para los pedidos en el restaurante.';
     }
     if (!numeroDocumento || !nombre || !apellido || !correo || !telefono) {
       return 'Completa todos los datos de la compra.';
     }
-    if (!comprobante) {
+    if (esPagoElectronico(metodoPago) && !comprobante) {
       return 'Adjunta una imagen del comprobante de pago. La IA verificará que sea un comprobante real.';
     }
     return null;
@@ -625,7 +597,6 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     enviandoRef.current = true;
     setEnviando(true);
     try {
-      
       const form = new FormData();
       expandirCarrito().forEach((item, i) => {
         form.append(`carrito[${i}][producto_id]`, String(item.producto_id));
@@ -637,7 +608,12 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       });
 
       form.append('tipo_entrega', TIPO_ENTREGA_BACKEND[tipoEntrega] ?? 'Domicilio');
-      if (tipoEntrega === 'En restaurante' && mesaSel) form.append('mesa', String(mesaSel));
+      
+      if (tipoEntrega === 'En restaurante') {
+        const mesaFinal = mesa || mesaSel;
+        if (mesaFinal) form.append('mesa', String(mesaFinal));
+      }
+
       form.append('metodo_pago', METODO_PAGO_BACKEND[metodoPago] ?? 'Efectivo');
       form.append('notas', construirNotas() ?? '');
       form.append('total', String(total));
@@ -666,12 +642,15 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       }
 
       const respuesta = await apiClient.post('/ventas', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Idempotency-Key': claveIdempotencia.current,
+        },
         timeout: 90000,
       });
 
-      
+      claveIdempotencia.current = nuevaClaveIdempotencia();
+
       const idVenta = respuesta.data?.id ?? null;
       const urlWsp = `https://wa.me/${WHATSAPP_LOCAL}?text=${encodeURIComponent(construirFacturaWhatsApp(idVenta))}`;
 
@@ -698,7 +677,6 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     }
   };
 
-  
   const construirFacturaWhatsApp = (idVenta: number | null = null): string => {
     const lineas: string[] = [];
     const fechaPedido = new Date().toLocaleString('es-CO', {
@@ -744,7 +722,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     lineas.push(`*TOTAL: ${fmtCOP(total)}*`);
     lineas.push('------------------------');
     lineas.push(`Método de pago: ${ETIQUETA_PAGO[metodoPago] ?? metodoPago}`);
-    if (metodoPago !== 'efectivo') {
+    if (esPagoElectronico(metodoPago)) {
       lineas.push(`Llave Bre-B: ${CUENTA_QR[metodoPago]?.llave ?? ''}`);
       lineas.push('*Adjunto el comprobante de pago por este chat.*');
     } else {
@@ -757,7 +735,6 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     }
 
     return lineas.join('\n');
-
   };
 
   const resumenEntrega = useMemo(() => {
@@ -779,7 +756,6 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       <div className="checkout-page">
         <div className="checkout-main">
           {pedidoConfirmado ? (
-           
             <section className="checkout-card">
               <div className="checkout-encabezado">
                 <h2>¡Pedido realizado con éxito!</h2>
@@ -828,7 +804,6 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
               </div>
             </section>
           ) : items.length === 0 ? (
-            /* ---- Carrito vacío: no mostrar el formulario de pago con $0 ---- */
             <section className="checkout-card">
               <div className="checkout-encabezado">
                 <h2>Tu carrito está vacío</h2>
@@ -847,42 +822,40 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
               </div>
             </section>
           ) : (
-          <section className="checkout-card">
-            <div className="checkout-encabezado">
-              <h2>Finaliza tu pedido</h2>
-              <p>Completa los pasos y paga con el método que prefieras.</p>
-            </div>
-
-          
-            <div className="checkout-seccion">
-              <div className="checkout-seccion-titulo">
-                <span className="checkout-paso">1</span>
-                <h3>{requiereDireccion ? 'Dirección de entrega' : 'Detalles del pedido'}</h3>
+            <section className="checkout-card">
+              <div className="checkout-encabezado">
+                <h2>Finaliza tu pedido</h2>
+                <p>Completa los pasos y paga con el método que prefieras.</p>
               </div>
 
-              {requiereDireccion ? (
-                <div className="checkout-form">
-                  <button type="button" className="btn-ubicacion" onClick={usarUbicacionActual} disabled={buscandoUbicacion}>
-                    <img src={logoUbicacion} alt="" className="btn-ubicacion-icono" />
-                    {buscandoUbicacion ? 'Buscando tu ubicación...' : 'Usar mi ubicación actual'}
-                  </button>
+              <div className="checkout-seccion">
+                <div className="checkout-seccion-titulo">
+                  <span className="checkout-paso">1</span>
+                  <h3>{requiereDireccion ? 'Dirección de entrega' : 'Detalles del pedido'}</h3>
+                </div>
 
+                {requiereDireccion ? (
+                  <div className="checkout-form">
+                    <button type="button" className="btn-ubicacion" onClick={usarUbicacionActual} disabled={buscandoUbicacion}>
+                      <img src={logoUbicacion} alt="" className="btn-ubicacion-icono" />
+                      {buscandoUbicacion ? 'Buscando tu ubicación...' : 'Usar mi ubicación actual'}
+                    </button>
 
-                  <div className="form-group">
-                    <label>Dirección <span className="checkout-required">*</span></label>
-                    <input
-                      value={direccion.linea1}
-                      onChange={(e) => setDireccion({ ...direccion, linea1: e.target.value })}
-                      placeholder="Calle 10 # 20-30"
-                      required
-                    />
-                  </div>
-                  <div className="checkout-grid-2">
                     <div className="form-group">
-                      <label>Barrio <span className="checkout-required">*</span></label>
-                      <input value={direccion.barrio} onChange={(e) => setDireccion({ ...direccion, barrio: e.target.value })} required />
+                      <label>Dirección <span className="checkout-required">*</span></label>
+                      <input
+                        value={direccion.linea1}
+                        onChange={(e) => setDireccion({ ...direccion, linea1: e.target.value })}
+                        placeholder="Calle 10 # 20-30"
+                        required
+                      />
                     </div>
-                  </div>
+                    <div className="checkout-grid-2">
+                      <div className="form-group">
+                        <label>Barrio <span className="checkout-required">*</span></label>
+                        <input value={direccion.barrio} onChange={(e) => setDireccion({ ...direccion, barrio: e.target.value })} required />
+                      </div>
+                    </div>
                     <div className="form-group">
                       <label>Referencia (opcional)</label>
                       <textarea
@@ -917,247 +890,272 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                         />
                       </div>
                     </div>
-
-                </div>
-              ) : (
-                <div className="checkout-info-row">
-                  <span className="checkout-info-icon">🕒</span>
-                  <div>
-                    <strong>{resumenEntrega}</strong>
-                    <p>{cuando === 'Lo antes posible' ? 'Lo antes posible' : `${fechaProgramada} · ${horaProgramada}`}</p>
                   </div>
-                </div>
-              )}
-
-              {tipoEntrega === 'En restaurante' && (
-                <div style={{ marginTop: 14 }}>
-                  <strong style={{ display: 'block', marginBottom: 8 }}>
-                    Elige tu mesa <span className="checkout-required">*</span>
-                  </strong>
-                  {mesas.length === 0 && <p className="checkout-hint">Cargando mesas…</p>}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
-                    {mesas.map((m) => {
-                      const libre = m.estado === 'Libre';
-                      const seleccionada = mesaSel === m.numero;
-                      return (
-                        <button
-                          type="button"
-                          key={m.numero}
-                          disabled={!libre}
-                          onClick={() => setMesaSel(m.numero)}
-                          style={{
-                            padding: '12px 8px',
-                            borderRadius: 12,
-                            border: `2px solid ${seleccionada ? '#e8821a' : libre ? '#bfe3cb' : '#eee'}`,
-                            background: seleccionada ? '#fff3e6' : libre ? '#f2fbf5' : '#f5f5f5',
-                            color: libre ? '#1a1a1a' : '#9a9a9a',
-                            cursor: libre ? 'pointer' : 'not-allowed',
-                            fontFamily: 'inherit',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: 6,
-                          }}
-                        >
-                          <strong>Mesa {m.numero}</strong>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: libre ? '#1a7a42' : '#b45309' }}>
-                            {libre ? '● Disponible' : '● Ocupada'}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            
-            <div className="checkout-seccion">
-              <div className="checkout-seccion-titulo">
-                <span className="checkout-paso">2</span>
-                <h3>Tus datos</h3>
-              </div>
-
-              <div className="checkout-datos-fila">
-                <div className="checkout-dato">
-                  <span className="checkout-dato-label">Nombre</span>
-                  <span className="checkout-dato-valor">{nombre} {apellido}</span>
-                </div>
-                <div className="checkout-dato">
-                  <span className="checkout-dato-label">Documento</span>
-                  <span className="checkout-dato-valor">{tipoDocumento} · {numeroDocumento || '—'}</span>
-                </div>
-                <div className="checkout-dato">
-                  <span className="checkout-dato-label">Correo</span>
-                  <span className="checkout-dato-valor">{correo || '—'}</span>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Teléfono <span className="checkout-required">*</span></label>
-                <input
-                  inputMode="tel"
-                  value={formatearTelefono(telefono)}
-                  onChange={(e) => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                  placeholder="300 345 8970"
-                />
-              </div>
-
-              <div className="checkout-subtitulo">Facturación electrónica</div>
-              <label className="checkout-checkbox-row">
-                <input type="checkbox" checked={usarMismosDatos} onChange={(e) => setUsarMismosDatos(e.target.checked)} />
-                <span>Utilizar mi información para la facturación</span>
-              </label>
-
-              {!usarMismosDatos && (
-                <div className="checkout-form" style={{ marginTop: 12 }}>
-                  <div className="checkout-grid-2">
-                    <div className="form-group">
-                      <label>Nombre</label>
-                      <input value={facturaNombre} onChange={(e) => setFacturaNombre(e.target.value)} />
-                    </div>
-                    <div className="form-group">
-                      <label>Apellido</label>
-                      <input value={facturaApellido} onChange={(e) => setFacturaApellido(e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="form-group">
-                    <label>Número de documento</label>
-                    <input value={facturaDocumento} onChange={(e) => setFacturaDocumento(e.target.value.replace(/\D/g, ''))} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-           
-            <div className="checkout-seccion checkout-seccion-pago">
-              <div className="checkout-seccion-titulo">
-                <span className="checkout-paso">3</span>
-                <h3>Método de pago</h3>
-              </div>
-
-              <div className="pago-zona">
-                <div className="pago-opciones">
-                  {METODOS_PAGO.map((m) => (
-                    <label key={m.id} className="pago-chip">
-                      <input
-                        type="radio"
-                        name="metodo"
-                        checked={metodoPago === m.id}
-                        onChange={() => {
-                          setMetodoPago(m.id);
-                          if (m.id === 'efectivo') setComprobante(null);
-                        }}
-                      />
-                      <span className={`pago-icono pago-icono-${m.id}`}>{m.icono}</span>
-                      <span className="pago-chip-texto">{m.etiqueta}</span>
-                    </label>
-                  ))}
-                </div>
-
-                {metodoPago !== 'efectivo' && (
-                  <div className="pago-qr-caja" key={metodoPago}>
-                    {!qrNoDisponible[metodoPago] ? (
-                      <>
-                        <img
-                          className="pago-qr-img"
-                          src={QR_RUTAS[metodoPago]}
-                          alt="Código QR Bre-B para pagar el pedido"
-                          onError={() => setQrNoDisponible((v) => ({ ...v, [metodoPago]: true }))}
-                        />
-                        <div className="pago-qr-cuenta">
-                          <strong>{CUENTA_QR[metodoPago]?.titular}</strong>
-                          <span>Llave Bre-B · {CUENTA_QR[metodoPago]?.llave}</span>
+                ) : (
+                  <>
+                    {tipoEntrega === 'En restaurante' && (
+                      <div className="checkout-form">
+                        <div className="form-group">
+                          <label>Mesa <span className="checkout-required">*</span></label>
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            value={mesa}
+                            onChange={(e) => {
+                              const valor = Number(e.target.value);
+                              setMesa(Number.isInteger(valor) && valor > 0 ? valor : '');
+                            }}
+                            placeholder="Número de mesa"
+                            required
+                          />
+                          {mesaDesdeUrl && (
+                            <span className="checkout-hint">Mesa tomada del código QR.</span>
+                          )}
                         </div>
-                      </>
-                    ) : (
-                      <div className="pago-qr-vacio">
-                        Paga con {NOMBRE_QR[metodoPago]} y guarda tu comprobante.
                       </div>
                     )}
-                    <div className="pago-qr-texto">
-                      Escanea este código <strong>Bre-B</strong> desde la app de tu banco o billetera
-                      (Nequi, Daviplata, Bancolombia, Davivienda...) y digita el total a pagar.
-                      Al finalizar, sube aquí tu comprobante para que la IA lo verifique.
-                    </div>
-                  </div>
-                )}
-
-                {metodoPago !== 'efectivo' && (
-                <div className="checkout-comprobante">
-                  <div className="checkout-seccion-titulo" style={{ marginBottom: 8 }}>
-                    <span className="checkout-paso">4</span>
-                   <h3>
-                    Comprobante de pago <span className="checkout-required">*</span>
-                  </h3>
-                  </div>
-                  <p className="checkout-comprobante-texto">
-                    Sube una foto o captura del comprobante de tu pago. La IA verificará que la imagen
-                    sea realmente un comprobante de pago antes de registrar el pedido. Si no lo es, no
-                    se aceptará.
-                  </p>
-
-                  <input
-                    ref={refComprobante}
-                    id="comprobante-pago"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    style={{ display: 'none' }}
-                    onChange={(e) => void seleccionarComprobante(e.target.files?.[0] ?? null)}
-                  />
-
-                  {comprobantePreview ? (
-                    <div className="checkout-comprobante-preview">
-                      <img src={comprobantePreview} alt="Vista previa del comprobante de pago" />
-                      <div className="checkout-comprobante-preview-info">
-                        <strong>{comprobante?.name}</strong>
-                        <span>{((comprobante?.size ?? 0) / 1024 / 1024).toFixed(2)} MB</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setComprobante(null);
-                            if (refComprobante.current) refComprobante.current.value = '';
-                          }}
-                        >
-                          Quitar y elegir otra
-                        </button>
+                    <div className="checkout-info-row">
+                      <span className="checkout-info-icon">🕒</span>
+                      <div>
+                        <strong>{resumenEntrega}</strong>
+                        <p>{cuando === 'Lo antes posible' ? 'Lo antes posible' : `${fechaProgramada} · ${horaProgramada}`}</p>
                       </div>
                     </div>
-                  ) : (
-                    <label htmlFor="comprobante-pago" className="checkout-comprobante-label">
-                      <span>📎 Adjuntar imagen del comprobante</span>
-                      <small>JPG, PNG o WEBP · máximo 8 MB</small>
-                    </label>
-                  )}
-                </div>
+                  </>
+                )}
+
+                {tipoEntrega === 'En restaurante' && (
+                  <div style={{ marginTop: 14 }}>
+                    <strong style={{ display: 'block', marginBottom: 8 }}>
+                      Elige tu mesa <span className="checkout-required">*</span>
+                    </strong>
+                    {mesas.length === 0 && <p className="checkout-hint">Cargando mesas…</p>}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
+                      {mesas.map((m) => {
+                        const libre = m.estado === 'Libre';
+                        const seleccionada = mesaSel === m.numero;
+                        return (
+                          <button
+                            type="button"
+                            key={m.numero}
+                            disabled={!libre}
+                            onClick={() => setMesaSel(m.numero)}
+                            style={{
+                              padding: '12px 8px',
+                              borderRadius: 12,
+                              border: `2px solid ${seleccionada ? '#e8821a' : libre ? '#bfe3cb' : '#eee'}`,
+                              background: seleccionada ? '#fff3e6' : libre ? '#f2fbf5' : '#f5f5f5',
+                              color: libre ? '#1a1a1a' : '#9a9a9a',
+                              cursor: libre ? 'pointer' : 'not-allowed',
+                              fontFamily: 'inherit',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: 6,
+                            }}
+                          >
+                            <strong>Mesa {m.numero}</strong>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: libre ? '#1a7a42' : '#b45309' }}>
+                              {libre ? '● Disponible' : '● Ocupada'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
-            </div>
-          </section>
+
+              <div className="checkout-seccion">
+                <div className="checkout-seccion-titulo">
+                  <span className="checkout-paso">2</span>
+                  <h3>Tus datos</h3>
+                </div>
+
+                <div className="checkout-datos-fila">
+                  <div className="checkout-dato">
+                    <span className="checkout-dato-label">Nombre</span>
+                    <span className="checkout-dato-valor">{nombre} {apellido}</span>
+                  </div>
+                  <div className="checkout-dato">
+                    <span className="checkout-dato-label">Documento</span>
+                    <span className="checkout-dato-valor">{tipoDocumento} · {numeroDocumento || '—'}</span>
+                  </div>
+                  <div className="checkout-dato">
+                    <span className="checkout-dato-label">Correo</span>
+                    <span className="checkout-dato-valor">{correo || '—'}</span>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Teléfono <span className="checkout-required">*</span></label>
+                  <input
+                    inputMode="tel"
+                    value={formatearTelefono(telefono)}
+                    onChange={(e) => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="300 345 8970"
+                  />
+                </div>
+
+                <div className="checkout-subtitulo">Facturación electrónica</div>
+                <label className="checkout-checkbox-row">
+                  <input type="checkbox" checked={usarMismosDatos} onChange={(e) => setUsarMismosDatos(e.target.checked)} />
+                  <span>Utilizar mi información para la facturación</span>
+                </label>
+
+                {!usarMismosDatos && (
+                  <div className="checkout-form" style={{ marginTop: 12 }}>
+                    <div className="checkout-grid-2">
+                      <div className="form-group">
+                        <label>Nombre</label>
+                        <input value={facturaNombre} onChange={(e) => setFacturaNombre(e.target.value)} />
+                      </div>
+                      <div className="form-group">
+                        <label>Apellido</label>
+                        <input value={facturaApellido} onChange={(e) => setFacturaApellido(e.target.value)} />
+                      </div>
+                    </div>
+                    <div className="form-group">
+                      <label>Número de documento</label>
+                      <input value={facturaDocumento} onChange={(e) => setFacturaDocumento(e.target.value.replace(/\D/g, ''))} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="checkout-seccion checkout-seccion-pago">
+                <div className="checkout-seccion-titulo">
+                  <span className="checkout-paso">3</span>
+                  <h3>Método de pago</h3>
+                </div>
+
+                <div className="pago-zona">
+                  <div className="pago-opciones">
+                    {METODOS_PAGO.map((m) => (
+                      <label key={m.id} className="pago-chip">
+                        <input
+                          type="radio"
+                          name="metodo"
+                          checked={metodoPago === m.id}
+                          onChange={() => {
+                            setMetodoPago(m.id);
+                            if (m.id === 'efectivo') setComprobante(null);
+                          }}
+                        />
+                        <span className={`pago-icono pago-icono-${m.id}`}>{m.icono}</span>
+                        <span className="pago-chip-texto">{m.etiqueta}</span>
+                      </label>
+                    ))}
+                  </div>
+
+                  {esPagoElectronico(metodoPago) && (
+                    <div className="pago-qr-caja" key={metodoPago}>
+                      {!qrNoDisponible[metodoPago] ? (
+                        <>
+                          <img
+                            className="pago-qr-img"
+                            src={QR_RUTAS[metodoPago]}
+                            alt="Código QR Bre-B para pagar el pedido"
+                            onError={() => setQrNoDisponible((v) => ({ ...v, [metodoPago]: true }))}
+                          />
+                          <div className="pago-qr-cuenta">
+                            <strong>{CUENTA_QR[metodoPago]?.titular}</strong>
+                            <span>Llave Bre-B · {CUENTA_QR[metodoPago]?.llave}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="pago-qr-vacio">
+                          Paga con {NOMBRE_QR[metodoPago]} y guarda tu comprobante.
+                        </div>
+                      )}
+                      <div className="pago-qr-texto">
+                        Escanea este código <strong>Bre-B</strong> desde la app de tu banco o billetera
+                        (Nequi, Daviplata, Bancolombia, Davivienda...) y digita el total a pagar.
+                        Al finalizar, sube aquí tu comprobante para que la IA lo verifique.
+                      </div>
+                    </div>
+                  )}
+
+                  {metodoPago !== 'efectivo' && (
+                    <div className="checkout-comprobante">
+                      <div className="checkout-seccion-titulo" style={{ marginBottom: 8 }}>
+                        <span className="checkout-paso">4</span>
+                        <h3>
+                          Comprobante de pago{' '}
+                          {esPagoElectronico(metodoPago) ? (
+                            <span className="checkout-required">*</span>
+                          ) : (
+                            <small style={{ fontWeight: 500, color: '#8f0b0b' }}>*</small>
+                          )}
+                        </h3>
+                      </div>
+                      <p className="checkout-comprobante-texto">
+                        Sube una foto o captura del comprobante de tu pago. La IA verificará que la imagen
+                        sea realmente un comprobante de pago antes de registrar el pedido. Si no lo es, no
+                        se aceptará.
+                      </p>
+
+                      <input
+                        ref={refComprobante}
+                        id="comprobante-pago"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        style={{ display: 'none' }}
+                        onChange={(e) => void seleccionarComprobante(e.target.files?.[0] ?? null)}
+                      />
+
+                      {comprobantePreview ? (
+                        <div className="checkout-comprobante-preview">
+                          <img src={comprobantePreview} alt="Vista previa del comprobante de pago" />
+                          <div className="checkout-comprobante-preview-info">
+                            <strong>{comprobante?.name}</strong>
+                            <span>{((comprobante?.size ?? 0) / 1024 / 1024).toFixed(2)} MB</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setComprobante(null);
+                                if (refComprobante.current) refComprobante.current.value = '';
+                              }}
+                            >
+                              Quitar y elegir otra
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <label htmlFor="comprobante-pago" className="checkout-comprobante-label">
+                          <span>📎 Adjuntar imagen del comprobante</span>
+                          <small>JPG, PNG o WEBP · máximo 8 MB</small>
+                        </label>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
           )}
         </div>
 
-        {/* ---- Resumen / botón pagar ---- */}
         {!pedidoConfirmado && items.length > 0 && (
-        <aside className="checkout-resumen">
-          <div className="checkout-resumen-titulo">Tu pedido</div>
-          <div className="checkout-resumen-items">
-            {items.map((i) => (
-              <div className="checkout-resumen-item" key={i.id}>
-                <span className="checkout-resumen-item-nombre">{i.cantidad}x {i.nombre}</span>
-                <span>{fmtCOP(i.precio * i.cantidad)}</span>
-              </div>
-            ))}
-          </div>
-          <div className="checkout-resumen-rows">
-            <div><span>Subtotal</span><span>{fmtCOP(subtotal)}</span></div>
-            <div><span>Impuestos</span><span>{fmtCOP(impuestos)}</span></div>
-            <div className="checkout-resumen-total"><span>Total</span><span>{fmtCOP(total)}</span></div>
-          </div>
-          <button className="btn-pagar-ahora" onClick={pagarAhora} disabled={enviando}>
-            {enviando ? 'Procesando...' : 'Pagar ahora'}
-          </button>
-        </aside>
+          <aside className="checkout-resumen">
+            <div className="checkout-resumen-titulo">Tu pedido</div>
+            <div className="checkout-resumen-items">
+              {items.map((i) => (
+                <div className="checkout-resumen-item" key={i.id}>
+                  <span className="checkout-resumen-item-nombre">{i.cantidad}x {i.nombre}</span>
+                  <span>{fmtCOP(i.precio * i.cantidad)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="checkout-resumen-rows">
+              <div><span>Subtotal</span><span>{fmtCOP(subtotal)}</span></div>
+              <div><span>Impuestos</span><span>{fmtCOP(impuestos)}</span></div>
+              <div className="checkout-resumen-total"><span>Total</span><span>{fmtCOP(total)}</span></div>
+            </div>
+            <button className="btn-pagar-ahora" onClick={pagarAhora} disabled={enviando}>
+              {enviando ? 'Procesando...' : 'Pagar ahora'}
+            </button>
+          </aside>
         )}
       </div>
       {enviando && (

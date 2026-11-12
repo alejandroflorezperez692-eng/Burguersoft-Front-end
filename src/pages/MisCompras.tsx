@@ -2,9 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import PublicHeader from '../components/PublicHeader';
 import MotivoModal from '../components/MotivoModal';
 import ComprobanteModal from '../components/ComprobanteModal';
+import DetallePedidoCliente from '../components/DetallePedidoCliente';
 import Footer from '../components/Footer';
 import apiClient from '../api/client';
 import { getEcho } from '../api/echo';
+import { etiquetaEstado } from '../utils/estados';
 import { useAuth } from '../hooks/useAuth';
 import { Link } from 'react-router-dom';
 import '../styles/mis-pedidos.css';
@@ -41,13 +43,11 @@ type PedidoUI = {
   comprobante_subido_en?: string;
 };
 
-
 function texto(valor: unknown): string | undefined {
   if (valor === null || valor === undefined) return undefined;
   const limpio = String(valor).trim();
   return limpio !== '' ? limpio : undefined;
 }
-
 
 function booleano(valor: unknown): boolean | undefined {
   if (valor === null || valor === undefined || valor === '') return undefined;
@@ -63,12 +63,14 @@ function numero(valor: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-
 const PASOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'];
 const PASOS_DOMICILIO = PASOS;
 const PASOS_RECOGER = PASOS;
 const PASOS_CONSUMIR = PASOS;
 const CANCELABLES = ['Registrado', 'Por verificar', 'Recepcionado'];
+
+// Orden global para estimar progreso cuando el estado no pertenece al flujo actual
+// (el backend permite cualquier estado en cualquier tipo de entrega).
 const RECHAZABLES: string[] = [];
 const ORDEN_GLOBAL = PASOS;
 
@@ -85,7 +87,6 @@ function pasosPara(tipoEntrega: string): string[] {
   if (t === 'Para recoger') return PASOS_RECOGER;
   return PASOS_CONSUMIR;
 }
-
 
 function calcularProgreso(pasoActual: number, totalPasos: number): number {
   if (totalPasos <= 1) return 100;
@@ -111,7 +112,6 @@ function formatoMoneda(valor: number): string {
   return `$${Number(valor ?? 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`;
 }
 
-
 function formatearTelefono(valor?: string): string | undefined {
   if (!valor) return undefined;
   let digitos = valor.replace(/\D/g, '');
@@ -122,9 +122,7 @@ function formatearTelefono(valor?: string): string | undefined {
   return valor;
 }
 
-
 function normalizarPedidos(raw: any): PedidoUI[] {
-
   const desanidar = (v: any): any[] => {
     if (Array.isArray(v)) return v;
     if (!v || typeof v !== 'object') return [];
@@ -139,10 +137,8 @@ function normalizarPedidos(raw: any): PedidoUI[] {
   const lista = desanidar(raw);
   if (lista.length === 0) return [];
 
- 
   const esFilaPlana = lista.some((r: any) => r && (r.id_venta !== undefined || r.producto !== undefined));
   if (esFilaPlana) {
-
     const mapa = new Map<number, PedidoUI & { valorTotalBD?: number }>();
     for (const f of lista as any[]) {
       const vid = Number(f.id_venta ?? f.venta_id ?? f.id);
@@ -199,10 +195,8 @@ function normalizarPedidos(raw: any): PedidoUI[] {
   }
 
   const pedidos = (lista as any[])
-    
     .map((v: any): PedidoUI | null => {
       const detalles = Array.isArray(v.detalles)
-       
         ? v.detalles.map((d: any): ItemUI => {
             const cantidad = Number(d.cantidad ?? 1);
             const precio = Number(d.precio_unitario ?? d.precio ?? d.valor_producto ?? 0);
@@ -216,7 +210,6 @@ function normalizarPedidos(raw: any): PedidoUI[] {
             };
           })
         : Array.isArray(v.productos)
-          
           ? v.productos.map((d: any): ItemUI => {
               const cantidad = Number(d.cantidad ?? 1);
               const precio = Number(d.precio ?? d.precio_unitario ?? 0);
@@ -228,7 +221,6 @@ function normalizarPedidos(raw: any): PedidoUI[] {
               };
             })
           : Array.isArray(v.items)
-          
             ? v.items.map((d: any): ItemUI => {
                 const cantidad = Number(d.cantidad ?? 1);
                 const precio = Number(d.precio_unitario ?? d.precio ?? 0);
@@ -254,7 +246,6 @@ function normalizarPedidos(raw: any): PedidoUI[] {
         metodo_pago: v.metodo_pago ? String(v.metodo_pago) : undefined,
         total: Number.isFinite(totalBD) && totalBD > 0 ? totalBD : totalCalculado,
         items: detalles,
-       
         telefono: texto(
           v.telefono_contacto ?? v.telefono ?? v.usuario?.telefono ?? v.usuario?.phone,
         ),
@@ -275,7 +266,6 @@ function normalizarPedidos(raw: any): PedidoUI[] {
     })
     .filter((p): p is PedidoUI => p !== null);
 
-
   pedidos.sort((a, b) => {
     const fa = new Date(a.fecha).getTime();
     const fb = new Date(b.fecha).getTime();
@@ -285,7 +275,6 @@ function normalizarPedidos(raw: any): PedidoUI[] {
 
   return asignarSecuenciales(pedidos);
 }
-
 
 function asignarSecuenciales(pedidos: PedidoUI[]): PedidoUI[] {
   const ordenados = [...pedidos].sort((a, b) => {
@@ -301,94 +290,17 @@ function asignarSecuenciales(pedidos: PedidoUI[]): PedidoUI[] {
 export default function MisCompras() {
   const { isAuthenticated, user } = useAuth();
   const [pedidoACancelar, setPedidoACancelar] = useState<PedidoUI | null>(null);
-  const [pedidoARechazar, setPedidoARechazar] = useState<PedidoUI | null>(null);
   const [pedidoComprobante, setPedidoComprobante] = useState<PedidoUI | null>(null);
+  const [pedidoDetalle, setPedidoDetalle] = useState<PedidoUI | null>(null);
   const [avisoComprobante, setAvisoComprobante] = useState<string | null>(null);
   const { showToast } = useToast();
   const [pedidos, setPedidos] = useState<PedidoUI[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [cancelandoId, setCancelandoId] = useState<number | null>(null);
-  const [rechazandoId, setRechazandoId] = useState<number | null>(null);
   const [cargando, setCargando] = useState(false);
 
-  const cargar = useCallback(async (silencioso = false) => {
-    if (!silencioso) {
-      setError(null);
-      setCargando(true);
-    }
-    try {
-      
-      try {
-        const { data } = await apiClient.get('/mis-pedidos');
-        const normalizados = normalizarPedidos(data);
-       
-        if (normalizados.length > 0) {
-          setPedidos(normalizados);
-          return;
-        }
-      } catch (e: unknown) {
-        const status = (e as { response?: { status?: number } })?.response?.status;
-        
-        if (status === 401) {
-          if (!silencioso) {
-            setError('Tu sesión expiró. Inicia sesión de nuevo para ver tus compras.');
-            setPedidos([]);
-          }
-          return;
-        }
-      }
-
-  
-      const { data: ventasRaw } = await apiClient.get('/ventas');
-      let lista = normalizarPedidos(ventasRaw);
-      const userId = user?.id;
-      if (userId) {
-   
-        const crudo: any[] = Array.isArray(ventasRaw)
-          ? ventasRaw
-          
-          : ((ventasRaw as any)?.data ?? []);
-        if (Array.isArray(crudo) && crudo.length > 0) {
-         
-          const mios = crudo.filter((v: any) => {
-            const uid = Number(
-              v.usuario_id ?? v.usuario?.id ?? v.usuario?.id_Usuario ?? v.user_id ?? NaN,
-            );
-            return Number.isFinite(uid) && uid === userId;
-          });
-         
-          if (mios.length > 0) lista = normalizarPedidos(mios);
-        }
-      }
-      setPedidos(lista);
-    } catch (e: unknown) {
- 
-      if (silencioso) return;
-      const err = e as { response?: { status?: number } };
-      if (err?.response?.status === 401) {
-        setError('Tu sesión expiró. Inicia sesión de nuevo para ver tus compras.');
-      } else {
-        setError('No se pudieron cargar tus compras. Intenta de nuevo más tarde.');
-      }
-      setPedidos([]);
-    } finally {
-      if (!silencioso) setCargando(false);
-    }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-   
-    if (sessionStorage.getItem('token') === 'demo-token-sin-backend') {
-      setPedidos([]);
-      return;
-    }
-
-    void cargar();
-
-   
-    const echo = getEcho();
-    const alCambiarEstado = (payload: {
+  const aplicarCambioEstado = useCallback(
+    (payload: {
       id?: number;
       estado?: string;
       comprobante_estado?: string | null;
@@ -416,15 +328,87 @@ export default function MisCompras() {
                 : p,
             ),
       );
-    };
-    echo?.channel('cocina').listen('.venta.actualizada', alCambiarEstado);
+    },
+    [],
+  );
 
-   
+  const cargar = useCallback(async (silencioso = false) => {
+    if (!silencioso) {
+      setError(null);
+      setCargando(true);
+    }
+    try {
+      try {
+        const { data } = await apiClient.get('/mis-pedidos');
+        const normalizados = normalizarPedidos(data);
+        if (normalizados.length > 0) {
+          setPedidos(normalizados);
+          return;
+        }
+      } catch (e: unknown) {
+        const status = (e as { response?: { status?: number } })?.response?.status;
+        if (status === 401) {
+          if (!silencioso) {
+            setError('Tu sesión expiró. Inicia sesión de nuevo para ver tus compras.');
+            setPedidos([]);
+          }
+          return;
+        }
+      }
+
+      const { data: ventasRaw } = await apiClient.get('/ventas');
+      let lista = normalizarPedidos(ventasRaw);
+      const userId = user?.id;
+      if (userId) {
+        const crudo: any[] = Array.isArray(ventasRaw)
+          ? ventasRaw
+          : ((ventasRaw as any)?.data ?? []);
+        if (Array.isArray(crudo) && crudo.length > 0) {
+          const mios = crudo.filter((v: any) => {
+            const uid = Number(
+              v.usuario_id ?? v.usuario?.id ?? v.usuario?.id_Usuario ?? v.user_id ?? NaN,
+            );
+            return Number.isFinite(uid) && uid === userId;
+          });
+          if (mios.length > 0) lista = normalizarPedidos(mios);
+        }
+      }
+      setPedidos(lista);
+    } catch (e: unknown) {
+      if (silencioso) return;
+      const err = e as { response?: { status?: number } };
+      if (err?.response?.status === 401) {
+        setError('Tu sesión expiró. Inicia sesión de nuevo para ver tus compras.');
+      } else {
+        setError('No se pudieron cargar tus compras. Intenta de nuevo más tarde.');
+      }
+      setPedidos([]);
+    } finally {
+      if (!silencioso) setCargando(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (sessionStorage.getItem('token') === 'demo-token-sin-backend') {
+      setPedidos([]);
+      return;
+    }
+
+    void cargar();
+
+    // Respaldo: sin websocket, refrescamos seguido para que el estado que
+    // cambia el administrador se refleje sin recargar la página.
+    const echo = getEcho();
+    
+    if (echo) {
+      echo.channel('cocina').listen('.venta.actualizada', aplicarCambioEstado);
+    }
+
     const t = window.setInterval(() => {
       if (!document.hidden) void cargar(true);
     }, echo ? 60000 : 10000);
 
- 
     const alVolver = () => {
       if (!document.hidden) void cargar(true);
     };
@@ -435,9 +419,38 @@ export default function MisCompras() {
       window.clearInterval(t);
       window.removeEventListener('focus', alVolver);
       document.removeEventListener('visibilitychange', alVolver);
-      echo?.channel('cocina').stopListening('.venta.actualizada', alCambiarEstado);
+      if (echo) {
+        echo.channel('cocina').stopListening('.venta.actualizada', aplicarCambioEstado);
+      }
     };
-  }, [isAuthenticated, cargar]);
+  }, [isAuthenticated, cargar, aplicarCambioEstado]);
+
+  // Cada pedido tiene su propio canal privado: solo su dueño o el personal lo escucha.
+  const idsPedidos = (pedidos ?? []).map((p) => p.id).join(',');
+
+  useEffect(() => {
+    if (!isAuthenticated || !idsPedidos) return;
+    // Token demo sin backend: no hay websocket real.
+    if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
+
+    const echo = getEcho();
+    if (!echo) return;
+
+    const canales = idsPedidos
+      .split(',')
+      .filter(Boolean)
+      .map((id) =>
+        echo.private(`venta.${id}`).listen('.venta.actualizada', aplicarCambioEstado),
+      );
+
+    return () => {
+      canales.forEach((canal) => canal.stopListening('.venta.actualizada', aplicarCambioEstado));
+      idsPedidos
+        .split(',')
+        .filter(Boolean)
+        .forEach((id) => echo.leave(`venta.${id}`));
+    };
+  }, [isAuthenticated, idsPedidos, aplicarCambioEstado]);
 
   const cancelarPedido = (pedido: PedidoUI) => {
     if (!CANCELABLES.includes(pedido.estado)) {
@@ -452,8 +465,8 @@ export default function MisCompras() {
     setCancelandoId(pedido.id);
     setError(null);
     try {
-      const { data } = await apiClient.put(`/pedidos/${pedido.id}`, { estado: 'Cancelado', motivo });
-     
+      const { data } = await apiClient.patch(`/ventas/${pedido.id}/estado`, { estado: 'Cancelado', motivo });
+      // El backend puede devolver { success: true } o la venta actualizada
       if (data && data.success === false) {
         throw new Error(String(data.error ?? data.message ?? 'No se pudo cancelar el pedido.'));
       }
@@ -466,40 +479,6 @@ export default function MisCompras() {
       setError(mensajeError(e, 'No se pudo cancelar el pedido'));
     } finally {
       setCancelandoId(null);
-    }
-  };
-
-  const rechazarPedido = (pedido: PedidoUI) => {
-    if (!RECHAZABLES.includes(pedido.estado)) {
-      setError('Este pedido ya no se puede rechazar. Contáctanos por WhatsApp.');
-      return;
-    }
-    setPedidoARechazar(pedido);
-  };
-
-  const confirmarRechazo = async (pedido: PedidoUI, motivo: string) => {
-    setPedidoARechazar(null);
-    setRechazandoId(pedido.id);
-    setError(null);
-    try {
-      const { data } = await apiClient.put(`/pedidos/${pedido.id}`, { estado: 'Rechazada', motivo });
-      if (data && data.success === false) {
-        throw new Error(String(data.error ?? data.message ?? 'No se pudo rechazar el pedido.'));
-      }
-      
-      setPedidos((prev) =>
-        prev === null ? prev : prev.map((p) => (p.id === pedido.id ? { ...p, estado: 'Rechazada' } : p)),
-      );
-      await cargar();
-    } catch (e: unknown) {
-      let mensaje = 'No se pudo rechazar el pedido.';
-      if (typeof e === 'object' && e !== null) {
-        const err = e as { response?: { data?: { error?: string; message?: string } }; message?: string };
-        mensaje = err.response?.data?.error ?? err.response?.data?.message ?? err.message ?? mensaje;
-      }
-      setError(mensaje);
-    } finally {
-      setRechazandoId(null);
     }
   };
 
@@ -580,7 +559,6 @@ export default function MisCompras() {
             const pasos = pasosPara(p.tipo_entrega);
             let pasoActual = pasos.indexOf(estado);
             if (pasoActual === -1) {
-              
               const gActual = ORDEN_GLOBAL.indexOf(estado);
               if (gActual !== -1) {
                 const gIni = ORDEN_GLOBAL.indexOf(pasos[0]);
@@ -593,14 +571,12 @@ export default function MisCompras() {
               }
             }
             const totalPasos = pasos.length;
-            
             const halfStep = 50 / totalPasos;
             const anchoDisponible = 100 - 2 * halfStep;
             const fillWidth = sinProgreso
               ? 0
               : (anchoDisponible * calcularProgreso(pasoActual, totalPasos)) / 100;
             const esCancelable = CANCELABLES.includes(estado);
-            const esRechazable = RECHAZABLES.includes(estado);
             const estaCancelando = cancelandoId === p.id;
             const direccionTexto =
               p.tipo_entrega === 'Domicilio'
@@ -637,7 +613,7 @@ export default function MisCompras() {
 
                 <div className="progreso-container">
                   <div className={`progreso-estado-label${sinProgreso ? ' cancelado' : ''}`}>
-                    {cancelado ? '✗ Pedido cancelado' : rechazado ? '✗ Pedido rechazado' : estado}
+                    {cancelado ? '✗ Pedido cancelado' : rechazado ? '✗ Pedido rechazado' : etiquetaEstado(estado, p.tipo_entrega)}
                   </div>
                   <div className="progreso-tipo">Entrega: {p.tipo_entrega}</div>
 
@@ -658,7 +634,7 @@ export default function MisCompras() {
                           return (
                             <div className="progreso-paso" key={paso}>
                               <div className={`paso-circulo ${clase}`}>{clase ? i + 1 : ''}</div>
-                              <span className={`paso-label ${clase}`}>{paso}</span>
+                              <span className={`paso-label ${clase}`}>{etiquetaEstado(paso, p.tipo_entrega)}</span>
                             </div>
                           );
                         })}
@@ -784,24 +760,24 @@ export default function MisCompras() {
                 )}
 
                 <div className="pedido-foot">
-                  {esCancelable && (
+                  <div className="pedido-foot-acciones">
                     <button
-                      className="btn-cancelar-pedido"
-                      onClick={() => cancelarPedido(p)}
-                      disabled={estaCancelando}
+                      type="button"
+                      className="btn-ver-detalle"
+                      onClick={() => setPedidoDetalle(p)}
                     >
-                      {estaCancelando ? 'Cancelando…' : 'Cancelar pedido'}
+                      Ver detalle
                     </button>
-                  )}
-                  {esRechazable && (
-                    <button
-                      className="btn-cancelar-pedido"
-                      onClick={() => rechazarPedido(p)}
-                      disabled={rechazandoId === p.id}
-                    >
-                      {rechazandoId === p.id ? 'Rechazando…' : 'Rechazar pedido'}
-                    </button>
-                  )}
+                    {esCancelable && (
+                      <button
+                        className="btn-cancelar-pedido"
+                        onClick={() => cancelarPedido(p)}
+                        disabled={estaCancelando}
+                      >
+                        {estaCancelando ? 'Cancelando…' : 'Cancelar pedido'}
+                      </button>
+                    )}
+                  </div>
                   <span className="label">Total del pedido:</span>
                   <span className="total">{formatoMoneda(p.total)}</span>
                 </div>
@@ -822,15 +798,10 @@ export default function MisCompras() {
           onConfirm={(motivo) => void confirmarCancelacion(pedidoACancelar, motivo)}
         />
       )}
-      {pedidoARechazar && (
-        <MotivoModal
-          titulo={`Rechazar el pedido #${pedidoARechazar.numero_secuencial}`}
-          descripcion="Indica por qué rechazas este pedido (por ejemplo, si nunca hiciste el pago). Quedará registrado."
-          confirmarTexto="Sí, rechazar pedido"
-          placeholder="Escribe el motivo del rechazo..."
-          peligro
-          onClose={() => setPedidoARechazar(null)}
-          onConfirm={(motivo) => void confirmarRechazo(pedidoARechazar, motivo)}
+      {pedidoDetalle && (
+        <DetallePedidoCliente
+          pedido={pedidoDetalle}
+          onClose={() => setPedidoDetalle(null)}
         />
       )}
       {pedidoComprobante && (

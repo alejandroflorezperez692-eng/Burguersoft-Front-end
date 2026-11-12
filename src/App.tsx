@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+
 import { ConAsistenteCliente } from './components/AsistenteCliente';
 import { ACCESO } from './utils/roles';
 import { ToastProvider } from './components/Toast';
@@ -55,88 +56,81 @@ export default function App() {
       <DemoAccess />
       <AvisoComprobanteDevuelto />
       <Suspense fallback={<AdminLoading compact texto="Cargando" subtexto="Un momento, por favor" />}>
-      <Routes>
-      <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
-
-        <Route element={<ConAsistenteCliente />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/nosotros" element={<Nosotros />} />
-          <Route path="/menu-publico" element={<MenuPublico />} />
-          <Route path="/contactanos" element={<Contactanos />} />
-          <Route path="/mis-compras" element={<MisCompras />} />
-          <Route path="/checkout" element={<Checkout />} />
-        </Route>
-        <Route path="/" element={<Home />} />
-        <Route path="/nosotros" element={<Nosotros />} />
-        <Route path="/menu-publico" element={<MenuPublico />} />
-        <Route path="/contactanos" element={<Contactanos />} />
-        <Route path="/terminos-y-condiciones" element={<TerminosPrivacidad />} />
-        <Route path="/mis-compras" element={<MisCompras />} />
-        <Route path="/checkout" element={<Checkout />} />
-      </Route>
-
-      <Route path="/login" element={<Login />} />
-      <Route path="/social-callback" element={<SocialCallback />} />
-      <Route path="/registro" element={<Registro />} />
-      <Route path="/terminos" element={<TerminosCondiciones />} />
-      <Route path="/privacidad" element={<PoliticaPrivacidad />} />
-      <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
-      <Route path="/verificar-codigo" element={<VerificarCodigo />} />
-      <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
-      <Route path="/ayuda" element={<Ayuda />} />
-
-      <Route element={<ProtectedRoute roles={['cliente']} redirect="/" />}>
-        <Route element={<ConAsistenteCliente />}>
-          <Route path="/ayuda-cliente" element={<AyudaCliente />} />
-        </Route>
-      </Route>
-
-      {/* Panel interno: admin, cajero, cocinero y mesero comparten el mismo layout */}
-      <Route element={<ProtectedRoute roles={ACCESO.personal} redirect="/" />}>
-        <Route element={<AdminLayout />}>
-
-          {/* Todo el personal */}
-          <Route path="/inicio" element={<Inicio />} />
-          <Route path="/pedidos-en-vivo" element={<PedidosTurno />} />
-          <Route path="/configuracion" element={<ConfiguracionAdmin />} />
-          <Route path="/ayuda-admin" element={<AyudaAdmin />} />
-
-          {/* Admin + cajero + mesero */}
-          <Route element={<ProtectedRoute roles={ACCESO.menu} />}>
-            <Route path="/menu" element={<MenuAdmin />} />
-            <Route path="/promociones" element={<PromocionesAdmin />} />
+        <Routes>
+          {/* Páginas públicas: se pueden ver con o sin sesión. */}
+          <Route element={<ProtectedRoute allowGuest />}>
+            <Route element={<ConAsistenteCliente />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/nosotros" element={<Nosotros />} />
+              <Route path="/menu-publico" element={<MenuPublico />} />
+              <Route path="/contactanos" element={<Contactanos />} />
+              <Route path="/terminos-y-condiciones" element={<TerminosPrivacidad />} />
+            </Route>
           </Route>
 
-          {/* Admin + cocinero + mesero */}
-          <Route element={<ProtectedRoute roles={ACCESO.ventas} />}>
-            <Route path="/ventas" element={<VentasAdmin />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/social-callback" element={<SocialCallback />} />
+          <Route path="/registro" element={<Registro />} />
+          <Route path="/terminos" element={<TerminosCondiciones />} />
+          <Route path="/privacidad" element={<PoliticaPrivacidad />} />
+          <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
+          <Route path="/verificar-codigo" element={<VerificarCodigo />} />
+          <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
+          <Route path="/ayuda" element={<Ayuda />} />
+
+          {/* Solo clientes con sesión: sus compras, checkout y ayuda. */}
+          <Route element={<ProtectedRoute roles={['cliente']} redirect="/inicio" />}>
+            <Route element={<ConAsistenteCliente />}>
+              <Route path="/mis-compras" element={<MisCompras />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/ayuda-cliente" element={<AyudaCliente />} />
+            </Route>
           </Route>
 
-          {/* Admin + cajero + cocinero */}
-          <Route element={<ProtectedRoute roles={ACCESO.inventario} />}>
-            <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
-            <Route path="/inventario" element={<InventarioAdmin />} />
-            <Route path="/compras" element={<ComprasAdmin />} />
-            <Route path="/cierre-inventario" element={<CierreInventarioAdmin />} />
-            <Route path="/gestion-proveedores" element={<ProveedoresAdmin />} />
+          {/* Panel interno: admin, cajero, cocinero y mesero comparten el mismo layout */}
+          <Route element={<ProtectedRoute roles={ACCESO.personal} redirect="/" />}>
+            <Route element={<AdminLayout />}>
+              {/* Todo el personal */}
+              <Route path="/inicio" element={<Inicio />} />
+              <Route path="/pedidos-en-vivo" element={<PedidosTurno />} />
+              <Route path="/configuracion" element={<ConfiguracionAdmin />} />
+              <Route path="/ayuda-admin" element={<AyudaAdmin />} />
+
+              {/* Menú y promociones: todo el personal */}
+              <Route element={<ProtectedRoute roles={ACCESO.menu} />}>
+                <Route path="/menu" element={<MenuAdmin />} />
+                <Route path="/promociones" element={<PromocionesAdmin />} />
+              </Route>
+
+              {/* Ventas: admin + cajero + mesero */}
+              <Route element={<ProtectedRoute roles={ACCESO.ventas} />}>
+                <Route path="/ventas" element={<VentasAdmin />} />
+              </Route>
+
+              {/* Inventario y compras: admin + cajero + cocinero */}
+              <Route element={<ProtectedRoute roles={ACCESO.inventario} />}>
+                <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
+                <Route path="/inventario" element={<InventarioAdmin />} />
+                <Route path="/compras" element={<ComprasAdmin />} />
+                <Route path="/cierre-inventario" element={<CierreInventarioAdmin />} />
+                <Route path="/gestion-proveedores" element={<ProveedoresAdmin />} />
+              </Route>
+
+              {/* Solo admin */}
+              <Route element={<ProtectedRoute roles={ACCESO.soloAdmin} />}>
+                <Route path="/copias-de-seguridad" element={<BackupsAdmin />} />
+                <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />
+                <Route path="/usuarios" element={<UsuariosAdmin />} />
+                <Route path="/reportes" element={<ReportesAdmin />} />
+              </Route>
+            </Route>
           </Route>
 
-          {/* Solo admin */}
-          <Route element={<ProtectedRoute roles={ACCESO.soloAdmin} />}>
-            <Route path="/copias-de-seguridad" element={<BackupsAdmin />} />
-            <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />
-            <Route path="/usuarios" element={<UsuariosAdmin />} />
-            <Route path="/reportes" element={<ReportesAdmin />} />
-          </Route>
+          {/* Ruta anterior: se conserva para no romper enlaces o favoritos viejos */}
+          <Route path="/mis-pedidos" element={<Navigate to="/mis-compras" replace />} />
 
-        </Route>
-      </Route>
-
-      {/* Ruta anterior: se conserva para no romper enlaces o favoritos viejos */}
-      <Route path="/mis-pedidos" element={<Navigate to="/mis-compras" replace />} />
-
-      <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </Suspense>
       <ScrollToTop />
       <Accesibilidad />
