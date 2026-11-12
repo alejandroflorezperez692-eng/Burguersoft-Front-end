@@ -11,7 +11,7 @@ import { mensajeError as mensajeErrorBase } from '../../utils/errores';
 import { categoriaSinExtras } from '../../utils/categorias';
 import SelectOscuro from '../../components/SelectOscuro';
 
-type Estado = 'Disponible' | 'Agotado' | 'Por agotarse';
+type Estado = 'Disponible' | 'Agotado';
 
 interface Producto {
   id: number;
@@ -19,10 +19,10 @@ interface Producto {
   valor: number | string;
   descripcion: string | null;
   img: string | null;
-  cantidad: number | string | null;
   categoria: string;
   estado: Estado;
   activo?: boolean;
+  requiere_cocina?: boolean;
   adiciones?: { id: number; nombre: string; precio: number | string; tipo?: string }[];
 }
 
@@ -31,9 +31,10 @@ const CATEGORIAS = [
   'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
 ];
 
-const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Por agotarse', 'Agotado'];
+const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Agotado'];
 
-const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '' };
+const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '', requiere_cocina: true };
+type CampoTexto = Exclude<keyof typeof emptyForm, 'requiere_cocina'>;
 
 const MAX_ADICIONES = 30;
 const MAX_QUITAR = 10;
@@ -143,16 +144,8 @@ const normalizar = (s: unknown) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-const calcularEstado = (cantidad: number | string | null | undefined): Estado => {
-  const n = parseInt(String(cantidad ?? ''), 10) || 0;
-  return n === 0 ? 'Agotado' : 'Disponible';
-};
-
-// Si la BD trae 'Por agotarse', se muestra como Disponible
-const estadoVisible = (p: Producto): Estado => {
-  if (!p.estado) return calcularEstado(p.cantidad);
-  return p.estado === 'Agotado' ? 'Agotado' : 'Disponible';
-};
+// F-035: los productos ya no guardan cantidad propia; el estado es el dato real.
+const estadoVisible = (p: Producto): Estado => (p.estado === 'Agotado' ? 'Agotado' : 'Disponible');
 
 const estadoClase = (e: Estado) => `mn-estado-${e.replace(/ /g, '_')}`;
 
@@ -296,7 +289,6 @@ export default function MenuAdmin() {
         }
       }
 
-      // Usamos estadoVisible(p) para que 'Por agotarse' cuente como Disponible en el filtro
       if (filtroEstado && estadoVisible(p) !== filtroEstado) return false;
 
       const valor = Number(p.valor) || 0;
@@ -338,7 +330,7 @@ export default function MenuAdmin() {
   };
 
   /* ---------- Formulario ---------- */
-  const setCampo = (campo: keyof typeof emptyForm) =>
+  const setCampo = (campo: CampoTexto) =>
     (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setForm((f) => ({ ...f, [campo]: e.target.value }));
 
@@ -370,6 +362,7 @@ export default function MenuAdmin() {
       estado: p.estado === 'Agotado' ? 'Agotado' : 'Disponible',
       categoria: p.categoria,
       descripcion: p.descripcion ?? '',
+      requiere_cocina: p.requiere_cocina !== false,
     });
     setArchivo(null);
     setPreview(imgValida(p.img) ? p.img : null);
@@ -451,6 +444,7 @@ export default function MenuAdmin() {
     fd.append('descripcion', form.descripcion.trim());
     fd.append('categoria', form.categoria);
     fd.append('estado', form.estado);
+    fd.append('requiere_cocina', form.requiere_cocina ? '1' : '0');
     fd.append('adiciones', JSON.stringify(filas.map((a) => ({
       id: a.id,
       nombre: a.nombre.trim(),
@@ -558,6 +552,21 @@ export default function MenuAdmin() {
                 <textarea id="mn-desc" style={rojo(errores.descripcion)} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
                   value={form.descripcion} onChange={setCampo('descripcion')} />
                 <span className="mn-counter">{form.descripcion.length}/255</span>
+              </div>
+
+              <div className="mn-field">
+                <label htmlFor="mn-cocina" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                  <input
+                    id="mn-cocina"
+                    type="checkbox"
+                    checked={form.requiere_cocina}
+                    onChange={(e) => setForm((f) => ({ ...f, requiere_cocina: e.target.checked }))}
+                  />
+                  <span>
+                    Requiere cocina{' '}
+                    <small>(desmárcalo para bebidas frías u otros productos listos)</small>
+                  </span>
+                </label>
               </div>
 
               {permiteExtras && (

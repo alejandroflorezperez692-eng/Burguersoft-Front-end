@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import apiClient from '../api/client';
@@ -14,8 +14,10 @@ import logoDaviplata from '../assets/img/daviplata.png';
 import logoBancolombia from '../assets/img/bancolombia.svg';
 import logoEfectivo from '../assets/img/efectivo.svg';
 import logoUbicacion from '../assets/img/Ubicacion.png';
+import { useTasaImpuesto } from '../hooks/useTasaImpuesto';
+import { nuevaClaveIdempotencia } from '../utils/idempotencia';
+import { esPagoElectronico } from '../utils/pagos';
 
-const IVA_RATE = 0.08;
 const TIPOS_DOCUMENTO = ['CC', 'CE', 'NIT', 'Pasaporte', 'Otro'];
 
 function IconoNequi() {
@@ -331,6 +333,13 @@ export default function Checkout() {
   const navigate = useNavigate();
   const { showToast: showToastGlobal } = useToast();
   const alertar = (msg: any) => showToastGlobal(String(msg), true);
+  const tasaImpuesto = useTasaImpuesto();
+
+  // F-006: la mesa puede venir en el QR de cada mesa (?mesa=N).
+  const [searchParams] = useSearchParams();
+  const mesaUrl = Number(searchParams.get('mesa'));
+  const mesaDesdeUrl = Number.isInteger(mesaUrl) && mesaUrl > 0;
+  const [mesa, setMesa] = useState<number | ''>(mesaDesdeUrl ? mesaUrl : '');
 
   // El AuthContext guarda "name" como nombre completo (nombre + apellido juntos),
   // así que lo separamos para llenar los dos campos del formulario.
@@ -573,8 +582,9 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     mensajeError(err, 'No se pudo procesar el pago');
 
   const [enviando, setEnviando] = useState(false);
+  const claveIdempotencia = useRef(nuevaClaveIdempotencia());
 
-  const subtotal = total / (1 + IVA_RATE);
+  const subtotal = total / (1 + tasaImpuesto);
   const impuestos = total - subtotal;
 
   const requiereDireccion = tipoEntrega === 'Domicilio';
@@ -584,10 +594,13 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     if (requiereDireccion && (!direccion.linea1 || !direccion.barrio)) {
       return 'Completa la dirección de entrega (o usa el botón de ubicación actual).';
     }
+    if (tipoEntrega === 'En restaurante' && !mesa) {
+      return 'Indica el número de mesa para los pedidos en el restaurante.';
+    }
     if (!numeroDocumento || !nombre || !apellido || !correo || !telefono) {
       return 'Completa todos los datos de la compra.';
     }
-    if (metodoPago !== 'efectivo' && !comprobante) {
+    if (esPagoElectronico(metodoPago) && !comprobante) {
       return 'Adjunta una imagen del comprobante de pago. La IA verificará que sea un comprobante real.';
     }
     return null;
@@ -620,6 +633,9 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
 
       form.append('tipo_entrega', TIPO_ENTREGA_BACKEND[tipoEntrega] ?? 'Domicilio');
       form.append('metodo_pago', METODO_PAGO_BACKEND[metodoPago] ?? 'Efectivo');
+      if (tipoEntrega === 'En restaurante' && mesa) {
+        form.append('mesa', String(mesa));
+      }
       form.append('notas', construirNotas() ?? '');
       form.append('total', String(total));
       form.append('cuando', cuando);
@@ -645,10 +661,16 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
       }
 
       const respuesta = await apiClient.post('/ventas', form, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Idempotency-Key': claveIdempotencia.current,
+        },
         // La IA puede tardar en analizar la imagen del comprobante.
         timeout: 90000,
       });
+
+      // El intento terminó: el próximo envío es una venta nueva.
+      claveIdempotencia.current = nuevaClaveIdempotencia();
 
       // Numero del pedido registrado en el backend, va en el mensaje.
       const idVenta = respuesta.data?.id ?? null;
@@ -720,7 +742,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
     lineas.push(`*TOTAL: ${fmtCOP(total)}*`);
     lineas.push('------------------------');
     lineas.push(`Método de pago: ${ETIQUETA_PAGO[metodoPago] ?? metodoPago}`);
-    if (metodoPago !== 'efectivo') {
+    if (esPagoElectronico(metodoPago)) {
       lineas.push(`Llave Bre-B: ${CUENTA_QR[metodoPago]?.llave ?? ''}`);
       lineas.push('*Adjunto el comprobante de pago por este chat.*');
     } else {
@@ -864,13 +886,37 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
 
                 </div>
               ) : (
-                <div className="checkout-info-row">
-                  <span className="checkout-info-icon">🕒</span>
-                  <div>
-                    <strong>{resumenEntrega}</strong>
-                    <p>{cuando === 'Lo antes posible' ? 'Lo antes posible' : `${fechaProgramada} · ${horaProgramada}`}</p>
+                <>
+                  {tipoEntrega === 'En restaurante' && (
+                    <div className="checkout-form">
+                      <div className="form-group">
+                        <label>Mesa <span className="checkout-required">*</span></label>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          value={mesa}
+                          onChange={(e) => {
+                            const valor = Number(e.target.value);
+                            setMesa(Number.isInteger(valor) && valor > 0 ? valor : '');
+                          }}
+                          placeholder="Número de mesa"
+                          required
+                        />
+                        {mesaDesdeUrl && (
+                          <span className="checkout-hint">Mesa tomada del código QR.</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="checkout-info-row">
+                    <span className="checkout-info-icon">🕒</span>
+                    <div>
+                      <strong>{resumenEntrega}</strong>
+                      <p>{cuando === 'Lo antes posible' ? 'Lo antes posible' : `${fechaProgramada} · ${horaProgramada}`}</p>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
 
@@ -955,7 +1001,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                   ))}
                 </div>
 
-                {metodoPago !== 'efectivo' && (
+                {esPagoElectronico(metodoPago) && (
                   <div className="pago-qr-caja" key={metodoPago}>
                     {!qrNoDisponible[metodoPago] ? (
                       <>
@@ -988,7 +1034,7 @@ const construirAdiciones = (): { adicion_id: number; cantidad: number }[] => {
                     <span className="checkout-paso">4</span>
                     <h3>
                       Comprobante de pago{' '}
-                      {metodoPago !== 'efectivo' ? (
+                      {esPagoElectronico(metodoPago) ? (
                         <span className="checkout-required">*</span>
                       ) : (
                         <small style={{ fontWeight: 500, color: '#888' }}>(opcional)</small>

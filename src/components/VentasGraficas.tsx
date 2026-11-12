@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
 import type { EstadisticasVentas } from '../types/Ventas';
+import { METODOS_MOSTRADOR } from '../utils/pagos';
 
 const PALETA = ['#E8821A', '#C2410C', '#7C9A3C', '#2F7FB8', '#8E5BB5', '#B5563F'];
 
-const METODOS_PAGO = ['Efectivo', 'Daviplata', 'Bancolombia', 'Nequi'];
+const METODOS_PAGO = METODOS_MOSTRADOR;
 
 const dinero = (valor: number) =>
   Math.abs(valor) >= 1000000

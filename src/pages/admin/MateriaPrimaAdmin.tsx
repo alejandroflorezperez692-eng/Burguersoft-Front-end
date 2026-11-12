@@ -8,6 +8,8 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
+import { useAuth } from '../../hooks/useAuth';
+import { normalizarRol } from '../../utils/roles';
 
 interface MateriaPrima {
   id: number;
@@ -76,6 +78,9 @@ const emptyForm = {
 };
 
 export default function MateriaPrimaAdmin() {
+  const { user } = useAuth();
+  // F-021: el cocinero consulta el inventario, pero no lo modifica.
+  const soloLectura = normalizarRol(user?.role) === 'cocinero';
   const [items, setItems] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
   const [q, setQ] = useState('');
@@ -394,19 +399,21 @@ export default function MateriaPrimaAdmin() {
                   </td>
                   <td>{marcaNombre(m?.marca_id) || '—'}</td>
                   <td>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
-                      <button
-                        type="button"
-                        className={esInactivo(m) ? 'mn-btn-edit' : 'mn-btn-del'}
-                        style={{ flex: 'none', padding: '7px 18px' }}
-                        disabled={cambiandoId === m?.id}
-                        onClick={() => (esInactivo(m) ? alternarEstado(m) : setDesactivar(m))}
-                        data-tooltip={esInactivo(m) ? 'Activar' : 'Desactivar'}
-                      >
-                        {esInactivo(m) ? 'Activar' : 'Desactivar'}
-                      </button>
-                    </div>
+                    {!soloLectura && (
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
+                        <button
+                          type="button"
+                          className={esInactivo(m) ? 'mn-btn-edit' : 'mn-btn-del'}
+                          style={{ flex: 'none', padding: '7px 18px' }}
+                          disabled={cambiandoId === m?.id}
+                          onClick={() => (esInactivo(m) ? alternarEstado(m) : setDesactivar(m))}
+                          data-tooltip={esInactivo(m) ? 'Activar' : 'Desactivar'}
+                        >
+                          {esInactivo(m) ? 'Activar' : 'Desactivar'}
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))}

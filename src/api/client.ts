@@ -32,12 +32,10 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.log('[API ERROR]', error.config?.url, error.code, error.message);
     const token = sessionStorage.getItem('token');
     const esLogin = error.config?.url?.includes('/login');
-    const esDemo = token === 'demo-token-sin-backend';
 
-    if (error.response?.status === 401 && token && !esLogin && !esDemo) {
+    if (error.response?.status === 401 && token && !esLogin) {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
       // Se avisa en el login que la sesión expiró (en vez de redirigir en silencio).

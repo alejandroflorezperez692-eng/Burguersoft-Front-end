@@ -28,7 +28,6 @@ import BackupsAdmin from './pages/admin/BackupsAdmin';
 import ConfiguracionAdmin from './pages/admin/ConfiguracionAdmin';
 import AyudaAdmin from './pages/admin/AyudaAdmin';
 import Accesibilidad from './components/Accesibilidad';
-import DemoAccess from './components/DemoAccess';
 import Checkout from './pages/Checkout';
 import { ConAsistenteCliente } from './components/AsistenteCliente';
 import CierreInventarioAdmin from './pages/admin/CierreInventarioAdmin';
@@ -46,25 +45,16 @@ export default function App() {
   return (
     <ToastProvider>
       <TooltipsGlobales />
-      <DemoAccess />
       <Routes>
-      <Route element={<ProtectedRoute roles={['cliente']} allowGuest redirect="/inicio" />}>
-
+      {/* Páginas públicas: se pueden ver con o sin sesión. */}
+      <Route element={<ProtectedRoute allowGuest />}>
         <Route element={<ConAsistenteCliente />}>
           <Route path="/" element={<Home />} />
           <Route path="/nosotros" element={<Nosotros />} />
           <Route path="/menu-publico" element={<MenuPublico />} />
           <Route path="/contactanos" element={<Contactanos />} />
-          <Route path="/mis-compras" element={<MisCompras />} />
-          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/terminos-y-condiciones" element={<TerminosPrivacidad />} />
         </Route>
-        <Route path="/" element={<Home />} />
-        <Route path="/nosotros" element={<Nosotros />} />
-        <Route path="/menu-publico" element={<MenuPublico />} />
-        <Route path="/contactanos" element={<Contactanos />} />
-        <Route path="/terminos-y-condiciones" element={<TerminosPrivacidad />} />
-        <Route path="/mis-compras" element={<MisCompras />} />
-        <Route path="/checkout" element={<Checkout />} />
       </Route>
 
       <Route path="/login" element={<Login />} />
@@ -77,8 +67,11 @@ export default function App() {
       <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
       <Route path="/ayuda" element={<Ayuda />} />
 
-      <Route element={<ProtectedRoute roles={['cliente']} redirect="/" />}>
+      {/* Solo clientes con sesión: sus compras, checkout y ayuda. */}
+      <Route element={<ProtectedRoute roles={['cliente']} redirect="/inicio" />}>
         <Route element={<ConAsistenteCliente />}>
+          <Route path="/mis-compras" element={<MisCompras />} />
+          <Route path="/checkout" element={<Checkout />} />
           <Route path="/ayuda-cliente" element={<AyudaCliente />} />
         </Route>
       </Route>
@@ -93,18 +86,18 @@ export default function App() {
           <Route path="/configuracion" element={<ConfiguracionAdmin />} />
           <Route path="/ayuda-admin" element={<AyudaAdmin />} />
 
-          {/* Admin + cajero + mesero */}
+          {/* Menú y promociones: todo el personal */}
           <Route element={<ProtectedRoute roles={ACCESO.menu} />}>
             <Route path="/menu" element={<MenuAdmin />} />
             <Route path="/promociones" element={<PromocionesAdmin />} />
           </Route>
 
-          {/* Admin + cocinero + mesero */}
+          {/* Ventas: admin + cajero + mesero */}
           <Route element={<ProtectedRoute roles={ACCESO.ventas} />}>
             <Route path="/ventas" element={<VentasAdmin />} />
           </Route>
 
-          {/* Admin + cajero + cocinero */}
+          {/* Inventario y compras: admin + cajero + cocinero */}
           <Route element={<ProtectedRoute roles={ACCESO.inventario} />}>
             <Route path="/materia-prima" element={<MateriaPrimaAdmin />} />
             <Route path="/inventario" element={<InventarioAdmin />} />

@@ -85,7 +85,6 @@ type AuthContextValue = {
     recaptchaToken?: string,
   ) => Promise<void>;
   logout: () => void;
-  demoLogin: (role?: string) => void;
   updateUser: (partial: Partial<User>) => void;
 };
 
@@ -253,19 +252,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
-  const demoLogin = useCallback((role?: string) => {
-    const esAdmin = role === 'admin';
-    const demoUser: User = {
-      id: 0,
-      name: esAdmin ? 'Administrador Demo' : 'Cliente Demo',
-      email: esAdmin ? 'admin@demo.com' : 'cliente@demo.com',
-      role: esAdmin ? 'admin' : 'cliente',
-    };
-    sessionStorage.setItem('token', 'demo-token-sin-backend');
-    sessionStorage.setItem('user', JSON.stringify(demoUser));
-    setUser(demoUser);
-  }, []);
-
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
@@ -275,11 +261,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginWithToken,
       register,
       logout,
-      demoLogin,
       updateUser,
     }),
 
-    [user, loading, login, register, logout, demoLogin],
+    [user, loading, login, register, logout],
 
   );
 

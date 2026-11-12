@@ -234,6 +234,18 @@
 .tv-total { font-weight: 800; font-size: 17px; color: var(--text-900); margin-right: auto; }
 .tv-espera { font-size: 12px; color: var(--text-400); font-style: italic; }
 
+/* F-010: hora para la que el cliente programó el pedido */
+.tv-programado {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #2f6fed;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .tv-btn {
   border: none; cursor: pointer; border-radius: 10px;
   font-family: inherit; font-weight: 800; font-size: 13px;
@@ -243,6 +255,18 @@
 }
 .tv-btn:hover:not(:disabled) { transform: translateY(-1px); opacity: .9; }
 .tv-btn:disabled { opacity: .55; cursor: wait; }
+
+/* F-004: botón secundario para rechazar un pedido con motivo */
+.tv-col[data-estado] .tv-btn-rechazar {
+  background: transparent;
+  color: var(--danger, #b42318);
+  border: 1px solid var(--danger, #b42318);
+  box-shadow: none;
+  padding: 10px 16px;
+}
+.tv-col[data-estado] .tv-btn-rechazar:hover:not(:disabled) {
+  background: rgba(180, 35, 24, .08);
+}
 
 /* Foco visible para teclado */
 .tv-tab:focus-visible, .tv-refrescar:focus-visible, .tv-btn-sec:focus-visible,

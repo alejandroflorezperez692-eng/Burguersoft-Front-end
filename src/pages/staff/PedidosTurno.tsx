@@ -7,6 +7,7 @@ import MotivoModal from '../../components/MotivoModal';
 import { mensajeDeError, type MapaTransiciones } from '../../types/Trazabilidad';
 import '../../styles/pedidos-turno.css';
 import { getEcho } from '../../api/echo';
+import { etiquetaEstado } from '../../utils/estados';
 
 import NuevaVentaModal, { precargarNuevaVenta } from '../../components/NuevaVentaModal';
 import ComprobanteImagen from '../../components/ComprobanteImagen';
@@ -50,8 +51,8 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   },
   cajero: {
     titulo: 'Cajero',
-    subtitulo: 'Pedidos servidos y pagos pendientes por cobrar.',
-    estados: ['Servido', 'Pendiente de pago'],
+    subtitulo: 'Entrega pedidos de domicilio o para recoger y cobra los pagos pendientes.',
+    estados: ['Preparado', 'Servido', 'Pendiente de pago'],
     acciones: {
       Servido: { sig: 'Pagado', texto: 'Registrar pago' },
       'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
@@ -89,6 +90,7 @@ interface PromoVenta {
 interface Venta {
   id: number;
   fecha?: string;
+  programado_para?: string | null;
   estado?: string;
   tipo_entrega?: string | null;
   metodo_pago?: string | null;
@@ -163,6 +165,7 @@ export default function PedidosTurno() {
   const rol = normalizarRol(user?.role);
   const esAdmin = rol === 'admin';
   const puedeVerComprobante = esAdmin || rol === 'cajero' || rol === 'cocinero';
+  const puedeRevisarComprobante = esAdmin || rol === 'cajero';
   const puedeCrear = rol === 'admin' || rol === 'mesero';
   const vistaInicial = VISTA_INICIAL[rol] ?? 'cocina';
 
@@ -236,7 +239,7 @@ export default function PedidosTurno() {
   useEffect(() => {
     const echo = getEcho();
     const alCambiar = () => void load();
-    echo?.channel('cocina').listen('.venta.actualizada', alCambiar);
+    echo?.private('cocina').listen('.venta.actualizada', alCambiar);
 
     const t = window.setInterval(() => {
       if (!document.hidden) void load();
@@ -244,7 +247,7 @@ export default function PedidosTurno() {
 
     return () => {
       window.clearInterval(t);
-      echo?.channel('cocina').stopListening('.venta.actualizada', alCambiar);
+      echo?.private('cocina').stopListening('.venta.actualizada', alCambiar);
     };
   }, [load]);
 
@@ -370,20 +373,34 @@ export default function PedidosTurno() {
   ]);
 
   const tarjeta = (v: Venta) => {
-    const accion = config.acciones[v.estado ?? ''];
+    const accionBase = config.acciones[v.estado ?? ''];
+    // F-037: el cajero entrega solo pedidos de domicilio o para recoger.
+    const accion =
+      accionBase ??
+      (rol === 'cajero' && v.estado === 'Preparado' && v.tipo_entrega !== 'Consumir'
+        ? { sig: 'Servido', texto: 'Entregar' }
+        : undefined);
     const esOcupado = ocupadoId === v.id;
     const min = minutosDesde(v.fecha ?? '');
     const enMesa = v.tipo_entrega === 'Consumir' && !!v.mesa;
+
+    // F-004: el cocinero rechaza con motivo; el admin y el cajero también pueden.
+    const tActual = transiciones?.[v.estado ?? ''];
+    const estadoTerminal = ['Cancelado', 'Rechazada', 'Reembolsada'].includes(v.estado ?? '');
+    const puedeRechazar =
+      !estadoTerminal &&
+      !!tActual &&
+      (tActual.directas.includes('Rechazada') || tActual.con_motivo.includes('Rechazada'));
 
     // El pago electrónico no se puede confirmar hasta aprobar el comprobante.
     const vaAPagar = accion?.sig === 'Pagado';
     const faltaComprobante = vaAPagar && requiereComprobante(v) && !comprobanteAprobado(v);
     const textoAccion = faltaComprobante
-      ? esAdmin
+      ? puedeRevisarComprobante
         ? 'Aprobar comprobante'
         : 'Comprobante pendiente'
       : accion?.texto;
-    const accionDeshabilitada = esOcupado || (faltaComprobante && !esAdmin);
+    const accionDeshabilitada = esOcupado || (faltaComprobante && !puedeRevisarComprobante);
 
     return (
       <div
@@ -419,6 +436,15 @@ export default function PedidosTurno() {
             Ver detalle
           </button>
 
+          {v.programado_para && (
+            <span className="tv-programado">
+              Programado: {aFecha(v.programado_para).toLocaleString('es-CO', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              })}
+            </span>
+          )}
+
           {faltaComprobante && (
             <span className="tv-pago-bloqueado">
               {v.comprobante_estado === 'Rechazado'
@@ -437,8 +463,8 @@ export default function PedidosTurno() {
               type="button"
               className="tv-btn"
               disabled={accionDeshabilitada}
-              title={faltaComprobante && !esAdmin
-                ? 'El administrador debe aprobar el comprobante antes de confirmar el pago.'
+              title={faltaComprobante && !puedeRevisarComprobante
+                ? 'El administrador o el cajero deben aprobar el comprobante antes de confirmar el pago.'
                 : undefined}
               onClick={() =>
                 faltaComprobante ? setDetalleId(v.id) : intentarCambio(v, accion)
@@ -448,6 +474,16 @@ export default function PedidosTurno() {
             </button>
           ) : (
             <span className="tv-espera">Sin acción disponible</span>
+          )}
+          {puedeRechazar && (
+            <button
+              type="button"
+              className="tv-btn tv-btn-rechazar"
+              disabled={esOcupado}
+              onClick={() => intentarCambio(v, { sig: 'Rechazada', texto: 'Rechazar' })}
+            >
+              Rechazar
+            </button>
           )}
         </div>
       </div>
@@ -589,13 +625,24 @@ export default function PedidosTurno() {
             </div>
             <dl className="tv-det-info">
               <div><dt>Cliente</dt><dd>{nombreCliente(detalle)}</dd></div>
-              <div><dt>Estado</dt><dd>{detalle.estado ?? '—'}</dd></div>
+              <div><dt>Estado</dt><dd>{etiquetaEstado(detalle.estado ?? '-', detalle.tipo_entrega)}</dd></div>
               <div>
                 <dt>Entrega</dt>
                 <dd>{ETIQUETA_ENTREGA[detalle.tipo_entrega ?? ''] ?? detalle.tipo_entrega ?? '—'}</dd>
               </div>
               {detalle.tipo_entrega === 'Consumir' && detalle.mesa ? (
                 <div><dt>Mesa</dt><dd>{detalle.mesa}</dd></div>
+              ) : null}
+              {detalle.programado_para ? (
+                <div>
+                  <dt>Programado para</dt>
+                  <dd>
+                    {aFecha(detalle.programado_para).toLocaleString('es-CO', {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    })}
+                  </dd>
+                </div>
               ) : null}
               <div><dt>Método de pago</dt><dd>{detalle.metodo_pago || '—'}</dd></div>
               <div>
@@ -732,7 +779,7 @@ export default function PedidosTurno() {
                       alt={`Comprobante de pago del pedido ${detalle.id}`}
                     />
 
-                    {esAdmin && (
+                    {puedeRevisarComprobante && (
                       <div className="vt-comprobante-acciones">
                         {detalle.comprobante_estado !== 'Aprobado' && (
                           <button
