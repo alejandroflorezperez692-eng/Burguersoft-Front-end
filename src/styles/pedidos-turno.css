@@ -12,11 +12,11 @@
 
 .tv-titulo {
   margin: 0;
-  font-family: var(--font-display, 'Fraunces', Georgia, serif);
+  font-family: var(--font-sans, inherit);
   font-size: clamp(30px, 3.4vw, 40px);
-  font-weight: 900;
-  letter-spacing: -.02em;
-  line-height: 1.05;
+  font-weight: 400;
+  letter-spacing: normal;
+  line-height: 1.1;
   color: var(--text-900);
 }
 .tv-subtitulo { margin: 6px 0 0; font-size: 14.5px; color: var(--text-600); max-width: 560px; }
