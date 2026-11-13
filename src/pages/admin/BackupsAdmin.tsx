@@ -589,7 +589,7 @@ export default function BackupsAdmin() {
                     <tr key={b.id}>
                       <td>{b.id}</td>
                       <td style={{ fontWeight: 600 }} title={titulo || undefined}>{texto}</td>
-                      <td>{b.fecha ? new Date(b.fecha).toLocaleString() : '—'}</td>
+                      <td>{b.fecha ? new Date(b.fecha).toLocaleString(undefined, { hour12: true }) : '—'}</td>
                       <td>{formatBytes(b.tamano_bytes)}</td>
                       <td>{b.total_registros != null ? Number(b.total_registros).toLocaleString('es-MX') : '—'}</td>
                       {drive.configurada && (
@@ -742,7 +742,7 @@ export default function BackupsAdmin() {
             <h2>Restaurar copia de seguridad</h2>
             <p className="bk-desc">
               Copia <strong>#{restoreSel.id}</strong> — {resumenContenido(restoreSel).texto}, del{' '}
-              {restoreSel.fecha ? new Date(restoreSel.fecha).toLocaleString() : '—'}.
+              {restoreSel.fecha ? new Date(restoreSel.fecha).toLocaleString(undefined, { hour12: true }) : '—'}.
             </p>
 
             <label className={`bk-modo ${restoreModo === 'replace' ? 'activo' : ''}`}>
