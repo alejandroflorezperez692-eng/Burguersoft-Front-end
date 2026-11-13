@@ -104,11 +104,10 @@ export default function AdminLayout() {
   }, 500);
 };
 
-  const irAMiPerfil = () => {
+const irAMiPerfil = () => {
   setUserMenuOpen(false);
-  navigate('/configuracion');
+  navigate('/configuracion', { state: { reset: Date.now() } });
 };
-
 const salirDesdeMenuUsuario = () => {
   setUserMenuOpen(false);
   setConfirmarSalida(true);
