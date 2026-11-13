@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { useLocation } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
 import apiClient from '../../api/client';
 import HistorialPage from '../../components/HistorialModal';
@@ -51,7 +50,6 @@ export default function ConfiguracionAdmin() {
   const [mostrarConf, setMostrarConf] = useState(false);
   const [actualizandoPwd, setActualizandoPwd] = useState(false);
   const selectorTdocRef = useRef<HTMLDivElement>(null);
-  const location = useLocation();
 
   useEffect(() => {
     setVerHistorial(false);
