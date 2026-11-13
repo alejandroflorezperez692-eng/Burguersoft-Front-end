@@ -18,11 +18,64 @@ interface CierreGuardado {
   total_cobrado: number | string;
   diferencia: number | string;
   observacion: string | null;
+  desde?: string;
+  base_inicial?: number | string;
+  efectivo_esperado?: number | string;
+  efectivo_contado?: number | string;
+  pedidos?: number;
+  por_metodo?: { metodo: string; pedidos: number; total: number }[];
 }
 
 const moneda = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(Math.round(n)).toLocaleString('es-CO')}`;
+const soloDigitos = (v: string) => v.replace(/\D/g, '').slice(0, 9);
+const miles = (v: string) => (v === '' ? '' : Number(v).toLocaleString('es-CO'));
 const fechaHora = (iso: string) =>
   new Date(iso).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' });
+
+const esc = (t: string) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+function descargarPdfCierre(c: CierreGuardado, aviso: (m: string) => void) {
+  const f = new Date(c.created_at);
+  const dif = Number(c.diferencia);
+  const filas = (c.por_metodo ?? [])
+    .map((m) => `<tr><td>${esc(m.metodo)}</td><td>${m.pedidos}</td><td>${moneda(Number(m.total))}</td></tr>`)
+    .join('');
+  const w = window.open('', '_blank');
+  if (!w) { aviso('Permite las ventanas emergentes para descargar el PDF'); return; }
+  w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8">
+    <title>Cierre de caja N.º ${c.id}</title>
+    <style>
+      body{font-family:Arial,sans-serif;color:#1a0a00;padding:32px}
+      h1{margin:0 0 4px;font-size:22px} p{margin:2px 0;font-size:13px}
+      table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+      th{background:#1a0a00;color:#fff;text-align:left;padding:8px 10px}
+      td{padding:8px 10px;border-bottom:1px solid #ddd}
+    </style></head><body>
+    <h1>Cierre de caja N.º ${c.id}</h1>
+    <p><b>Empresa:</b> El Oriente</p>
+    <p><b>Fecha:</b> ${f.toLocaleDateString('es-CO')} &nbsp; <b>Hora:</b> ${f.toLocaleTimeString('es-CO')}</p>
+    <p><b>Cajero:</b> ${esc(c.cajero)}</p>
+    ${c.desde ? `<p><b>Turno desde:</b> ${fechaHora(c.desde)}</p>` : ''}
+    <p><b>Pedidos cobrados:</b> ${c.pedidos ?? '—'}</p>
+    <table>
+      <thead><tr><th>Método de pago</th><th>Pedidos</th><th>Total</th></tr></thead>
+      <tbody>${filas || '<tr><td colspan="3">Sin cobros</td></tr>'}</tbody>
+    </table>
+    <table>
+      <tbody>
+        <tr><td>Total cobrado</td><td><b>${moneda(Number(c.total_cobrado))}</b></td></tr>
+        <tr><td>Base inicial</td><td>${moneda(Number(c.base_inicial ?? 0))}</td></tr>
+        <tr><td>Efectivo esperado</td><td>${moneda(Number(c.efectivo_esperado ?? 0))}</td></tr>
+        <tr><td>Efectivo contado</td><td>${moneda(Number(c.efectivo_contado ?? 0))}</td></tr>
+        <tr><td>Diferencia</td><td><b>${Math.abs(dif) >= 0.01 ? moneda(dif) : 'Cuadró'}</b></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px"><b>Observación:</b> ${esc(c.observacion ?? '—')}</p>
+    </body></html>`);
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 300);
+}
 
 export default function ArqueoCaja() {
   const { showToast } = useToast();
@@ -113,11 +166,11 @@ export default function ArqueoCaja() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 12 }}>
         <div className="form-group" style={{ margin: 0 }}>
           <label>Base inicial (opcional)</label>
-          <input type="number" min={0} step={100} value={base} onChange={(e) => setBase(e.target.value)} placeholder="0" />
+          <input type="text" inputMode="numeric" value={miles(base)} onChange={(e) => setBase(soloDigitos(e.target.value))} placeholder="0" />
         </div>
         <div className="form-group" style={{ margin: 0 }}>
           <label>Efectivo que contaste</label>
-          <input type="number" min={0} step={100} value={contado} onChange={(e) => setContado(e.target.value)} placeholder="0" />
+          <input type="text" inputMode="numeric" value={miles(contado)} onChange={(e) => setContado(soloDigitos(e.target.value))} placeholder="0" />
         </div>
       </div>
 
@@ -161,6 +214,15 @@ export default function ArqueoCaja() {
                   {fechaHora(c.created_at)} · {c.cajero}
                 </span>
                 <span>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    style={{ padding: '2px 10px', marginRight: 8 }}
+                    onClick={() => descargarPdfCierre(c, (m) => showToast(m, true))}
+                    aria-label={`Descargar PDF del cierre ${c.id}`}
+                  >
+                    PDF
+                  </button>
                   {moneda(Number(c.total_cobrado))} ·{' '}
                   <b style={{ color: Math.abs(dif) >= 0.01 ? 'var(--danger)' : '#1e8e4e' }}>
                     {Math.abs(dif) >= 0.01 ? moneda(dif) : 'Cuadró'}

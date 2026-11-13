@@ -7,6 +7,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
 import Paginacion, { paginar } from '../../components/Paginacion';
 
@@ -61,16 +62,16 @@ const esAdmin = normalizarRol(user?.role) === 'admin';
   const { showToast } = useToast();
 
 const load = async (silencioso = false) => {
-  if (!silencioso) setLoading(true);
-  try {
-    const r = await apiClient.get<Proveedor[]>('/marcas');
-    setItems(r.data);
-  } catch {
-    showToast('No se pudieron cargar los proveedores', true);
-  } finally {
-    setLoading(false);
-  }
-};
+    if (!silencioso) setLoading(true);
+    try {
+      const r = await apiClient.get<Proveedor[]>('/marcas');
+      setItems(r.data);
+    } catch (err) {
+      showToast(mensajeError(err, 'No se pudieron cargar los proveedores'), true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => { load(); }, []);
 
@@ -163,8 +164,8 @@ const load = async (silencioso = false) => {
       }
       setModal(false);
       load(true);
-    } catch {
-      showToast('No se pudo guardar el proveedor', true);
+    } catch (err) {
+      showToast(mensajeError(err, 'No se pudo guardar el proveedor'), true);
     }
   };
 
@@ -183,8 +184,8 @@ const load = async (silencioso = false) => {
       setConfirmDel(null);
       closeDetail();
       load();
-    } catch {
-      showToast('No se pudo eliminar el proveedor', true);
+    } catch (err) {
+      showToast(mensajeError(err, 'No se pudo eliminar el proveedor'), true);
       setConfirmDel(null);
     } finally {
       setEliminando(false);
