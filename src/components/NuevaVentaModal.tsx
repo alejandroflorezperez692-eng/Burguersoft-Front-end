@@ -449,7 +449,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                   {(mesaActual.pedidos ?? []).map((p) => (
                     <div key={p.id} className="np-previo-item">
                       <span className="np-previo-head">#{p.id} · {p.estado}</span>
-                      <span>{p.items.map((i) => `${i.cantidad}× ${i.nombre}`).join(', ')}</span>
+                      <span>{p.items.map((i) => `${i.cantidad} ${i.nombre}`).join(', ')}</span>
                     </div>
                   ))}
                   <div className="np-previo-total">
