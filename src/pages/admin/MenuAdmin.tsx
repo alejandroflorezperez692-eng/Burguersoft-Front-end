@@ -862,7 +862,7 @@ export default function MenuAdmin() {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando menú" subtexto="Preparando tus productos" />
+        <AdminLoading area texto="Cargando menú" subtexto="Preparando tus productos" />
       ) : grupos.length === 0 ? (
         <div className="mn-empty">
           No se encontraron productos

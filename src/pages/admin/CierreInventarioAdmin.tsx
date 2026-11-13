@@ -273,7 +273,7 @@ export default function CierreInventarioAdmin() {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando cierre" subtexto="Calculando la cantidad esperada" />
+        <AdminLoading area texto="Cargando cierre" subtexto="Calculando la cantidad esperada" />
       ) : (
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 14 }}>

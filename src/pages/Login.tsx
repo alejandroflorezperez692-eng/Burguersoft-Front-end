@@ -13,10 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
-
   const [loading, setLoading] = useState(false);
-
-  
   const [turnstileToken, setTurnstileToken] = useState('');
   const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -26,24 +23,26 @@ export default function Login() {
   const location = useLocation();
   const tipoToast = (location.state as { toast?: string } | null)?.toast ?? '';
 
- 
   const MENSAJE_AVISO: Record<string, string> = {
     password_ok: 'Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
     logout_ok: 'Has cerrado sesión correctamente.',
     sesion_expirada: 'Tu sesión expiró. Inicia sesión de nuevo.',
     registro_ok: 'Tu cuenta fue creada correctamente. Inicia sesión para continuar.',
   };
+
   const [aviso, setAviso] = useState<string | null>(null);
+
   useEffect(() => {
     const guardado = sessionStorage.getItem('aviso_login') ?? '';
     const clave = tipoToast || guardado;
+
     if (!clave) return;
+
     if (guardado) sessionStorage.removeItem('aviso_login');
     setAviso(MENSAJE_AVISO[clave] ?? null);
-   
+
     const t = setTimeout(() => setAviso(null), 6000);
     return () => clearTimeout(t);
- 
   }, [tipoToast]);
 
   if (isAuthenticated) {
@@ -53,7 +52,6 @@ export default function Login() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    
     const faltaCorreo = !email.trim();
     const faltaPassword = !password.trim();
 
@@ -82,7 +80,6 @@ export default function Login() {
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
       showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
-      
       setTurnstileToken('');
       turnstileRef.current?.reset();
     } finally {
@@ -94,21 +91,33 @@ export default function Login() {
     window.location.href = 'http://127.0.0.1:8000/api/auth/google';
   };
 
-  if (loading) {
-    return <AdminLoading texto="Iniciando sesión" subtexto="Verificando tus credenciales" />;
-  }
-
   return (
     <AuthLayout regresarA="/">
+      {loading && (
+        <AdminLoading texto="Iniciando sesión" subtexto="Verificando tus credenciales" />
+      )}
+
       {aviso && (
         <div
           role="status"
           style={{
-            position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
-            display: 'flex', alignItems: 'center', gap: 10,
-            background: '#1e3b1e', color: '#7ddc82', border: '2.5px solid #2e7d32',
-            padding: '16px 26px', borderRadius: 10, fontSize: 14, fontWeight: 600,
-            zIndex: 99999, maxWidth: '90%', textAlign: 'center',
+            position: 'fixed',
+            top: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            background: '#1e3b1e',
+            color: '#7ddc82',
+            border: '2.5px solid #2e7d32',
+            padding: '16px 26px',
+            borderRadius: 10,
+            fontSize: 14,
+            fontWeight: 600,
+            zIndex: 99999,
+            maxWidth: '90%',
+            textAlign: 'center',
             boxShadow: '0 8px 20px rgba(0,0,0,.25)',
           }}
         >
@@ -116,10 +125,14 @@ export default function Login() {
           <span>{aviso}</span>
         </div>
       )}
+
       <div className="header-bar">INICIAR SESIÓN</div>
+
       <div className="card">
         <form onSubmit={handleSubmit} noValidate>
-          <h2>CORREO<span className="required-marker">*</span></h2>
+          <h2>
+            CORREO<span className="required-marker">*</span>
+          </h2>
           <input
             type="email"
             id="email"
@@ -130,7 +143,9 @@ export default function Login() {
             required
           />
 
-          <h2>CONTRASEÑA<span className="required-marker">*</span></h2>
+          <h2>
+            CONTRASEÑA<span className="required-marker">*</span>
+          </h2>
           <div className="campo-password">
             <input
               type={mostrarPassword ? 'text' : 'password'}
@@ -152,7 +167,6 @@ export default function Login() {
             </button>
           </div>
 
-        
           <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
             <Turnstile
               ref={turnstileRef}

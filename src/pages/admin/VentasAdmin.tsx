@@ -965,7 +965,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
   ]);
 
   if (loading) {
-    return <AdminLoading texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
+    return <AdminLoading area texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
   }
 
   return (

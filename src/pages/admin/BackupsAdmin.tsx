@@ -564,7 +564,7 @@ export default function BackupsAdmin() {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando copias" subtexto="Revisando tus respaldos" />
+        <AdminLoading area texto="Cargando copias" subtexto="Revisando tus respaldos" />
       ) : (
         <>
           <div className="tabla-responsive">

@@ -147,7 +147,7 @@ export default function InventarioAdmin() {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando inventario" subtexto="Revisando tus existencias" />
+        <AdminLoading area texto="Cargando inventario" subtexto="Revisando tus existencias" />
       ) : (
         <div className="tabla-responsive">
           <table className="data-table" style={{ minWidth: 760 }}>

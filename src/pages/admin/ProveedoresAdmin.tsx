@@ -292,7 +292,7 @@ const load = async (silencioso = false) => {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando proveedores" subtexto="Listando tus proveedores" />
+        <AdminLoading area texto="Cargando proveedores" subtexto="Listando tus proveedores" />
       ) : vista === 'lista' ? (
         filtered.length === 0 ? (
           <div className="empty-state">No se encontraron proveedores</div>

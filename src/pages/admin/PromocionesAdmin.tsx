@@ -942,7 +942,7 @@ const cargar = useCallback(async () => {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando promociones" subtexto="Armando tus combos" />
+        <AdminLoading area texto="Cargando promociones" subtexto="Armando tus combos" />
       ) : grupos.length === 0 ? (
         <div className="mn-empty">
           No se encontraron promociones{hayFiltros ? ' con los filtros seleccionados' : ''}.
