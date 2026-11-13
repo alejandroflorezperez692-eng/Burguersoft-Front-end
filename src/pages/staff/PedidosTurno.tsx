@@ -10,6 +10,7 @@ import { getEcho } from '../../api/echo';
 import { etiquetaEstado } from '../../utils/estados';
 import { QR_RUTAS, CUENTA_QR, NOMBRE_QR, claveQr } from '../../utils/pagoQr';
 
+
 import NuevaVentaModal, { precargarNuevaVenta } from '../../components/NuevaVentaModal';
 import ComprobanteImagen from '../../components/ComprobanteImagen';
 import ComprobanteModal from '../../components/ComprobanteModal';
@@ -43,18 +44,20 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   },
   meseros: {
     titulo: 'Meseros',
-    subtitulo: 'Pedidos recién recepcionados y listos para llevar a la mesa.',
-    estados: ['Recepcionado', 'Preparado'],
+    subtitulo: 'Pedidos preparados para servir en las mesas.',
+    estados: ['Preparado'],
     acciones: {
       Preparado: { sig: 'Servido', texto: 'Marcar servido' },
     },
   },
   cajero: {
     titulo: 'Cajero',
-    subtitulo: 'Pedidos por cobrar y pedidos ya pagados por el cliente.',
-    estados: ['Servido', 'Pendiente de pago'],
-    columnas: ['Pendiente de pago', 'Ya pagados'],
+    subtitulo: 'Verifica pedidos, entrega pedidos listos y cobra las mesas pendientes.',
+    estados: ['Por verificar', 'Preparado', 'Servido', 'Pendiente de pago'],
+    columnas: ['Por verificar', 'Preparado', 'Pendiente de pago', 'Ya pagados'],
     acciones: {
+      'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
+      Preparado: { sig: 'Servido', texto: 'Entregar' },
       Servido: { sig: 'Pagado', texto: 'Registrar pago' },
       'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
     },
@@ -166,8 +169,13 @@ const pagoConComprobanteAprobado = (v: Venta): boolean =>
   (v.metodo_pago ?? '').trim().toLowerCase() !== 'efectivo' &&
   v.comprobante_estado === 'Aprobado';
 
-const columnaDe = (v: Venta, vista: Vista): string =>
-  vista === 'cajero' ? (yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago') : (v.estado ?? '');
+const columnaDe = (v: Venta, vista: Vista): string => {
+  if (vista !== 'cajero') return v.estado ?? '';
+  if (v.estado === 'Servido' || v.estado === 'Pendiente de pago') {
+    return yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago';
+  }
+  return v.estado ?? '';
+};
 
 const FILTROS_ENTREGA: { valor: Entrega; texto: string }[] = [
   { valor: 'todos', texto: 'Todos' },
@@ -551,7 +559,7 @@ export default function PedidosTurno() {
         ? { sig: 'Servido', texto: 'Entregar' }
         : undefined);
         
-    if (vista === 'cajero' && accion && yaPagado(v)) {
+    if (vista === 'cajero' && accion && accion.sig === 'Pagado' && yaPagado(v)) {
       accion = { ...accion, texto: 'Cerrar pedido' };
     }
     
@@ -575,7 +583,7 @@ export default function PedidosTurno() {
     const permiteRechazo = !!tActual && (tActual.directas.includes('Rechazada') || tActual.con_motivo.includes('Rechazada'));
     
     let puedeRechazar = false;
-    if (!estadoTerminal && permiteRechazo && vista !== 'cajero') {
+    if (!estadoTerminal && permiteRechazo) {
       if (rol === 'admin') {
         puedeRechazar = true;
       } else if (rol === 'cocinero' && ['Recepcionado', 'En preparación'].includes(v.estado ?? '')) {
@@ -1045,12 +1053,12 @@ export default function PedidosTurno() {
                     {puedeRevisarComprobante && (
                       <div className="vt-comprobante-acciones">
                         {detalle.comprobante_estado !== 'Aprobado' && detalle.comprobante_estado !== 'Rechazado' && (
-                        <button
-                          type="button"
-                          className="btn-save"
-                          disabled={procesandoComprobante}
-                          onClick={() => void revisarComprobante(detalle, 'Aprobado')}
-                        >
+                          <button
+                            type="button"
+                            className="btn-save"
+                            disabled={procesandoComprobante}
+                            onClick={() => void revisarComprobante(detalle, 'Aprobado')}
+                          >
                             {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
                           </button>
                         )}
