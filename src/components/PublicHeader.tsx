@@ -116,7 +116,10 @@ export default function PublicHeader() {
                       <circle cx="12" cy="7" r="4" />
                     </svg>
                   </span>
-                  <span className="perfil-nombre">{user?.name ?? 'Usuario'}</span>
+                  <span className="perfil-info">
+                    <span className="perfil-nombre">{user?.name ?? 'Usuario'}</span>
+                    <span className="perfil-rol">{user?.role ?? 'Cliente'}</span>
+                  </span>
                 </button>
 
                 <div className={`dropdown-menu${menuAbierto ? ' abierto' : ''}`} id="perfilDropdownMenu">
