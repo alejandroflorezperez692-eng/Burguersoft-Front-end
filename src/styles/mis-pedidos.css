@@ -491,3 +491,59 @@ body.dark-mode .comprobante-modal-preview { background: #241d18; border-color: #
   .pedido-comprobante { flex-direction: column; align-items: flex-start; }
   .btn-comprobante { width: 100%; }
 }
+
+/* ============================================================
+   Mis compras (SOLO modo claro):
+   fondo blanco, líneas naranja y letra negra
+   ============================================================ */
+
+/* Tarjeta: borde naranja */
+body:not(.dark-mode) .pedido-card {
+  background: #ffffff;
+  border-color: #e8821a;
+}
+
+/* Fondos blancos (antes crema) */
+body:not(.dark-mode) .pedido-head,
+body:not(.dark-mode) .pedido-foot,
+body:not(.dark-mode) .pedido-info,
+body:not(.dark-mode) .progreso-container,
+body:not(.dark-mode) .pedido-table,
+body:not(.dark-mode) .pedido-table thead tr,
+body:not(.dark-mode) .pedido-comprobante {
+  background: #ffffff;
+}
+
+/* Líneas que dividen cada sección */
+body:not(.dark-mode) .pedido-head,
+body:not(.dark-mode) .progreso-container,
+body:not(.dark-mode) .pedido-info,
+body:not(.dark-mode) .pedido-comprobante {
+  border-bottom: 1px solid #e8821a;
+}
+
+body:not(.dark-mode) .pedido-foot {
+  border-top: 1px solid #e8821a;
+}
+
+body:not(.dark-mode) .pedido-table th {
+  border-bottom: 1px solid #e8821a;
+}
+
+body:not(.dark-mode) .pedido-table td {
+  border-top: 1px solid #e8821a;
+}
+
+/* Letra negra */
+body:not(.dark-mode) .pedido-fecha,
+body:not(.dark-mode) .progreso-tipo,
+body:not(.dark-mode) .pedido-info-label,
+body:not(.dark-mode) .pedido-info-valor,
+body:not(.dark-mode) .pedido-info-notas,
+body:not(.dark-mode) .pedido-table th,
+body:not(.dark-mode) .pedido-table td,
+body:not(.dark-mode) .producto-nombre,
+body:not(.dark-mode) .precio-unit,
+body:not(.dark-mode) .pedido-foot .label {
+  color: #000000;
+}

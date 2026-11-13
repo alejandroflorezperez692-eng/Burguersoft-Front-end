@@ -126,7 +126,7 @@ function FiltroDesplegableVentas({ value, onChange, opciones }: {
   onChange: (value: string) => void;
   opciones: { value: string; label: string }[];
 }) {
-  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef<HTMLDivElement>(null);
 
@@ -152,15 +152,7 @@ function FiltroDesplegableVentas({ value, onChange, opciones }: {
     };
   }, [abierto]);
 
-  if (!modoOscuro) {
-    return (
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
-        {opciones.map((opcion) => <option key={opcion.value} value={opcion.value}>{opcion.label}</option>)}
-      </select>
-    );
-  }
-
-  const seleccionada = opciones.find((opcion) => opcion.value === value);
+const seleccionada = opciones.find((opcion) => opcion.value === value);
   return (
     <div className="ventas-filter-dropdown" ref={contenedorRef}>
       <button
@@ -208,7 +200,7 @@ function SelectorFechaVentas({ value, onChange, min, max }: {
   min?: string;
   max?: string;
 }) {
-  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
+  const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
   const fechaInicial = value ? new Date(`${value}T00:00:00`) : new Date();
   const [mesVisible, setMesVisible] = useState(() => new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), 1));
@@ -236,19 +228,7 @@ function SelectorFechaVentas({ value, onChange, min, max }: {
     };
   }, [abierto]);
 
-  if (!modoOscuro) {
-    return (
-      <input
-        type="date"
-        value={value}
-        min={min}
-        max={max}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
-  }
-
-  const anio = mesVisible.getFullYear();
+const anio = mesVisible.getFullYear();
   const mes = mesVisible.getMonth();
   const diasEnMes = new Date(anio, mes + 1, 0).getDate();
   const primerDia = (new Date(anio, mes, 1).getDay() + 6) % 7;
@@ -991,11 +971,11 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <div className="cierre-filtros">
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Desde</label>
-                <input type="date" value={cierre.desde} max={cierre.hasta} onChange={(e) => setCierreDesde(e.target.value)} />
+                <SelectorFechaVentas value={cierre.desde} max={cierre.hasta} onChange={setCierreDesde} />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label>Hasta</label>
-                <input type="date" value={cierre.hasta} min={cierre.desde} onChange={(e) => setCierreHasta(e.target.value)} />
+                <SelectorFechaVentas value={cierre.hasta} min={cierre.desde} onChange={setCierreHasta} />
               </div>
               <p className="cierre-nota">
                 Solo cuenta ventas <b>Pagadas</b>

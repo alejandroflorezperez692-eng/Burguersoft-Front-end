@@ -4,6 +4,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 import App from './App.tsx';
 import './styles/responsive.css';
+import './styles/claro-fixes.css';
+import './styles/x-centradas.css';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { CartProvider } from './context/CartContext.tsx';
 

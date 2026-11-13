@@ -47,7 +47,7 @@ export default function MotivoModal({
         style={{ maxWidth: 420, width: '92%' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: 17, fontWeight: 800, margin: 0, color: 'var(--text-900)' }}>
+        <h3 className="motivo-modal-titulo" style={{ fontFamily: 'var(--font-sans)', fontSize: 17, fontWeight: 800, margin: 0, color: 'var(--text-900)' }}>
           {titulo}
         </h3>
         {descripcion && (
@@ -57,6 +57,7 @@ export default function MotivoModal({
         )}
 
         <textarea
+          className="motivo-modal-input"
           placeholder={placeholder}
           aria-label="Motivo"
           rows={4}
