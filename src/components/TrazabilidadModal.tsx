@@ -27,6 +27,24 @@ const claseEstado = (estado: string) => {
 };
 
 
+const ETIQUETA_EVENTO: Record<string, string> = {
+  cancelacion: 'Cancelación',
+  reembolso: 'Reembolso',
+  cambio_metodo_pago: 'Cambio de método de pago',
+  cambio_mesa: 'Cambio de mesa',
+  pedido_programado: 'Pedido programado',
+  comprobante: 'Comprobante de pago',
+  'Pedido ampliado': 'Pedido ampliado',
+  'Pedido unido': 'Pedido unido',
+};
+
+const fmtDuracion = (seg?: number | null) => {
+  if (seg == null) return '';
+  const min = Math.round(seg / 60);
+  if (min < 1) return 'menos de 1 min';
+  return min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`;
+};
+
 export default function TrazabilidadModal({ ventaId, onClose }: TrazabilidadModalProps) {
   const [registros, setRegistros] = useState<RegistroTrazabilidad[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,19 +99,30 @@ export default function TrazabilidadModal({ ventaId, onClose }: TrazabilidadModa
             registros.map((r, i) => {
               const estado = r.a || r.estado || '';
               const tieneCambio = Boolean(r.de && r.a && r.de !== r.a);
-              const esCreacion = !r.de && !!r.a;
+              const esCreacion = !r.de && !!r.a && !r.evento;
+              const esEvento = !!r.evento;
               return (
                 <div className="tz-item" key={i}>
                   <span className={`badge ${claseEstado(estado)}`}>{estado || '—'}</span>
                   <div className="tz-desc">
                     {esCreacion && <span className="tz-linea">Pedido registrado</span>}
-                    {tieneCambio && (
+                    {esEvento && (
+                      <span className="tz-linea">
+                        <strong>{ETIQUETA_EVENTO[r.evento as string] ?? r.evento}</strong>
+                      </span>
+                    )}
+                    {tieneCambio && !esEvento && (
                       <span className="tz-linea">
                         Cambió de <strong>{r.de}</strong> a <strong>{r.a}</strong>
                       </span>
                     )}
                     {r.motivo && <span className="tz-motivo">Motivo: {r.motivo}</span>}
-                    <span className="tz-user">{nombreUsuario(r)}</span>
+                    {r.es_correccion && <span className="tz-motivo">Corrección de estado</span>}
+                    {r.fuera_de_rol && <span className="tz-motivo">Hecho fuera del rol habitual</span>}
+                    <span className="tz-user">
+                      {nombreUsuario(r)}{r.rol ? ` · ${r.rol}` : ''}
+                      {!esEvento && r.duracion_segundos != null ? ` · estuvo ${fmtDuracion(r.duracion_segundos)} aquí` : ''}
+                    </span>
                   </div>
                   <div className="tz-fecha">
                     <span>{fmtDia(r.fecha || '')}</span>

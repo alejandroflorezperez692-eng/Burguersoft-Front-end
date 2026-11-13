@@ -193,6 +193,10 @@ export async function exportarHistorialInsumoExcel(op: {
   wsRes.getCell('B2').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
   wsRes.getCell('B2').numFmt = FMT_FECHA_HORA;
   wsRes.getCell('B2').alignment = { horizontal: 'left' };
+  wsRes.getCell('A3').value = 'Empresa';
+  wsRes.getCell('A3').font = { bold: true };
+  wsRes.getCell('B3').value = 'El Oriente';
+  wsRes.getCell('B3').alignment = { horizontal: 'left' };
 
   let f = 4;
   const seccion = (t: string) => {
@@ -420,7 +424,7 @@ export async function exportarHistorialInsumoExcel(op: {
 
   // Solo lectura: se puede ver, seleccionar, copiar y ajustar columnas, pero no editar
   for (const ws of wb.worksheets) {
-    await ws.protect(CLAVE_HOJAS, {
+    await ws.protect('', {
       selectLockedCells: true,
       selectUnlockedCells: true,
       formatColumns: true,

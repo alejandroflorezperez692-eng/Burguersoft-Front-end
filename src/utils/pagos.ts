@@ -18,5 +18,7 @@ export const METODOS_CON_COMPROBANTE = [
 ];
 
 /** True si el método de pago exige comprobante (sin distinguir mayúsculas). */
-export const esPagoElectronico = (metodo?: string | null): boolean =>
-  METODOS_CON_COMPROBANTE.includes((metodo ?? '').trim());
+export const esPagoElectronico = (metodo?: string | null): boolean => {
+  const k = (metodo ?? '').trim().toLowerCase();
+  return METODOS_CON_COMPROBANTE.some((m) => m.toLowerCase() === k);
+};
