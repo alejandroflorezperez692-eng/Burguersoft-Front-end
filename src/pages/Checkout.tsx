@@ -410,6 +410,7 @@ export default function Checkout() {
     url: string;
     correo: string | null;
     comprobanteCargado: boolean;
+    comprobanteRevisionManual?: boolean;
     metodoPago: string;
   };
   const leerPedidoGuardado = (): PedidoConfirmado | null => {
@@ -639,6 +640,7 @@ export default function Checkout() {
         url: urlWsp,
         correo: respuesta.data?.recibo_correo ?? null,
         comprobanteCargado: Boolean(respuesta.data?.tiene_comprobante),
+        comprobanteRevisionManual: Boolean(respuesta.data?.comprobante_revision_manual),
         metodoPago,
       };
       setPedidoConfirmado(confirmado);
@@ -731,7 +733,9 @@ export default function Checkout() {
                 <h2>¡Pedido realizado con éxito!</h2>
                 <p>
                   {pedidoConfirmado.comprobanteCargado
-                    ? 'La IA verificó tu comprobante de pago y quedó en revisión. El administrador lo aprobará o te pedirá subir uno nuevo desde el estado de tu pedido.'
+                    ? pedidoConfirmado.comprobanteRevisionManual
+                      ? 'Recibimos tu comprobante, pero no se pudo verificar automáticamente. El administrador lo revisará y lo aprobará o te pedirá subir uno nuevo desde el estado de tu pedido.'
+                      : 'La IA verificó tu comprobante de pago y quedó en revisión. El administrador lo aprobará o te pedirá subir uno nuevo desde el estado de tu pedido.'
                     : pedidoConfirmado.metodoPago === 'efectivo'
                       ? 'Tu pedido quedó registrado. Puedes pagar en efectivo al recibirlo y seguir su estado desde Mis compras.'
                       : 'Tu pedido quedó registrado. Puedes seguir su estado desde Mis compras y enviar cualquier detalle por el WhatsApp del local.'}
