@@ -5978,3 +5978,142 @@ html body:not(.dark-mode) .admin-body .main-content .backups-page .modal-box .mo
   padding: 0;
   border-top: 0;
 }
+
+/* =====================================================================
+   Configuración de Cuenta + Historial de movimientos (SOLO modo claro)
+   Bordes naranja, letra negra, bordes en todos los cuadros
+   ===================================================================== */
+
+/* ---------- Configuración de Cuenta ---------- */
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) {
+  --border: #e8821a;
+  --border-strong: #e8821a;
+  --text-900: #000000;
+  --text-600: #000000;
+  --text-400: #000000;
+}
+
+/* Tarjetas (perfil y formularios) con borde un poco más marcado */
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-card,
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .grid-perfil > div > div:first-child {
+  border: 1.5px solid #e8821a !important;
+}
+
+/* Inputs, select de tipo de documento y lista desplegable */
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .form-group :is(input, select, textarea),
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-trigger,
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-options {
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+
+/* Campos bloqueados (documento y correo): borde igual, letra gris oscuro para distinguirlos */
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .form-group :is(input, select):disabled {
+  color: #555555 !important;
+  -webkit-text-fill-color: #555555;
+}
+
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .form-group input::placeholder {
+  color: #555555;
+}
+
+/* Etiquetas y textos de ayuda */
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) :is(.form-group label, .cfg-titulo, .cfg-hint, .cfg-documento-hint, .subtitulo) {
+  color: #000000 !important;
+}
+
+/* Insignia "Administrador" con borde */
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-role-badge {
+  border: 1px solid #e8821a;
+  color: #000000 !important;
+}
+
+/* Opciones del select de documento */
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-option {
+  color: #000000;
+}
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-option + .cfg-document-option {
+  border-top: 1px solid #e8821a;
+}
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-option:hover {
+  background: #e8821a;
+  color: #ffffff;
+}
+
+
+/* ---------- Historial de movimientos ---------- */
+html body:not(.dark-mode) .hist-page {
+  --border: #e8821a;
+  --border-strong: #e8821a;
+  --text-900: #000000;
+  --text-600: #000000;
+  --text-400: #000000;
+}
+
+/* Cuadro de filtros y cada movimiento */
+html body:not(.dark-mode) .hist-page :is(.hist-card, .hist-item) {
+  border: 1.5px solid #e8821a !important;
+}
+
+/* Buscador, selects, fechas y botones Hoy / 7 días / 30 días */
+html body:not(.dark-mode) .hist-page .hist-ctl,
+html body:not(.dark-mode) .hist-page :is(input, select, button):not(.hist-ctl) {
+  border-color: #e8821a !important;
+}
+
+html body:not(.dark-mode) .hist-page :is(input, select) {
+  color: #000000 !important;
+}
+
+/* Botón activo (ej. "Todo") mantiene fondo naranja y letra blanca */
+html body:not(.dark-mode) .hist-page button[style*="var(--brand)"] {
+  color: #ffffff !important;
+}
+
+/* Fechas de grupo (JUEVES, 13 DE AGOSTO...), usuario, rol y hora */
+html body:not(.dark-mode) .hist-page :is(.hist-dia, .hist-texto, .hist-rol, .hist-hora) {
+  color: #000000 !important;
+}
+
+/* Línea de tiempo en naranja */
+html body:not(.dark-mode) .hist-page .hist-linea::before {
+  background: #e8821a;
+}
+
+/* Contador "62 movimientos" y etiquetas de los filtros */
+html body:not(.dark-mode) .hist-page label {
+  color: #000000 !important;
+}
+
+/* Insignia "Administrador" con borde */
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-role-badge {
+  border: 1px solid #e8821a;
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-role-badge {
+  border: 0 !important;
+  color: #1a5fb4 !important;
+  background: #dbeafe !important;
+}
+
+/* ---------- Historial de movimientos: fondo blanco + línea bajo el título (solo modo claro) ---------- */
+
+/* Todo el fondo blanco (página, contenedor y alrededor) */
+html body:not(.dark-mode) .admin-body .main-content:has(.hist-page),
+html body:not(.dark-mode) .admin-body .main-content:has(.hist-page) .page-inner,
+html body:not(.dark-mode) .admin-body .hist-page {
+  background: #ffffff !important;
+}
+
+/* Aro de los puntos de la línea de tiempo en blanco */
+html body:not(.dark-mode) .admin-body .hist-page .hist-item::before {
+  border-color: #ffffff !important;
+}
+
+/* Línea que separa el título del resto */
+html body:not(.dark-mode) .admin-body .hist-page > div:first-of-type {
+  margin-bottom: 24px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 1.5px solid #e8821a !important;
+}

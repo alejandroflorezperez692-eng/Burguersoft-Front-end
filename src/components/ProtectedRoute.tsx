@@ -23,7 +23,6 @@ export default function ProtectedRoute({
 
   const rol = normalizarRol(user?.role);
 
-  // Si la ruta exige roles y el usuario no tiene uno permitido, se redirige.
   if (roles && (!rol || !roles.includes(rol))) {
     return <Navigate to={redirect} replace />;
   }

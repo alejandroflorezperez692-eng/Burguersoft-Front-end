@@ -49,7 +49,6 @@ export interface OpcionesReporte {
 
 /* ---------- Constantes y utilidades ---------- */
 const COLOR = 'FFE8821A'; // naranja de la marca
-// Contraseña para desbloquear las hojas (el archivo se entrega de solo lectura)
 const CLAVE_HOJAS = 'burguersoft-reportes';
 const FMT_MONEDA = '"$"#,##0';
 const FMT_FECHA = 'dd/mm/yyyy';
@@ -184,7 +183,6 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
       r.getCell('total').numFmt = FMT_MONEDA;
       bordeSuave(r);
 
-      // Sin pagar / anuladas en gris para distinguirlas
       if (noContable(v.estado)) {
         r.eachCell((c) => {
           c.font = { italic: true, color: { argb: 'FF999999' } };
@@ -573,7 +571,6 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
   }
 
   /* ===================== ACABADO Y PROTECCIÓN ===================== */
-  // Filas alternas en gris muy suave para que se lea mejor (solo hojas de datos)
   wb.worksheets.forEach((ws) => {
     if (ws === wsRes) return;
     ws.eachRow((row, n) => {
@@ -589,8 +586,6 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
     });
   });
 
-  // Solo lectura: se puede ver, seleccionar, copiar y ajustar el ancho de columnas,
-  // pero no editar celdas ni fórmulas.
   for (const ws of wb.worksheets) {
     await ws.protect('', {
       selectLockedCells: true,

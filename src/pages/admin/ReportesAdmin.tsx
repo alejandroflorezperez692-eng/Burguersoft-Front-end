@@ -99,7 +99,6 @@ const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const nombreCliente = (v: Venta) =>
   v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
-// Normaliza para buscar sin importar mayúsculas ni tildes
 const norm = (s: unknown) =>
   String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
@@ -175,7 +174,6 @@ function PanelProductosVendidos({ productos }: { productos: ProductoVendido[] })
   const [busqueda, setBusqueda] = useState('');
   const q = norm(busqueda);
 
-  // Sin texto: top 10. Con texto: busca entre todos los productos del rango.
   const filas = q
     ? productos.filter((p) => norm(p.nombre).includes(q))
     : productos.slice(0, 10);
@@ -466,7 +464,6 @@ export default function ReportesAdmin() {
       });
     });
 
-    // Lista completa de productos (el panel con buscador muestra el top 10 o filtra)
     const productos = [...prodMap.entries()]
       .map(([nombre, d]) => ({ nombre, ...d }))
       .sort((a, b) => b.cantidad - a.cantidad);
@@ -577,7 +574,6 @@ export default function ReportesAdmin() {
       })
       .reduce((a, c) => a + valorDe(c), 0);
 
-    // Barras de evolución: máximo 12 tramos dentro del rango
     const tam = Math.ceil(dias / Math.min(dias, 12));
     const nBarras = Math.ceil(dias / tam);
     const barras = Array.from({ length: nBarras }, (_, i) => {
@@ -640,7 +636,6 @@ export default function ReportesAdmin() {
   const hayProductos = !!reporte && reporte.productos.length > 0;
   const hayCompras = !!reporteCompras && reporteCompras.enRango.length > 0;
 
-  // ¿Hay algo que exportar con la vista actual?
   const hayDatos =
     (ver('ventas') && hayVentas) ||
     (ver('productos') && hayProductos) ||
@@ -649,8 +644,6 @@ export default function ReportesAdmin() {
   const exportarExcel = () => {
     if (!reporte || !reporteCompras) return;
 
-    // Cada reporte se descarga como un archivo Excel independiente.
-    // En "Todo" salen los que tengan datos, con una pausa para que el navegador no bloquee las descargas.
     const base = { desde, hasta };
     const tareas: (() => void)[] = [];
 
@@ -727,7 +720,7 @@ export default function ReportesAdmin() {
   const maxMarcaCompra = reporteCompras ? Math.max(1, ...reporteCompras.topMarcas.map((d) => d.valor)) : 1;
 
   return (
-    <div className="page-inner">
+    <div className="page-inner reportes-page">
       <div className="page-header">
         <div>
           <h1>Reportes</h1>

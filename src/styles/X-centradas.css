@@ -1,0 +1,55 @@
+/* X de cerrar / quitar: centradas en el cuadro (SOLO modo claro) */
+html body:not(.dark-mode):not(#_) :is(
+  .modal-x, .mn-form-cerrar, .modal-box .mm-cerrar, .np-close, .mp-close,
+  .close-cart, .detalle-close, .verify-modal-close, .pers-cerrar,
+  .mp-detalle-cerrar, .legal-modal-cerrar,
+  .mn-adic-del, .grid-lineas > .btn-icon-del
+) {
+  display: inline-grid !important;
+  place-items: center !important;
+  padding: 0 !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+}
+
+html body:not(.dark-mode):not(#_) :is(
+  .modal-x, .mn-form-cerrar, .modal-box .mm-cerrar, .np-close, .mp-close,
+  .close-cart, .detalle-close, .verify-modal-close, .pers-cerrar,
+  .mp-detalle-cerrar, .legal-modal-cerrar,
+  .mn-adic-del, .grid-lineas > .btn-icon-del
+)::before,
+html body:not(.dark-mode):not(#_) :is(
+  .modal-x, .mn-form-cerrar, .modal-box .mm-cerrar, .np-close, .mp-close,
+  .close-cart, .detalle-close, .verify-modal-close, .pers-cerrar,
+  .mp-detalle-cerrar, .legal-modal-cerrar,
+  .mn-adic-del, .grid-lineas > .btn-icon-del
+)::after {
+  content: "" !important;
+  grid-area: 1 / 1 !important;
+  position: static !important;
+  inset: auto !important;
+  display: block !important;
+  width: 14px !important;
+  height: 2px !important;
+  border-radius: 2px;
+  background: currentColor !important;
+  font-size: 0 !important;
+}
+
+html body:not(.dark-mode):not(#_) :is(
+  .modal-x, .mn-form-cerrar, .modal-box .mm-cerrar, .np-close, .mp-close,
+  .close-cart, .detalle-close, .verify-modal-close, .pers-cerrar,
+  .mp-detalle-cerrar, .legal-modal-cerrar,
+  .mn-adic-del, .grid-lineas > .btn-icon-del
+)::before {
+  transform: translateY(1px) rotate(45deg) !important;
+}
+
+html body:not(.dark-mode):not(#_) :is(
+  .modal-x, .mn-form-cerrar, .modal-box .mm-cerrar, .np-close, .mp-close,
+  .close-cart, .detalle-close, .verify-modal-close, .pers-cerrar,
+  .mp-detalle-cerrar, .legal-modal-cerrar,
+  .mn-adic-del, .grid-lineas > .btn-icon-del
+)::after {
+  transform: translateY(1px) rotate(-45deg) !important;
+}

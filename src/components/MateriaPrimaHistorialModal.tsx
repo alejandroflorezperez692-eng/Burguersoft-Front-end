@@ -61,7 +61,6 @@ export default function MateriaPrimaHistorialModal({ insumo, proveedor, onClose 
     return () => {
       vivo = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insumo.id]);
 
   const unidad = insumo.unidad_medida ? ` ${insumo.unidad_medida}` : '';
@@ -142,7 +141,7 @@ export default function MateriaPrimaHistorialModal({ insumo, proveedor, onClose 
 
         <div className="hm-kpis">
           <div className="hm-kpi">
-            <span>Stock actual</span>
+            <span>cantidad actual</span>
             <strong>{cant(insumo.cantidad)}{unidad}</strong>
           </div>
           <div className="hm-kpi">
@@ -172,7 +171,7 @@ export default function MateriaPrimaHistorialModal({ insumo, proveedor, onClose 
                   <th style={{ textAlign: 'right' }}># Compras</th>
                   <th style={{ textAlign: 'right' }}>Cantidad</th>
                   <th style={{ textAlign: 'right' }}>Total gastado</th>
-                  <th style={{ textAlign: 'right' }} className="hm-sep">Stock inicial</th>
+                  <th style={{ textAlign: 'right' }} className="hm-sep">cantidad inicial</th>
                   <th style={{ textAlign: 'right' }}>Esperado</th>
                   <th style={{ textAlign: 'right' }}>Conteo real</th>
                   <th>Diferencia</th>
@@ -203,7 +202,7 @@ export default function MateriaPrimaHistorialModal({ insumo, proveedor, onClose 
                       </>
                     ) : (
                       <td colSpan={4} className="hm-sep hm-pendiente">
-                        Pendiente de cierre · stock actual {cant(insumo.cantidad)}{unidad}
+                        Pendiente de cierre · cantidad actual {cant(insumo.cantidad)}{unidad}
                       </td>
                     )}
                   </tr>

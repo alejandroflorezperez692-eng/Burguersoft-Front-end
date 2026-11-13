@@ -1,0 +1,212 @@
+/* ==========================================================================
+   MODO OSCURO (SOLO .dark-mode) - paneles, líneas de extremo a extremo,
+   tarjetas, checkbox, flechas y buscador.
+   El modo claro no se toca.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1) PANELES: Detalle de venta (.vt-det), Trazabilidad (.tz-box) e
+      Historial de insumo (.hm-box)
+      - El panel no lleva padding: cada bloque lo trae, así las líneas
+        llegan de borde a borde.
+   -------------------------------------------------------------------------- */
+html body.dark-mode :is(.vt-det, .tz-box, .hm-box) {
+  --dm-pad: 28px;
+  padding: 0 !important;
+  background: #000000;
+  border: 1px solid #e8821a;
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+@media (max-width: 640px) {
+  html body.dark-mode :is(.vt-det, .tz-box, .hm-box) { --dm-pad: 18px; }
+}
+
+/* ---- Detalle de venta ---- */
+html body.dark-mode .vt-det .vt-det-head {
+  padding: var(--dm-pad) 64px 16px var(--dm-pad) !important;
+  border-bottom: 1.5px solid #e8821a;          /* línea bajo el título */
+}
+html body.dark-mode .vt-det :is(.vt-det-sec, .vt-det-total) {
+  padding-left: var(--dm-pad);
+  padding-right: var(--dm-pad);
+}
+html body.dark-mode .vt-det > .modal-actions {
+  margin-top: 0 !important;
+  padding: 18px var(--dm-pad) var(--dm-pad) !important;
+  border-top: 1.5px solid #e8821a;             /* línea sobre los botones */
+}
+
+/* ---- Trazabilidad ---- */
+html body.dark-mode .tz-box > .tz-title {
+  margin: 0;
+  padding: var(--dm-pad) 64px 0 var(--dm-pad) !important;
+  color: #ffffff;
+}
+html body.dark-mode .tz-box > .tz-sub {
+  margin: 0 !important;
+  padding: 6px var(--dm-pad) 16px !important;
+  color: #b8b8b8;
+  border-bottom: 1.5px solid #e8821a;          /* línea bajo el título */
+}
+html body.dark-mode .tz-box > .tz-list {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: #000000;
+}
+html body.dark-mode .tz-box .tz-item {
+  padding: 13px var(--dm-pad);
+  border-bottom: 1px solid #e8821a;
+}
+html body.dark-mode .tz-box .tz-item:last-child { border-bottom: none; }
+html body.dark-mode .tz-box .tz-msg {
+  padding: 30px var(--dm-pad);
+  color: #ffffff;
+}
+html body.dark-mode .tz-box .tz-msg-error { color: #ff8a65; }
+html body.dark-mode .tz-box :is(.tz-linea, .tz-fecha) { color: #ffffff; }
+html body.dark-mode .tz-box :is(.tz-motivo, .tz-user, .tz-fecha small) { color: #b8b8b8; }
+html body.dark-mode .tz-box > .tz-footer {
+  margin: 0 !important;
+  padding: 16px var(--dm-pad) var(--dm-pad);
+  border-top: 1.5px solid #e8821a;             /* línea sobre el botón */
+}
+
+/* ---- Historial de insumo ---- */
+html body.dark-mode .hm-box > .hm-head {
+  padding: var(--dm-pad) 64px 16px var(--dm-pad) !important;
+  border-bottom: 1.5px solid #e8821a;          /* línea bajo el título */
+}
+html body.dark-mode .hm-box > :is(.hm-kpis, .hm-vacio, .hm-tabla) {
+  padding-left: var(--dm-pad) !important;
+  padding-right: var(--dm-pad) !important;
+}
+html body.dark-mode .hm-box > .mn-modal-actions {
+  margin: 18px 0 0 !important;
+  padding: 18px var(--dm-pad) var(--dm-pad) !important;
+  border-top: 1.5px solid #e8821a;             /* línea sobre el botón */
+}
+
+/* Tarjetas de Stock / Precio / Valor: fondo negro y borde naranja */
+html body.dark-mode .hm-kpi {
+  background: #000000 !important;
+  border: 1px solid #e8821a;
+}
+html body.dark-mode .hm-kpi span   { color: #b8b8b8; }
+html body.dark-mode .hm-kpi strong { color: #ffffff; }
+
+/* --------------------------------------------------------------------------
+   2) CHECKBOX (ej. "Requiere cocina"): negro, borde naranja, visto naranja
+   -------------------------------------------------------------------------- */
+html body.dark-mode .mn-field label > input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+  width: 20px !important;
+  min-width: 20px;
+  height: 20px !important;
+  margin: 0;
+  padding: 0 !important;
+  border: 1.5px solid #e8821a;
+  border-radius: 5px;
+  background-color: #000000;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 14px 14px;
+  cursor: pointer;
+}
+html body.dark-mode .mn-field label > input[type="checkbox"]:checked {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='%23e8821a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6.5l2.5 2.5L10 3'/%3E%3C/svg%3E");
+}
+html body.dark-mode .mn-field label > input[type="checkbox"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(232, 130, 26, 0.35);
+}
+
+/* --------------------------------------------------------------------------
+   3) FLECHAS ‹ › de Pedidos del turno: negro, borde naranja; naranja al pasar
+   -------------------------------------------------------------------------- */
+html body.dark-mode .tv-flechas button {
+  display: grid;
+  place-items: center;
+  padding: 0 0 3px 0;
+  border: 1.5px solid #e8821a !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+  transition: background 0.15s ease;
+}
+html body.dark-mode .tv-flechas button:hover:not(:disabled) {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+html body.dark-mode .tv-flechas button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   4) BUSCADOR "Buscar producto..." (Reportes): con espacio a la izquierda
+   -------------------------------------------------------------------------- */
+html body.dark-mode input[type="text"][placeholder="Buscar producto..."] {
+  box-sizing: border-box;
+  height: 42px;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 14px !important;
+  border: 1px solid #e8821a !important;
+  border-radius: 12px !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+  font-size: 13.5px;
+  outline: none;
+}
+html body.dark-mode input[type="text"][placeholder="Buscar producto..."]::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+html body.dark-mode input[type="text"][placeholder="Buscar producto..."]:focus {
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   5) MIS COMPRAS - tarjeta de pedido (SOLO modo oscuro):
+      fondo negro, líneas naranja de borde a borde y letra blanca
+   -------------------------------------------------------------------------- */
+html body.dark-mode .pedido-card {
+  background: #000000;
+  border-color: #e8821a;
+}
+
+html body.dark-mode .pedido-card :is(
+  .pedido-head, .pedido-foot, .pedido-info, .progreso-container,
+  .pedido-comprobante, .pedido-table, .pedido-table thead tr
+) {
+  background: #000000;
+}
+
+/* Líneas que dividen cada sección */
+html body.dark-mode .pedido-card :is(.pedido-head, .progreso-container, .pedido-info, .pedido-comprobante) {
+  border-bottom: 1px solid #e8821a;
+}
+html body.dark-mode .pedido-card .pedido-foot {
+  border-top: 1px solid #e8821a;
+}
+html body.dark-mode .pedido-card .pedido-table th {
+  border-bottom: 1px solid #e8821a;
+  color: #ffffff;
+}
+html body.dark-mode .pedido-card .pedido-table td {
+  border-top: 1px solid #e8821a;
+  color: #ffffff;
+}
+
+/* Etiquetas en gris claro y valores en blanco */
+html body.dark-mode .pedido-card .pedido-info-label { color: #b8b8b8; }
+html body.dark-mode .pedido-card :is(.pedido-info-valor, .pedido-info-notas, .producto-nombre) { color: #ffffff; }
+
+/* Chip del método de pago */
+html body.dark-mode .pedido-card .pedido-metodo {
+  border: 1px solid #e8821a;
+}

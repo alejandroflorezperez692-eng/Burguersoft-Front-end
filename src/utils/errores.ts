@@ -86,7 +86,6 @@ export function mensajeSeguro(texto: unknown, status?: number): string {
   if (traducido) return traducido;
 
   if (esMensajeTecnico(limpio)) return '';
-  // Los errores del servidor (500/502/503...) nunca se muestran en crudo.
   if (status && status >= 500) return '';
   if (pareceIngles(limpio)) return '';
 
@@ -150,7 +149,6 @@ export function mensajeError(err: unknown, porDefecto = 'No se pudo completar la
     const status = err.response.status;
     const data = err.response.data;
 
-    // 401 fuera del login = la sesión expiró (no "credenciales incorrectas").
     if (status === 401) {
       const url = String(err.config?.url ?? '');
       if (!/login|auth/i.test(url)) return MENSAJE_SESION_EXPIRADA;
@@ -160,7 +158,6 @@ export function mensajeError(err: unknown, porDefecto = 'No se pudo completar la
     if (directo) return directo;
 
     const desdeRespuesta = mensajeDeRespuesta(data, status);
-    // Si la respuesta no traía nada útil, mensajeDeRespuesta cae al genérico.
     if (status >= 400 && status < 500) {
       if (status === 403) return 'No tienes permisos para realizar esta acción.';
       if (status === 404) return 'No se encontró la información solicitada.';

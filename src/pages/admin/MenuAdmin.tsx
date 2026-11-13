@@ -143,7 +143,6 @@ const normalizar = (s: unknown) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 
-// F-035: los productos ya no guardan cantidad propia; el estado es el dato real.
 const estadoVisible = (p: Producto): Estado => (p.estado === 'Agotado' ? 'Agotado' : 'Disponible');
 
 const estadoClase = (e: Estado) => `mn-estado-${e.replace(/ /g, '_')}`;

@@ -76,7 +76,6 @@ export default function InventarioAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  // Al cambiar un filtro volvemos a la página 1
   useEffect(() => { setPagina(1); }, [q, filtroEstado]);
 
   useEscape([[!!detalle, () => setDetalle(null)]]);
@@ -122,7 +121,7 @@ export default function InventarioAdmin() {
 
       <div className="mn-filtros">
         <div className="mn-field">
-          <label>Stock</label>
+          <label>Cantidad</label>
           <SelectOscuro
             className={filtroEstado !== 'todos' ? 'activo' : ''}
             value={filtroEstado}

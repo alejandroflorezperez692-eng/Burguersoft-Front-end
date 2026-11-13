@@ -16,6 +16,8 @@ import ComprobanteImagen from '../../components/ComprobanteImagen';
 import ComprobanteModal from '../../components/ComprobanteModal';
 import { useEscape } from '../../hooks/useEscape';
 import AdminLoading from '../../components/AdminLoading';
+import SelectOscuro from '../../components/SelectOscuro';
+
 
 type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
 
@@ -1189,11 +1191,11 @@ export default function PedidosTurno() {
 
             <div className="form-group">
               <label>Método de pago</label>
-              <select value={metodoCobro} onChange={(e) => setMetodoCobro(e.target.value)} disabled={pagando}>
+              <SelectOscuro value={metodoCobro} onChange={(e) => setMetodoCobro(e.target.value)} disabled={pagando}>
                 {METODOS_COBRO.map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
-              </select>
+              </SelectOscuro>
             </div>
 
             {claveQrCobro && (

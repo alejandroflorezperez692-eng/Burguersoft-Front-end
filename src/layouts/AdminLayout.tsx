@@ -22,6 +22,7 @@ import { ACCESO, normalizarRol } from '../utils/roles';
 import '../styles/admin.css';
 import '../styles/nu-admin.css';
 import '../styles/dark-fixes.css';
+import '../styles/claro-fixes.css';
 import AdminLoading from '../components/AdminLoading';
 import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
@@ -103,11 +104,10 @@ export default function AdminLayout() {
   }, 500);
 };
 
-  const irAMiPerfil = () => {
+const irAMiPerfil = () => {
   setUserMenuOpen(false);
-  navigate('/configuracion');
+  navigate('/configuracion', { state: { reset: Date.now() } });
 };
-
 const salirDesdeMenuUsuario = () => {
   setUserMenuOpen(false);
   setConfirmarSalida(true);

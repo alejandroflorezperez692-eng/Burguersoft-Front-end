@@ -34,8 +34,6 @@ export default function AvisoComprobanteDevuelto() {
         if (!vivo) return;
         const lista: any[] = Array.isArray(data) ? data : data?.data ?? data?.pedidos ?? [];
 
-        // Número del pedido del cliente (1, 2, 3...), igual que en Mis compras.
-        // /mis-pedidos viene paginado: data.total es la cantidad real de pedidos.
         const totalPedidos = Number(data?.total) || lista.length;
         const ordenados = [...lista].sort((a, b) => {
           const fa = new Date(a?.fecha ?? a?.created_at ?? 0).getTime();
@@ -52,7 +50,6 @@ export default function AvisoComprobanteDevuelto() {
           const clave = `aviso_comprobante_${id}`;
 
           if (String(v?.comprobante_estado ?? '') !== 'Rechazado') {
-            // Si luego lo vuelve a subir y lo devuelven otra vez, avisa de nuevo.
             localStorage.removeItem(clave);
             continue;
           }

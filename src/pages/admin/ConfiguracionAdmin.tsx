@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useLocation } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
 import apiClient from '../../api/client';
 import HistorialPage from '../../components/HistorialModal';
@@ -28,7 +30,7 @@ type UsuarioMe = {
 export default function ConfiguracionAdmin() {
   const { user, updateUser, logout } = useAuth();
   const { showToast } = useToast();
-
+  const location = useLocation();
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [tdoc, setTdoc] = useState('');
@@ -49,6 +51,11 @@ export default function ConfiguracionAdmin() {
   const [mostrarConf, setMostrarConf] = useState(false);
   const [actualizandoPwd, setActualizandoPwd] = useState(false);
   const selectorTdocRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    setVerHistorial(false);
+  }, [location.key]);
 
   useEffect(() => {
     const cerrarAlHacerClickFuera = (event: MouseEvent) => {
@@ -60,7 +67,9 @@ export default function ConfiguracionAdmin() {
     document.addEventListener('mousedown', cerrarAlHacerClickFuera);
     return () => document.removeEventListener('mousedown', cerrarAlHacerClickFuera);
   }, []);
-
+  useEffect(() => {
+  setVerHistorial(false);
+}, [location.state]);
   useEffect(() => {
     let cancelado = false;
     const partes = (user?.name ?? '').split(' ');
