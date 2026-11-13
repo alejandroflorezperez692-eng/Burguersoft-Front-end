@@ -1,1011 +1,1210 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent, FormEvent, CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import apiClient from '../../api/client';
-import { useToast } from '../../components/Toast';
-import AdminLoading from '../../components/AdminLoading';
-import '../../styles/nu-admin.css';
-import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
-import { mensajeError as mensajeErrorBase } from '../../utils/errores';
-import { categoriaSinExtras } from '../../utils/categorias';
-import SelectOscuro from '../../components/SelectOscuro';
+import { useToast } from '../../components/Toast';
+import MotivoModal from '../../components/MotivoModal';
+import { mensajeDeError, type MapaTransiciones } from '../../types/Trazabilidad';
+import '../../styles/pedidos-turno.css';
+import { getEcho } from '../../api/echo';
+import { etiquetaEstado } from '../../utils/estados';
 
-type Estado = 'Disponible' | 'Agotado';
+import NuevaVentaModal, { precargarNuevaVenta } from '../../components/NuevaVentaModal';
+import ComprobanteImagen from '../../components/ComprobanteImagen';
+import ComprobanteModal from '../../components/ComprobanteModal';
+import { useEscape } from '../../hooks/useEscape';
+import AdminLoading from '../../components/AdminLoading';
 
-interface Producto {
-  id: number;
-  nombre: string;
-  valor: number | string;
-  descripcion: string | null;
-  img: string | null;
-  categoria: string;
-  estado: Estado;
-  activo?: boolean;
-  requiere_cocina?: boolean;
-  adiciones?: { id: number; nombre: string; precio: number | string; tipo?: string }[];
+type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
+
+interface Accion {
+  sig: string;
+  texto: string;
 }
 
-const CATEGORIAS = [
-  'Hamburguesa', 'Perros Caliente', 'Salchipapa', 'Fritos',
-  'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
-];
-
-const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Agotado'];
-
-const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '', requiere_cocina: true };
-type CampoTexto = Exclude<keyof typeof emptyForm, 'requiere_cocina'>;
-
-const MAX_ADICIONES = 30;
-const MAX_QUITAR = 10;
-const MAX_PRECIO_ADICION = 50000;
-type FilaAdicion = { id?: number; nombre: string; precio: string; tipo: 'adicion' | 'quitar' };
-const miles = (v: string) => (v === '' ? '' : Number(v).toLocaleString('es-CO'));
-
-function MnFormSelect({
-  id,
-  label,
-  value,
-  onChange,
-  options,
-  style,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
-  style?: CSSProperties;
-}) {
-  const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
-  const [abierto, setAbierto] = useState(false);
-  const contenedorRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      setModoOscuro(document.body.classList.contains('dark-mode'));
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!abierto) return;
-    const cerrarFuera = (event: MouseEvent) => {
-      if (!contenedorRef.current?.contains(event.target as Node)) setAbierto(false);
-    };
-    const cerrarEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setAbierto(false);
-    };
-    document.addEventListener('mousedown', cerrarFuera);
-    document.addEventListener('keydown', cerrarEscape);
-    return () => {
-      document.removeEventListener('mousedown', cerrarFuera);
-      document.removeEventListener('keydown', cerrarEscape);
-    };
-  }, [abierto]);
-
-  if (!modoOscuro) {
-    return (
-      <SelectOscuro id={id} value={value} onChange={(event) => onChange(event.target.value)} style={style}>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </SelectOscuro>
-    );
-  }
-
-  const seleccionada = options.find((option) => option.value === value);
-  return (
-    <div className="mn-form-select" ref={contenedorRef}>
-      <button
-        type="button"
-        id={id}
-        className="mn-form-select-trigger"
-        style={style}
-        aria-label={label}
-        aria-haspopup="listbox"
-        aria-expanded={abierto}
-        aria-controls={`${id}-options`}
-        onClick={() => setAbierto((actual) => !actual)}
-      >
-        <span>{seleccionada?.label ?? ''}</span>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-          <path d="M2 4l4 4 4-4" />
-        </svg>
-      </button>
-      {abierto && (
-        <div id={`${id}-options`} className="mn-form-select-options" role="listbox" aria-label={label}>
-          {options.map((option) => (
-            <button
-              type="button"
-              key={option.value}
-              className="mn-form-select-option"
-              role="option"
-              aria-selected={option.value === value}
-              onClick={() => {
-                onChange(option.value);
-                setAbierto(false);
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+interface VistaConfig {
+  titulo: string;
+  subtitulo: string;
+  estados: string[];
+  columnas?: string[];
+  acciones: Record<string, Accion>;
 }
 
-const normalizar = (s: unknown) =>
-  String(s ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-
-// F-035: los productos ya no guardan cantidad propia; el estado es el dato real.
-const estadoVisible = (p: Producto): Estado => (p.estado === 'Agotado' ? 'Agotado' : 'Disponible');
-
-const estadoClase = (e: Estado) => `mn-estado-${e.replace(/ /g, '_')}`;
-
-const mensajeError = (err: unknown, porDefecto: string): string => {
-  const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })?.response?.data;
-  const primero = data?.errors ? Object.values(data.errors)[0]?.[0] : undefined;
-  const msg = primero || data?.message || porDefecto;
-  if (/23503|foreign key|sale_details|llave for[aá]nea/i.test(msg)) {
-    return 'No se puede eliminar porque tiene ventas registradas. Puedes desactivarlo.';
-  }
-  return mensajeErrorBase(err, porDefecto);
+const VISTA_CONFIG: Record<Vista, VistaConfig> = {
+  cocina: {
+    titulo: 'Cocina',
+    subtitulo: 'Pedidos por preparar. Muévelos a «En preparación» y avisa con «Preparado».',
+    estados: ['Recepcionado', 'En preparación'],
+    acciones: {
+      Recepcionado: { sig: 'En preparación', texto: 'Empezar a preparar' },
+      'En preparación': { sig: 'Preparado', texto: 'Marcar preparado' },
+    },
+  },
+  meseros: {
+    titulo: 'Meseros',
+    subtitulo: 'Pedidos preparados para servir en las mesas.',
+    estados: ['Preparado'],
+    acciones: {
+      Preparado: { sig: 'Servido', texto: 'Marcar servido' },
+    },
+  },
+  cajero: {
+    titulo: 'Cajero',
+    subtitulo: 'Verifica pedidos, entrega pedidos listos y cobra las mesas pendientes.',
+    estados: ['Por verificar', 'Preparado', 'Pendiente de pago'],
+    acciones: {
+      'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
+      Preparado: { sig: 'Servido', texto: 'Entregar' },
+      'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
+    },
+  },
+  todos: {
+    titulo: 'Todos',
+    subtitulo: 'Vista completa del flujo de pedidos.',
+    estados: ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago'],
+    acciones: {
+      Registrado: { sig: 'Por verificar', texto: 'Verificar' },
+      'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
+      Recepcionado: { sig: 'En preparación', texto: 'Empezar a preparar' },
+      'En preparación': { sig: 'Preparado', texto: 'Marcar preparado' },
+      Preparado: { sig: 'Servido', texto: 'Marcar servido' },
+      Servido: { sig: 'Pagado', texto: 'Registrar pago' },
+      'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
+    },
+  },
 };
 
-const imgValida = (img: string | null | undefined): boolean =>
-  !!img && /^(https?:\/\/|data:|blob:|\/storage\/)/.test(img);
+const VISTA_INICIAL: Record<string, Vista> = { admin: 'todos', cocinero: 'cocina', mesero: 'meseros', cajero: 'cajero' };
 
-function CardImg({ img, nombre }: { img: string | null; nombre: string }) {
-  const [error, setError] = useState(false);
-  const [alta, setAlta] = useState(false);
-  if (!imgValida(img) || error) {
-    return <div className="mn-card-noimg">{(nombre || '?').charAt(0).toUpperCase()}</div>;
-  }
-  return (
-    <img
-      className={`mn-card-img${alta ? ' alta' : ''}`}
-      src={img ?? ''}
-      alt={nombre}
-      loading="lazy"
-      decoding="async"
-      onLoad={(e) => {
-        const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
-        setAlta(h > 0 && w / h < 0.85);
-      }}
-      onError={() => setError(true)}
-    />
-  );
+const ETIQUETA: Partial<Record<Vista, Record<string, string>>> = {
+  cocina: { Recepcionado: 'Por tomar' },
+  cajero: { Preparado: 'Por entregar' },
+};
+
+interface ItemVenta {
+  cantidad?: number;
+  producto?: { nombre?: string } | null;
+}
+interface PromoVenta {
+  nombre?: string;
+}
+interface Venta {
+  id: number;
+  fecha?: string;
+  programado_para?: string | null;
+  fecha_programada?: string | null;
+  estado?: string;
+  tipo_entrega?: string | null;
+  metodo_pago?: string | null;
+  valor_total?: string | number | null;
+  cliente_nombre?: string | null;
+  mesa?: number | null;
+  notas?: string | null;
+  usuario_id?: number | null;
+  usuario?: { nombre?: string; apellido?: string; rol_id?: number; telefono?: string | null; phone?: string | null } | null;
+  telefono_contacto?: string | null;
+  direccion?: string | null;
+  barrio?: string | null;
+  referencia?: string | null;
+  recibe_nombre?: string | null;
+  recibe_telefono?: string | null;
+  detalles?: ItemVenta[];
+  promociones?: PromoVenta[];
+  tiene_comprobante?: boolean;
+  comprobante_estado?: string | null;
+  comprobante_motivo?: string | null;
+  comprobante_valor?: string | number | null;
+  comprobante_coincide?: boolean | null;
+  comprobante_subido_en?: string | null;
+  comprobante_datos?: {
+    entidad?: string | null;
+    referencia?: string | null;
+    estado_transaccion?: string | null;
+    observaciones?: string | null;
+  } | null;
 }
 
-export default function MenuAdmin() {
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [vista, setVista] = useState<'tarjetas' | 'lista'>(() => {
-    try {
-      return localStorage.getItem('menuAdminVista') === 'lista' ? 'lista' : 'tarjetas';
-    } catch {
-      return 'tarjetas';
-    }
-  });
+interface CambioConMotivo {
+  venta: Venta;
+  accion: Accion;
+}
 
+const METODOS_COBRO = ['Efectivo', 'Nequi', 'Daviplata', 'Bancolombia'];
+
+const aFecha = (f: string) => new Date((f || '').replace(' ', 'T'));
+
+const minutosDesde = (f: string): number => {
+  const t = aFecha(f).getTime();
+  return Number.isFinite(t) ? Math.max(0, Math.floor((Date.now() - t) / 60000)) : 0;
+};
+
+const duracion = (min: number): string =>
+  min < 60 ? `${min} min` : `${Math.floor(min / 60)} h ${min % 60} min`;
+
+type Entrega = 'todos' | 'Domicilio' | 'Recoger' | 'Consumir';
+
+const METODOS_CON_COMPROBANTE = [
+  'Nequi', 'Daviplata', 'Bancolombia', 'Transferencia', 'Tarjeta', 'PSE',
+];
+
+const requiereComprobante = (v: Venta): boolean =>
+  METODOS_CON_COMPROBANTE.includes((v.metodo_pago ?? '').trim());
+
+const comprobanteAprobado = (v: Venta): boolean => v.comprobante_estado === 'Aprobado';
+
+const ROL_CLIENTE = 2;
+const creoCliente = (v: Venta) => Number(v.usuario?.rol_id) === ROL_CLIENTE;
+
+const yaPagado = (v: Venta): boolean =>
+  creoCliente(v) &&
+  (v.metodo_pago ?? '').trim().toLowerCase() !== 'efectivo' &&
+  v.comprobante_estado === 'Aprobado';
+
+const pagoConComprobanteAprobado = (v: Venta): boolean =>
+  (v.metodo_pago ?? '').trim().toLowerCase() !== 'efectivo' &&
+  v.comprobante_estado === 'Aprobado';
+
+const columnaDe = (v: Venta, vista: Vista): string =>
+  vista === 'cajero' ? (yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago') : (v.estado ?? '');
+
+const FILTROS_ENTREGA: { valor: Entrega; texto: string }[] = [
+  { valor: 'todos', texto: 'Todos' },
+  { valor: 'Domicilio', texto: 'Domicilio' },
+  { valor: 'Recoger', texto: 'Para recoger' },
+  { valor: 'Consumir', texto: 'En el local' },
+];
+
+const ETIQUETA_ENTREGA: Record<string, string> = { Domicilio: 'Domicilio', Recoger: 'Para recoger', Consumir: 'En el local' };
+
+const separarNotas = (n?: string | null): string[] =>
+  (n ?? '').split(/[,;\n]/).map((x) => x.trim()).filter(Boolean);
+
+const nombreCliente = (v: Venta): string =>
+  v.cliente_nombre || [v.usuario?.nombre, v.usuario?.apellido].filter(Boolean).join(' ').trim() || 'Cliente';
+
+const telefonoCliente = (v: Venta): string =>
+  v.telefono_contacto || v.usuario?.telefono || v.usuario?.phone || '';
+
+const Fila = ({ k, v }: { k: string; v: ReactNode }) => (
+  <div className="tv-fila">
+    <span className="tv-fila-k">{k}</span>
+    <span className="tv-fila-v">{v}</span>
+  </div>
+);
+
+export default function PedidosTurno() {
   const { user } = useAuth();
-  const esAdmin = normalizarRol(user?.role) === 'admin';
+  const { showToast, confirmar } = useToast();
 
+  const alertar = (m: string) => showToast(m, true);
+
+  const rol = normalizarRol(user?.role);
+  const esAdmin = rol === 'admin';
+  const puedeRevisar = esAdmin || rol === 'cajero';
+  const puedeRevisarComprobante = esAdmin || rol === 'cajero';
+  const puedeVerComprobante = esAdmin || rol === 'cajero'; 
+  const puedeCrear = rol === 'admin' || rol === 'mesero';
+  const vistaInicial = VISTA_INICIAL[rol] ?? 'cocina';
+
+  const [vista, setVista] = useState<Vista>(vistaInicial);
+  const [items, setItems] = useState<Venta[]>([]);
+  const [transiciones, setTransiciones] = useState<MapaTransiciones | null>(null);
   const [loading, setLoading] = useState(true);
-  const [guardando, setGuardando] = useState(false);
-  const [intentado, setIntentado] = useState(false);
-  const [buscar, setBuscar] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [ocupadoId] = useState<number | null>(null);
+  const [cambioConMotivo, setCambioConMotivo] = useState<CambioConMotivo | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroEntrega, setFiltroEntrega] = useState<Entrega>('todos');
+  const [nuevoAbierto, setNuevoAbierto] = useState(false);
+  const [mesaNueva, setMesaNueva] = useState<number | null>(null);
+  const [detalleId, setDetalleId] = useState<number | null>(null);
+  const [arrastrandoId, setArrastrandoId] = useState<number | null>(null);
+  const [colHover, setColHover] = useState<string | null>(null);
+  const [comprobanteARechazar, setComprobanteARechazar] = useState<Venta | null>(null);
+  const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
+  const [procesandoComprobante, setProcesandoComprobante] = useState(false);
+  const [cobro, setCobro] = useState<{ venta: Venta; accion: Accion } | null>(null);
+  const [metodoCobro, setMetodoCobro] = useState('Efectivo');
+  const [archivoCobro, setArchivoCobro] = useState<File | null>(null);
+  const [pagando, setPagando] = useState(false);
+  const pagandoRef = useRef(false);
+  const colsRef = useRef<HTMLDivElement>(null);
+  const moverColumnas = (dir: 1 | -1) =>
+    colsRef.current?.scrollBy({ left: dir * 420, behavior: 'smooth' });
+  const refArchivoCobro = useRef<HTMLInputElement>(null);
+  const previewCobro = useMemo(
+    () => (archivoCobro ? URL.createObjectURL(archivoCobro) : null),
+    [archivoCobro],
+  );
+  useEffect(() => () => { if (previewCobro) URL.revokeObjectURL(previewCobro); }, [previewCobro]);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = window.setInterval(() => setTick((x) => x + 1), 30000);
+    return () => window.clearInterval(t);
+  }, []);
 
-  const [filtroCategoria, setFiltroCategoria] = useState('');
-  const [filtroEstado, setFiltroEstado] = useState('');
-  const [precioMin, setPrecioMin] = useState('');
-  const [precioMax, setPrecioMax] = useState('');
+  const version = useRef(0);
+  const pendientes = useRef(0);
+  const config = VISTA_CONFIG[vista];
 
-  const [eliminar, setEliminar] = useState<Producto | null>(null);
-  const [cambiarEstado, setCambiarEstado] = useState<Producto | null>(null);
-  const [mostrarForm, setMostrarForm] = useState(false);
-
-  const [editId, setEditId] = useState<number | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [archivo, setArchivo] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [imgActual, setImgActual] = useState(false);
-  const [adiciones, setAdiciones] = useState<FilaAdicion[]>([]);
-
-  const panelRef = useRef<HTMLDivElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const { showToast } = useToast();
-
-  const cargarProductos = useCallback(async () => {
+  const load = useCallback(async () => {
+    if (pendientes.current > 0) return;
+    const miVersion = version.current;
     try {
-      const r = await apiClient.get<Producto[]>('/productos', { params: { todos: 1 } });
-      setProductos(Array.isArray(r.data) ? r.data : []);
+      const res = await apiClient.get('/pedidos/tablero');
+      if (miVersion !== version.current || pendientes.current > 0) return;
+      const lista: Venta[] = Array.isArray(res.data)
+        ? res.data
+        : ((res.data as { data?: unknown })?.data as Venta[]) ?? [];
+      const turno = lista.filter((v) => config.estados.includes(v.estado ?? ''));
+      turno.sort((a, b) =>
+        aFecha(a.fecha_programada ?? a.fecha ?? '').getTime() - aFecha(b.fecha_programada ?? b.fecha ?? '').getTime());
+      setItems(turno);
     } catch {
-      showToast('Error al cargar productos', true);
-      setProductos([]);
+      setError('No se pudo cargar la lista de pedidos.');
     } finally {
       setLoading(false);
     }
+  }, [config.estados]);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    void load();
+  }, [load]);
+
+  useEffect(() => {
+    precargarNuevaVenta();
   }, []);
 
   useEffect(() => {
-    cargarProductos();
-  }, [cargarProductos]);
+    let vivo = true;
+    apiClient
+      .get('/pedidos/transiciones')
+      .then(({ data }) => {
+        if (vivo) setTransiciones((data as MapaTransiciones) ?? null);
+      })
+      .catch(() => {
+      });
+    return () => {
+      vivo = false;
+    };
+  }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('menuAdminVista', vista);
-    } catch {
+    const echo = getEcho();
+    const alCambiar = () => void load();
+    echo?.private('cocina').listen('.venta.actualizada', alCambiar);
 
+    const t = window.setInterval(() => {
+      if (!document.hidden) void load();
+    }, echo ? 60000 : 8000);
+
+    return () => {
+      window.clearInterval(t);
+      echo?.private('cocina').stopListening('.venta.actualizada', alCambiar);
+    };
+  }, [load]);
+
+  const intentarCambio = (venta: Venta, accion: Accion) => {
+    if (accion.sig === 'Pagado' && pagoConComprobanteAprobado(venta)) {
+      void ejecutarCambio(venta, accion, undefined, venta.metodo_pago ?? undefined);
+      return;
     }
-  }, [vista]);
-
-  useEffect(() => {
-    if (!archivo) return;
-    const url = URL.createObjectURL(archivo);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [archivo]);
-
-  const hayFiltros = Boolean(buscar || filtroCategoria || filtroEstado || precioMin || precioMax);
-
-  const limpiarFiltros = () => {
-    setBuscar('');
-    setFiltroCategoria('');
-    setFiltroEstado('');
-    setPrecioMin('');
-    setPrecioMax('');
-  };
-
-  const grupos = useMemo(() => {
-    const fil = normalizar(buscar).trim();
-    const min = precioMin ? Number(precioMin) : null;
-    const max = precioMax ? Number(precioMax) : null;
-
-    const visibles = productos.filter((p) => {
-      if (fil) {
-        const haystack = normalizar(`${p.nombre} ${p.descripcion ?? ''} ${p.categoria ?? ''}`);
-        if (!haystack.includes(fil)) return false;
-      }
-
-      if (filtroCategoria) {
-        if (filtroCategoria === 'Otras') {
-          if (CATEGORIAS.includes(p.categoria)) return false;
-        } else if (p.categoria !== filtroCategoria) {
-          return false;
-        }
-      }
-
-      if (filtroEstado && estadoVisible(p) !== filtroEstado) return false;
-
-      const valor = Number(p.valor) || 0;
-      if (min !== null && valor < min) return false;
-      if (max !== null && valor > max) return false;
-
-      return true;
-    });
-
-    const res: [string, Producto[]][] = [];
-    CATEGORIAS.forEach((cat) => {
-      const lista = visibles.filter((p) => p.categoria === cat);
-      if (lista.length) res.push([cat, lista]);
-    });
-    const otras = visibles.filter((p) => !CATEGORIAS.includes(p.categoria));
-    if (otras.length) res.push(['Otras', otras]);
-    return res;
-  }, [productos, buscar, filtroCategoria, filtroEstado, precioMin, precioMax]);
-
-  const totalVisibles = grupos.reduce((acc, [, lista]) => acc + lista.length, 0);
-
-  const alternarActivo = async (p: Producto) => {
-    const nuevo = p.activo === false;
-    try {
-      await apiClient.patch(`/productos/${p.id}/activo`, { activo: nuevo });
-      showToast(nuevo ? 'Producto activado' : 'Producto desactivado');
-      await cargarProductos();
-    } catch (err) {
-      showToast(mensajeError(err, 'No se pudo cambiar el estado del producto'), true);
+    if (accion.sig === 'Pagado' && (venta.metodo_pago ?? '').trim().toLowerCase() === 'efectivo') {
+      void ejecutarCambio(venta, accion, undefined, 'Efectivo');
+      return;
     }
+    setError(null);
+    const actual = venta.estado ?? '';
+    const t = transiciones?.[actual];
+    if (t && !t.directas.includes(accion.sig) && !t.con_motivo.includes(accion.sig)) {
+      alertar(`El sistema no permite pasar de «${actual}» a «${accion.sig}».`);
+      return;
+    }
+    if (t?.con_motivo.includes(accion.sig)) {
+      setCambioConMotivo({ venta, accion });
+      return;
+    }
+    if (actual === 'Registrado' && accion.sig === 'Por verificar') {
+      const metodo = (venta.metodo_pago ?? '').trim();
+      if (!metodo) {
+        alertar(`El pedido #${venta.id} no tiene método de pago. Verifícalo antes de avanzar.`);
+        return;
+      }
+      if (requiereComprobante(venta) && venta.comprobante_estado === 'Rechazado') {
+        alertar(`El comprobante del pedido #${venta.id} fue devuelto. Espera a que el cliente suba uno nuevo.`);
+        return;
+      }
+      if (requiereComprobante(venta) && !comprobanteAprobado(venta)) {
+        alertar(
+          venta.tiene_comprobante
+            ? `Aprueba el comprobante de ${metodo} del pedido #${venta.id} antes de avanzar.`
+            : `El pedido #${venta.id} (${metodo}) no tiene comprobante de pago.`,
+        );
+        return;
+      }
+    }
+    if (accion.sig === 'Pagado') {
+      pagandoRef.current = false;
+      setPagando(false);
+      const m = (venta.metodo_pago ?? '').trim();
+      setMetodoCobro(METODOS_COBRO.includes(m) ? m : 'Efectivo');
+      setArchivoCobro(null);
+      setCobro({ venta, accion });
+      return;
+    }
+    void ejecutarCambio(venta, accion, undefined);
   };
 
-  const confirmarCambioActivo = async () => {
-    if (!cambiarEstado) return;
-    const p = cambiarEstado;
-    setCambiarEstado(null);
-    await alternarActivo(p);
-  };
+  const ejecutarCambio = async (venta: Venta, accion: Accion, motivo?: string, metodo?: string) => {
+    const anterior = items;
+    pendientes.current += 1;
+    version.current += 1;
 
-  /* ---------- Formulario ---------- */
-  const setCampo = (campo: CampoTexto) =>
-    (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-      setForm((f) => ({ ...f, [campo]: e.target.value }));
-
-  const elegirArchivo = (e: ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0] ?? null;
-    if (!f) return;
-    setArchivo(f);
-    setImgActual(false);
-  };
-
-  const limpiarFormulario = () => {
-    setIntentado(false);
-    setForm(emptyForm);
-    setEditId(null);
-    setArchivo(null);
-    setPreview(null);
-    setImgActual(false);
-    setAdiciones([]);
-    if (fileRef.current) fileRef.current.value = '';
-    setMostrarForm(false);
-  };
-
-  const prepararEdicion = (p: Producto) => {
-    setIntentado(false);
-    setEditId(p.id);
-    setForm({
-      nombre: p.nombre,
-      valor: String(Math.round(Number(p.valor))),
-      estado: p.estado === 'Agotado' ? 'Agotado' : 'Disponible',
-      categoria: p.categoria,
-      descripcion: p.descripcion ?? '',
-      requiere_cocina: p.requiere_cocina !== false,
-    });
-    setArchivo(null);
-    setPreview(imgValida(p.img) ? p.img : null);
-    setImgActual(!!p.img);
-    setAdiciones((p.adiciones ?? []).map((a) => ({
-      id: a.id,
-      nombre: a.nombre,
-      precio: String(Math.round(Number(a.precio))),
-      tipo: a.tipo === 'quitar' ? 'quitar' : 'adicion',
-    })));
-    if (fileRef.current) fileRef.current.value = '';
-    setMostrarForm(false);
-  };
-
-  const errores = {
-    nombre: !form.nombre.trim(),
-    valor: form.valor === '' || Number(form.valor) <= 0,
-    categoria: !form.categoria,
-    estado: !form.estado,
-    descripcion: !form.descripcion.trim(),
-    imagen: !editId && !archivo,
-  };
-
-  const rojo = (malo: boolean): CSSProperties | undefined =>
-    intentado && malo
-      ? { borderColor: 'var(--danger)', boxShadow: '0 0 0 3px rgba(192, 57, 43, 0.12)' }
-      : undefined;
-
-  const nAdic = adiciones.filter((a) => a.tipo === 'adicion').length;
-  const nQuitar = adiciones.filter((a) => a.tipo === 'quitar').length;
-  const permiteExtras = !!form.categoria && !categoriaSinExtras(form.categoria);
-
-  const sugeridas = useMemo(() => {
-    const vistos = new Set<string>();
-    const lista: FilaAdicion[] = [];
-    productos.forEach((p) =>
-      (p.adiciones ?? []).forEach((a) => {
-        const tipo = a.tipo === 'quitar' ? 'quitar' : 'adicion';
-        const precio = String(Math.round(Number(a.precio)));
-        const clave = `${tipo}|${a.nombre.toLowerCase()}|${precio}`;
-        if (vistos.has(clave)) return;
-        vistos.add(clave);
-        lista.push({ nombre: a.nombre, precio, tipo });
-      }),
+    setItems((prev) =>
+      prev
+        .map((v) => (v.id === venta.id ? { ...v, estado: accion.sig } : v))
+        .filter((v) => config.estados.includes(v.estado ?? '')),
     );
-    return lista;
-  }, [productos]);
+    showToast(`Pedido #${venta.id}: ${accion.sig.toLowerCase()}`, false);
 
-  const yaEsta = (tipo: string, nombre: string) =>
-    adiciones.some((a) => a.tipo === tipo && a.nombre.trim().toLowerCase() === nombre.toLowerCase());
+    try {
+      await apiClient.patch(`/ventas/${venta.id}/estado`, { estado: accion.sig, motivo, metodo_pago: metodo });
+    } catch (e) {
+      setItems(anterior);
+      alertar(mensajeDeError(e, `No se pudo marcar el pedido #${venta.id} como «${accion.sig}».`));
+    } finally {
+      pendientes.current -= 1;
+      version.current += 1;
+      void load();
+    }
+  };
 
-  const sugAdic = sugeridas.filter((s) => s.tipo === 'adicion' && !yaEsta('adicion', s.nombre));
-  const sugQuitar = sugeridas.filter((s) => s.tipo === 'quitar' && !yaEsta('quitar', s.nombre));
+  const claseComprobante = (estado?: string | null) => {
+    const e = (estado ?? '').trim().toLowerCase();
+    if (e === 'aprobado') return 'badge-success';
+    if (e === 'rechazado') return 'badge-danger';
+    if (e === 'pendiente') return 'badge-warning';
+    return 'badge-info';
+  };
 
-  const guardar = async (e: FormEvent) => {
-    e.preventDefault();
-    setIntentado(true);
-    if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
-    if (form.valor === '' || Number(form.valor) <= 0) { showToast('Ingresa un precio mayor a 0', true); return; }
-    if (!form.categoria) { showToast('Selecciona una categoría', true); return; }
-    if (!form.estado) { showToast('Selecciona un estado', true); return; }
-    if (!form.descripcion.trim()) { showToast('La descripción es obligatoria', true); return; }
-    if (!editId && !archivo) { showToast('La imagen es obligatoria', true); return; }
+  const revisarComprobante = async (
+    venta: Venta,
+    estado: 'Aprobado' | 'Rechazado',
+    motivo?: string,
+  ) => {
+    setProcesandoComprobante(true);
+    setError(null);
+    try {
+      const { data } = await apiClient.patch(`/ventas/${venta.id}/comprobante/revisar`, {
+        estado,
+        motivo,
+      });
+      showToast(
+        data?.message ??
+          (estado === 'Aprobado'
+            ? 'Comprobante aprobado.'
+            : 'Comprobante devuelto al cliente.'),
+        false,
+      );
+      setComprobanteARechazar(null);
+      setItems((prev) =>
+        prev.map((v) =>
+          v.id === venta.id
+            ? {
+                ...v,
+                comprobante_estado: estado,
+                comprobante_motivo: estado === 'Rechazado' ? motivo ?? null : null,
+              }
+            : v,
+        ),
+      );
+      await load();
+    } catch (e: unknown) {
+      alertar(
+        mensajeDeError(e, `No se pudo revisar el comprobante del pedido #${venta.id}.`),
+      );
+    } finally {
+      setProcesandoComprobante(false);
+    }
+  };
 
-    const filas = permiteExtras
-      ? adiciones.filter((a) => a.nombre.trim() || (a.tipo === 'adicion' && a.precio !== ''))
-      : [];
-    if (filas.some((a) => !a.nombre.trim() || (a.tipo === 'adicion' && (a.precio === '' || Number(a.precio) <= 0)))) {
-      showToast('Completa el nombre y el precio de cada adición', true);
+  const soltarEn = (estadoDestino: string) => {
+    const venta = items.find((x) => x.id === arrastrandoId);
+    setArrastrandoId(null);
+    setColHover(null);
+    if (!venta || venta.estado === estadoDestino) return;
+    if (vista === 'cajero') return;
+    intentarCambio(venta, { sig: estadoDestino, texto: `Mover a ${estadoDestino}` });
+  };
+
+  const visibles = items.filter((v) => {
+    if (rol === 'mesero' && v.tipo_entrega !== 'Consumir') return false;
+    if (rol === 'cajero' && v.estado === 'Preparado' && v.tipo_entrega === 'Consumir') return false;
+    if (rol === 'cajero' && v.estado === 'Pendiente de pago' && v.tipo_entrega !== 'Consumir') return false;
+    if (filtroEntrega !== 'todos' && v.tipo_entrega !== filtroEntrega) return false;
+    const q = busqueda.trim().toLowerCase().replace('#', '');
+    if (!q) return true;
+    const texto = [
+      v.id,
+      nombreCliente(v),
+      v.mesa ? `mesa ${v.mesa}` : '',
+      ...(v.detalles ?? []).map((d) => d.producto?.nombre ?? ''),
+    ]
+      .join(' ')
+      .toLowerCase();
+    return texto.includes(q);
+  });
+
+  const puedeSubirComprobante = (v: Venta) =>
+    puedeRevisar || Number(v.usuario_id) === Number(user?.id);
+  const esEfectivo = (v: Venta) => (v.metodo_pago || '').toLowerCase() === 'efectivo';
+
+  const detalle = detalleId !== null ? items.find((x) => x.id === detalleId) ?? null : null;
+  useEscape([
+    [cobro !== null, () => setCobro(null)],
+    [comprobanteASubir !== null, () => setComprobanteASubir(null)],
+    [comprobanteARechazar !== null, () => setComprobanteARechazar(null)],
+    [detalle !== null, () => setDetalleId(null)],
+  ]);
+  
+  const exigeComprobante =
+    !!cobro && METODOS_CON_COMPROBANTE.includes(metodoCobro) && !comprobanteAprobado(cobro.venta);
+    
+  const confirmarPago = async () => {
+    if (!cobro || pagandoRef.current) return;
+    const { venta, accion } = cobro;
+
+    if (exigeComprobante && !archivoCobro) {
+      alertar('Adjunta la imagen del comprobante de pago.');
       return;
     }
 
-    const fd = new FormData();
-    fd.append('nombre', form.nombre.trim());
-    fd.append('valor', form.valor);
-    fd.append('descripcion', form.descripcion.trim());
-    fd.append('categoria', form.categoria);
-    fd.append('estado', form.estado);
-    fd.append('requiere_cocina', form.requiere_cocina ? '1' : '0');
-    fd.append('adiciones', JSON.stringify(filas.map((a) => ({
-      id: a.id,
-      nombre: a.nombre.trim(),
-      precio: a.tipo === 'quitar' ? 0 : Number(a.precio),
-      tipo: a.tipo,
-    }))));
-    if (archivo) fd.append('imagen', archivo);
-
-    setGuardando(true);
+    pagandoRef.current = true;
+    setPagando(true);
     try {
-      if (editId) {
-        fd.append('_method', 'PUT');
-        await apiClient.post(`/productos/${editId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      } else {
-        await apiClient.post('/productos', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      if (exigeComprobante && (venta.metodo_pago ?? '').trim() !== metodoCobro) {
+        await apiClient.patch(`/ventas/${venta.id}/metodo-pago`, { metodo_pago: metodoCobro });
       }
-      showToast(editId ? 'Producto actualizado' : 'Producto agregado');
-      limpiarFormulario();
-      setIntentado(false);
-      await cargarProductos();
-    } catch (err) {
-      showToast(mensajeError(err, 'Error al guardar el producto'), true);
-    } finally {
-      setGuardando(false);
+
+      if (exigeComprobante && archivoCobro) {
+        const form = new FormData();
+        form.append('comprobante', archivoCobro);
+        const { data } = await apiClient.post(`/ventas/${venta.id}/comprobante`, form, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 90000,
+        });
+
+        if (data?.venta?.comprobante_estado !== 'Aprobado') {
+          const valor = data?.venta?.comprobante_valor;
+          const seguir = await confirmar(
+          `El valor del comprobante${valor != null ? ` ($${Number(valor).toLocaleString('es-CO')})` : ''} ` +
+          `no coincide con el total del pedido.\n¿Registrar el pago de todas formas?`,
+          'Sí, registrar pago',
+        );
+          if (!seguir) {
+            pagandoRef.current = false;
+            setPagando(false);
+            return;
+          }
+          await apiClient.patch(`/ventas/${venta.id}/comprobante/revisar`, { estado: 'Aprobado' });
+        }
+      }
+
+      setCobro(null);
+      setArchivoCobro(null);
+      void ejecutarCambio(venta, accion, undefined, metodoCobro);
+      pagandoRef.current = false;
+      setPagando(false);
+    } catch (e) {
+      alertar(mensajeDeError(e, 'No se pudo registrar el pago.'));
+      pagandoRef.current = false;
+      setPagando(false);
     }
   };
 
-  const confirmarEliminar = async () => {
-    if (!eliminar) return;
-    const p = eliminar;
-    setEliminar(null);
-    try {
-      await apiClient.delete(`/productos/${p.id}`);
-      showToast('Producto eliminado');
-      if (editId === p.id) limpiarFormulario();
-      await cargarProductos();
-    } catch (err) {
-      showToast(mensajeError(err, 'No se pudo eliminar el producto'), true);
+  const tarjeta = (v: Venta) => {
+    const accionBase = config.acciones[v.estado ?? ''];
+    let accion =
+      accionBase ??
+      (rol === 'cajero' && v.estado === 'Preparado' && v.tipo_entrega !== 'Consumir'
+        ? { sig: 'Servido', texto: 'Entregar' }
+        : undefined);
+        
+    if (vista === 'cajero' && accion && yaPagado(v)) {
+      accion = { ...accion, texto: 'Cerrar pedido' };
     }
-  };
+    
+    const esOcupado = ocupadoId === v.id;
+    const min = minutosDesde(v.fecha_programada ?? v.fecha ?? '');
+    const enMesa = v.tipo_entrega === 'Consumir' && !!v.mesa;
+    const FINALES = ['Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
+    const hermanos = enMesa
+      ? items
+          .filter((o) => o.tipo_entrega === 'Consumir' && o.mesa === v.mesa && !FINALES.includes(o.estado ?? ''))
+          .sort((a, b) => a.id - b.id)
+      : [];
+    const nPedido = hermanos.findIndex((o) => o.id === v.id) + 1;
+    const colorMesa =
+      enMesa && hermanos.length > 1
+        ? ['#2563eb', '#e67e22', '#1d7a46', '#8b5cf6', '#db2777'][(Number(v.mesa) - 1) % 5]
+        : undefined;
 
-  const panelFormulario = (
-    <div className="mn-form-panel" ref={panelRef} style={{ marginBottom: 0, border: 0, boxShadow: 'none' }}>
-      <div className="mn-form-header">
-        <h3>{editId ? 'Editar producto' : 'Nuevo producto'}</h3>
-        <button type="button" className="mn-form-cerrar" onClick={limpiarFormulario} aria-label="Cerrar">×</button>
-      </div>
+    const estadoTerminal = ['Cancelado', 'Rechazada', 'Reembolsada'].includes(v.estado ?? '');
+    const tActual = transiciones?.[v.estado ?? ''];
+    const permiteRechazo = !!tActual && (tActual.directas.includes('Rechazada') || tActual.con_motivo.includes('Rechazada'));
+    
+    let puedeRechazar = false;
+    if (!estadoTerminal && permiteRechazo) {
+      if (rol === 'admin') {
+        puedeRechazar = true;
+      } else if (rol === 'cocinero' && ['Recepcionado', 'En preparación'].includes(v.estado ?? '')) {
+        puedeRechazar = true;
+      } else if (['cajero', 'mesero'].includes(rol) && ['Registrado', 'Por verificar', 'Recepcionado'].includes(v.estado ?? '')) {
+        puedeRechazar = true;
+      }
+    }
 
-      <form onSubmit={guardar} noValidate>
-        <div className="mn-form-body">
-          <div className="mn-form-grid">
+    const vaAPagar = accion?.sig === 'Pagado';
+    const faltaComprobante = vaAPagar && requiereComprobante(v) && !comprobanteAprobado(v);
+    const textoAccion = faltaComprobante
+      ? puedeRevisarComprobante
+        ? 'Aprobar comprobante'
+        : 'Comprobante pendiente'
+      : accion?.texto;
+    const accionDeshabilitada = esOcupado || (faltaComprobante && !puedeRevisarComprobante);
 
-            <div className="mn-form-left">
-              <div className="mn-field">
-                <label htmlFor="mn-nombre">Nombre <span className="mn-req">*</span></label>
-                <input id="mn-nombre" style={rojo(errores.nombre)} type="text" maxLength={40} placeholder="Ej: Hamburguesa Especial"
-                  value={form.nombre} onChange={setCampo('nombre')} />
-              </div>
-
-              <div className="mn-row-3">
-                <div className="mn-field">
-                  <label htmlFor="mn-precio">Precio <span className="mn-req">*</span></label>
-                  <input id="mn-precio" style={rojo(errores.valor)} type="text" inputMode="numeric" placeholder="$ 0"
-                    value={form.valor ? Number(form.valor).toLocaleString('es-CO') : ''}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, valor: e.target.value.replace(/\D/g, '').slice(0, 9) }))
-                    } />
-                </div>
-                <div className="mn-field">
-                  <label htmlFor="mn-categoria">Categoría <span className="mn-req">*</span></label>
-                  <MnFormSelect
-                    id="mn-categoria"
-                    label="Categoría"
-                    style={rojo(errores.categoria)}
-                    value={form.categoria}
-                    onChange={(value) => setForm((actual) => ({ ...actual, categoria: value }))}
-                    options={[
-                      { value: '', label: 'Selecciona...' },
-                      ...CATEGORIAS.map((categoria) => ({ value: categoria, label: categoria })),
-                    ]}
-                  />
-                </div>
-                <div className="mn-field">
-                  <label htmlFor="mn-estado">Estado <span className="mn-req">*</span></label>
-                  <MnFormSelect
-                    id="mn-estado"
-                    label="Estado"
-                    style={rojo(errores.estado)}
-                    value={form.estado}
-                    onChange={(value) => setForm((actual) => ({ ...actual, estado: value }))}
-                    options={[
-                      { value: '', label: 'Selecciona...' },
-                      { value: 'Disponible', label: 'Disponible' },
-                      { value: 'Agotado', label: 'Agotado' },
-                    ]}
-                  />
-                </div>
-              </div>
-
-              <div className="mn-field">
-                <label htmlFor="mn-desc">Descripción <span className="mn-req">*</span></label>
-                <textarea id="mn-desc" style={rojo(errores.descripcion)} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
-                  value={form.descripcion} onChange={setCampo('descripcion')} />
-                <span className="mn-counter">{form.descripcion.length}/255</span>
-              </div>
-
-              <div className="mn-field">
-                <label htmlFor="mn-cocina" style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                  <input
-                    id="mn-cocina"
-                    type="checkbox"
-                    checked={form.requiere_cocina}
-                    onChange={(e) => setForm((f) => ({ ...f, requiere_cocina: e.target.checked }))}
-                  />
-                  <span>
-                    Requiere cocina{' '}
-                    <small>(desmárcalo para bebidas frías u otros productos listos)</small>
-                  </span>
-                </label>
-              </div>
-
-              {permiteExtras && (
-                <>
-                  <div className="mn-field">
-                    <details className="mn-acc">
-                      <summary>
-                        Adiciones con precio <small>(opcional · {nAdic}/{MAX_ADICIONES})</small>
-                      </summary>
-                      <div className="mn-adic-list">
-                        {adiciones.map((a, i) =>
-                          a.tipo !== 'adicion' ? null : (
-                            <div key={i} className="mn-adic-row">
-                              <input
-                                type="text"
-                                maxLength={40}
-                                placeholder="Ej: Tocino"
-                                value={a.nombre}
-                                onChange={(e) =>
-                                  setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
-                                }
-                              />
-                              <div className="mn-adic-precio">
-                                <span>$</span>
-                                <input
-                                  type="text"
-                                  inputMode="numeric"
-                                  placeholder="2.000"
-                                  value={miles(a.precio)}
-                                  onChange={(e) => {
-                                    const n = e.target.value.replace(/\D/g, '').slice(0, 6);
-                                    const valor = n === '' ? '' : String(Math.min(Number(n), MAX_PRECIO_ADICION));
-                                    setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, precio: valor } : x)));
-                                  }}
-                                />
-                              </div>
-                              <button
-                                type="button"
-                                className="mn-adic-del"
-                                aria-label="Quitar adición"
-                                onClick={() => setAdiciones((l) => l.filter((_, j) => j !== i))}
-                              >
-                                &times;
-                              </button>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                      {nAdic < MAX_ADICIONES && sugAdic.length > 0 && (
-                        <div className="mn-adic-sug">
-                          <span>Guardadas:</span>
-                          {sugAdic.map((s) => (
-                            <button
-                              type="button"
-                              key={`${s.nombre}-${s.precio}`}
-                              className="mn-adic-chip"
-                              onClick={() => setAdiciones((l) => [...l, s])}
-                            >
-                              + {s.nombre} · ${miles(s.precio)}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {nAdic < MAX_ADICIONES ? (
-                        <button
-                          type="button"
-                          className="mn-adic-add"
-                          onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '', tipo: 'adicion' }])}
-                        >
-                          + Nueva adición
-                        </button>
-                      ) : (
-                        <div className="mn-adic-hint">Llegaste al máximo de {MAX_ADICIONES} adiciones.</div>
-                      )}
-                      <div className="mn-adic-hint">Precio máximo por adición: $50.000</div>
-                    </details>
-                  </div>
-
-                  <div className="mn-field">
-                    <details className="mn-acc">
-                      <summary>
-                        Personalizaciones <small>(lo que el cliente puede quitar · {nQuitar}/{MAX_QUITAR})</small>
-                      </summary>
-                      <div className="mn-adic-list">
-                        {adiciones.map((a, i) =>
-                          a.tipo !== 'quitar' ? null : (
-                            <div key={i} className="mn-adic-row quitar">
-                              <input
-                                type="text"
-                                maxLength={40}
-                                placeholder="Ej: Salsa blanca (el cliente verá «Sin Salsa blanca»)"
-                                value={a.nombre}
-                                onChange={(e) =>
-                                  setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
-                                }
-                              />
-                              <button
-                                type="button"
-                                className="mn-adic-del"
-                                aria-label="Quitar personalización"
-                                onClick={() => setAdiciones((l) => l.filter((_, j) => j !== i))}
-                              >
-                                &times;
-                              </button>
-                            </div>
-                          ),
-                        )}
-                      </div>
-                      {nQuitar < MAX_QUITAR && sugQuitar.length > 0 && (
-                        <div className="mn-adic-sug">
-                          <span>Guardadas:</span>
-                          {sugQuitar.map((s) => (
-                            <button
-                              type="button"
-                              key={s.nombre}
-                              className="mn-adic-chip"
-                              onClick={() => setAdiciones((l) => [...l, s])}
-                            >
-                              + {s.nombre}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                      {nQuitar < MAX_QUITAR ? (
-                        <button
-                          type="button"
-                          className="mn-adic-add"
-                          onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '', tipo: 'quitar' }])}
-                        >
-                          + Nueva personalización
-                        </button>
-                      ) : (
-                        <div className="mn-adic-hint">Llegaste al máximo de {MAX_QUITAR} personalizaciones.</div>
-                      )}
-                    </details>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div className="mn-form-right">
-              <div className="mn-field">
-                <label>Imagen del producto {!editId && <span className="mn-req">*</span>}</label>
-                <div className={`mn-upload${preview ? ' has-img' : ''}`} style={rojo(errores.imagen)} onClick={() => fileRef.current?.click()}>
-                  {preview ? (
-                    <img className="mn-upload-img" src={preview} alt="Vista previa" />
-                  ) : (
-                    <div className="mn-upload-empty">
-                      <svg viewBox="0 0 24 24" width="38" height="38" fill="none" stroke="currentColor"
-                        strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <rect x="3" y="3" width="18" height="18" rx="3" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <path d="M21 15l-5-5L5 21" />
-                      </svg>
-                      <strong>Haz clic para subir una imagen</strong>
-                      <small>PNG, JPG o WEBP · máx. 4 MB</small>
-                    </div>
-                  )}
-                </div>
-                <div className="mn-upload-bar">
-                  <span className="mn-upload-name">
-                    {archivo ? archivo.name : imgActual ? 'Imagen actual' : 'Ningún archivo seleccionado'}
-                  </span>
-                  <button type="button" className="mn-btn-pick" onClick={() => fileRef.current?.click()}>
-                    {preview ? 'Cambiar' : 'Seleccionar'}
-                  </button>
-                </div>
-                <input ref={fileRef} className="mn-file-input" type="file" accept="image/*" onChange={elegirArchivo} />
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        <div className="mn-form-footer">
-          <button type="submit" className="mn-btn-submit" disabled={guardando}>
-            {guardando ? 'Guardando…' : editId ? 'Guardar cambios' : 'Guardar Producto'}
-          </button>
-          <button type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
-        </div>
-      </form>
-    </div>
-  );
-
-  useEscape([
-    [!!eliminar, () => setEliminar(null)],
-    [!!cambiarEstado, () => setCambiarEstado(null)],
-    [mostrarForm || editId !== null, limpiarFormulario],
-  ]);
-
-  return (
-    <div className="page-inner mn-page mn-menu-admin">
-      <div className="page-header">
-        <div>
-          <h1>Gestión del Menú</h1>
-          <p className="subtitulo">Productos disponibles en el menú</p>
-        </div>
-        {esAdmin && (
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
-          >
-            {mostrarForm ? 'Cancelar' : '+ Agregar producto'}
-          </button>
-        )}
-      </div>
-
-      {(mostrarForm || editId !== null) && (
-        <div className="mn-modal-overlay">
-          <div
-            className="mn-modal-box"
-            style={{ maxWidth: 980, width: '95%', maxHeight: '92vh', overflowY: 'auto', padding: 0, textAlign: 'left' }}
-          >
-            {panelFormulario}
-          </div>
-        </div>
-      )}
-
-      <div className="mn-toolbar" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
-            <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    return (
+      <div
+        className={`tv-card${accion ? ' arrastrable' : ''}${arrastrandoId === v.id ? ' arrastrando' : ''}`}
+        key={v.id}
+        draggable={!!accion && !esOcupado}
+        style={colorMesa ? { borderLeftColor: colorMesa } : undefined}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('text/plain', String(v.id));
+          e.dataTransfer.effectAllowed = 'move';
+          setArrastrandoId(v.id);
+        }}
+        onDragEnd={() => {
+          setArrastrandoId(null);
+          setColHover(null);
+        }}
+      >
+        <div className="tv-card-head">
+          <span className="tv-num">#{v.id}</span>
+          {v.tipo_entrega && <span className="tv-tag">{ETIQUETA_ENTREGA[v.tipo_entrega] ?? v.tipo_entrega}</span>}
+          <span className={`tv-tiempo${min >= 20 ? ' urgente' : ''}`}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
             </svg>
-            <input className="mn-search" type="text" placeholder="Buscar por nombre, descripción o categoría..."
-              value={buscar} onChange={(e) => setBuscar(e.target.value)} />
-          </div>
-
-          <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
-            <button type="button" className={vista === 'lista' ? 'active' : ''}
-              onClick={() => setVista('lista')} title="Vista de lista" data-tooltip="Vista de lista" aria-pressed={vista === 'lista'}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" />
-              </svg>
-            </button>
-            <button type="button" className={vista === 'tarjetas' ? 'active' : ''}
-              onClick={() => setVista('tarjetas')} title="Vista de tarjetas" data-tooltip="Vista de tarjeta" aria-pressed={vista === 'tarjetas'}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="4" y="4" width="7" height="7" rx="1" /><rect x="13" y="4" width="7" height="7" rx="1" />
-                <rect x="4" y="13" width="7" height="7" rx="1" /><rect x="13" y="13" width="7" height="7" rx="1" />
-              </svg>
-            </button>
-          </div>
+            {duracion(min)}
+          </span>
         </div>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
-          <div className="mn-field" style={{ margin: 0 }}>
-            <label htmlFor="mn-f-categoria">Categoría</label>
-            <SelectOscuro id="mn-f-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
-              <option value="">Todas</option>
-              {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
-              <option value="Otras">Otras</option>
-            </SelectOscuro>
-          </div>
+        <div className="tv-card-body">
+          <span className="tv-cliente">{enMesa ? `Mesa ${v.mesa}` : nombreCliente(v)}</span>
+          {colorMesa && nPedido > 0 && (
+            <span className="tv-mesa-grupo" style={{ color: colorMesa, borderColor: colorMesa }}>
+              {nPedido}º pedido de la mesa
+            </span>
+          )}
 
-          <div className="mn-field" style={{ margin: 0 }}>
-            <label htmlFor="mn-f-estado">Estado</label>
-            <SelectOscuro id="mn-f-estado" value={filtroEstado} onChange={(e) => setFiltroEstado(e.target.value)}>
-              <option value="">Todos</option>
-              {ESTADOS_FILTRO.map((e) => <option key={e} value={e}>{e}</option>)}
-            </SelectOscuro>
-          </div>
+          {v.fecha_programada && (() => {
+            const t = new Date(v.fecha_programada);
+            const hora = t.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            const faltan = Math.round((t.getTime() - Date.now()) / 60000);
+            return faltan <= 30 ? (
+              <span className="tv-pago-bloqueado">¡Preparar ya! Para las {hora}</span>
+            ) : (
+              <span className="tv-tag">Programado: {hora}</span>
+            );
+          })()}
 
-          <div className="mn-field" style={{ margin: 0 }}>
-            <label htmlFor="mn-f-pmin">Precio mínimo</label>
-            <input
-              id="mn-f-pmin"
-              type="text"
-              inputMode="numeric"
-              placeholder="$ 0"
-              style={{ width: 120 }}
-              value={precioMin ? Number(precioMin).toLocaleString('es-CO') : ''}
-              onChange={(e) => setPrecioMin(e.target.value.replace(/\D/g, '').slice(0, 9))}
-            />
-          </div>
+          <button type="button" className="tv-ver-detalle" onClick={() => setDetalleId(v.id)}>
+            Ver detalle
+          </button>
 
-          <div className="mn-field" style={{ margin: 0 }}>
-            <label htmlFor="mn-f-pmax">Precio máximo</label>
-            <input
-              id="mn-f-pmax"
-              type="text"
-              inputMode="numeric"
-              placeholder="$ 0"
-              style={{ width: 120 }}
-              value={precioMax ? Number(precioMax).toLocaleString('es-CO') : ''}
-              onChange={(e) => setPrecioMax(e.target.value.replace(/\D/g, '').slice(0, 9))}
-            />
-          </div>
+          {v.programado_para && (
+            <span className="tv-programado">
+              Programado: {aFecha(v.programado_para).toLocaleString('es-CO', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              })}
+            </span>
+          )}
 
-          {hayFiltros && (
-            <button type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>
-              Limpiar filtros
-            </button>
+          {faltaComprobante && (
+            <span className="tv-pago-bloqueado">
+              {v.comprobante_estado === 'Rechazado'
+                ? 'Comprobante devuelto'
+                : v.comprobante_estado === 'Pendiente'
+                  ? 'Comprobante pendiente de aprobación'
+                  : 'Sin comprobante de pago'}
+            </span>
           )}
         </div>
 
-        {!loading && (
-         <p className="contador-lista">
-            {totalVisibles} de {productos.length} productos
-          </p>
-        )}
+        <div className="tv-card-foot">
+          <span className="tv-total">${Number(v.valor_total || 0).toLocaleString('es-CO')}</span>
+          
+          <div className="tv-acciones-tarjeta">
+            {accion ? (
+              <button
+                type="button"
+                className="tv-btn"
+                disabled={accionDeshabilitada}
+                title={faltaComprobante && !puedeRevisarComprobante
+                  ? 'El administrador o el cajero deben aprobar el comprobante antes de confirmar el pago.'
+                  : undefined}
+                onClick={() => {
+                  if (faltaComprobante || v.estado === 'Registrado') {
+                    setDetalleId(v.id);
+                  } else {
+                    intentarCambio(v, accion);
+                  }
+                }}
+              >
+                {esOcupado ? 'Guardando…' : textoAccion}
+              </button>
+            ) : (
+              <span className="tv-espera">Sin acción disponible</span>
+            )}
+
+            {puedeRechazar && (
+              <button
+                type="button"
+                className="tv-btn tv-btn-rechazar"
+                disabled={esOcupado}
+                onClick={() => intentarCambio(v, { sig: 'Rechazada', texto: 'Rechazar pedido' })}
+                title="Rechazar pedido (requiere motivo)"
+              >
+                Rechazar
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const columnas = config.columnas ?? config.estados;
+  return (
+    <div className="tv-wrap">
+      <div className="tv-head">
+        <div>
+          <h1 className="tv-titulo">{config.titulo}</h1>
+          <p className="tv-subtitulo">{config.subtitulo}</p>
+        </div>
+        <div className="tv-lado">
+          {esAdmin ? (
+            <div className="tv-tabs" role="tablist">
+              {(['todos', 'cocina', 'meseros', 'cajero'] as Vista[]).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="tab"
+                  aria-selected={vista === v}
+                  className={`tv-tab${vista === v ? ' activo' : ''}`}
+                  onClick={() => setVista(v)}
+                >
+                  {VISTA_CONFIG[v].titulo}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
-      {loading ? (
-        <AdminLoading texto="Cargando menú" subtexto="Preparando tus productos" />
-      ) : grupos.length === 0 ? (
-        <div className="mn-empty">
-          No se encontraron productos
-          {buscar ? <> para "<strong>{buscar}</strong>"</> : ''}
-          {hayFiltros ? ' con los filtros seleccionados' : ''}.
-        </div>
-      ) : vista === 'lista' ? (
-        <div className="mn-table-wrap">
-          <table className="mn-table">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th>Descripción</th>
-                <th>Precio</th>
-                <th>Estado</th>
-                <th className="th-acciones">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {grupos.flatMap(([, lista]) => lista).map((p) => {
-                const est = estadoVisible(p);
-                return (
-                  <tr
-                    key={p.id}
-                    className={`${est === 'Agotado' ? 'agotado' : ''}${p.activo === false ? ' inactivo' : ''}`.trim()}
-                  >
-                    <td>
-                      <div className="mn-table-prod">
-                        <div className="mn-table-img"><CardImg img={p.img} nombre={p.nombre} /></div>
-                        <strong>{p.nombre}</strong>
-                      </div>
-                    </td>
-                    <td>{p.categoria}</td>
-                    <td className="mn-table-desc">{p.descripcion || '—'}</td>
-                    <td className="mn-table-price">${Number(p.valor).toLocaleString('es-CO')}</td>
-                    <td>
-                      <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
-                      {p.activo === false && <span className="mn-badge-inactivo">Inactivo</span>}
-                    </td>
-                    <td>
-                      {esAdmin && (
-                        <div className="mn-table-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+      <p className="tv-nota">Se actualiza en tiempo real.</p>
 
-                          <button
-                            type="button"
-                            className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
-                            onClick={() => setCambiarEstado(p)}
-                          >
-                            {p.activo === false ? 'Activar' : 'Desactivar'}
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <div className="mn-container">
-          {grupos.map(([cat, lista]) => (
-            <section key={cat}>
-              <div className="mn-cat-header">
-                <div className="mn-cat-name">{cat}</div>
-                <div className="mn-cat-count">{lista.length} {lista.length === 1 ? 'producto' : 'productos'}</div>
-              </div>
-              <div className="mn-grid">
-                {lista.map((p) => {
-                  const est = estadoVisible(p);
-                  return (
-                    <article
-                      key={p.id}
-                      className={`mn-card${est === 'Agotado' ? ' agotado' : ''}${p.activo === false ? ' inactivo' : ''}`}
-                    >
-                      <div className="mn-card-imgwrap"><CardImg img={p.img} nombre={p.nombre} /></div>
-                      <div className="mn-card-body">
-                        <div className="mn-card-name">{p.nombre}</div>
-                        <div className="mn-card-desc">{p.descripcion || ''}</div>
-                        <div className="mn-card-meta">
-                          <div className="mn-card-price">${Number(p.valor).toLocaleString('es-CO')}</div>
-                          <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
-                          {p.activo === false && <span className="mn-badge-inactivo">Inactivo</span>}
-                        </div>
-                      </div>
-                      {esAdmin && (
-                        <div className="mn-card-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
-
-                          <button
-                            type="button"
-                            className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
-                            onClick={() => setCambiarEstado(p)}
-                          >
-                            {p.activo === false ? 'Activar' : 'Desactivar'}
-                          </button>
-                        </div>
-                      )}
-                    </article>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+      {error && (
+        <div className="tv-errorbox" role="alert">
+          {error}
+          <button type="button" onClick={() => setError(null)} aria-label="Cerrar aviso">✕</button>
         </div>
       )}
 
-      {cambiarEstado && (
-        <div className="mn-modal-overlay" onClick={() => setCambiarEstado(null)}>
-          <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
-            <p>
-              {cambiarEstado.activo === false
-                ? `¿Activar "${cambiarEstado.nombre}"? Volverá a aparecer en el menú y se podrá vender.`
-                : `¿Desactivar "${cambiarEstado.nombre}"? Dejará de aparecer en el menú y no se podrá vender.`}
-            </p>
-            <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setCambiarEstado(null)}>
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="mn-btn-confirm"
-                style={cambiarEstado.activo === false ? { background: '#16a34a', boxShadow: '0 4px 14px rgba(22,163,74,.3)' } : undefined}
-                onClick={confirmarCambioActivo}
-              >
-                {cambiarEstado.activo === false ? 'Sí, activar' : 'Sí, desactivar'}
-              </button>
+      <div className="tv-barra">
+        <input
+          className="tv-buscar"
+          type="search"
+          placeholder="Buscar por número, mesa o nombre"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+        <div className="tv-acciones">
+          {puedeCrear && (
+            <button type="button" className="tv-btn-nuevo" onClick={() => setNuevoAbierto(true)}>
+              + Nuevo pedido
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="tv-pills">
+        {FILTROS_ENTREGA.map((f) => (
+          <button
+            key={f.valor}
+            type="button"
+            className={`tv-pill${filtroEntrega === f.valor ? ' activo' : ''}`}
+            onClick={() => setFiltroEntrega(f.valor)}
+          >
+            {f.texto}
+          </button>
+        ))}
+
+        {columnas.length > 3 && (
+          <div className="tv-flechas">
+            <button type="button" onClick={() => moverColumnas(-1)} aria-label="Columnas anteriores">‹</button>
+            <button type="button" onClick={() => moverColumnas(1)} aria-label="Columnas siguientes">›</button>
+          </div>
+        )}
+      </div>
+
+      <div
+        ref={colsRef}
+        className="tv-cols"
+        style={{ gridTemplateColumns: `repeat(${columnas.length}, minmax(320px, 1fr))` }}
+      >
+        {columnas.map((estado) => {
+          const col = visibles.filter((v) => columnaDe(v, vista) === estado);
+          return (
+            <section
+              className={`tv-col${colHover === estado ? ' soltar' : ''}`}
+              data-estado={estado}
+              key={estado}
+              onDragOver={(e) => {
+                if (arrastrandoId === null) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (colHover !== estado) setColHover(estado);
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) setColHover(null);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                soltarEn(estado);
+              }}
+            >
+              <header className="tv-col-head">
+                <span className="tv-col-titulo">
+                  <i className="tv-dot" />
+                  {ETIQUETA[vista]?.[estado] ?? estado}
+                </span>
+                <span className="tv-col-count">{loading ? '–' : col.length}</span>
+              </header>
+              {loading ? (
+                <p className="tv-col-vacio">Cargando…</p>
+              ) : col.length === 0 ? (
+                <p className="tv-col-vacio">Sin pedidos</p>
+              ) : (
+                col.map(tarjeta)
+              )}
+            </section>
+          );
+        })}
+      </div>
+
+      {loading && (
+        <AdminLoading texto="Cargando pedidos" subtexto="Preparando el tablero" />
+      )}
+      <NuevaVentaModal
+        abierto={nuevoAbierto}
+        mesaInicial={mesaNueva}
+        onClose={() => {
+          setNuevoAbierto(false);
+          setMesaNueva(null);
+        }}
+        onCreada={() => void load()}
+      />
+
+      {detalle && (
+        <div className="modal-overlay open" onClick={() => setDetalleId(null)}>
+          <div className="modal-box tv-det-box" onClick={(e) => e.stopPropagation()}>
+            <div className="tv-det-head">
+              <div>
+                <h3 className="tv-det-titulo">Pedido #{detalle.id}</h3>
+              </div>
+              <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>
             </div>
+            
+            {(() => {
+              const fmt = (f?: string | null) =>
+                f && Number.isFinite(aFecha(f).getTime())
+                  ? aFecha(f).toLocaleString('es-CO', { dateStyle: 'short', timeStyle: 'short' })
+                  : '—';
+              const entrega = ETIQUETA_ENTREGA[detalle.tipo_entrega ?? ''] ?? detalle.tipo_entrega ?? '—';
+              const esDomicilio = detalle.tipo_entrega === 'Domicilio';
+              const esRecoger = detalle.tipo_entrega === 'Recoger';
+              const esLocal = detalle.tipo_entrega === 'Consumir';
+
+              return (
+                <div className="tv-info">
+                  <div className="tv-info-chips">
+                    <span className="tv-info-chip entrega">{entrega}</span>
+                  </div>
+
+                  <section className="tv-info-sec">
+                    <h4>Cliente</h4>
+                    <Fila k="Nombre" v={nombreCliente(detalle)} />
+                    {telefonoCliente(detalle) && <Fila k="Teléfono" v={telefonoCliente(detalle)} />}
+                  </section>
+
+                  <section className="tv-info-sec">
+                    <h4>{esDomicilio ? 'Entrega a domicilio' : esRecoger ? 'Para recoger' : 'En el local'}</h4>
+                    {esLocal && <Fila k="Mesa" v={detalle.mesa ?? '—'} />}
+                    {esRecoger && (
+                      <Fila k="Recoge a nombre de" v={detalle.recibe_nombre || nombreCliente(detalle)} />
+                    )}
+                    {esDomicilio && (
+                      <>
+                        <Fila k="Nombre de quien recibe" v={detalle.recibe_nombre || nombreCliente(detalle)} />
+                        <Fila k="Teléfono de quien recibe" v={detalle.recibe_telefono || telefonoCliente(detalle) || '—'} />
+                        <Fila k="Dirección" v={detalle.direccion || '—'} />
+                        <Fila k="Barrio" v={detalle.barrio || '—'} />
+                        {detalle.referencia && <Fila k="Referencia" v={detalle.referencia} />}
+                      </>
+                    )}
+                    {!esLocal && (
+                      <Fila
+                        k="Hora que lo quieren"
+                        v={detalle.fecha_programada ? fmt(detalle.fecha_programada) : 'Lo antes posible'}
+                      />
+                    )}
+                  </section>
+
+                  <section className="tv-info-sec">
+                    <h4>Pedido</h4>
+                    <Fila k="Estado" v={etiquetaEstado(detalle.estado ?? '-', detalle.tipo_entrega)} />
+                    <Fila k="Método de pago" v={detalle.metodo_pago || '—'} />
+                    <Fila k="Hora del pedido" v={fmt(detalle.fecha)} />
+                    {detalle.programado_para && (
+                      <Fila k="Programado para" v={fmt(detalle.programado_para)} />
+                    )}
+                  </section>
+                </div>
+              );
+            })()}
+
+            {(() => {
+              const agrupados = new Map<string, { nombre: string; cantidad: number; subtotal: number }>();
+              (detalle.detalles ?? []).forEach((d) => {
+                const nombre = d.producto?.nombre ?? 'Producto';
+                const prev = agrupados.get(nombre) ?? { nombre, cantidad: 0, subtotal: 0 };
+                prev.cantidad += Number(d.cantidad ?? 1);
+                prev.subtotal += Number((d as any).subtotal ?? 0);
+                agrupados.set(nombre, prev);
+              });
+              const promos = (detalle.promociones ?? []).filter((p) => p?.nombre);
+
+              return (
+                <div className="tv-det-productos">
+                  <h4 className="tv-det-subtitulo">Productos</h4>
+                  <ul className="tv-det-lista">
+                    {[...agrupados.values()].map((g) => (
+                      <li key={g.nombre}>
+                        <span className="tv-det-cant">{g.cantidad}</span>
+                        <span className="tv-det-nombre">{g.nombre}</span>
+                        <span className="tv-det-precio">
+                          {g.subtotal > 0 ? `$${g.subtotal.toLocaleString('es-CO')}` : 'Incluido'}
+                        </span>
+                      </li>
+                    ))}
+                    {promos.map((p, i) => (
+                      <li key={`p${i}`} className="tv-det-combo">
+                        <span className="tv-det-cant">1</span>
+                        <span className="tv-det-nombre">Combo {p.nombre}</span>
+                        <span className="tv-det-precio" />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+
+            {separarNotas(detalle.notas).length > 0 && (
+              <div className="tv-chips">
+                {separarNotas(detalle.notas).map((n, i) => (
+                  <span key={i} className={`tv-chip${/^sin/i.test(n) ? ' sin' : /^extra/i.test(n) ? ' extra' : ''}`}>
+                    {n}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {puedeVerComprobante && (
+              <section className="vt-det-sec tv-det-comprobante">
+                <h4>Comprobante de pago</h4>
+
+                {!detalle.tiene_comprobante ? (
+                  <>
+                    <p className="vt-comprobante-vacio">
+                      {esEfectivo(detalle)
+                        ? 'Pago en efectivo contra entrega: no requiere comprobante.'
+                        : 'Este pedido no tiene comprobante de pago cargado.'}
+                    </p>
+                    {!esEfectivo(detalle) && puedeSubirComprobante(detalle) && (
+                      <div className="vt-comprobante-acciones">
+                        <button
+                          type="button"
+                          className="btn-save"
+                          onClick={() => setComprobanteASubir(detalle)}
+                        >
+                          Subir comprobante
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="vt-comprobante-cabecera">
+                      <span className={`badge ${claseComprobante(detalle.comprobante_estado)}`}>
+                        {detalle.comprobante_estado || 'Pendiente'}
+                      </span>
+                      {detalle.comprobante_subido_en && (
+                        <span className="vt-comprobante-fecha">
+                          Subido: {aFecha(detalle.comprobante_subido_en).toLocaleString('es-CO', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })}
+                        </span>
+                      )}
+                    </div>
+
+                    {detalle.comprobante_estado === 'Rechazado' && detalle.comprobante_motivo && (
+                      <p className="vt-comprobante-motivo">
+                        Motivo enviado al cliente: {detalle.comprobante_motivo}
+                      </p>
+                    )}
+
+                    <dl className="vt-det-grid vt-comprobante-datos">
+                      <div>
+                        <dt>Valor detectado por la IA</dt>
+                        <dd>
+                          {detalle.comprobante_valor !== null && detalle.comprobante_valor !== undefined
+                            ? `$${Number(detalle.comprobante_valor).toLocaleString('es-CO')}`
+                            : 'No identificado'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>¿Coincide con el total?</dt>
+                        <dd>
+                          {detalle.comprobante_coincide === true
+                            ? 'Sí'
+                            : detalle.comprobante_coincide === false
+                              ? 'No — revisar antes de aprobar'
+                              : 'No se pudo determinar'}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Entidad</dt>
+                        <dd>{detalle.comprobante_datos?.entidad || 'No identificada'}</dd>
+                      </div>
+                      <div>
+                        <dt>Referencia</dt>
+                        <dd>{detalle.comprobante_datos?.referencia || 'No identificada'}</dd>
+                      </div>
+                    </dl>
+
+                    <ComprobanteImagen
+                      ventaId={detalle.id}
+                      version={detalle.comprobante_subido_en}
+                      alt={`Comprobante de pago del pedido ${detalle.id}`}
+                    />
+
+                    {puedeRevisarComprobante && (
+                      <div className="vt-comprobante-acciones">
+                        {detalle.comprobante_estado !== 'Aprobado' && (
+                          <button
+                            type="button"
+                            className="btn-save"
+                            disabled={procesandoComprobante}
+                            onClick={() => void revisarComprobante(detalle, 'Aprobado')}
+                          >
+                            {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
+                          </button>
+                        )}
+                        {detalle.comprobante_estado !== 'Rechazado' && (
+                          <button
+                            type="button"
+                            className="btn-cancel"
+                            style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                            disabled={procesandoComprobante}
+                            onClick={() => setComprobanteARechazar(detalle)}
+                          >
+                            Devolver comprobante
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {requiereComprobante(detalle) && !comprobanteAprobado(detalle) && detalle.comprobante_estado !== 'Rechazado' && (
+                  <p className="tv-pago-aviso">
+                    Pago electrónico: para confirmar el pago primero debe estar aprobado el
+                    comprobante.
+                  </p>
+                )}
+              </section>
+            )}
+
+            <div className="tv-det-total">
+              <span>Total</span>
+              <strong>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</strong>
+            </div>
+
+            {detalle.estado === 'Registrado' && (() => {
+              const devuelto = requiereComprobante(detalle) && detalle.comprobante_estado === 'Rechazado';
+              const bloqueado =
+                !detalle.metodo_pago ||
+                devuelto ||
+                (requiereComprobante(detalle) && !comprobanteAprobado(detalle));
+
+              return (
+                <div className="vt-comprobante-acciones" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                  {devuelto && (
+                    <p className="tv-pago-aviso">
+                      Comprobante devuelto: espera a que el cliente suba uno nuevo para continuar.
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    className="btn-save"
+                    disabled={bloqueado}
+                    style={bloqueado ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+                    onClick={() => {
+                      const v = detalle;
+                      setDetalleId(null);
+                      intentarCambio(v, { sig: 'Por verificar', texto: 'Verificar' });
+                    }}
+                  >
+                    Verificar y continuar
+                  </button>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
 
-      {eliminar && (
-        <div className="mn-modal-overlay" onClick={() => setEliminar(null)}>
-          <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
-            <p>¿Eliminar "{eliminar.nombre}"? Esta acción no se puede deshacer.</p>
-            <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setEliminar(null)}>Cancelar</button>
-              <button type="button" className="mn-btn-confirm" onClick={confirmarEliminar}>Sí, eliminar</button>
+      {comprobanteASubir && (
+        <ComprobanteModal
+          ventaId={comprobanteASubir.id}
+          numero={comprobanteASubir.id}
+          onClose={() => setComprobanteASubir(null)}
+          onSubido={() => {
+            setComprobanteASubir(null);
+            void load();
+          }}
+        />
+      )}
+
+      {comprobanteARechazar && (
+        <MotivoModal
+          titulo={`Devolver el comprobante del pedido #${comprobanteARechazar.id}`}
+          descripcion="Explica al cliente por qué no se acepta el comprobante (por ejemplo, porque el valor no coincide con el total). El cliente verá este motivo en Mis compras y podrá subir uno nuevo."
+          confirmarTexto="Devolver comprobante"
+          placeholder="Ej: el comprobante muestra $20.000 y el total del pedido es $35.000..."
+          onClose={() => setComprobanteARechazar(null)}
+          onConfirm={(motivo) =>
+            void revisarComprobante(comprobanteARechazar, 'Rechazado', motivo)
+          }
+        />
+      )}
+
+      {cambioConMotivo && (
+        <MotivoModal
+          titulo={`Cambiar el pedido #${cambioConMotivo.venta.id} a «${cambioConMotivo.accion.sig}»`}
+          descripcion="Este cambio necesita un motivo; quedó registrado en el historial del pedido."
+          confirmarTexto={cambioConMotivo.accion.texto}
+          onClose={() => setCambioConMotivo(null)}
+          onConfirm={(motivo) => {
+            const { venta, accion } = cambioConMotivo;
+            setCambioConMotivo(null);
+            void ejecutarCambio(venta, accion, motivo);
+          }}
+        />
+      )}
+
+      {cobro && (
+        <div className="modal-overlay open" onClick={() => !pagando && setCobro(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="tv-det-head">
+              <h3 className="tv-det-titulo">Registrar pago del pedido #{cobro.venta.id}</h3>
+              <button type="button" className="modal-x" onClick={() => setCobro(null)} aria-label="Cerrar">×</button>
+            </div>
+
+            <div className="tv-cobro-resumen">
+              <div>
+                <span className="tv-cobro-etq">
+                  {cobro.venta.tipo_entrega === 'Consumir' && cobro.venta.mesa
+                    ? `Mesa ${cobro.venta.mesa}`
+                    : ETIQUETA_ENTREGA[cobro.venta.tipo_entrega ?? ''] ?? 'Pedido'}
+                </span>
+              </div>
+              <div className="tv-cobro-total">
+                <span className="tv-cobro-etq">Total a cobrar</span>
+                <strong>${Number(cobro.venta.valor_total).toLocaleString('es-CO')}</strong>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Método de pago</label>
+              <select value={metodoCobro} onChange={(e) => setMetodoCobro(e.target.value)} disabled={pagando}>
+                {METODOS_COBRO.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            {exigeComprobante && (
+              <div className="form-group">
+                <label>Comprobante de pago <span style={{ color: '#E8821A' }}>*</span></label>
+                <input
+                  ref={refArchivoCobro}
+                  id="comprobante-cobro"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  style={{ display: 'none' }}
+                  onChange={(e) => setArchivoCobro(e.target.files?.[0] ?? null)}
+                />
+                {previewCobro ? (
+                  <div className="tv-drop-preview">
+                    <img src={previewCobro} alt="Vista previa del comprobante" />
+                    <div className="tv-drop-info">
+                      <strong>{archivoCobro?.name}</strong>
+                      <span>{((archivoCobro?.size ?? 0) / 1024 / 1024).toFixed(2)} MB</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setArchivoCobro(null);
+                          if (refArchivoCobro.current) refArchivoCobro.current.value = '';
+                        }}
+                      >
+                        Quitar y elegir otra
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <label htmlFor="comprobante-cobro" className="tv-drop">
+                    <span>📎 Adjuntar imagen del comprobante</span>
+                    <small>JPG, PNG o WEBP · máximo 8 MB</small>
+                  </label>
+                )}
+              </div>
+            )}
+
+            <div className="vt-comprobante-acciones">
+              <button type="button" className="btn-cancel" onClick={() => setCobro(null)} disabled={pagando}>
+                Cancelar
+              </button>
+              <button type="button" className="btn-save" onClick={confirmarPago} disabled={pagando}>
+                {pagando ? 'Registrando…' : 'Registrar pago'}
+              </button>
             </div>
           </div>
         </div>
