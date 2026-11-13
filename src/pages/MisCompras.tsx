@@ -46,6 +46,7 @@ type PedidoUI = {
   comprobante_valor?: number;
   comprobante_coincide?: boolean;
   comprobante_subido_en?: string;
+  reembolso?: { monto: number; fecha: string } | null;
 };
 
 function texto(valor: unknown): string | undefined {
@@ -167,6 +168,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
           comprobante_valor: numero(f.comprobante_valor),
           comprobante_coincide: booleano(f.comprobante_coincide),
           comprobante_subido_en: texto(f.comprobante_subido_en),
+          reembolso: f.reembolso ? { monto: Number((f.reembolso as { monto: unknown }).monto), fecha: String((f.reembolso as { fecha: unknown }).fecha) } : null,
           valorTotalBD: f.valor_total !== undefined ? Number(f.valor_total) : undefined,
         });
       }
@@ -275,6 +277,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
         comprobante_valor: numero(v.comprobante_valor),
         comprobante_coincide: booleano(v.comprobante_coincide),
         comprobante_subido_en: texto(v.comprobante_subido_en),
+        reembolso: v.reembolso ? { monto: Number(v.reembolso.monto), fecha: String(v.reembolso.fecha) } : null,
       };
     })
     .filter((p): p is PedidoUI => p !== null);
@@ -651,6 +654,11 @@ export default function MisCompras() {
                   ) : (
                     <div className="progreso-cancelado">
                       <span>{cancelado ? 'Este pedido fue cancelado.' : 'Este pedido fue rechazado.'}</span>
+                      {p.reembolso && (
+                        <span>
+                          Registramos la devolución de ${Number(p.reembolso.monto).toLocaleString('es-CO')}. Si no la ves reflejada, escríbenos por WhatsApp.
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

@@ -8,6 +8,8 @@ import { mensajeDeError, type MapaTransiciones } from '../../types/Trazabilidad'
 import '../../styles/pedidos-turno.css';
 import { getEcho } from '../../api/echo';
 import { etiquetaEstado } from '../../utils/estados';
+import { QR_RUTAS, CUENTA_QR, NOMBRE_QR, claveQr } from '../../utils/pagoQr';
+
 
 import NuevaVentaModal, { precargarNuevaVenta } from '../../components/NuevaVentaModal';
 import ComprobanteImagen from '../../components/ComprobanteImagen';
@@ -53,10 +55,12 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   cajero: {
     titulo: 'Cajero',
     subtitulo: 'Verifica pedidos, entrega pedidos listos y cobra las mesas pendientes.',
-    estados: ['Por verificar', 'Preparado', 'Pendiente de pago'],
+    estados: ['Por verificar', 'Preparado', 'Servido', 'Pendiente de pago'],
+    columnas: ['Por verificar', 'Preparado', 'Pendiente de pago', 'Ya pagados'],
     acciones: {
       'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
       Preparado: { sig: 'Servido', texto: 'Entregar' },
+      Servido: { sig: 'Pagado', texto: 'Registrar pago' },
       'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
     },
   },
@@ -89,6 +93,7 @@ interface ItemVenta {
 }
 interface PromoVenta {
   nombre?: string;
+  precio?: string | number | null;
 }
 interface Venta {
   id: number;
@@ -166,8 +171,13 @@ const pagoConComprobanteAprobado = (v: Venta): boolean =>
   (v.metodo_pago ?? '').trim().toLowerCase() !== 'efectivo' &&
   v.comprobante_estado === 'Aprobado';
 
-const columnaDe = (v: Venta, vista: Vista): string =>
-  vista === 'cajero' ? (yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago') : (v.estado ?? '');
+const columnaDe = (v: Venta, vista: Vista): string => {
+  if (vista !== 'cajero') return v.estado ?? '';
+  if (v.estado === 'Servido' || v.estado === 'Pendiente de pago') {
+    return yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago';
+  }
+  return v.estado ?? '';
+};
 
 const FILTROS_ENTREGA: { valor: Entrega; texto: string }[] = [
   { valor: 'todos', texto: 'Todos' },
@@ -229,6 +239,7 @@ export default function PedidosTurno() {
   const [metodoCobro, setMetodoCobro] = useState('Efectivo');
   const [archivoCobro, setArchivoCobro] = useState<File | null>(null);
   const [pagando, setPagando] = useState(false);
+  const comprobantesRef = useRef<Map<number, string | null> | null>(null);
   const pagandoRef = useRef(false);
   const colsRef = useRef<HTMLDivElement>(null);
   const moverColumnas = (dir: 1 | -1) =>
@@ -258,6 +269,19 @@ export default function PedidosTurno() {
       const lista: Venta[] = Array.isArray(res.data)
         ? res.data
         : ((res.data as { data?: unknown })?.data as Venta[]) ?? [];
+
+      if (puedeRevisarComprobante) {
+        const previos = comprobantesRef.current;
+        const nuevos = new Map<number, string | null>();
+        lista.forEach((v) => {
+          const marca = v.comprobante_subido_en ?? null;
+          nuevos.set(v.id, marca);
+          if (previos && previos.has(v.id) && marca && previos.get(v.id) !== marca) {
+            showToast(`Llegó un nuevo comprobante de pago del pedido #${v.id}. Revísalo.`, false);
+          }
+        });
+        comprobantesRef.current = nuevos;
+      }
       const turno = lista.filter((v) => config.estados.includes(v.estado ?? ''));
       turno.sort((a, b) =>
         aFecha(a.fecha_programada ?? a.fecha ?? '').getTime() - aFecha(b.fecha_programada ?? b.fecha ?? '').getTime());
@@ -267,7 +291,7 @@ export default function PedidosTurno() {
     } finally {
       setLoading(false);
     }
-  }, [config.estados]);
+  }, [config.estados, puedeRevisarComprobante]);
 
   useEffect(() => {
     setLoading(true);
@@ -471,6 +495,9 @@ export default function PedidosTurno() {
     [detalle !== null, () => setDetalleId(null)],
   ]);
   
+  const claveQrCobro = claveQr(metodoCobro);
+  const [qrCobroFallo, setQrCobroFallo] = useState<Record<string, boolean>>({});
+
   const exigeComprobante =
     !!cobro && METODOS_CON_COMPROBANTE.includes(metodoCobro) && !comprobanteAprobado(cobro.venta);
     
@@ -534,7 +561,7 @@ export default function PedidosTurno() {
         ? { sig: 'Servido', texto: 'Entregar' }
         : undefined);
         
-    if (vista === 'cajero' && accion && yaPagado(v)) {
+    if (vista === 'cajero' && accion && accion.sig === 'Pagado' && yaPagado(v)) {
       accion = { ...accion, texto: 'Cerrar pedido' };
     }
     
@@ -570,12 +597,16 @@ export default function PedidosTurno() {
 
     const vaAPagar = accion?.sig === 'Pagado';
     const faltaComprobante = vaAPagar && requiereComprobante(v) && !comprobanteAprobado(v);
+    const devuelto = v.comprobante_estado === 'Rechazado';
     const textoAccion = faltaComprobante
-      ? puedeRevisarComprobante
-        ? 'Aprobar comprobante'
-        : 'Comprobante pendiente'
+      ? devuelto
+        ? 'Esperando nuevo comprobante'
+        : puedeRevisarComprobante
+          ? 'Aprobar comprobante'
+          : 'Comprobante pendiente'
       : accion?.texto;
-    const accionDeshabilitada = esOcupado || (faltaComprobante && !puedeRevisarComprobante);
+    const accionDeshabilitada =
+      esOcupado || (faltaComprobante && (devuelto || !puedeRevisarComprobante));
 
     return (
       <div
@@ -892,6 +923,7 @@ export default function PedidosTurno() {
             })()}
 
             {(() => {
+              const promos = (detalle.promociones ?? []).filter((p) => p?.nombre);
               const agrupados = new Map<string, { nombre: string; cantidad: number; subtotal: number }>();
               (detalle.detalles ?? []).forEach((d) => {
                 const nombre = d.producto?.nombre ?? 'Producto';
@@ -900,13 +932,14 @@ export default function PedidosTurno() {
                 prev.subtotal += Number((d as any).subtotal ?? 0);
                 agrupados.set(nombre, prev);
               });
-              const promos = (detalle.promociones ?? []).filter((p) => p?.nombre);
+              // Si hay combo, se ocultan los productos incluidos en él (subtotal 0)
+              const lista = [...agrupados.values()].filter((g) => promos.length === 0 || g.subtotal > 0);
 
               return (
                 <div className="tv-det-productos">
                   <h4 className="tv-det-subtitulo">Productos</h4>
                   <ul className="tv-det-lista">
-                    {[...agrupados.values()].map((g) => (
+                    {lista.map((g) => (
                       <li key={g.nombre}>
                         <span className="tv-det-cant">{g.cantidad}</span>
                         <span className="tv-det-nombre">{g.nombre}</span>
@@ -918,8 +951,10 @@ export default function PedidosTurno() {
                     {promos.map((p, i) => (
                       <li key={`p${i}`} className="tv-det-combo">
                         <span className="tv-det-cant">1</span>
-                        <span className="tv-det-nombre">Combo {p.nombre}</span>
-                        <span className="tv-det-precio" />
+                        <span className="tv-det-nombre">{/^combo/i.test(p.nombre ?? '') ? p.nombre : `Combo ${p.nombre}`}</span>
+                        <span className="tv-det-precio">
+                          {p.precio != null ? `$${Number(p.precio).toLocaleString('es-CO')}` : ''}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -1019,7 +1054,7 @@ export default function PedidosTurno() {
 
                     {puedeRevisarComprobante && (
                       <div className="vt-comprobante-acciones">
-                        {detalle.comprobante_estado !== 'Aprobado' && (
+                        {detalle.comprobante_estado !== 'Aprobado' && detalle.comprobante_estado !== 'Rechazado' && (
                           <button
                             type="button"
                             className="btn-save"
@@ -1029,7 +1064,7 @@ export default function PedidosTurno() {
                             {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
                           </button>
                         )}
-                        {detalle.comprobante_estado !== 'Rechazado' && (
+                        {detalle.comprobante_estado !== 'Aprobado' && detalle.comprobante_estado !== 'Rechazado' && (
                           <button
                             type="button"
                             className="btn-cancel"
@@ -1162,6 +1197,30 @@ export default function PedidosTurno() {
                 ))}
               </SelectOscuro>
             </div>
+
+            {claveQrCobro && (
+              <div className="tv-qr-caja" key={claveQrCobro}>
+                {!qrCobroFallo[claveQrCobro] ? (
+                  <>
+                    <img
+                      className="tv-qr-img"
+                      src={QR_RUTAS[claveQrCobro]}
+                      alt="Código QR Bre-B para pagar el pedido"
+                      onError={() => setQrCobroFallo((v) => ({ ...v, [claveQrCobro]: true }))}
+                    />
+                    <div className="tv-qr-cuenta">
+                      <strong>{CUENTA_QR[claveQrCobro]?.titular}</strong>
+                      <span>Llave Bre-B · {CUENTA_QR[claveQrCobro]?.llave}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="tv-qr-cuenta">
+                    Paga con {NOMBRE_QR[claveQrCobro]} y adjunta el comprobante.
+                  </div>
+                )}
+                <small>El cliente escanea el código, digita ${Number(cobro?.venta.valor_total ?? 0).toLocaleString('es-CO')} y muestra el comprobante.</small>
+              </div>
+            )}
 
             {exigeComprobante && (
               <div className="form-group">

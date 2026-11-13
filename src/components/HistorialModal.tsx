@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import apiClient from '../api/client';
 import SelectOscuro from './SelectOscuro';
 import AdminDatePicker from './AdminDatePicker';
+import Paginacion, { paginar } from './Paginacion';
+
 
 interface Movimiento {
   id: number;
@@ -22,7 +24,6 @@ interface Item {
   repetidos: number;
 }
 
-const POR_PAGINA = 50;
 const ALTO = 38;
 
 const PALETA = [
@@ -160,7 +161,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
   const [accion, setAccion] = useState<'' | Accion>('');
   const [desde, setDesde] = useState('');
   const [hasta, setHasta] = useState('');
-  const [mostrar, setMostrar] = useState(POR_PAGINA);
+  const [pagina, setPagina] = useState(1);
   const [agrupar, setAgrupar] = useState(true);
 
   const cargar = () => {
@@ -192,7 +193,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
   }, []);
 
   useEffect(() => {
-    setMostrar(POR_PAGINA);
+    setPagina(1);
   }, [q, modulo, usuario, rol, accion, desde, hasta]);
 
   const ordenados = useMemo(
@@ -250,7 +251,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
     return out;
   }, [filtrados]);
 
-  const visibles = items.slice(0, mostrar);
+  const { visibles, paginaActual } = paginar(items, pagina);
 
   const grupos = useMemo(() => {
     if (!agrupar) return [{ clave: 'todos', etiqueta: '', items: visibles }];
@@ -609,17 +610,12 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
               </section>
             ))}
 
-            {items.length > mostrar && (
-              <div style={{ textAlign: 'center', paddingTop: 16 }}>
-                <button
-                  type="button"
-                  className="btn-cancel"
-                  onClick={() => setMostrar((n) => n + POR_PAGINA)}
-                >
-                  Ver más ({items.length - mostrar} restantes)
-                </button>
-              </div>
-            )}
+            <Paginacion
+              total={items.length}
+              pagina={paginaActual}
+              onCambiar={setPagina}
+              etiqueta="movimientos"
+            />
           </>
         )}
       </div>

@@ -220,6 +220,7 @@ export default function CierreInventarioAdmin() {
         td{padding:8px 10px;border-bottom:1px solid #ddd}
       </style></head><body>
       <h1>Cierre de inventario N.º ${d.id}</h1>
+      <p><b>Empresa:</b> El Oriente</p>
       <p><b>Fecha:</b> ${f.toLocaleDateString('es-CO')} &nbsp; <b>Hora:</b> ${f.toLocaleTimeString('es-CO')}</p>
       <p><b>Responsable:</b> ${esc(d.usuario ?? '—')}</p>
       <p><b>Observación:</b> ${esc(d.observacion ?? '—')}</p>

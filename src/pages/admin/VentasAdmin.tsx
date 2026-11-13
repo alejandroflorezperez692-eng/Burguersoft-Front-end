@@ -1110,7 +1110,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                       style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 14px', borderBottom: '1px solid var(--border)', fontSize: 13 }}
                     >
                       <span style={{ flex: 1, fontWeight: 600, color: 'var(--text-900)' }}>{prod?.nombre ?? 'Producto'}</span>
-                      <span style={{ color: 'var(--text-600)' }}>x{linea.cantidad}</span>
+                      <span style={{ color: 'var(--text-600)' }}>{linea.cantidad}</span>
                       <span style={{ fontWeight: 700, color: 'var(--text-900)', minWidth: 80, textAlign: 'right' }}>
                         ${((Number(prod?.valor) || 0) * linea.cantidad).toLocaleString('es-CO')}
                       </span>
@@ -1136,7 +1136,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                         {promo?.nombre ?? 'Combo'}{' '}
                         <span className="badge badge-info" style={{ fontSize: 10 }}>Combo</span>
                       </span>
-                      <span style={{ color: 'var(--text-600)' }}>x{combo.cantidad}</span>
+                      <span style={{ color: 'var(--text-600)' }}>{combo.cantidad}</span>
                       <span style={{ fontWeight: 700, color: 'var(--text-900)', minWidth: 80, textAlign: 'right' }}>
                         ${((Number(promo?.precio) || 0) * combo.cantidad).toLocaleString('es-CO')}
                       </span>
@@ -1546,7 +1546,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   />
 
                   <div className="vt-comprobante-acciones">
-                    {esAdmin && detalle.comprobante_estado !== 'Aprobado' && (
+                    {esAdmin && detalle.comprobante_estado !== 'Aprobado' && detalle.comprobante_estado !== 'Rechazado' && (
                       <button
                         type="button"
                         className="btn-save"
