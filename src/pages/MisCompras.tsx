@@ -19,6 +19,7 @@ type ItemUI = {
   cantidad: number;
   precio_unitario: number;
   subtotal: number;
+  es_combo?: boolean;
 };
 
 type PedidoUI = {
@@ -31,6 +32,9 @@ type PedidoUI = {
   total: number;
   items: ItemUI[];
   telefono?: string;
+  telefono_recibe?: string;
+  recibe_nombre?: string;
+  combos?: { nombre: string; precio: number }[];
   direccion?: string;
   barrio?: string;
   referencia?: string;
@@ -209,6 +213,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
               cantidad: Number.isFinite(cantidad) ? cantidad : 1,
               precio_unitario: Number.isFinite(precio) ? precio : 0,
               subtotal: Number(d.subtotal ?? cantidad * precio) || 0,
+              es_combo: Boolean(d.venta_promocion_id),
             };
           })
         : Array.isArray(v.productos)
@@ -220,6 +225,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
                 cantidad: Number.isFinite(cantidad) ? cantidad : 1,
                 precio_unitario: Number.isFinite(precio) ? precio : 0,
                 subtotal: Number(d.subtotal ?? cantidad * precio) || 0,
+                es_combo: Boolean(d.venta_promocion_id),
               };
             })
           : Array.isArray(v.items)
@@ -231,6 +237,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
                   cantidad: Number.isFinite(cantidad) ? cantidad : 1,
                   precio_unitario: Number.isFinite(precio) ? precio : 0,
                   subtotal: Number(d.subtotal ?? cantidad * precio) || 0,
+                  es_combo: Boolean(d.venta_promocion_id),
                 };
               })
             : [];
@@ -251,6 +258,14 @@ function normalizarPedidos(raw: any): PedidoUI[] {
         telefono: texto(
           v.telefono_contacto ?? v.telefono ?? v.usuario?.telefono ?? v.usuario?.phone,
         ),
+        telefono_recibe: texto(v.recibe_telefono),
+        recibe_nombre: texto(v.recibe_nombre),
+        combos: Array.isArray(v.promociones)
+          ? v.promociones.map((promo: any) => ({
+              nombre: String(promo?.nombre ?? 'Combo'),
+              precio: Number(promo?.precio ?? 0) || 0,
+            }))
+          : [],
         direccion: texto(v.direccion),
         barrio: texto(v.barrio),
         referencia: texto(v.referencia),
@@ -721,9 +736,15 @@ export default function MisCompras() {
                     </span>
                   </div>
                   <div className="pedido-info-item">
-                    <span className="pedido-info-label">Teléfono</span>
+                    <span className="pedido-info-label">
+                      {p.tipo_entrega === 'Domicilio' ? 'Teléfono de quien recibe' : 'Teléfono'}
+                    </span>
                     <span className="pedido-info-valor">
-                      {formatearTelefono(p.telefono) ?? 'No registrado'}
+                      {formatearTelefono(
+                        p.tipo_entrega === 'Domicilio'
+                          ? (p.telefono_recibe ?? p.telefono)
+                          : p.telefono,
+                      ) ?? 'No registrado'}
                     </span>
                   </div>
                   <div className="pedido-info-item pedido-info-full">
@@ -757,10 +778,24 @@ export default function MisCompras() {
                             <span className="producto-nombre">{item.nombre}</span>
                           </td>
                           <td>
-                            <span className="precio-unit">{formatoMoneda(item.precio_unitario)}</span>
+                            <span className="precio-unit">
+                              {item.es_combo ? 'Incluido' : formatoMoneda(item.precio_unitario)}
+                            </span>
                           </td>
                           <td>{item.cantidad}</td>
-                          <td>{formatoMoneda(item.subtotal)}</td>
+                          <td>{item.es_combo ? '—' : formatoMoneda(item.subtotal)}</td>
+                        </tr>
+                      ))}
+                      {(p.combos ?? []).map((combo, idx) => (
+                        <tr key={`${p.id}-combo-${idx}`} className="pedido-combo-row">
+                          <td>
+                            <span className="producto-nombre">{combo.nombre} (combo)</span>
+                          </td>
+                          <td>
+                            <span className="precio-unit">{formatoMoneda(combo.precio)}</span>
+                          </td>
+                          <td>1</td>
+                          <td>{formatoMoneda(combo.precio)}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -479,11 +479,10 @@ const load = async (silencioso = false) => {
     setPagina(1);
   };
 
-  // El total filtrado solo suma ventas reales: lo cancelado/reembolsado/rechazado
-  // no cuenta (salvo que el usuario esté filtrando justo por uno de esos estados,
-  // para poder ver cuánto representan).
+  // Solo los pedidos entregados y en estado "Pagado" cuentan como dinero vendido.
+  // Si el usuario filtra un estado concreto se muestra el total de ese estado.
   const totalFiltrado = filtered
-    .filter((v) => filtroEstado || !NO_VENDIDOS.includes(v?.estado))
+    .filter((v) => (filtroEstado ? true : v?.estado === 'Pagado'))
     .reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
 
   const { visibles, paginaActual } = paginar(filtered, pagina);

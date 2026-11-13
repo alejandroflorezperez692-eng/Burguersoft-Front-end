@@ -7,7 +7,6 @@ import { normalizarRol } from '../utils/roles';
 import '../styles/nu-admin.css';
 import '../styles/nuevo-pedido.css';
 import SelectOscuro from './SelectOscuro';
-import { METODOS_MOSTRADOR } from '../utils/pagos';
 
 interface Adicion { id: number; nombre: string; precio: number | string; tipo?: string; estado?: string }
 interface Producto { id: number; nombre: string; valor: number; img?: string | null; estado?: string; categoria?: string; adiciones?: Adicion[] }
@@ -15,8 +14,6 @@ interface Promocion { id: number; nombre: string; precio: number; estado?: strin
 interface PedidoMesa { id: number; estado: string; valor_total: number; items: { nombre: string; cantidad: number }[] }
 interface Mesa { numero: number; estado: 'Libre' | 'Ocupada' | 'Por cobrar'; total?: number; pedidos?: PedidoMesa[]; mesero?: { id: number; nombre: string; apellido: string } | null }
 type Item = { tipo: 'producto' | 'combo'; id: number; nombre: string; precio: number; img?: string | null; agotado?: boolean; cat: string };
-
-const METODOS = METODOS_MOSTRADOR;
 
 const TIPOS = [
   { v: 'Consumir', t: 'En el local' },
