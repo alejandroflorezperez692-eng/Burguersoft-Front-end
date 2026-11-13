@@ -873,3 +873,12 @@ body:not(.dark-mode) .tv-tabs .tv-tab.activo:focus-visible {
 .tv-qr-cuenta { display: flex; flex-direction: column; gap: 2px; font-size: 0.9rem; }
 .tv-qr-caja small { color: #6b6b6b; line-height: 1.3; }
 body.dark-mode .tv-qr-caja small { color: #b5b5b5; }
+.tv-wrap .tv-cols {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+.tv-wrap .tv-cols::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
