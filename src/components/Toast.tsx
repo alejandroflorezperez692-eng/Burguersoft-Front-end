@@ -111,7 +111,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const showToast = useCallback((msg: string, error = false, aviso = false, duracionMs?: number) => {
     setToast({ msg, error, aviso });
     window.clearTimeout(timer.current);
-    // Los mensajes largos duran más para que alcancen a leerse (mínimo 3.5s).
     const duracion = duracionMs ?? Math.min(8000, Math.max(3500, 3200 + msg.length * 25));
     timer.current = window.setTimeout(() => setToast(null), duracion);
   }, []);

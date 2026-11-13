@@ -26,6 +26,9 @@ export interface RegistroTrazabilidad {
   evento?: string | null;
   rol?: string | null;
   usuario?: string | { nombre?: string | null; apellido?: string | null } | null;
+  fuera_de_rol?: boolean;
+  es_correccion?: boolean;
+  duracion_segundos?: number | null;
 }
 
 export function registrosDeTrazabilidad(data: unknown): RegistroTrazabilidad[] {

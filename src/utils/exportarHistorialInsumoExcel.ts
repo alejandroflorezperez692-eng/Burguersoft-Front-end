@@ -1,6 +1,3 @@
-// src/utils/exportarHistorialInsumoExcel.ts
-// Genera un .xlsx (solo lectura) con el historial de UN insumo:
-//   Resumen · Compras vs Cierres · Detalle de compras
 
 import type { Row, Workbook, Worksheet } from 'exceljs';
 
@@ -108,7 +105,6 @@ export function armarPeriodos(compras: CompraInsumo[], cierres: CierreInsumo[]):
 
 /* ---------- Constantes y utilidades ---------- */
 const COLOR = 'FFE8821A'; // naranja de la marca
-// Contraseña para desbloquear las hojas (el archivo se entrega de solo lectura)
 const CLAVE_HOJAS = 'burguersoft-reportes';
 const FMT_MONEDA = '"$"#,##0';
 const FMT_NUM = '#,##0.##';
@@ -117,7 +113,6 @@ const FMT_FECHA_HORA = 'dd/mm/yyyy hh:mm';
 
 const num = (v: unknown) => Number(v) || 0;
 
-// Fecha real de Excel construida en UTC para que no se corra por zona horaria
 const aFechaExcel = (s?: string | null): Date | null => {
   const m = String(s ?? '').match(/(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
   if (!m) return null;
@@ -169,7 +164,6 @@ export async function exportarHistorialInsumoExcel(op: {
   compras: CompraInsumo[];
   cierres: CierreInsumo[];
 }) {
-  // Import dinámico: ExcelJS solo se descarga cuando se usa el botón
   const ExcelJS = (await import('exceljs')).default;
   const { insumo, compras, cierres } = op;
   const unidad = insumo.unidad_medida ? ` (${insumo.unidad_medida})` : '';
@@ -193,6 +187,10 @@ export async function exportarHistorialInsumoExcel(op: {
   wsRes.getCell('B2').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
   wsRes.getCell('B2').numFmt = FMT_FECHA_HORA;
   wsRes.getCell('B2').alignment = { horizontal: 'left' };
+  wsRes.getCell('A3').value = 'Empresa';
+  wsRes.getCell('A3').font = { bold: true };
+  wsRes.getCell('B3').value = 'El Oriente';
+  wsRes.getCell('B3').alignment = { horizontal: 'left' };
 
   let f = 4;
   const seccion = (t: string) => {
@@ -287,7 +285,6 @@ export async function exportarHistorialInsumoExcel(op: {
   const hRow = wsV.getRow(2);
   cabeceras.forEach((t, i) => (hRow.getCell(i + 1).value = t));
   estiloEncabezado(hRow);
-  // El bloque de cierre lleva su propio tono para que se lea el "contra"
   for (let i = 7; i <= 10; i++) hRow.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2E9D5F' } };
   for (let i = 1; i <= 3; i++) hRow.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8C7B67' } };
   for (let i = 11; i <= 12; i++) hRow.getCell(i).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF8C7B67' } };
@@ -332,7 +329,6 @@ export async function exportarHistorialInsumoExcel(op: {
         c.font = { italic: true, color: { argb: 'FF8C7B67' } };
         c.alignment = { horizontal: 'center' };
       }
-      // Línea más marcada entre los dos bloques
       r.getCell('inicial').border = { left: { style: 'medium', color: { argb: 'FFD6D1CC' } }, bottom: { style: 'hair', color: { argb: 'FFD9D9D9' } } };
       r.getCell('n').border = { left: { style: 'medium', color: { argb: 'FFD6D1CC' } }, bottom: { style: 'hair', color: { argb: 'FFD9D9D9' } } };
       ['periodo', 'desde', 'hasta', 'cant', 'gastado', 'real', 'dif', 'esperado', 'usuario', 'obs'].forEach((k) => {
@@ -402,7 +398,6 @@ export async function exportarHistorialInsumoExcel(op: {
   }
 
   /* ===== Acabado y protección ===== */
-  // Filas alternas con fondo cálido muy suave (solo hojas de datos)
   wb.worksheets.forEach((ws) => {
     if (ws === wsRes) return;
     ws.eachRow((row, n) => {
@@ -418,9 +413,8 @@ export async function exportarHistorialInsumoExcel(op: {
     });
   });
 
-  // Solo lectura: se puede ver, seleccionar, copiar y ajustar columnas, pero no editar
   for (const ws of wb.worksheets) {
-    await ws.protect(CLAVE_HOJAS, {
+    await ws.protect('', {
       selectLockedCells: true,
       selectUnlockedCells: true,
       formatColumns: true,

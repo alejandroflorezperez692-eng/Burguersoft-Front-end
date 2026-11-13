@@ -61,7 +61,6 @@ export default function MateriaPrimaHistorialModal({ insumo, proveedor, onClose 
     return () => {
       vivo = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [insumo.id]);
 
   const unidad = insumo.unidad_medida ? ` ${insumo.unidad_medida}` : '';

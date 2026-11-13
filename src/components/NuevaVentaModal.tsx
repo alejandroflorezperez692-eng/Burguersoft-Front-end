@@ -98,7 +98,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const [direccion, setDireccion] = useState('');
   const [telefono, setTelefono] = useState('');
   const [recibeNombre, setRecibeNombre] = useState('');
-  // El método de pago va fijo en 'Efectivo': el pago real se confirma al verificar el comprobante
   const [metodoPago] = useState('Efectivo');
   const [notas, setNotas] = useState('');
   const [buscar, setBuscar] = useState('');
@@ -149,7 +148,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
       .catch(() => {});
     cargarMesas();
 
-    // F-036: admin y cajero pueden asignar el mesero de cada mesa.
     if (puedeAsignarMesero) {
       apiClient.get('/mesas/meseros')
         .then(({ data }) => { if (vivo) setMeseros(Array.isArray(data) ? data : []); })
@@ -446,7 +444,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                   {(mesaActual.pedidos ?? []).map((p) => (
                     <div key={p.id} className="np-previo-item">
                       <span className="np-previo-head">#{p.id} · {p.estado}</span>
-                      <span>{p.items.map((i) => `${i.cantidad}× ${i.nombre}`).join(', ')}</span>
+                      <span>{p.items.map((i) => `${i.cantidad} ${i.nombre}`).join(', ')}</span>
                     </div>
                   ))}
                   <div className="np-previo-total">

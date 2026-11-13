@@ -31,7 +31,6 @@ export function getEcho(): EchoReverb | null {
       wssPort: puerto,
       forceTLS: conTLS,
       enabledTransports: ['ws', 'wss'],
-      // Si Reverb está caído, el navegador reintenta solo; aquí no rompemos nada.
       authorizer: (canal) => ({
         authorize: (socketId, callback) => {
           apiClient

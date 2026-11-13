@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../components/Toast';
 import apiClient from '../../api/client';
@@ -49,6 +50,11 @@ export default function ConfiguracionAdmin() {
   const [mostrarConf, setMostrarConf] = useState(false);
   const [actualizandoPwd, setActualizandoPwd] = useState(false);
   const selectorTdocRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+
+  useEffect(() => {
+    setVerHistorial(false);
+  }, [location.key]);
 
   useEffect(() => {
     const cerrarAlHacerClickFuera = (event: MouseEvent) => {

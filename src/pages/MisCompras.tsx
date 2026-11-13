@@ -46,6 +46,7 @@ type PedidoUI = {
   comprobante_valor?: number;
   comprobante_coincide?: boolean;
   comprobante_subido_en?: string;
+  reembolso?: { monto: number; fecha: string } | null;
 };
 
 function texto(valor: unknown): string | undefined {
@@ -74,8 +75,6 @@ const PASOS_RECOGER = PASOS;
 const PASOS_CONSUMIR = PASOS;
 const CANCELABLES = ['Registrado', 'Por verificar', 'Recepcionado'];
 
-// Orden global para estimar progreso cuando el estado no pertenece al flujo actual
-// (el backend permite cualquier estado en cualquier tipo de entrega).
 const ORDEN_GLOBAL = PASOS;
 
 function normalizarTipoEntrega(tipo?: string): string {
@@ -169,6 +168,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
           comprobante_valor: numero(f.comprobante_valor),
           comprobante_coincide: booleano(f.comprobante_coincide),
           comprobante_subido_en: texto(f.comprobante_subido_en),
+          reembolso: f.reembolso ? { monto: Number((f.reembolso as { monto: unknown }).monto), fecha: String((f.reembolso as { fecha: unknown }).fecha) } : null,
           valorTotalBD: f.valor_total !== undefined ? Number(f.valor_total) : undefined,
         });
       }
@@ -277,6 +277,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
         comprobante_valor: numero(v.comprobante_valor),
         comprobante_coincide: booleano(v.comprobante_coincide),
         comprobante_subido_en: texto(v.comprobante_subido_en),
+        reembolso: v.reembolso ? { monto: Number(v.reembolso.monto), fecha: String(v.reembolso.fecha) } : null,
       };
     })
     .filter((p): p is PedidoUI => p !== null);
@@ -412,8 +413,6 @@ export default function MisCompras() {
 
     void cargar();
 
-    // Respaldo: sin websocket, refrescamos seguido para que el estado que
-    // cambia el administrador se refleje sin recargar la página.
     const echo = getEcho();
     
     if (echo) {
@@ -440,12 +439,10 @@ export default function MisCompras() {
     };
   }, [isAuthenticated, cargar, aplicarCambioEstado]);
 
-  // Cada pedido tiene su propio canal privado: solo su dueño o el personal lo escucha.
   const idsPedidos = (pedidos ?? []).map((p) => p.id).join(',');
 
   useEffect(() => {
     if (!isAuthenticated || !idsPedidos) return;
-    // Token demo sin backend: no hay websocket real.
     if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
 
     const echo = getEcho();
@@ -481,7 +478,6 @@ export default function MisCompras() {
     setError(null);
     try {
       const { data } = await apiClient.patch(`/ventas/${pedido.id}/estado`, { estado: 'Cancelado', motivo });
-      // El backend puede devolver { success: true } o la venta actualizada
       if (data && data.success === false) {
         throw new Error(String(data.error ?? data.message ?? 'No se pudo cancelar el pedido.'));
       }
@@ -658,6 +654,11 @@ export default function MisCompras() {
                   ) : (
                     <div className="progreso-cancelado">
                       <span>{cancelado ? 'Este pedido fue cancelado.' : 'Este pedido fue rechazado.'}</span>
+                      {p.reembolso && (
+                        <span>
+                          Registramos la devolución de ${Number(p.reembolso.monto).toLocaleString('es-CO')}. Si no la ves reflejada, escríbenos por WhatsApp.
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import apiClient from '../api/client';
 import '../styles/public.css';
 import '../styles/checkout.css';
+import { QR_RUTAS, CUENTA_QR, NOMBRE_QR } from '../utils/pagoQr';
 import PublicHeader from '../components/PublicHeader';
 import { useToast } from '../components/Toast';
 import { mensajeError } from '../utils/errores';
@@ -238,24 +239,6 @@ const ETIQUETA_PAGO: Record<string, string> = {
   efectivo: 'Efectivo (contra entrega)',
 };
 
-const QR_RUTAS: Record<string, string> = {
-  nequi: '/estilos/img/qr-breb.png',
-  daviplata: '/estilos/img/qr-breb.png',
-  bancolombia: '/estilos/img/qr-breb.png',
-};
-
-const CUENTA_QR: Record<string, { titular: string; llave: string }> = {
-  nequi: { titular: 'Flor Avella', llave: '@3115387534' },
-  daviplata: { titular: 'Flor Avella', llave: '@3115387534' },
-  bancolombia: { titular: 'Flor Avella', llave: '@3115387534' },
-};
-
-const NOMBRE_QR: Record<string, string> = {
-  nequi: 'Nequi',
-  daviplata: 'Daviplata',
-  bancolombia: 'Bancolombia',
-};
-
 const fmtCOP = (v: number) => `$${Math.round(v).toLocaleString('es-CO')}`;
 
 function formatearTelefono(v: string): string {
@@ -273,7 +256,6 @@ export default function Checkout() {
   const alertar = (msg: any) => showToastGlobal(String(msg), true);
   const tasaImpuesto = useTasaImpuesto();
 
-  // F-006: la mesa puede venir en el QR de cada mesa (?mesa=N).
   const [searchParams] = useSearchParams();
   const mesaUrl = Number(searchParams.get('mesa'));
   const mesaDesdeUrl = Number.isInteger(mesaUrl) && mesaUrl > 0;
@@ -361,7 +343,6 @@ export default function Checkout() {
   const [recibeNombre, setRecibeNombre] = useState('');
   const [recibeTelefono, setRecibeTelefono] = useState('');
 
-  // ---- Mesas (solo si el cliente come en el local) ----
   const [mesas, setMesas] = useState<{ numero: number; estado: string }[]>([]);
   const [mesaSel, setMesaSel] = useState<number | null>(null);
 
@@ -418,11 +399,6 @@ export default function Checkout() {
     });
   }, []);
 
-  const [usarMismosDatos, setUsarMismosDatos] = useState(true);
-  const [facturaNombre, setFacturaNombre] = useState('');
-  const [facturaApellido, setFacturaApellido] = useState('');
-  const [facturaDocumento, setFacturaDocumento] = useState('');
-
   const [metodoPago, setMetodoPago] = useState<'nequi' | 'daviplata' | 'bancolombia' | 'efectivo'>('nequi');
   const [qrNoDisponible, setQrNoDisponible] = useState<Record<string, boolean>>({});
 
@@ -450,7 +426,6 @@ export default function Checkout() {
     return () => {
       try { sessionStorage.removeItem(PEDIDO_KEY); } catch { /* sin storage */ }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [comprobante, setComprobante] = useState<File | null>(null);
@@ -520,7 +495,7 @@ export default function Checkout() {
           ...(i.extras ?? []).map((e) => `+${e.cantidad} ${e.nombre}`),
           i.nota,
         ].filter(Boolean).join(', ');
-        return `${i.cantidad}x ${i.nombre}: ${det}`;
+        return `${i.cantidad} ${i.nombre}: ${det}`;
       });
     return partes.length ? partes.join(' | ').slice(0, 255) : null;
   };
@@ -714,7 +689,7 @@ export default function Checkout() {
     lineas.push('------------------------');
     lineas.push('*PRODUCTOS*');
     items.forEach((i) => {
-      lineas.push(`${i.cantidad}x ${i.nombre} - ${fmtCOP(i.precio * i.cantidad)}`);
+      lineas.push(`${i.cantidad} ${i.nombre} - ${fmtCOP(i.precio * i.cantidad)}`);
     });
     lineas.push('------------------------');
     lineas.push(`Subtotal: ${fmtCOP(subtotal)}`);
@@ -727,11 +702,6 @@ export default function Checkout() {
       lineas.push('*Adjunto el comprobante de pago por este chat.*');
     } else {
       lineas.push('Pago contra entrega.');
-    }
-    if (usarMismosDatos) {
-      lineas.push('Facturación: mismos datos del cliente');
-    } else {
-      lineas.push(`Facturación: ${facturaNombre} ${facturaApellido} - Doc ${facturaDocumento}`);
     }
 
     return lineas.join('\n');
@@ -997,31 +967,6 @@ export default function Checkout() {
                     placeholder="300 345 8970"
                   />
                 </div>
-
-                <div className="checkout-subtitulo">Facturación electrónica</div>
-                <label className="checkout-checkbox-row">
-                  <input type="checkbox" checked={usarMismosDatos} onChange={(e) => setUsarMismosDatos(e.target.checked)} />
-                  <span>Utilizar mi información para la facturación</span>
-                </label>
-
-                {!usarMismosDatos && (
-                  <div className="checkout-form" style={{ marginTop: 12 }}>
-                    <div className="checkout-grid-2">
-                      <div className="form-group">
-                        <label>Nombre</label>
-                        <input value={facturaNombre} onChange={(e) => setFacturaNombre(e.target.value)} />
-                      </div>
-                      <div className="form-group">
-                        <label>Apellido</label>
-                        <input value={facturaApellido} onChange={(e) => setFacturaApellido(e.target.value)} />
-                      </div>
-                    </div>
-                    <div className="form-group">
-                      <label>Número de documento</label>
-                      <input value={facturaDocumento} onChange={(e) => setFacturaDocumento(e.target.value.replace(/\D/g, ''))} />
-                    </div>
-                  </div>
-                )}
               </div>
 
               <div className="checkout-seccion checkout-seccion-pago">
@@ -1142,7 +1087,7 @@ export default function Checkout() {
             <div className="checkout-resumen-items">
               {items.map((i) => (
                 <div className="checkout-resumen-item" key={i.id}>
-                  <span className="checkout-resumen-item-nombre">{i.cantidad}x {i.nombre}</span>
+                  <span className="checkout-resumen-item-nombre">{i.cantidad} {i.nombre}</span>
                   <span>{fmtCOP(i.precio * i.cantidad)}</span>
                 </div>
               ))}

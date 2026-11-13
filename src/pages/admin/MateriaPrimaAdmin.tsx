@@ -78,7 +78,6 @@ const emptyForm = {
 
 export default function MateriaPrimaAdmin() {
   const { user } = useAuth();
-  // F-021: el cocinero consulta el inventario, pero no lo modifica.
   const soloLectura = normalizarRol(user?.role) === 'cocinero';
   const [items, setItems] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);

@@ -1,5 +1,3 @@
-
-
 import type { Row, Workbook, Worksheet } from 'exceljs';
 
 
@@ -51,7 +49,6 @@ export interface OpcionesReporte {
 
 /* ---------- Constantes y utilidades ---------- */
 const COLOR = 'FFE8821A'; // naranja de la marca
-// Contraseña para desbloquear las hojas (el archivo se entrega de solo lectura)
 const CLAVE_HOJAS = 'burguersoft-reportes';
 const FMT_MONEDA = '"$"#,##0';
 const FMT_FECHA = 'dd/mm/yyyy';
@@ -186,7 +183,6 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
       r.getCell('total').numFmt = FMT_MONEDA;
       bordeSuave(r);
 
-      // Sin pagar / anuladas en gris para distinguirlas
       if (noContable(v.estado)) {
         r.eachCell((c) => {
           c.font = { italic: true, color: { argb: 'FF999999' } };
@@ -368,17 +364,22 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
   wsRes.views = [{ showGridLines: false }];
 
   wsRes.mergeCells('A1:D1');
-  wsRes.getCell('A1').value = 'Reporte';
+  const tituloReporte = op.ventas ? 'Reporte de ventas' : op.productos ? 'Reporte de productos vendidos' : 'Reporte de compras';
+  wsRes.getCell('A1').value = tituloReporte;
   wsRes.getCell('A1').font = { bold: true, size: 18, color: { argb: COLOR } };
   wsRes.getCell('A2').value = 'Rango de fechas';
   wsRes.getCell('A2').font = { bold: true };
   wsRes.getCell('B2').value = `${dmy(op.desde)} al ${dmy(op.hasta)}`;
   wsRes.getCell('A3').value = 'Generado';
   wsRes.getCell('A3').font = { bold: true };
-  wsRes.getCell('B3').value = new Date();
+  wsRes.getCell('B3').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000);
   wsRes.getCell('B3').numFmt = 'dd/mm/yyyy hh:mm';
   wsRes.getCell('B3').alignment = { horizontal: 'left' };
   wsRes.getCell('B2').alignment = { horizontal: 'left' };
+  wsRes.getCell('A4').value = 'Empresa';
+  wsRes.getCell('A4').font = { bold: true };
+  wsRes.getCell('B4').value = 'El Oriente';
+  wsRes.getCell('B4').alignment = { horizontal: 'left' };
 
   let f = 5;
 
@@ -570,7 +571,6 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
   }
 
   /* ===================== ACABADO Y PROTECCIÓN ===================== */
-  // Filas alternas en gris muy suave para que se lea mejor (solo hojas de datos)
   wb.worksheets.forEach((ws) => {
     if (ws === wsRes) return;
     ws.eachRow((row, n) => {
@@ -586,10 +586,8 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
     });
   });
 
-  // Solo lectura: se puede ver, seleccionar, copiar y ajustar el ancho de columnas,
-  // pero no editar celdas ni fórmulas.
   for (const ws of wb.worksheets) {
-    await ws.protect(CLAVE_HOJAS, {
+    await ws.protect('', {
       selectLockedCells: true,
       selectUnlockedCells: true,
       formatColumns: true,

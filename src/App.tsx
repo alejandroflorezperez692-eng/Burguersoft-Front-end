@@ -48,6 +48,7 @@ const Ayuda = lazy(() => import('./pages/admin/Ayuda'));
 const AyudaCliente = lazy(() => import('./pages/AyudaCliente'));
 const InventarioAdmin = lazy(() => import('./pages/admin/InventarioAdmin'));
 
+
 export default function App() {
   return (
     <ToastProvider>

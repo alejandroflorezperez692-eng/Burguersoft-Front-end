@@ -22,7 +22,6 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
   const { user, updateUser, logout } = useAuth();
   const { showToast } = useToast();
   const esCliente = normalizarRol(user?.role) === 'cliente';
-  // Si el usuario ya editó algo, la respuesta tardía de /me no debe borrarlo.
   const dirtyRef = useRef(false);
   const abiertoRef = useRef(false);
   const [tab, setTab] = useState<Tab>('datos');

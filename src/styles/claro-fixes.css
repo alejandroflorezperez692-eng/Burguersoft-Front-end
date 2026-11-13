@@ -1,0 +1,948 @@
+/* =====================================================================
+   Ajustes SOLO modo claro (no afecta el modo oscuro)
+   - Configuración de Cuenta
+   - Historial de movimientos
+   - Desplegables y calendarios
+   ===================================================================== */
+
+/* ---------- Configuración de Cuenta ---------- */
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) {
+  --border: #e8821a;
+  --border-strong: #e8821a;
+  --text-900: #000000;
+  --text-600: #000000;
+  --text-400: #000000;
+}
+
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-card,
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .grid-perfil > div > div:first-child {
+  border: 1.5px solid #e8821a !important;
+}
+
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .form-group :is(input, select, textarea),
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-trigger,
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-options {
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .form-group :is(input, select):disabled {
+  color: #555555 !important;
+  -webkit-text-fill-color: #555555;
+}
+
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .form-group input::placeholder {
+  color: #555555;
+}
+
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) :is(.form-group label, .cfg-titulo, .cfg-hint, .cfg-documento-hint, .subtitulo) {
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-option {
+  color: #000000;
+}
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-option + .cfg-document-option {
+  border-top: 1px solid #e8821a;
+}
+html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-option:hover {
+  background: #e8821a;
+  color: #ffffff;
+}
+
+
+/* ---------- Historial de movimientos ---------- */
+html body:not(.dark-mode) .hist-page {
+  --border: #e8821a;
+  --border-strong: #e8821a;
+  --text-900: #000000;
+  --text-600: #000000;
+  --text-400: #000000;
+}
+
+html body:not(.dark-mode) .hist-page :is(.hist-card, .hist-item) {
+  border: 1.5px solid #e8821a !important;
+}
+
+html body:not(.dark-mode) .hist-page .hist-ctl,
+html body:not(.dark-mode) .hist-page :is(input, select, button):not(.hist-ctl) {
+  border-color: #e8821a !important;
+}
+
+html body:not(.dark-mode) .hist-page :is(input, select) {
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .hist-page button[style*="var(--brand)"] {
+  color: #ffffff !important;
+}
+
+html body:not(.dark-mode) .hist-page :is(.hist-dia, .hist-texto, .hist-rol, .hist-hora) {
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .hist-page .hist-linea::before {
+  background: #e8821a;
+}
+
+html body:not(.dark-mode) .hist-page label {
+  color: #000000 !important;
+}
+
+/* Fondo totalmente blanco */
+html body:not(.dark-mode) .admin-body .main-content:has(.hist-page),
+html body:not(.dark-mode) .admin-body .main-content:has(.hist-page) .page-inner,
+html body:not(.dark-mode) .admin-body .hist-page {
+  background: #ffffff !important;
+}
+
+html body:not(.dark-mode) .admin-body .hist-page .hist-item::before {
+  border-color: #ffffff !important;
+}
+
+/* Línea que separa el título del resto */
+html body:not(.dark-mode) .admin-body .hist-page > div:first-of-type {
+  margin-bottom: 24px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 1.5px solid #e8821a !important;
+}
+
+/* Calendario dentro del Historial: sin bordes naranja en los botones de días */
+html body:not(.dark-mode) .hist-page .compras-calendar button {
+  border-color: transparent !important;
+}
+
+
+/* ---------- Desplegable de filtros de Ventas ---------- */
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown {
+  position: relative;
+}
+
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-trigger {
+  border: 1.5px solid #e8821a !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-options {
+  border: 1px solid #e8821a !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18) !important;
+  padding: 0 !important;
+  overflow-y: auto;
+  scrollbar-color: #e8821a #ffffff;
+  scrollbar-width: thin;
+}
+
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option {
+  padding: 7px 12px !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e8821a !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  cursor: pointer;
+}
+
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option:last-child {
+  border-bottom: 0 !important;
+}
+
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option:hover,
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option:focus-visible,
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option.selected {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+
+/* ---------- Menú: checkbox "Requiere cocina" (SOLO modo claro) ---------- */
+html body:not(.dark-mode) .mn-field label[for="mn-cocina"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  width: 100%;
+  margin: 0;
+  color: #000000 !important;
+  cursor: pointer;
+}
+
+html body:not(.dark-mode) .mn-field label[for="mn-cocina"] span {
+  flex: 1 1 auto;
+  color: #000000 !important;
+  line-height: 1.3;
+  text-align: left;
+}
+
+html body:not(.dark-mode) .mn-field label[for="mn-cocina"] small {
+  display: block;
+  margin-top: 2px;
+  color: #000000 !important;
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: none;
+}
+
+
+/* ---------- Botones de cerrar (X) en administrador y cliente (SOLO modo claro) ---------- */
+html body:not(.dark-mode) :is(
+  .modal-x, .mn-form-cerrar, .np-close, .mp-close, .close-cart,
+  .detalle-close, .verify-modal-close, .pers-cerrar,
+  .mp-detalle-cerrar, .legal-modal-cerrar
+) {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: var(--font-sans, system-ui, sans-serif) !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+html body:not(.dark-mode) :is(
+  .modal-x, .mn-form-cerrar, .np-close, .mp-close, .close-cart,
+  .detalle-close, .verify-modal-close, .pers-cerrar,
+  .mp-detalle-cerrar, .legal-modal-cerrar
+):hover:not(:disabled) {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+html body:not(.dark-mode) :is(
+  .modal-x, .mn-form-cerrar, .np-close, .mp-close, .close-cart,
+  .detalle-close, .verify-modal-close, .pers-cerrar,
+  .mp-detalle-cerrar, .legal-modal-cerrar
+):focus-visible {
+  outline: 2px solid #e8821a;
+  outline-offset: 2px;
+}
+
+html body:not(.dark-mode) :is(.modal-x, .mn-form-cerrar):disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+
+/* ---------- Casillas (checkbox) administrador y cliente (SOLO modo claro) ---------- */
+/* El selector repite [type=checkbox] a propósito para ganarle a las reglas de focus/fondo de admin.css */
+html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox],
+html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox]:focus,
+html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox]:focus-visible,
+html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox]:active,
+html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox]:hover {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  position: relative;
+  flex: 0 0 18px;
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  margin: 0;
+  padding: 0 !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 4px !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  outline: none !important;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+/* Chulito: se dibuja en el pseudo-elemento, así ninguna regla de fondo lo tapa */
+html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox]::before {
+  content: "" !important;
+  position: absolute;
+  inset: 0;
+  border-radius: 2px;
+  background: #e8821a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4 12 10 18 20 6'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+  opacity: 0;
+  pointer-events: none;
+}
+
+html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox]:checked::before {
+  opacity: 1;
+}
+
+html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox][type=checkbox]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Pedidos del turno (SOLO modo claro): bordes naranja, líneas naranja, letra negra ---------- */
+html body:not(.dark-mode) :is(.tv-wrap, .tv-det-box) {
+  --border: #e8821a;
+  --border-strong: #e8821a;
+  --text-900: #000000;
+  --text-600: #000000;
+  --text-400: #000000;
+}
+
+/* Columnas de estados: como estaban (fondo gris claro, borde gris) */
+html body:not(.dark-mode) .tv-wrap .tv-col {
+  background: color-mix(in srgb, #160800 4%, #ffffff) !important;
+  border: 1px solid #e7e4e1 !important;
+}
+
+/* Recuadro punteado "Sin pedidos" */
+html body:not(.dark-mode) .tv-wrap .tv-col-vacio {
+  border: 1.5px dashed #d6d1cc !important;
+  color: #000000 !important;
+}
+
+/* Contador de cada columna (0, 1, 2...) */
+html body:not(.dark-mode) .tv-wrap .tv-col-count {
+  background: #ffffff !important;
+  border: 1px solid #e7e4e1 !important;
+  color: #000000 !important;
+}
+
+/* Tarjetas de pedido */
+html body:not(.dark-mode) .tv-wrap :is(.tv-card, .tv-col[data-estado] .tv-card) {
+  border: 1.5px solid #e8821a !important;
+}
+
+html body:not(.dark-mode) .tv-wrap :is(.tv-card-foot, .tv-items) {
+  border-color: #e8821a !important;
+}
+
+html body:not(.dark-mode) .tv-wrap .tv-chip {
+  border: 1px solid #e8821a !important;
+  color: #000000 !important;
+}
+
+/* Buscador, pestañas (Todos / Cocina / Meseros / Cajero) y botones */
+html body:not(.dark-mode) .tv-wrap :is(.tv-buscar, .tv-tabs, .tv-btn-sec, .tv-refrescar) {
+  border: 1.5px solid #e8821a !important;
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .tv-wrap .tv-pill:not(.activo) {
+  color: #000000 !important;
+}
+
+/* Flechas del carrusel */
+html body:not(.dark-mode) .tv-wrap .tv-flechas button {
+  border: 1.5px solid #e8821a !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .tv-wrap .tv-flechas button:hover {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+/* Textos en negro */
+html body:not(.dark-mode) .tv-wrap :is(
+  .tv-titulo, .tv-subtitulo, .tv-nota, .tv-col-head, .tv-col-titulo,
+  .tv-cliente, .tv-sub, .tv-num, .tv-total, .tv-tiempo, .tv-espera,
+  .tv-tab:not(.activo)
+) {
+  color: #000000 !important;
+}
+
+/* Ventana de detalle y cobro */
+html body:not(.dark-mode) .tv-det-box :is(
+  .tv-det-titulo, .tv-det-sub, .tv-det-nombre, .tv-det-precio,
+  .tv-det-cant, .tv-det-subtitulo, .tv-cobro-etq, .tv-fila-k, .tv-fila-v
+) {
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .tv-det-box :is(
+  .tv-det-info, .tv-det-total, .tv-det-lista li, .tv-cobro-resumen, .tv-fila
+) {
+  border-color: #e8821a !important;
+}
+
+/* Pedidos del turno: línea naranja que separa el título del resto (SOLO modo claro) */
+html body:not(.dark-mode) .tv-wrap .tv-head {
+  padding-bottom: 18px;
+  border-bottom: 1.5px solid #e8821a;
+}
+
+/* ---------- Botones pequeños de flecha (‹ ›) en todo el sistema (SOLO modo claro) ---------- */
+
+/* Flechas redondas del carrusel de Pedidos */
+html body:not(.dark-mode) .tv-flechas button {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Flechas del mes en los calendarios */
+html body:not(.dark-mode) .compras-calendar-header button {
+  display: inline-grid !important;
+  place-items: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Al pasar el cursor: fondo naranja y flecha blanca */
+html body:not(.dark-mode) .tv-flechas button:hover:not(:disabled),
+html body:not(.dark-mode) .compras-calendar-header button:hover:not(:disabled) {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+html body:not(.dark-mode) .tv-flechas button:disabled,
+html body:not(.dark-mode) .compras-calendar-header button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Paginación (‹ Anterior, 1, 2, 3, Siguiente ›) y paginación del nuevo pedido */
+html body:not(.dark-mode) :is(.pag-btn, .np-pg) {
+  border: 1.5px solid #e8821a !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) :is(.pag-btn, .np-pg):hover:not(:disabled):not(.activa) {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+html body:not(.dark-mode) .pag-btn.activa {
+  background: #e8821a !important;
+  border-color: #e8821a !important;
+  color: #ffffff !important;
+}
+
+html body:not(.dark-mode) :is(.pag-btn, .np-pg):disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ---------- Botones pequeños redondos − / + (cantidades) en administrador y cliente (SOLO modo claro) ---------- */
+html body:not(.dark-mode) :is(.np-step, .qty-stepper, .pers-mini, .pers-qty) > button {
+  display: inline-grid !important;
+  place-items: center !important;
+  flex: 0 0 28px;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  padding: 0 !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: var(--font-sans, system-ui, sans-serif) !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Al pasar el cursor: fondo naranja y signo blanco */
+html body:not(.dark-mode) :is(.np-step, .qty-stepper, .pers-mini, .pers-qty) > button:hover:not(:disabled) {
+  background: #e8821a !important;
+  color: #ffffff !important;
+}
+
+html body:not(.dark-mode) :is(.np-step, .qty-stepper, .pers-mini, .pers-qty) > button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* El número del medio en negro */
+html body:not(.dark-mode) :is(.np-step, .qty-stepper, .pers-mini, .pers-qty) > :is(strong, span) {
+  color: #000000 !important;
+  font-weight: 700;
+  min-width: 22px;
+  text-align: center;
+}
+
+/* ---------- Ventas: filtros alineados y del mismo tamaño (SOLO modo claro) ---------- */
+html body:not(.dark-mode) .ventas-page .ventas-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+/* Etiquetas iguales (ESTADO, MÉTODO DE PAGO, ENTREGA, DESDE, HASTA) */
+html body:not(.dark-mode) .ventas-page .ventas-filtros .form-group {
+  margin: 0;
+}
+
+html body:not(.dark-mode) .ventas-page .ventas-filtros .form-group > label {
+  display: block;
+  margin: 0 0 6px;
+  color: #000000 !important;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+/* Selects y desplegables: mismo alto que los campos de fecha */
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown {
+  position: relative;
+  min-width: 170px;
+}
+
+html body:not(.dark-mode) .ventas-page .ventas-filtros :is(.ventas-filter-dropdown-trigger, select) {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 170px;
+  height: 40px !important;
+  padding: 0 12px !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  font: inherit;
+  font-size: 13.5px !important;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Flecha del desplegable personalizado */
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-trigger svg {
+  flex: 0 0 12px;
+  color: #000000;
+}
+
+/* Lista de opciones debajo del campo */
+html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-options {
+  position: absolute !important;
+  z-index: 2100;
+  top: calc(100% + 4px);
+  left: 0;
+  min-width: 100%;
+  max-height: 240px;
+}
+
+/* ---------- Ventas (admin): filtros ordenados como los de Promociones (SOLO modo claro) ---------- */
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  gap: 14px !important;
+}
+
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros > .form-group {
+  flex: 0 0 auto !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+}
+
+/* Ancho de cada filtro */
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros > .ventas-filter-state    { width: 190px !important; }
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros > .ventas-filter-method   { width: 190px !important; }
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros > .ventas-filter-delivery { width: 160px !important; }
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros > .ventas-filter-date     { width: 170px !important; }
+
+/* El contenedor de cada campo ocupa todo el ancho de su columna */
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros .ventas-filter-dropdown,
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros .ventas-date-picker {
+  display: block !important;
+  position: relative;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Desplegables y fechas: mismo alto, borde, radio y letra (como Promociones) */
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros .ventas-filter-dropdown-trigger,
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros .ventas-date-trigger {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  padding: 0 12px !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+  font-family: inherit;
+  font-size: 13.5px !important;
+  line-height: normal !important;
+  text-align: left;
+  cursor: pointer;
+}
+
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros .ventas-filter-dropdown-trigger svg,
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros .ventas-date-trigger svg {
+  flex: 0 0 auto;
+  color: #000000;
+}
+
+/* Botón "Limpiar filtros" con la misma altura */
+html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros .ventas-clear-filters-btn {
+  box-sizing: border-box;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font-size: 13.5px;
+}
+
+
+/* ---------- Modal "Cancelar el pedido" (MotivoModal): línea bajo el título y borde naranja (SOLO modo claro) ---------- */
+html body:not(.dark-mode) .modal-box:has(> .motivo-modal-titulo) {
+  --mm-pad: 36px;
+  padding: var(--mm-pad) !important;
+}
+
+html body:not(.dark-mode) .motivo-modal-titulo {
+  margin: 0 calc(var(--mm-pad) * -1) !important;
+  padding: 0 var(--mm-pad) 14px;
+  border-bottom: 1.5px solid #e8821a;
+}
+
+@media (max-width: 600px) {
+  html body:not(.dark-mode) .modal-box:has(> .motivo-modal-titulo) {
+    --mm-pad: 20px;
+  }
+}
+
+html body:not(.dark-mode) .motivo-modal-titulo + p {
+  margin-top: 14px !important;
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .motivo-modal-input {
+  border: 1.5px solid #e8821a !important;
+  background: #ffffff;
+  color: #000000 !important;
+}
+
+html body:not(.dark-mode) .motivo-modal-input:focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18);
+}
+
+
+/* ---------- Detalle de venta (Venta #N): espaciado ordenado (SOLO modo claro) ---------- */
+html body:not(.dark-mode) .vt-det {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Cada bloque con el mismo margen lateral que el encabezado */
+html body:not(.dark-mode) .vt-det > .vt-det-sec,
+html body:not(.dark-mode) .vt-det > .vt-det-total {
+  margin: 0;
+  padding: 16px 26px 0;
+}
+
+html body:not(.dark-mode) .vt-det > .vt-det-sec h4 {
+  margin: 0 0 8px;
+  color: #000000 !important;
+}
+
+/* Cajas de datos (Cliente / Pedido) con borde naranja y aire interno */
+html body:not(.dark-mode) .vt-det .vt-det-grid {
+  gap: 12px 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+}
+
+html body:not(.dark-mode) .vt-det .vt-det-grid dt {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* Productos */
+html body:not(.dark-mode) .vt-det .vt-det-lineas {
+  border: 0;
+}
+
+html body:not(.dark-mode) .vt-det .vt-det-linea {
+  padding: 8px 2px;
+  border-bottom: 1px solid #e8821a;
+}
+
+html body:not(.dark-mode) .vt-det .vt-det-linea:last-child {
+  border-bottom: 0;
+}
+
+/* Total */
+html body:not(.dark-mode) .vt-det > .vt-det-total {
+  padding-top: 14px;
+}
+
+/* Línea divisoria y botón Cerrar dentro del modal, sin salirse de los bordes */
+html body:not(.dark-mode) .admin-body .main-content .modal-box.vt-det .modal-actions,
+html body:not(.dark-mode) .modal-box.vt-det .modal-actions {
+  margin: 20px 0 0;
+  padding: 18px 26px 26px;
+  border-top: 1.5px solid #e8821a;
+}
+
+
+/* ---------- Inventario: historial del insumo (MateriaPrimaHistorialModal) (SOLO modo claro) ---------- */
+/* Línea naranja bajo el encabezado, de extremo a extremo */
+html body:not(.dark-mode) .hm-box .hm-head {
+  margin: 0 -32px;
+  padding: 0 60px 16px 32px;
+  border-bottom: 1.5px solid #e8821a;
+}
+
+/* Tarjetas de datos: fondo blanco y borde naranja */
+html body:not(.dark-mode) .hm-box .hm-kpi {
+  background: #ffffff;
+  border: 1.5px solid #e8821a;
+}
+
+/* Letras en negro */
+html body:not(.dark-mode) .hm-box .hm-titulo,
+html body:not(.dark-mode) .hm-box .hm-tipo,
+html body:not(.dark-mode) .hm-box .hm-kpi span,
+html body:not(.dark-mode) .hm-box .hm-kpi strong,
+html body:not(.dark-mode) .hm-box .hm-vacio,
+html body:not(.dark-mode) .hm-box .hm-sub,
+html body:not(.dark-mode) .hm-box .hm-pendiente {
+  color: #000000 !important;
+}
+
+/* Línea naranja sobre el botón Cerrar, de extremo a extremo */
+html body:not(.dark-mode) .hm-box .mn-modal-actions {
+  margin: 18px -32px 0 !important;
+  padding: 18px 32px 0;
+  border-top: 1.5px solid #e8821a;
+}
+
+
+/* ---------- Reportes: buscador "Buscar producto..." igual que los demás campos (SOLO modo claro) ---------- */
+html body:not(.dark-mode) .reportes-page input[placeholder="Buscar producto..."] {
+  box-sizing: border-box;
+  width: 100%;
+  height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 14px;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 10px !important;
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  font-family: inherit;
+  font-size: 13.5px;
+  outline: none;
+}
+
+html body:not(.dark-mode) .reportes-page input[placeholder="Buscar producto..."]::placeholder {
+  color: #6b6b6b;
+  opacity: 1;
+}
+
+html body:not(.dark-mode) .reportes-page input[placeholder="Buscar producto..."]:focus {
+  border-color: #e8821a !important;
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18);
+}
+
+
+/* ---------- Contraseña en todo el sistema: igual al campo de "Nueva contraseña" del admin (SOLO modo claro) ---------- */
+
+/* Botón Mostrar / Ocultar: negro, mayúsculas, sin fondo ni borde (clientes, admin, inicio de sesión, crear cuenta) */
+html body:not(.dark-mode) :is(
+  .mp-pw-toggle,
+  .cfg-pw-toggle,
+  .bk-pw-toggle,
+  .boton-mostrar-password,
+  button[aria-label="Mostrar contraseña"],
+  button[aria-label="Ocultar contraseña"]
+),
+html body:not(.dark-mode) :is(
+  .mp-pw-toggle,
+  .cfg-pw-toggle,
+  .bk-pw-toggle,
+  .boton-mostrar-password,
+  button[aria-label="Mostrar contraseña"],
+  button[aria-label="Ocultar contraseña"]
+):is(:hover, :focus, :focus-visible, :active) {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #000000 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+html body:not(.dark-mode) :is(
+  .mp-pw-toggle,
+  .cfg-pw-toggle,
+  .boton-mostrar-password,
+  button[aria-label="Mostrar contraseña"],
+  button[aria-label="Ocultar contraseña"]
+):not(:has(svg)) {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Barra de fuerza: pista gris y relleno de color (perfil de clientes, admin, crear cuenta, restablecer) */
+html body:not(.dark-mode) :is(.barra-contrasena, .mp-panel .barra-contrasena),
+html body:not(.dark-mode) .cfg-barra {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 8px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: rgba(44, 24, 16, 0.12) !important;
+  overflow: hidden;
+}
+
+html body:not(.dark-mode) :is(.barra-contrasena-fill, .cfg-barra-fill) {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+html body:not(.dark-mode) :is(.barra-contrasena, .cfg-barra).rojo :is(.barra-contrasena-fill, .cfg-barra-fill) {
+  background: linear-gradient(90deg, #d93025, #f77e4f) !important;
+}
+html body:not(.dark-mode) :is(.barra-contrasena, .cfg-barra).amarillo :is(.barra-contrasena-fill, .cfg-barra-fill) {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24) !important;
+}
+html body:not(.dark-mode) :is(.barra-contrasena, .cfg-barra).verde :is(.barra-contrasena-fill, .cfg-barra-fill) {
+  background: linear-gradient(90deg, #16a34a, #4ade80) !important;
+}
+
+/* Lista de requisitos: texto café-naranja, ícono rojo; cumplido en verde */
+html body:not(.dark-mode) :is(.requisitos, .cfg-requisitos) {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+html body:not(.dark-mode) :is(.requisito, .cfg-requisito) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #a0522d !important;
+}
+
+html body:not(.dark-mode) .mp-panel .requisito:not(.cumple) {
+  color: #a0522d !important;
+}
+
+html body:not(.dark-mode) :is(.requisito, .cfg-requisito).cumple {
+  color: #1e8e3e !important;
+}
+
+html body:not(.dark-mode) .cfg-requisito:not(.cumple) .cfg-requisito-icon {
+  color: #d93025;
+  font-weight: 800;
+}
+
+
+/* ---------- Clientes: modal "¿Cerrar sesión?" visible y con el mismo diseño del panel (SOLO modo claro) ---------- */
+html body:not(.dark-mode) .public-body .mn-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(22, 8, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-modal-box {
+  box-sizing: border-box;
+  width: 92%;
+  max-width: 380px;
+  padding: 32px;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-modal-box p {
+  margin: 0 0 24px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #000000;
+}
+
+html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Cancelar: blanco con borde naranja */
+html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-btn-cancel {
+  padding: 11px 24px;
+  border: 1.5px solid #e8821a;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #000000;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-btn-cancel:hover {
+  background: #e8821a;
+  color: #ffffff;
+}
+
+/* Sí, salir: rojo */
+html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-btn-confirm {
+  padding: 11px 28px;
+  border: none;
+  border-radius: 8px;
+  background: #c8382a;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(200, 56, 42, 0.3);
+}
+html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-btn-confirm:hover {
+  background: #a82d22;
+}
+
