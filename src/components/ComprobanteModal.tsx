@@ -51,7 +51,6 @@ const elegir = async (file: File | null) => {
   }
   const comprimido = await comprimirImagen(file);
   setArchivo(comprimido);
-  // Un solo click: al elegir la imagen se sube y verifica automáticamente.
   void enviar(comprimido);
 };
 
@@ -113,7 +112,6 @@ const elegir = async (file: File | null) => {
             const input = e.target;
             const file = input.files?.[0] ?? null;
             void elegir(file);
-            // Permite volver a elegir el mismo archivo si falla.
             input.value = '';
           }}
         />

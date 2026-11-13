@@ -98,7 +98,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const [direccion, setDireccion] = useState('');
   const [telefono, setTelefono] = useState('');
   const [recibeNombre, setRecibeNombre] = useState('');
-  // El método de pago va fijo en 'Efectivo': el pago real se confirma al verificar el comprobante
   const [metodoPago] = useState('Efectivo');
   const [notas, setNotas] = useState('');
   const [buscar, setBuscar] = useState('');
@@ -149,7 +148,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
       .catch(() => {});
     cargarMesas();
 
-    // F-036: admin y cajero pueden asignar el mesero de cada mesa.
     if (puedeAsignarMesero) {
       apiClient.get('/mesas/meseros')
         .then(({ data }) => { if (vivo) setMeseros(Array.isArray(data) ? data : []); })

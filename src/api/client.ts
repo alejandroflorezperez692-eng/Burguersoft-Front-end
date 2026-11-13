@@ -38,14 +38,12 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && token && !esLogin) {
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
-      // Se avisa en el login que la sesión expiró (en vez de redirigir en silencio).
       sessionStorage.setItem('aviso_login', 'sesion_expirada');
       window.location.href = '/login';
     }
 
     const status: number | undefined = error.response?.status;
 
-    // Errores de red / tiempo de espera: se traducen para que nunca salgan en inglés.
     if (!error.response) {
       const msg = String(error.message ?? '');
       if (error.code === 'ECONNABORTED' || /timeout|timed out/i.test(msg)) {
@@ -57,8 +55,6 @@ apiClient.interceptors.response.use(
 
     if (error.response?.data) {
       const data = error.response.data;
-      // Se guarda el texto original (sin sanear) por si alguna pantalla
-      // necesita detectar casos concretos (p. ej. llaves foráneas de Postgres).
       const originales: string[] = [];
       const guardar = (v: unknown) => {
         if (typeof v === 'string' && v) originales.push(v);
@@ -96,7 +92,6 @@ apiClient.interceptors.response.use(
               configurable: true,
             });
           } catch {
-            // Si no se puede definir, no es crítico.
           }
         }
       }

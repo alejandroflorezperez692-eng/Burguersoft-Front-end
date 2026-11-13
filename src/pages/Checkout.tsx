@@ -256,7 +256,6 @@ export default function Checkout() {
   const alertar = (msg: any) => showToastGlobal(String(msg), true);
   const tasaImpuesto = useTasaImpuesto();
 
-  // F-006: la mesa puede venir en el QR de cada mesa (?mesa=N).
   const [searchParams] = useSearchParams();
   const mesaUrl = Number(searchParams.get('mesa'));
   const mesaDesdeUrl = Number.isInteger(mesaUrl) && mesaUrl > 0;
@@ -344,7 +343,6 @@ export default function Checkout() {
   const [recibeNombre, setRecibeNombre] = useState('');
   const [recibeTelefono, setRecibeTelefono] = useState('');
 
-  // ---- Mesas (solo si el cliente come en el local) ----
   const [mesas, setMesas] = useState<{ numero: number; estado: string }[]>([]);
   const [mesaSel, setMesaSel] = useState<number | null>(null);
 
@@ -428,7 +426,6 @@ export default function Checkout() {
     return () => {
       try { sessionStorage.removeItem(PEDIDO_KEY); } catch { /* sin storage */ }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const [comprobante, setComprobante] = useState<File | null>(null);

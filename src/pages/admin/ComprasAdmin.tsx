@@ -411,7 +411,6 @@ const CLAVE_BORRADOR = 'compra_borrador_local';
 
 export default function ComprasAdmin() {
   const { user } = useAuth();
-  // F-021: el cocinero consulta compras y costos, pero no los modifica.
   const soloLectura = normalizarRol(user?.role) === 'cocinero';
   const [items, setItems] = useState<Compra[]>([]);
   const [materias, setMaterias] = useState<MateriaPrima[]>([]);
@@ -424,7 +423,6 @@ export default function ComprasAdmin() {
   const [fInsumo, setFInsumo] = useState('');
   const [fMarca, setFMarca] = useState('');
 
-  // --- Estados de paginación ---
   const DIAS_POR_PAGINA = 15;
   const [pagina, setPagina] = useState(1);
 

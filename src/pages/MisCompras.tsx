@@ -75,8 +75,6 @@ const PASOS_RECOGER = PASOS;
 const PASOS_CONSUMIR = PASOS;
 const CANCELABLES = ['Registrado', 'Por verificar', 'Recepcionado'];
 
-// Orden global para estimar progreso cuando el estado no pertenece al flujo actual
-// (el backend permite cualquier estado en cualquier tipo de entrega).
 const ORDEN_GLOBAL = PASOS;
 
 function normalizarTipoEntrega(tipo?: string): string {
@@ -415,8 +413,6 @@ export default function MisCompras() {
 
     void cargar();
 
-    // Respaldo: sin websocket, refrescamos seguido para que el estado que
-    // cambia el administrador se refleje sin recargar la página.
     const echo = getEcho();
     
     if (echo) {
@@ -443,12 +439,10 @@ export default function MisCompras() {
     };
   }, [isAuthenticated, cargar, aplicarCambioEstado]);
 
-  // Cada pedido tiene su propio canal privado: solo su dueño o el personal lo escucha.
   const idsPedidos = (pedidos ?? []).map((p) => p.id).join(',');
 
   useEffect(() => {
     if (!isAuthenticated || !idsPedidos) return;
-    // Token demo sin backend: no hay websocket real.
     if (sessionStorage.getItem('token') === 'demo-token-sin-backend') return;
 
     const echo = getEcho();
@@ -484,7 +478,6 @@ export default function MisCompras() {
     setError(null);
     try {
       const { data } = await apiClient.patch(`/ventas/${pedido.id}/estado`, { estado: 'Cancelado', motivo });
-      // El backend puede devolver { success: true } o la venta actualizada
       if (data && data.success === false) {
         throw new Error(String(data.error ?? data.message ?? 'No se pudo cancelar el pedido.'));
       }

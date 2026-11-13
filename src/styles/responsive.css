@@ -47,8 +47,7 @@ canvas {
     min-width: 0;
   }
 
-  /* `clip` (en lugar de `hidden`) evita que la cabecera pegajosa deje de
-     funcionar, porque no convierte al body en contenedor de scroll. */
+ 
   body {
     overflow-x: hidden;
   }
@@ -701,14 +700,7 @@ canvas {
   }
 }
 
-/* ==========================================================================
-   CAPA RESPONSIVE MEJORADA
-   Ajustes finos para que la interfaz se vea bien en celular, tablet,
-   portátil y pantallas grandes. Esta sección se carga después de los
-   estilos base, así que solo refina medidas; no cambia la identidad visual.
-   ========================================================================== */
 
-/* --- Base: escalado de texto y prevención de desbordes ------------------- */
 
 html {
   -webkit-text-size-adjust: 100%;
@@ -720,12 +712,12 @@ body {
   min-height: 100svh;
 }
 
-/* Los textos largos (correos, URLs, códigos) no deben romper el layout. */
+
 .public-body :is(p, h1, h2, h3, h4, h5, h6, li, label, td, th, a, strong, small) {
   overflow-wrap: break-word;
 }
 
-/* Contenedores que nunca deben generar scroll horizontal. */
+
 .public-body .promociones,
 .public-body .contact-section,
 .public-body .nosotros-content,
@@ -735,7 +727,7 @@ body {
   max-width: 100%;
 }
 
-/* --- Cabecera pública: tablet (769px – 1024px) --------------------------- */
+
 
 @media (min-width: 769px) and (max-width: 1024px) {
   .public-body header {
@@ -786,7 +778,7 @@ body {
   }
 }
 
-/* --- Cabecera pública: celular (≤768px) ---------------------------------- */
+
 
 @media (max-width: 768px) {
   .public-body header {
@@ -853,7 +845,7 @@ body {
     height: 20px;
   }
 
-  /* En móvil el avatar ocupa menos: el nombre se oculta. */
+
   .public-body .btn-perfil {
     padding: 3px;
     border-radius: 50%;
@@ -869,7 +861,7 @@ body {
   }
 }
 
-/* Pantallas muy estrechas (≤380px): los 5 enlaces caben sin desplazamiento. */
+
 
 @media (max-width: 380px) {
   .public-body .header-center {
@@ -888,7 +880,7 @@ body {
   }
 }
 
-/* --- Héroe / carrusel: altura fluida (solo móvil y tableta) --------------- */
+
 
 @media (max-width: 1024px) {
   .public-body .hero {
@@ -908,7 +900,7 @@ body {
   }
 }
 
-/* --- Secciones públicas: tipografía y rejillas fluidas ------------------- */
+
 
 .public-body .promociones {
   padding: clamp(16px, 4vw, 40px);
@@ -944,7 +936,7 @@ body {
   font-size: clamp(0.875rem, 1.6vw, 1.125rem);
 }
 
-/* Nosotros: se apila antes para que la tablet no quede apretada. */
+
 @media (max-width: 900px) {
   .public-body .nosotros-section {
     flex-direction: column;
@@ -983,7 +975,7 @@ body {
   border-radius: clamp(12px, 2vw, 24px);
 }
 
-/* --- Pie de página ------------------------------------------------------ */
+
 
 .public-body .footer-container {
   gap: clamp(22px, 4vw, 40px);
@@ -998,7 +990,7 @@ body {
   flex-wrap: wrap;
 }
 
-/* --- Contacto ----------------------------------------------------------- */
+
 
 .public-body .contact-section {
   padding: clamp(36px, 8vw, 80px) clamp(16px, 5vw, 5%) clamp(48px, 9vw, 100px);
@@ -1046,7 +1038,7 @@ body {
   }
 }
 
-/* --- Carrito lateral ---------------------------------------------------- */
+
 
 .public-body .cart-panel {
   width: min(400px, 100vw);
@@ -1107,7 +1099,7 @@ body {
   }
 }
 
-/* --- Modal de perfil (mp-*) y personalizar producto (pers-*) ------------- */
+
 
 .mp-panel {
   max-height: 88vh;
@@ -1191,7 +1183,7 @@ body {
   }
 }
 
-/* --- Checkout ----------------------------------------------------------- */
+
 
 @media (max-width: 600px) {
   .checkout-page {
@@ -1225,7 +1217,7 @@ body {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  /* 16px evita el zoom automático de iOS al enfocar un campo. */
+  
   .checkout-form .form-group input,
   .checkout-form .form-group select,
   .checkout-form .form-group textarea {
@@ -1233,7 +1225,7 @@ body {
   }
 }
 
-/* --- Panel administrativo ---------------------------------------------- */
+
 
 @media (max-width: 900px) {
   .admin-body .header-nav {
@@ -1274,7 +1266,7 @@ body {
     padding-bottom: calc(16px + env(safe-area-inset-bottom));
   }
 
-  /* Las tablas se desplazan dentro de su contenedor, nunca recortadas. */
+  
   .admin-body .tabla-responsive,
   .admin-body .mn-table-wrap,
   .admin-body .ventas-table-wrap,
@@ -1293,10 +1285,10 @@ body {
 }
 
 @media (max-width: 768px) {
-  /* Restaura el scroll horizontal real de las tablas de administración. */
+
   .admin-body .data-table {
     display: table;
-    /* min-width: max-content !important respeta el inline style minWidth:1040 de tablas como MateriaPrima para que las columnas no se achiquen y el contenedor .tabla-responsive permita scroll horizontal hacia la derecha, revelando la columna de Acciones. */
+   
     width: max-content !important;
     min-width: max-content !important;
     overflow-x: auto;
@@ -1325,7 +1317,7 @@ body {
     padding: 18px 14px;
   }
 
-  /* Espacio para que el título no quede bajo el botón X en móviles */
+
   .admin-body .modal-box h2 {
     padding-right: 44px;
     box-sizing: border-box;
@@ -1343,7 +1335,7 @@ body {
     width: 100%;
   }
 
-  /* Campos táctiles cómodos y sin zoom automático en iOS/Android. */
+
   .admin-body .form-group input,
   .admin-body .form-group select,
   .admin-body .form-group textarea,
@@ -1354,7 +1346,7 @@ body {
   }
 }
 
-/* --- Pantallas grandes -------------------------------------------------- */
+
 
 @media (min-width: 1440px) {
   .public-body .promociones {
@@ -1362,7 +1354,7 @@ body {
   }
 }
 
-/* --- Dispositivos táctiles: evita estados "hover" pegajosos ------------- */
+
 
 @media (hover: none) and (pointer: coarse) {
   .public-body .promo-card-pub:hover {
@@ -1388,7 +1380,7 @@ body {
   }
 }
 
-/* --- Móviles en horizontal (poca altura) -------------------------------- */
+
 
 @media (max-height: 520px) and (orientation: landscape) {
   .public-body header {

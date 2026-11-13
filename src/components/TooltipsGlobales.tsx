@@ -140,11 +140,9 @@ function encontrarElemento(target: EventTarget | null): Element | null {
   const cajaContacto = target.closest('.icon-box[data-tooltip]');
   if (cajaContacto) return cajaContacto;
 
-  // Chip de usuario del header (tiene texto, pero igual debe mostrar descripción)
   const chipUsuario = target.closest('.header-user[data-tooltip]');
   if (chipUsuario) return chipUsuario;
 
-  // Enlace que envuelve un icono o un "+" (ej. el + que lleva al login)
   const enlace = target.closest('a[data-tooltip]');
   if (enlace && sinTextoVisible(enlace)) return enlace;
 

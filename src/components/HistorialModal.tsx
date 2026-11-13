@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import apiClient from '../api/client';
+import SelectOscuro from './SelectOscuro';
+import AdminDatePicker from './AdminDatePicker';
 import Paginacion, { paginar } from './Paginacion';
+
 
 interface Movimiento {
   id: number;
@@ -291,7 +294,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
     <div className="hist-page">
       <style>{`
         .hist-page { width: 100%; box-sizing: border-box; padding: 24px 32px 48px; }
-        body:not(.dark-mode) .hist-page { background: #faf5ef; min-height: 100%; }
+        body:not(.dark-mode) .hist-page { background: #ffffff; min-height: 100%; }
         .hist-ctl:focus {
           border-color: var(--brand) !important;
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 20%, transparent);
@@ -322,7 +325,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
           width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%;
           background: var(--hc); border: 3px solid var(--bg, #000000);
         }
-        body:not(.dark-mode) .hist-item::before { border-color: #faf5ef; }
+        body:not(.dark-mode) .hist-item::before { border-color: #ffffff; }
         .hist-texto { flex: 1; min-width: 200px; font-size: 13px; color: var(--text-900); }
         .hist-rol { color: var(--text-400); }
         .hist-tag {
@@ -378,7 +381,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
         >
           <label style={etiquetaCtl}>
             Apartado
-            <select
+            <SelectOscuro
               className="hist-ctl"
               style={selectCtl}
               value={modulo}
@@ -390,12 +393,12 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
                   {m}
                 </option>
               ))}
-            </select>
+            </SelectOscuro>
           </label>
 
           <label style={etiquetaCtl}>
             Usuario
-            <select
+            <SelectOscuro
               className="hist-ctl"
               style={selectCtl}
               value={usuario}
@@ -407,12 +410,12 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
                   {nombre}
                 </option>
               ))}
-            </select>
+            </SelectOscuro>
           </label>
 
           <label style={etiquetaCtl}>
             Rol
-            <select
+            <SelectOscuro
               className="hist-ctl"
               style={selectCtl}
               value={rol}
@@ -424,12 +427,12 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
                   {r}
                 </option>
               ))}
-            </select>
+            </SelectOscuro>
           </label>
 
           <label style={etiquetaCtl}>
             Tipo de acción
-            <select
+            <SelectOscuro
               className="hist-ctl"
               style={selectCtl}
               value={accion}
@@ -440,7 +443,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
               <option value="editar">Ediciones</option>
               <option value="eliminar">Eliminaciones</option>
               <option value="otro">Otras</option>
-            </select>
+            </SelectOscuro>
           </label>
         </div>
 
@@ -454,28 +457,26 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
             borderTop: '1px solid var(--border)',
           }}
         >
-          <label style={etiquetaCtl}>
-            Desde
-            <input
-              className="hist-ctl"
-              type="date"
-              style={ctl}
+          <div style={etiquetaCtl}>
+            <span>Desde</span>
+            <AdminDatePicker
+              label="Desde"
               value={desde}
               max={hasta || undefined}
-              onChange={(e) => setDesde(e.target.value)}
+              onChange={setDesde}
+              style={{ height: ALTO, minWidth: 140 }}
             />
-          </label>
-          <label style={etiquetaCtl}>
-            Hasta
-            <input
-              className="hist-ctl"
-              type="date"
-              style={ctl}
+          </div>
+          <div style={etiquetaCtl}>
+            <span>Hasta</span>
+            <AdminDatePicker
+              label="Hasta"
               value={hasta}
               min={desde || undefined}
-              onChange={(e) => setHasta(e.target.value)}
+              onChange={setHasta}
+              style={{ height: ALTO, minWidth: 140 }}
             />
-          </label>
+          </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button type="button" style={chip(esRango(0))} onClick={() => rangoRapido(0)}>
