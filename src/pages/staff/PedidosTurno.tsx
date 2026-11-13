@@ -44,11 +44,13 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
       'En preparación': { sig: 'Preparado', texto: 'Marcar preparado' },
     },
   },
-  meseros: {
+    meseros: {
     titulo: 'Meseros',
-    subtitulo: 'Pedidos preparados para servir en las mesas.',
-    estados: ['Preparado'],
+    subtitulo: 'Pedidos recibidos y pedidos preparados para servir en las mesas.',
+    estados: ['Recepcionado', 'Preparado'],
+    columnas: ['Recepcionado', 'Preparado'],
     acciones: {
+      Recepcionado: { sig: 'En preparación', texto: 'Empezar a preparar' },
       Preparado: { sig: 'Servido', texto: 'Marcar servido' },
     },
   },

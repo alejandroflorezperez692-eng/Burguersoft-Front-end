@@ -2389,3 +2389,16 @@ body:not(.dark-mode) .public-body .cart-header-title {
   color: #000000;
 }
 body:not(.dark-mode) .public-body .close-cart { color: #000000; }
+.public-body .perfil-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  text-align: left;
+}
+
+.public-body .perfil-rol {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: nowrap;
+}
