@@ -2168,11 +2168,65 @@ body.dark-mode .public-body .dropdown-menu button + .cerrar-sesion {
   border-radius: 0 !important;
 }
 
-/* Ventana "¿Cerrar sesión?" del cliente en modo oscuro: botón "Sí, salir" en naranja (el administrador no se toca) */
+/* Modal de cierre de sesión del encabezado público (no depende de estilos del panel admin). */
+body.dark-mode .public-body .mn-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+body.dark-mode .public-body .mn-modal-overlay .mn-modal-box {
+  box-sizing: border-box;
+  width: min(380px, 92vw);
+  padding: 32px;
+  border: 1px solid rgba(232, 130, 26, 0.5);
+  border-radius: 20px;
+  background: #151515;
+  color: #ffffff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+body.dark-mode .public-body .mn-modal-overlay .mn-modal-box p {
+  margin: 0 0 24px;
+  color: #ffffff;
+  font-size: 15px;
+  line-height: 1.5;
+}
+body.dark-mode .public-body .mn-modal-overlay .mn-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+body.dark-mode .public-body .mn-modal-overlay .mn-btn-cancel {
+  padding: 11px 24px;
+  border: 1.5px solid #e8821a;
+  border-radius: 8px;
+  background: transparent;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+body.dark-mode .public-body .mn-modal-overlay .mn-btn-cancel:hover {
+  background: #e8821a;
+}
+/* Botón "Sí, salir" del cliente en modo oscuro (el administrador no se toca). */
 body.dark-mode .public-body .mn-modal-overlay .mn-btn-confirm {
+  padding: 11px 28px;
   background: #e8821a !important;
   color: #ffffff !important;
   border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
   box-shadow: 0 6px 20px rgba(232, 130, 26, 0.38);
   transition: background 0.2s ease, box-shadow 0.2s ease;
 }

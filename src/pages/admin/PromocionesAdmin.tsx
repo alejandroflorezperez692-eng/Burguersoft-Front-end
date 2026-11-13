@@ -352,7 +352,7 @@ export default function PromocionesAdmin() {
   const [promos, setPromos] = useState<Promocion[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [, setProgreso] = useState(10);
+  const [progreso, setProgreso] = useState(10);
   const [vista, setVista] = useState<'tarjetas' | 'lista'>(() => {
     try {
       return localStorage.getItem('promosAdminVista') === 'lista' ? 'lista' : 'tarjetas';
@@ -408,6 +408,8 @@ export default function PromocionesAdmin() {
   };
 
 const cargar = useCallback(async () => {
+  setLoading(true);
+  setProgreso(10);
   try {
     const [r1, r2] = await Promise.all([
       apiClient.get('/promociones'),
@@ -827,6 +829,10 @@ const cargar = useCallback(async () => {
     [mostrarForm || editId !== null, limpiarFormulario],
   ]);
   
+  if (loading) {
+    return <AdminLoading texto="Cargando promociones" subtexto="Armando tus combos" progreso={progreso} />;
+  }
+
   return (
     <div className="page-inner mn-page">
       <div className="page-header">
@@ -941,9 +947,7 @@ const cargar = useCallback(async () => {
         </div>
       </div>
 
-      {loading ? (
-        <AdminLoading texto="Cargando promociones" subtexto="Armando tus combos" />
-      ) : grupos.length === 0 ? (
+      {grupos.length === 0 ? (
         <div className="mn-empty">
           No se encontraron promociones{hayFiltros ? ' con los filtros seleccionados' : ''}.
         </div>

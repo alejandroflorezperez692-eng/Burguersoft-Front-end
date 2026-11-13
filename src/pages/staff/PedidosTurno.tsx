@@ -55,7 +55,7 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   cajero: {
     titulo: 'Cajero',
     subtitulo: 'Verifica pedidos, entrega pedidos listos y cobra las mesas pendientes.',
-    estados: ['Por verificar', 'Preparado', 'Servido', 'Pendiente de pago'],
+    estados: ['Por verificar', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'],
     columnas: ['Por verificar', 'Preparado', 'Pendiente de pago', 'Ya pagados'],
     acciones: {
       'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
@@ -67,7 +67,7 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   todos: {
     titulo: 'Todos',
     subtitulo: 'Vista completa del flujo de pedidos.',
-    estados: ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago'],
+    estados: ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'],
     acciones: {
       Registrado: { sig: 'Por verificar', texto: 'Verificar' },
       'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
@@ -159,23 +159,13 @@ const requiereComprobante = (v: Venta): boolean =>
 
 const comprobanteAprobado = (v: Venta): boolean => v.comprobante_estado === 'Aprobado';
 
-const ROL_CLIENTE = 2;
-const creoCliente = (v: Venta) => Number(v.usuario?.rol_id) === ROL_CLIENTE;
-
-const yaPagado = (v: Venta): boolean =>
-  creoCliente(v) &&
-  (v.metodo_pago ?? '').trim().toLowerCase() !== 'efectivo' &&
-  v.comprobante_estado === 'Aprobado';
-
 const pagoConComprobanteAprobado = (v: Venta): boolean =>
   (v.metodo_pago ?? '').trim().toLowerCase() !== 'efectivo' &&
   v.comprobante_estado === 'Aprobado';
 
 const columnaDe = (v: Venta, vista: Vista): string => {
   if (vista !== 'cajero') return v.estado ?? '';
-  if (v.estado === 'Servido' || v.estado === 'Pendiente de pago') {
-    return yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago';
-  }
+  if (v.estado === 'Pagado') return 'Ya pagados';
   return v.estado ?? '';
 };
 
@@ -561,10 +551,6 @@ export default function PedidosTurno() {
         ? { sig: 'Servido', texto: 'Entregar' }
         : undefined);
         
-    if (vista === 'cajero' && accion && accion.sig === 'Pagado' && yaPagado(v)) {
-      accion = { ...accion, texto: 'Cerrar pedido' };
-    }
-    
     const esOcupado = ocupadoId === v.id;
     const min = minutosDesde(v.fecha_programada ?? v.fecha ?? '');
     const enMesa = v.tipo_entrega === 'Consumir' && !!v.mesa;
@@ -581,14 +567,15 @@ export default function PedidosTurno() {
         : undefined;
 
     const estadoTerminal = ['Cancelado', 'Rechazada', 'Reembolsada'].includes(v.estado ?? '');
+    const yaEmpezoPreparacion = ['En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'].includes(v.estado ?? '');
     const tActual = transiciones?.[v.estado ?? ''];
     const permiteRechazo = !!tActual && (tActual.directas.includes('Rechazada') || tActual.con_motivo.includes('Rechazada'));
     
     let puedeRechazar = false;
-    if (!estadoTerminal && permiteRechazo) {
+    if (!estadoTerminal && !yaEmpezoPreparacion && permiteRechazo) {
       if (rol === 'admin') {
         puedeRechazar = true;
-      } else if (rol === 'cocinero' && ['Recepcionado', 'En preparación'].includes(v.estado ?? '')) {
+      } else if (rol === 'cocinero' && v.estado === 'Recepcionado') {
         puedeRechazar = true;
       } else if (['cajero', 'mesero'].includes(rol) && ['Registrado', 'Por verificar', 'Recepcionado'].includes(v.estado ?? '')) {
         puedeRechazar = true;
