@@ -54,7 +54,7 @@ export default function App() {
     <ToastProvider>
       <TooltipsGlobales />
       <AvisoComprobanteDevuelto />
-      <Suspense fallback={<AdminLoading compact texto="Cargando" subtexto="Un momento, por favor" />}>
+        <Suspense fallback={<AdminLoading texto="Cargando" subtexto="Un momento, por favor" />}>
         <Routes>
           {/* Páginas públicas: se pueden ver con o sin sesión. */}
           <Route element={<ProtectedRoute allowGuest />}>

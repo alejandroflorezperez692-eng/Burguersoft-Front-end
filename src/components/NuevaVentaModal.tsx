@@ -369,22 +369,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                   </div>
                 </div>
 
-                {puedeAsignarMesero && mesa && (
-                  <div style={{ marginTop: 12 }}>
-                    <label htmlFor="np-mesero" className="np-hint">Mesero de la mesa {mesa}</label>
-                    <SelectOscuro
-                      id="np-mesero"
-                      className="np-select"
-                      value={mesas.find((m) => m.numero === mesa)?.mesero?.id ?? ''}
-                      onChange={(e) => void asignarMesero(mesa, e.target.value)}
-                    >
-                      <option value="">Sin asignar</option>
-                      {meseros.map((m) => (
-                        <option key={m.id} value={m.id}>{m.nombre} {m.apellido}</option>
-                      ))}
-                    </SelectOscuro>
-                  </div>
-                )}
               </>
             ) : (
               <p className="np-hint" style={{ marginTop: 14 }}>

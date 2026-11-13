@@ -390,7 +390,7 @@ const load = async (silencioso = false) => {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando usuarios" subtexto="Listando tu equipo" />
+        <AdminLoading area texto="Cargando usuarios" subtexto="Listando tu equipo" />
       ) : (
         <>
         <div className="tabla-responsive">

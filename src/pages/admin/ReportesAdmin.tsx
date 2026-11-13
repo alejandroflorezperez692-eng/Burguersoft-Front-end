@@ -694,7 +694,7 @@ export default function ReportesAdmin() {
   };
 
   if (loading) {
-    return <AdminLoading texto="Cargando reportes" subtexto="Preparando la información de ventas y compras" />;
+    return <AdminLoading area texto="Cargando reportes" subtexto="Preparando la información de ventas y compras" />;
   }
 
   const etiquetaDia = (iso: string) =>

@@ -1284,7 +1284,7 @@ const load = () => {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando compras" subtexto="Reuniendo tus abastecimientos" />
+        <AdminLoading area texto="Cargando compras" subtexto="Reuniendo tus abastecimientos" />
       ) : (
         <>
           <div className="tabla-responsive compras-table-wrap">

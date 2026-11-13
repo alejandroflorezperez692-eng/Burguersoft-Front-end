@@ -387,7 +387,7 @@ export default function MateriaPrimaAdmin() {
       </div>
 
       {loading ? (
-        <AdminLoading texto="Cargando materia prima" subtexto="Revisando tu inventario" />
+        <AdminLoading area texto="Cargando materia prima" subtexto="Revisando tu inventario" />
       ) : (
         <div className="tabla-responsive">
           <table className="data-table" style={{ tableLayout: 'fixed', minWidth: 1040 }}>
