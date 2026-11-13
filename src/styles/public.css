@@ -2402,3 +2402,22 @@ body:not(.dark-mode) .public-body .close-cart { color: #000000; }
   color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
 }
+.public-body .menu-filtros { margin: 24px 0 32px; display: flex; flex-direction: column; gap: 16px; }
+.public-body .menu-filtros-fila { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.public-body .menu-buscar {
+  flex: 1; min-width: 220px; max-width: 420px;
+  padding: 12px 18px; font: inherit; font-size: 15px;
+  border: 1px solid #e8821a; border-radius: 999px; background: #fff; outline: none;
+}
+.public-body .menu-buscar:focus { box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.25); }
+.public-body .menu-check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.public-body .menu-check input { accent-color: #e8821a; width: 16px; height: 16px; }
+.public-body .menu-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+.public-body .menu-pill {
+  cursor: pointer; font: inherit; font-weight: 700; font-size: 14px;
+  padding: 9px 20px; border-radius: 999px;
+  background: #fff; color: #333; border: 1px solid #e8821a;
+  transition: background 0.18s, color 0.18s;
+}
+.public-body .menu-pill:hover { background: #fdf0e0; }
+.public-body .menu-pill.activo { background: #e8821a; color: #fff; }

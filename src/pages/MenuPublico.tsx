@@ -47,6 +47,9 @@ function formatCOP(valor: number): string {
 export default function MenuPublico() {
   const [items, setItems] = useState<Producto[] | null>(null);
   const [editando, setEditando] = useState<Producto | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [categoriaSel, setCategoriaSel] = useState('Todas');
+  const [ocultarAgotados, setOcultarAgotados] = useState(false);
   const { isAuthenticated } = useAuth();
 
   const { agregar } = useCart();
@@ -87,14 +90,30 @@ export default function MenuPublico() {
 
   const disponibles = items ?? [];
 
+  const filtrados = disponibles.filter((p) => {
+    if (ocultarAgotados && p.estado === 'Agotado') return false;
+    const q = busqueda.trim().toLowerCase();
+    if (q && !`${p.nombre} ${p.descripcion ?? ''}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+
   const grouped = CATEGORIAS.reduce<Record<string, Producto[]>>((acc, cat) => {
-    const prods = disponibles.filter((p) => catNombre(p.categoria) === cat);
+    const prods = filtrados.filter((p) => catNombre(p.categoria) === cat);
     if (prods.length > 0) acc[cat] = prods;
     return acc;
   }, {});
 
-  const sinCategoria = disponibles.filter((p) => !CATEGORIAS.includes(catNombre(p.categoria)));
+  const sinCategoria = filtrados.filter((p) => !CATEGORIAS.includes(catNombre(p.categoria)));
   if (sinCategoria.length > 0) grouped['Otras'] = sinCategoria;
+
+  // Categorías que existen en el menú (para los botones)
+  const categoriasConProductos = CATEGORIAS.filter((cat) =>
+    disponibles.some((p) => catNombre(p.categoria) === cat),
+  );
+
+  const gruposVisibles = Object.entries(grouped).filter(
+    ([cat]) => categoriaSel === 'Todas' || cat === categoriaSel,
+  );
 
   return (
     <div className="public-body">
@@ -106,12 +125,52 @@ export default function MenuPublico() {
         <h2>Nuestro Menú</h2>
         <p>Descubre todos nuestros productos, preparados al momento para ti.</p>
 
+        {items !== null && disponibles.length > 0 && (
+          <div className="menu-filtros">
+            <div className="menu-filtros-fila">
+              <input
+                className="menu-buscar"
+                type="search"
+                placeholder="Buscar producto por nombre..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                aria-label="Buscar producto"
+              />
+              <label className="menu-check">
+                <input
+                  type="checkbox"
+                  checked={ocultarAgotados}
+                  onChange={(e) => setOcultarAgotados(e.target.checked)}
+                />
+                Ocultar agotados
+              </label>
+            </div>
+
+            <div className="menu-pills" role="tablist" aria-label="Categorías">
+              {['Todas', ...categoriasConProductos].map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  role="tab"
+                  aria-selected={categoriaSel === cat}
+                  className={`menu-pill${categoriaSel === cat ? ' activo' : ''}`}
+                  onClick={() => setCategoriaSel(cat)}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         {items === null ? (
           <AdminLoading texto="Cargando menú" subtexto="Preparando nuestros productos" compact />
         ) : disponibles.length === 0 ? (
           <p className="promo-vacio">No hay productos disponibles en este momento.</p>
+        ) : gruposVisibles.length === 0 ? (
+          <p className="promo-vacio">No encontramos productos con esos filtros.</p>
         ) : (
-          Object.entries(grouped).map(([cat, prods]) => (
+          gruposVisibles.map(([cat, prods]) => (
             <div key={cat} style={{ marginBottom: 40 }}>
               <h2 style={{ fontSize: 28 }}>{cat}</h2>
               <div className="grid-promociones">
@@ -183,7 +242,7 @@ export default function MenuPublico() {
             imagen: editando.img,
             descripcion: editando.descripcion,
             adiciones: editando.adiciones,
-            categoria: catNombre(editando.categoria),   // ← NUEVA
+            categoria: catNombre(editando.categoria),
           }}
           onClose={() => setEditando(null)}
         />
