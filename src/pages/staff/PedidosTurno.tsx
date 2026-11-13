@@ -16,6 +16,7 @@ import { useEscape } from '../../hooks/useEscape';
 import AdminLoading from '../../components/AdminLoading';
 import SelectOscuro from '../../components/SelectOscuro';
 
+
 type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
 
 interface Accion {
