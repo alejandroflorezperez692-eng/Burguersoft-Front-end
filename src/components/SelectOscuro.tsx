@@ -69,8 +69,6 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
   const { children, className, onMouseDown, onKeyDown, ...resto } = props;
 
   const [punteroFino] = useState(() => window.matchMedia(CONSULTA_PUNTERO).matches);
-  // Lista personalizada en modo claro y oscuro (con puntero fino).
-  // Los colores de cada modo viven en select-claro.css / select-oscuro.css.
   const personalizado = punteroFino;
 
   const selectRef = useRef<HTMLSelectElement>(null);

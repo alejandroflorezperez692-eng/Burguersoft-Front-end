@@ -30,10 +30,8 @@ const empty: Omit<Proveedor, 'id'> = {
 export default function ProveedoresAdmin() {
   const [items, setItems] = useState<Proveedor[]>([]);
 
-  // Filtro de búsqueda de texto (Develop)
   const [q, setQ] = useState('');
 
-  // Filtros avanzados
   const [filtroProveedor, setFiltroProveedor] = useState('');
   const [filtroNombre, setFiltroNombre] = useState('');
 
@@ -106,7 +104,6 @@ const load = async (silencioso = false) => {
     return true;
   });
 
-  // Al cambiar los filtros, volver a la primera página
   useEffect(() => { setPagina(1); }, [q, filtroProveedor, filtroNombre]);
 
   const { visibles: proveedoresPagina, paginaActual: paginaProveedores } = paginar(filtered, pagina);

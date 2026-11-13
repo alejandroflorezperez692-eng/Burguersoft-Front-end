@@ -76,7 +76,6 @@ export default function InventarioAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  // Al cambiar un filtro volvemos a la página 1
   useEffect(() => { setPagina(1); }, [q, filtroEstado]);
 
   useEscape([[!!detalle, () => setDetalle(null)]]);

@@ -35,7 +35,6 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
   const [agitar, setAgitar] = useState(false);
   const [exito, setExito] = useState(false);
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
-  // Guarda el último código que se envió automáticamente (evita dobles envíos)
   const ultimoCodigoAuto = useRef('');
 
   const emailLimpio = correo.trim().toLowerCase();

@@ -52,7 +52,6 @@ export default function ConfiguracionAdmin() {
   const selectorTdocRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
 
-  // Al darle de nuevo a "Mi perfil" desde el menú, vuelve de Historial a la configuración
   useEffect(() => {
     setVerHistorial(false);
   }, [location.key]);

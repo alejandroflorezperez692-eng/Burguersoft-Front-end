@@ -20,10 +20,6 @@ export async function obtenerUsuarioActual(): Promise<Usuario> {
   return data;
 }
 
-// --- Verificación de correo para registro ---
-// Intenta endpoints del backend en orden. Si el backend aún no tiene
-// endpoints dedicados de registro, reutiliza los de recuperación
-// (/recuperar-contrasena y /verificar-codigo) que ya existen.
 
 const RUTAS_ENVIAR = [
   '/registro/enviar-codigo',

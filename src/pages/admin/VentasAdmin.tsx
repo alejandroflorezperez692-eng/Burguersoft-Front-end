@@ -99,7 +99,6 @@ const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación
 
 const requiereComprobante = (v: Venta): boolean => esPagoElectronico(v.metodo_pago);
 
-// Color de la etiqueta según el estado de la venta
 const claseEstado = (estado?: string | null) => {
   const e = (estado ?? '').trim();
   if (e === 'Pagado') return 'badge-success';
@@ -346,9 +345,7 @@ export default function VentasAdmin() {
   const [mesa, setMesa] = useState('');
   const [notas, setNotas] = useState('');
   const [intentado, setIntentado] = useState(false);
-  // F-028: evita que un doble clic registre dos ventas.
   const [guardando, setGuardando] = useState(false);
-  // F-012: una clave por intento de venta; se renueva tras un registro exitoso.
   const claveIdempotencia = useRef(nuevaClaveIdempotencia());
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
@@ -370,7 +367,6 @@ export default function VentasAdmin() {
 const load = async (silencioso = false) => {
   if (!silencioso) setLoading(true);
 
-  // Se piden a la vez, pero el loader solo espera las ventas
   const extras = Promise.all([apiClient.get('/productos'), apiClient.get('/promociones')])
     .then(([r2, r3]) => {
       setProductos(toArray<Producto>(r2.data));
@@ -382,8 +378,6 @@ const load = async (silencioso = false) => {
     });
 
   try {
-    // El backend puede entregar las ventas paginadas (solo 15 en la primera
-    // página). Si es así, se recorren todas las páginas hasta traerlas todas.
     const { data } = await apiClient.get('/ventas', { params: { per_page: 500 } });
     let lista: Venta[] = Array.isArray(data) ? data : data?.data ?? [];
     const ultima = Number(data?.last_page ?? 1);
@@ -418,7 +412,6 @@ const load = async (silencioso = false) => {
 
   const textoBusqueda = normalizar(q).trim();
 
-  // Estados que NO cuentan como dinero vendido (no suman en totales ni cierre)
   const NO_VENDIDOS = ['Cancelado', 'Reembolsada', 'Rechazada'];
 
   const filtered = (items ?? []).filter((v) => {
@@ -459,9 +452,6 @@ const load = async (silencioso = false) => {
     setPagina(1);
   };
 
-  // El total filtrado solo suma ventas reales: lo cancelado/reembolsado/rechazado
-  // no cuenta (salvo que el usuario esté filtrando justo por uno de esos estados,
-  // para poder ver cuánto representan).
   const totalFiltrado = filtered
     .filter((v) => filtroEstado || !NO_VENDIDOS.includes(v?.estado))
     .reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
@@ -597,7 +587,6 @@ const load = async (silencioso = false) => {
       });
     };
 
-    // Misma lógica del PDF: ventas de mostrador (rol 1) = "Consumidor final"
     const usu = v.usuario;
     const mostrador = Number(usu?.rol_id ?? 0) === 1;
     const nombre = mostrador
