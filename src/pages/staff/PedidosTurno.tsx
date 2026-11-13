@@ -55,7 +55,7 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   cajero: {
     titulo: 'Cajero',
     subtitulo: 'Verifica pedidos, entrega pedidos listos y cobra las mesas pendientes.',
-    estados: ['Por verificar', 'Preparado', 'Servido', 'Pendiente de pago'],
+    estados: ['Por verificar', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'],
     columnas: ['Por verificar', 'Preparado', 'Pendiente de pago', 'Ya pagados'],
     acciones: {
       'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
@@ -173,6 +173,7 @@ const pagoConComprobanteAprobado = (v: Venta): boolean =>
 
 const columnaDe = (v: Venta, vista: Vista): string => {
   if (vista !== 'cajero') return v.estado ?? '';
+  if (v.estado === 'Pagado') return 'Ya pagados';
   if (v.estado === 'Servido' || v.estado === 'Pendiente de pago') {
     return yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago';
   }
