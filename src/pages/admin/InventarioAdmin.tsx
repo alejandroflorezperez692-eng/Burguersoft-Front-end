@@ -122,7 +122,7 @@ export default function InventarioAdmin() {
 
       <div className="mn-filtros">
         <div className="mn-field">
-          <label>Stock</label>
+          <label>Cantidad</label>
           <SelectOscuro
             className={filtroEstado !== 'todos' ? 'activo' : ''}
             value={filtroEstado}
