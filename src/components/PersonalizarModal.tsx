@@ -36,7 +36,10 @@ export default function PersonalizarModal({
   const todas = item.adiciones ?? [];
   const adiciones = todas.filter((a) => a.tipo !== 'quitar');
   const quitarBD = todas.filter((a) => a.tipo === 'quitar').map((a) => a.nombre.trim());
-  const deDescripcion = (item.descripcion ?? '').split('+').map((s) => s.trim()).filter(Boolean);
+  const deDescripcion = (item.descripcion ?? '')
+  .split(/[+,;]/)
+  .map((s) => s.trim().replace(/\.+$/, ''))
+  .filter(Boolean);
   const ingredientes = item.esCombo
   ? []
   : Array.from(

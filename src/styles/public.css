@@ -2421,3 +2421,44 @@ body:not(.dark-mode) .public-body .close-cart { color: #000000; }
 }
 .public-body .menu-pill:hover { background: #fdf0e0; }
 .public-body .menu-pill.activo { background: #e8821a; color: #fff; }
+/* ===== Filtros del menú público: modo oscuro ===== */
+html body.dark-mode .public-body .menu-buscar {
+  background: #141414;
+  color: #ffffff;
+  border: 1px solid #e8821a;
+  caret-color: #e8821a;
+}
+html body.dark-mode .public-body .menu-buscar::placeholder {
+  color: #9a9a9a;
+  opacity: 1;
+}
+html body.dark-mode .public-body .menu-buscar:focus {
+  box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.35);
+}
+
+html body.dark-mode .public-body .menu-check {
+  color: #f2f2f2;
+}
+
+html body.dark-mode .public-body .menu-pill {
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #e8821a;
+}
+html body.dark-mode .public-body .menu-pill:hover {
+  background: rgba(232, 130, 26, 0.22);
+}
+html body.dark-mode .public-body .menu-pill.activo {
+  background: #e8821a;
+  color: #ffffff;
+}
+html body.dark-mode .public-body .menu-buscar {
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #e8821a;
+  caret-color: #e8821a;
+}
+html body.dark-mode .public-body .menu-buscar::placeholder {
+  color: #9a9a9a;
+  opacity: 1;
+}

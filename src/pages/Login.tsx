@@ -1,6 +1,5 @@
 ﻿import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
@@ -8,14 +7,15 @@ import { IconoToast, useToast } from '../components/Toast';
 import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
 import { mensajeError } from '../utils/errores';
+import CaptchaLocal, { type CaptchaLocalRef } from '../components/CaptchaLocal';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState('');
-  const turnstileRef = useRef<TurnstileInstance>(null);
+  const [captcha, setCaptcha] = useState({ id: '', respuesta: '' });
+  const captchaRef = useRef<CaptchaLocalRef>(null);
 
   const { login, isAuthenticated, user } = useAuth();
   const { showToast } = useToast();
@@ -66,22 +66,21 @@ export default function Login() {
       return;
     }
 
-    if (!turnstileToken) {
-      showToast('Completa la verificación de seguridad.', true);
+    if (!captcha.respuesta) {
+      showToast('Resuelve la operación de verificación.', true);
       return;
     }
 
     setLoading(true);
 
     try {
-      await login(email, password, turnstileToken);
+      await login(email, password, captcha.id, captcha.respuesta);
       const stored = sessionStorage.getItem('user');
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
       showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
-      setTurnstileToken('');
-      turnstileRef.current?.reset();
+      captchaRef.current?.recargar();
     } finally {
       setLoading(false);
     }
@@ -167,18 +166,12 @@ export default function Login() {
             </button>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0' }}>
-            <Turnstile
-              ref={turnstileRef}
-              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-              onSuccess={setTurnstileToken}
-              onExpire={() => setTurnstileToken('')}
-              onError={() => setTurnstileToken('')}
-              options={{ language: 'es', theme: 'light' }}
-            />
-          </div>
+          <CaptchaLocal
+            ref={captchaRef}
+            onChange={(id, respuesta) => setCaptcha({ id, respuesta })}
+          />
 
-          <button type="submit" className="btn-primario" disabled={loading || !turnstileToken}>
+          <button type="submit" className="btn-primario" disabled={loading || !captcha.respuesta}>
             {loading ? 'INGRESANDO…' : 'INICIAR SESIÓN'}
           </button>
 

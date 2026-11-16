@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import '../styles/ConfirmarSalida.css';
 
 export default function ConfirmarSalida({
   onConfirmar,
@@ -18,26 +19,13 @@ export default function ConfirmarSalida({
   }, [onCancelar]);
 
   return (
-    <div className="mn-modal-overlay" style={{ zIndex: 100000 }} onClick={onCancelar}>
+    <div className="cs-overlay" style={{ zIndex: 100000 }}>
       <div
-        className="mn-modal-box"
+        className="cs-box"
         role="alertdialog"
         aria-modal="true"
-        onClick={(e) => e.stopPropagation()}
       >
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
-            margin: '0 auto 14px',
-            background: 'rgba(200, 56, 42, 0.12)',
-            color: 'var(--danger, #C8382A)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
+        <div className="cs-icon">
           <svg
             width="28"
             height="28"
@@ -57,11 +45,11 @@ export default function ConfirmarSalida({
 
         <p>{mensaje}</p>
 
-        <div className="mn-modal-actions">
-          <button type="button" className="mn-btn-cancel" onClick={onCancelar}>
+        <div className="cs-actions">
+          <button type="button" className="cs-btn-cancel" onClick={onCancelar}>
             Cancelar
           </button>
-          <button type="button" className="mn-btn-confirm mn-btn-salir" onClick={onConfirmar}>
+          <button type="button" className="cs-btn-confirm" onClick={onConfirmar}>
             Sí, salir
           </button>
         </div>
