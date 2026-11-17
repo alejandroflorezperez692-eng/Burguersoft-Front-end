@@ -946,3 +946,292 @@ html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-btn-confirm:hover {
   background: #a82d22;
 }
 
+/* Botón "Cerrar" del modal Venta: naranja siempre, esquina derecha */
+html body .modal-overlay .modal-box.vt-det .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+html body:not(.dark-mode) .modal-overlay .modal-box.vt-det .modal-actions button.btn-cancel,
+html body:not(.dark-mode) .modal-overlay .modal-box.vt-det .modal-actions button.btn-cancel:hover,
+html body:not(.dark-mode) .modal-overlay .modal-box.vt-det .modal-actions button.btn-cancel:focus,
+html body:not(.dark-mode) .modal-overlay .modal-box.vt-det .modal-actions button.btn-cancel:active,
+html body.dark-mode .modal-overlay .modal-box.vt-det .modal-actions button.btn-cancel,
+html body.dark-mode .modal-overlay .modal-box.vt-det .modal-actions button.btn-cancel:hover {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0;
+  padding: 12px 32px !important;
+  background: #e8821a !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 14px;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(232, 130, 26, 0.25);
+}
+
+/* ===== Tabla de ventas, SOLO modo claro: "Ver detalle" azul y "Cancelar" rojo ===== */
+html body:not(.dark-mode) .ventas-table td button.btn-cancel.vt-btn-detalle,
+html body:not(.dark-mode) .ventas-table td button.btn-cancel.vt-btn-detalle:hover {
+  background: #3b82f6 !important;
+  border: 1.5px solid #3b82f6 !important;
+  color: #ffffff !important;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+html body:not(.dark-mode) .ventas-table td button.btn-cancel.vt-btn-detalle:hover {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+html body:not(.dark-mode) .ventas-table td button.btn-cancel.vt-btn-anular,
+html body:not(.dark-mode) .ventas-table td button.btn-cancel.vt-btn-anular:hover {
+  background: #dc2626 !important;
+  border: 1.5px solid #dc2626 !important;
+  color: #ffffff !important;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+html body:not(.dark-mode) .ventas-table td button.btn-cancel.vt-btn-anular:hover {
+  background: #b91c1c !important;
+  border-color: #b91c1c !important;
+}
+
+/* "Ver detalle" azul (columna Productos), SOLO modo claro */
+html body:not(.dark-mode) .ventas-table td:nth-child(4) button.btn-cancel,
+html body:not(.dark-mode) .ventas-table td:nth-child(4) button.btn-cancel:hover {
+  background: #3b82f6 !important;
+  border: 1.5px solid #3b82f6 !important;
+  color: #ffffff !important;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+html body:not(.dark-mode) .ventas-table td:nth-child(4) button.btn-cancel:hover {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+/* "Ver detalle" azul SIEMPRE (también en hover), SOLO modo claro */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel:hover,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel:hover:not(:disabled),
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel:focus,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel:active {
+  background: #3b82f6 !important;
+  border: 1.5px solid #3b82f6 !important;
+  color: #ffffff !important;
+  border-radius: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+}
+
+/* Mismas medidas para "Ver detalle" y "Cancelar" (modo claro) */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel,
+html body:not(.dark-mode) .ventas-table td button.btn-cancel.vt-btn-anular {
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1.2;
+  min-height: 30px;
+  border-radius: 12px !important;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+
+/* "Cancelar" rojo SIEMPRE, hover #C8382A (modo claro) */
+html body:not(.dark-mode) .ventas-table tbody tr td button.btn-cancel.vt-btn-anular,
+html body:not(.dark-mode) .ventas-table tbody tr td button.btn-cancel.vt-btn-anular:focus,
+html body:not(.dark-mode) .ventas-table tbody tr td button.btn-cancel.vt-btn-anular:active {
+  background: #dc2626 !important;
+  border: 1.5px solid #dc2626 !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+}
+
+html body:not(.dark-mode) .ventas-table tbody tr td button.btn-cancel.vt-btn-anular:hover,
+html body:not(.dark-mode) .ventas-table tbody tr td button.btn-cancel.vt-btn-anular:hover:not(:disabled) {
+  background: #C8382A !important;
+  border-color: #C8382A !important;
+  color: #ffffff !important;
+}
+
+/* "Ver historial" naranja SIEMPRE (modo claro) */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular),
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular):hover,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular):focus,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular):active {
+  background: #e8821a !important;
+  border: 1.5px solid #e8821a !important;
+  color: #ffffff !important;
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  min-height: 30px;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(232, 130, 26, 0.25);
+}
+
+/* Un poco más oscuro al pasar el mouse (opcional) */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular):hover {
+  background: #cf7010 !important;
+  border-color: #cf7010 !important;
+}
+
+/* Hover igual que "Ver factura": sube 1px y se oscurece un poco */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel {
+  transition: transform .15s ease, background .15s ease !important;
+}
+
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel:hover,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:hover {
+  transform: translateY(-1px);
+}
+
+/* Ver detalle (azul) */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel:hover {
+  background: #2f74e6 !important;
+  border-color: #2f74e6 !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25) !important;
+}
+
+/* Ver historial (naranja) */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular):hover {
+  background: #d4761a !important;
+  border-color: #d4761a !important;
+  box-shadow: 0 4px 12px rgba(232, 130, 26, 0.25) !important;
+}
+
+/* Cancelar (rojo #C8382A) */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel.vt-btn-anular:hover {
+  background: #C8382A !important;
+  border-color: #C8382A !important;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25) !important;
+}
+/* Todos los botones de la tabla de ventas, iguales (modo claro) */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(9) button {
+  padding: 6px 14px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1.2;
+  min-height: 30px;
+  border-radius: 10px !important;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: transform .15s ease, background .15s ease !important;
+}
+
+/* Mismo hover para todos: sube 1px y se oscurece, como "Cierre del día" */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button:hover,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button:hover,
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(9) button:hover {
+  transform: translateY(-1px);
+}
+
+/* Ver factura = mismo naranja del hover de "Cierre del día" */
+html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(9) button:hover {
+  background: #d4761a !important;
+}
+
+/* Historial del insumo: botón "Cerrar" naranja, pequeño y a la derecha (modo claro) */
+html body:not(.dark-mode) .hm-box .mn-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+html body:not(.dark-mode) .hm-box .mn-modal-actions button.mn-btn-cancel,
+html body:not(.dark-mode) .hm-box .mn-modal-actions button.mn-btn-cancel:focus,
+html body:not(.dark-mode) .hm-box .mn-modal-actions button.mn-btn-cancel:active {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0;
+  padding: 12px 32px !important;
+  background: #e8821a !important;
+  border: 1.5px solid #e8821a !important;
+  border-radius: 14px;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(232, 130, 26, 0.25);
+  transition: transform .15s ease, background .15s ease !important;
+}
+
+/* Hover igual que "Ver factura": sube 1px y se oscurece */
+html body:not(.dark-mode) .hm-box .mn-modal-actions button.mn-btn-cancel:hover:not(:disabled) {
+  background: #d4761a !important;
+  border-color: #d4761a !important;
+  color: #ffffff !important;
+  transform: translateY(-1px);
+}
+/* Cierre de inventario: barra de acción */
+.ci-barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding: 14px 18px;
+  border: 1.5px solid #e8821a;
+  border-radius: 14px;
+  background: #fffaf3;
+}
+.ci-progreso { flex: 1 1 220px; min-width: 200px; }
+.ci-progreso-txt { font-size: 13px; font-weight: 600; color: #5b4636; }
+.ci-progreso-txt b { color: #1a0f0a; }
+.ci-progreso-pista {
+  height: 6px;
+  margin-top: 8px;
+  border-radius: 999px;
+  background: #f1dfc6;
+  overflow: hidden;
+}
+.ci-progreso-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #e8821a;
+  transition: width .25s ease;
+}
+
+.ci-btn-guardar {
+  flex: 0 0 auto;
+  padding: 11px 28px;
+  border: 1.5px solid #e8821a;
+  border-radius: 12px;
+  background: #e8821a;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(232, 130, 26, 0.25);
+  transition: transform .15s ease, background .15s ease;
+}
+.ci-btn-guardar:hover:not(:disabled) {
+  background: #d4761a;
+  border-color: #d4761a;
+  transform: translateY(-1px);
+}
+.ci-btn-guardar:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Modo oscuro */
+body.dark-mode .ci-barra { background: #000; border-color: var(--border); }
+body.dark-mode .ci-progreso-txt { color: var(--text-600); }
+body.dark-mode .ci-progreso-txt b { color: var(--text-900); }
+body.dark-mode .ci-progreso-pista { background: #2a2a2a; }
+
+@media (max-width: 560px) {
+  .ci-btn-guardar { width: 100%; }
+}
+
+/* Contador de ventas: a la derecha y en negro (solo modo claro) */
+html body .ventas-page .search-bar p.vt-contador {
+  text-align: right;
+}
+html body:not(.dark-mode) .ventas-page .search-bar p.vt-contador {
+  color: #000000 !important;
+  font-weight: 600;
+}

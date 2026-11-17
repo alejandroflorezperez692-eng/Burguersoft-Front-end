@@ -584,6 +584,7 @@ export default function Accesibilidad() {
   };
 
   const restablecer = () => {
+    // 1. Borrar lo guardado
     [
       'acc_tema',
       'acc_factor',
@@ -592,10 +593,44 @@ export default function Accesibilidad() {
       'acc_fab_x',
       'acc_fab_y',
       ...AJUSTES.map(({ id }) => `acc_${id}`),
-    ].forEach((clave) =>
-      localStorage.removeItem(clave),
-    );
-    window.location.reload();
+      'acc_movimiento',
+    ].forEach((clave) => localStorage.removeItem(clave));
+
+    // 2. Parar la lectura en voz alta
+    if (leyendo || lecturaActivaRef.current) detenerLectura();
+
+    // 3. Tema claro
+    setTemaActual('claro');
+    document.body.classList.remove('dark-mode');
+
+    // 4. Tamaño del texto original
+    factorRef.current = 1;
+    setFactor(1);
+    aplicarEscala(1);
+
+    // 5. Fuente original
+    fuenteRef.current = '';
+    setFuenteActual('');
+    quitarFuente();
+
+    // 6. Velocidad de lectura por defecto
+    velocidadLecturaRef.current = 'normal';
+    setVelocidadLectura('normal');
+    setVelocidadSeleccionada(null);
+
+    // 7. Todos los ajustes apagados (movimiento sigue la preferencia del sistema)
+    const prefiereMenosMovimiento = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches;
+    setAjustes({
+      contraste: false,
+      grises: false,
+      enlaces: false,
+      espaciado: false,
+      cursor: false,
+      movimiento: prefiereMenosMovimiento,
+      guia: false,
+    });
   };
 
   return (

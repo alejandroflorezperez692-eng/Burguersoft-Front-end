@@ -2690,3 +2690,42 @@ body:not(.dark-mode) .cierre-box h2 {
 body:not(.dark-mode) .cierre-box .cierre-metodos span {
   border: none;
 }
+
+body .modal-box.vt-det {
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+}
+body .modal-box.vt-det .vt-det-head {
+  flex: 0 0 auto;
+  padding: 26px 64px 16px 26px;
+  border-bottom: 1px solid #e8821a;
+}
+body .modal-box.vt-det .vt-det-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: #e8821a transparent;
+}
+body .modal-box.vt-det .modal-actions {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 16px 26px;
+  border-top: 1px solid #eadfce;
+}
+
+body .modal-box.vt-det .vt-det-body::-webkit-scrollbar { width: 8px; }
+body .modal-box.vt-det .vt-det-body::-webkit-scrollbar-track { background: transparent; margin: 8px 0; }
+body .modal-box.vt-det .vt-det-body::-webkit-scrollbar-thumb { background: #e8821a; border-radius: 999px; }
+body .modal-box.vt-det .vt-det-body::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+
+body.dark-mode .modal-box.vt-det .vt-det-head { border-bottom-color: var(--border); }
+body.dark-mode .modal-box.vt-det .modal-actions { border-top-color: var(--border); }

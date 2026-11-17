@@ -1482,7 +1482,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           )}
         </div>
 
-        <p style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
+        <p className="vt-contador" style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
           {filtered.length} de {items.length} ventas
           {hayFiltros && ` · Total filtrado: $${Math.round(totalFiltrado).toLocaleString('es-CO')}`}
         </p>
@@ -1555,19 +1555,30 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   <span className={`badge ${claseEstado(v?.estado)}`}>{v?.estado ?? '—'}</span>
                 </td>
                 <td>
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+                    onClick={() => setHistorialId(v.id)}
+                  >
+                    Ver historial
+                  </button>
+                </td>
+                <td>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
                     <button
                       type="button"
-                      className="btn-cancel"
+                      className="btn-save"
                       style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
-                      onClick={() => setHistorialId(v.id)}
+                      onClick={() => verFactura(v.id)}
                     >
-                      Ver historial
+                      Ver factura
                     </button>
-                                        {esAdmin && !['Servido', 'Pendiente de pago', 'Pagado'].includes(v?.estado) && !NO_VENDIDOS.includes(v?.estado) && (
+
+                    {esAdmin && !['Servido', 'Pendiente de pago', 'Pagado'].includes(v?.estado) && !NO_VENDIDOS.includes(v?.estado) && (
                       <button
                         type="button"
-                        className="btn-cancel"
+                        className="btn-cancel vt-btn-anular"
                         style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--danger)', borderColor: 'var(--danger)' }}
                         onClick={() => setCambioMotivo({ id: v.id, estado: 'Cancelado' })}
                       >
@@ -1575,16 +1586,6 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                       </button>
                     )}
                   </div>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn-save"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
-                    onClick={() => verFactura(v.id)}
-                  >
-                    Ver factura
-                  </button>
                 </td>
               </tr>
               </Fragment>
@@ -1606,7 +1607,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
       {detalle && (
         <div className="modal-overlay open" onClick={() => setDetalleId(null)}>
           <div className="modal-box vt-det" onClick={(e) => e.stopPropagation()}>
-          <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
+          <button type="button" className="modal-x" onClick={() => setDetalleId(null)} aria-label="Cerrar">×</button>
           <div className="vt-det-head">
               <div>
                 <h3>Venta #{detalle.id}</h3>
@@ -1614,6 +1615,8 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               </div>
               <span className="vt-estado" data-estado={detalle.estado}>{detalle.estado}</span>
             </div>
+
+            <div className="vt-det-body">
 
             <section className="vt-det-sec">
               <h4>Cliente</h4>
@@ -1827,7 +1830,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               <div className="vt-det-lineas">
                 {(detalle.detalles ?? []).map((d, i) => (
                   <div className="vt-det-linea" key={`d${i}`}>
-                    <span><b>{d?.cantidad ?? 0}×</b> {d?.producto?.nombre ?? 'Producto'}</span>
+                    <span><b>{d?.cantidad ?? 0}</b> {d?.producto?.nombre ?? 'Producto'}</span>
                     <span className="vt-det-pu">${Number(d?.precio_unitario || 0).toLocaleString('es-CO')} c/u</span>
                     <strong>${Number(d?.subtotal || 0).toLocaleString('es-CO')}</strong>
                   </div>
@@ -1843,6 +1846,8 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <div className="vt-det-total">
               <span>Total</span>
               <strong>${Number(detalle.valor_total || 0).toLocaleString('es-CO')}</strong>
+            </div>
+
             </div>
 
             <div className="modal-actions">
