@@ -211,7 +211,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
           </div>
 
           {tab === 'datos' && (
-            <form onSubmit={handleGuardarDatos}>
+            <form onSubmit={handleGuardarDatos} noValidate>
               <div className="mp-grid">
                 <div className="mp-field">
                   <label className="mp-label">Nombre <span className="mp-req">*</span></label>
@@ -290,7 +290,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
           )}
 
           {tab === 'pwd' && (
-            <form onSubmit={handlePassword}>
+            <form onSubmit={handlePassword} noValidate>
               <div className="mp-grid">
                 <div className="mp-field mp-full">
                   <label className="mp-label">Contraseña actual <span className="mp-req">*</span></label>

@@ -471,7 +471,7 @@ export default function MateriaPrimaAdmin() {
       <div className="modal-overlay open" onClick={() => setModal(false)}>
         <div className="modal-box" style={{ maxWidth: 560, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
           <button type="button" className="modal-x" onClick={() => setModal(false)} aria-label="Cerrar">×</button>
-          <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar Materia Prima</h2>
+          <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar materia prima</h2>
 
             <div className="form-group" style={{ marginBottom: 14 }}>
               <label>Nombre del insumo <span className="mn-req">*</span></label>

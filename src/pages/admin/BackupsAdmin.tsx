@@ -525,7 +525,7 @@ export default function BackupsAdmin() {
 
       <div className="page-header">
         <div>
-          <h1>Copias de Seguridad</h1>
+          <h1>Copias de seguridad</h1>
           <p className="subtitulo">Respaldo cifrado y restauración de la base de datos</p>
         </div>
 

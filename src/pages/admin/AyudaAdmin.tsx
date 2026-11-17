@@ -128,7 +128,7 @@ const categorias: Categoria[] = [
       {
         titulo: "Problemas para iniciar sesión",
         contenido:
-          "Usa la opción de recuperar contraseña en la pantalla de login y sigue los pasos que llegan a tu correo.",
+          "Usa la opción de recuperar contraseña en la pantalla de inicio de sesión y sigue los pasos que llegan a tu correo.",
       },
     ],
   },
@@ -162,7 +162,7 @@ const preguntas: Pregunta[] = [
   {
     pregunta: "¿Qué hacer si no puedo iniciar sesión?",
     respuesta:
-      "Usa la opción de recuperar contraseña en el login y sigue los pasos que llegan a tu correo.",
+      "Usa la opción de recuperar contraseña en el inicio de sesión y sigue los pasos que llegan a tu correo.",
   },
   {
     pregunta: "¿Cómo cambiar una contraseña?",

@@ -105,7 +105,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
       
       console.log(`[Registro mock] Código para ${emailLimpio}: ${codigo}. ${motivo}`);
       setInfo(
-        'No se pudo contactar el servicio de correo del backend, así que generamos un código de prueba.',
+        'No se pudo contactar el servicio de correo del servidor, así que generamos un código de prueba.',
       );
     },
     [emailLimpio],
@@ -127,12 +127,12 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
       setInfo(`Enviamos un código de 6 dígitos a ${emailLimpio}. Revísalo e ingrésalo abajo.`);
     } catch (err) {
       if ((err as { code?: string })?.code === 'SIN_BACKEND') {
-        activarMock('Backend sin endpoints de registro.');
+        activarMock('Servidor sin endpoints de registro.');
         return;
       }
       if (isAxiosError(err) && !err.response) {
        
-        activarMock('Sin conexión al backend.');
+        activarMock('Sin conexión al servidor.');
         return;
       }
       if (isAxiosError(err) && err.response?.status === 429) {
@@ -214,7 +214,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
       setTimeout(() => onVerified(codigo), 900);
     } catch (err) {
       if ((err as { code?: string })?.code === 'SIN_BACKEND') {
-        activarMock('Backend sin verificación; usando código de prueba.');
+        activarMock('Servidor sin verificación; usando código de prueba.');
         return;
       }
       if (isAxiosError(err) && !err.response && modoMock === false) {

@@ -31,6 +31,14 @@ const CATEGORIAS = [
   'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
 ];
 
+// Se conserva el valor guardado en la base de datos y solo se corrige la etiqueta visible.
+const ETIQUETA_CATEGORIA: Record<string, string> = {
+  'Perros Caliente': 'Perros Calientes',
+  'Bebidas Frias': 'Bebidas Frías',
+};
+
+const catLabel = (categoria: string): string => ETIQUETA_CATEGORIA[categoria] ?? categoria;
+
 const ESTADOS_FILTRO: Estado[] = ['Disponible', 'Agotado'];
 
 const emptyForm = { nombre: '', valor: '', estado: '', categoria: '', descripcion: '', requiere_cocina: true };
@@ -510,7 +518,7 @@ export default function MenuAdmin() {
                     onChange={(value) => setForm((actual) => ({ ...actual, categoria: value }))}
                     options={[
                       { value: '', label: 'Selecciona...' },
-                      ...CATEGORIAS.map((categoria) => ({ value: categoria, label: categoria })),
+                      ...CATEGORIAS.map((categoria) => ({ value: categoria, label: catLabel(categoria) })),
                     ]}
                   />
                 </div>
@@ -807,7 +815,7 @@ export default function MenuAdmin() {
             <label htmlFor="mn-f-categoria">Categoría</label>
             <SelectOscuro id="mn-f-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
               <option value="">Todas</option>
-              {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+              {CATEGORIAS.map((c) => <option key={c} value={c}>{catLabel(c)}</option>)}
               <option value="Otras">Otras</option>
             </SelectOscuro>
           </div>
@@ -895,7 +903,7 @@ export default function MenuAdmin() {
                         <strong>{p.nombre}</strong>
                       </div>
                     </td>
-                    <td>{p.categoria}</td>
+                    <td>{catLabel(p.categoria)}</td>
                     <td className="mn-table-desc">{p.descripcion || '—'}</td>
                     <td className="mn-table-price">${Number(p.valor).toLocaleString('es-CO')}</td>
                     <td>
@@ -929,7 +937,7 @@ export default function MenuAdmin() {
           {grupos.map(([cat, lista]) => (
             <section key={cat}>
               <div className="mn-cat-header">
-                <div className="mn-cat-name">{cat}</div>
+                <div className="mn-cat-name">{catLabel(cat)}</div>
                 <div className="mn-cat-count">{lista.length} {lista.length === 1 ? 'producto' : 'productos'}</div>
               </div>
               <div className="mn-grid">
