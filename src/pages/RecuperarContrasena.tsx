@@ -7,6 +7,7 @@ import apiClient from '../api/client';
 import { useToast } from '../components/Toast';
 import { mensajeError } from '../utils/errores';
 import iconoBloqueo from '../assets/img/bloquear.png';
+import AdminLoading from '../components/AdminLoading';
 
 function segundosRestantesBloqueo(): number {
   const hasta = Number(sessionStorage.getItem('bloqueo_correo_hasta') ?? '0');
@@ -54,7 +55,6 @@ export default function RecuperarContrasena() {
     try {
       await apiClient.post('/recuperar-contrasena', { email: emailLimpio, correo: emailLimpio });
       sessionStorage.setItem('correo_recuperacion', emailLimpio);
-      
       navigate('/verificar-codigo');
     } catch (err) {
       if (isAxiosError(err) && err.response?.status === 429) {
@@ -86,6 +86,10 @@ export default function RecuperarContrasena() {
         document.body
       )}
       <AuthLayout regresarA="/login">
+        {loading && (
+          <AdminLoading texto="Enviando código" subtexto="Revisando tu correo electrónico" />
+        )}
+
         <div className="header-bar header-bar-recuperacion">¿TIENES PROBLEMAS?</div>
         <div className="card card-recuperacion">
           <form onSubmit={handleSubmit} noValidate>

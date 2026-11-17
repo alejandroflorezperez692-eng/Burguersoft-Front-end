@@ -10,15 +10,18 @@ export default function AdminLoading({
   subtexto = 'Preparando tus datos',
   compact = false,
   progreso,
+  area = false,
 }: {
   texto?: string;
   subtexto?: string;
   compact?: boolean;
   progreso?: number;
+  area?: boolean;
 }) {
+  const enLinea = compact || area;
 
   useEffect(() => {
-    if (compact) return;
+    if (enLinea) return;
     if (bloqueosScroll === 0) overflowOriginal = document.body.style.overflow;
     bloqueosScroll += 1;
     document.body.style.overflow = 'hidden';
@@ -26,7 +29,7 @@ export default function AdminLoading({
       bloqueosScroll = Math.max(0, bloqueosScroll - 1);
       if (bloqueosScroll === 0) document.body.style.overflow = overflowOriginal;
     };
-  }, [compact]);
+  }, [enLinea]);
 
   return (
     <div
@@ -34,9 +37,9 @@ export default function AdminLoading({
       aria-live="polite"
       aria-busy="true"
       style={
-        compact
+        enLinea
           ? {
-              minHeight: 200,
+              minHeight: area ? '65vh' : 200,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',

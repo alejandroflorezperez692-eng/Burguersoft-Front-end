@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { normalizarRol, type RolNormalizado } from '../utils/roles';
+import AccesoDenegado from '../pages/AccesoDenegado';
 
 type ProtectedRouteProps = {
   roles?: RolNormalizado[];
@@ -18,7 +19,7 @@ export default function ProtectedRoute({
   if (loading) return null;
 
   if (!isAuthenticated) {
-    return allowGuest ? <Outlet /> : <Navigate to="/login" replace />;
+    return allowGuest ? <Outlet /> : <AccesoDenegado />;
   }
 
   const rol = normalizarRol(user?.role);

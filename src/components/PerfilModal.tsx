@@ -3,6 +3,8 @@ import { useAuth } from '../hooks/useAuth';
 import { useToast } from './Toast';
 import apiClient from '../api/client';
 import { normalizarRol } from '../utils/roles';
+import AdminLoading from './AdminLoading';
+
 import {
   formatearTelefono,
   maxLenDocumento,
@@ -26,8 +28,6 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
   const abiertoRef = useRef(false);
   const [tab, setTab] = useState<Tab>('datos');
 
-
-
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [tdoc, setTdoc] = useState('');
@@ -47,7 +47,6 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     dirtyRef.current = true;
   };
 
- 
   useEffect(() => {
     if (!isOpen) {
       abiertoRef.current = false;
@@ -57,14 +56,14 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     abiertoRef.current = true;
     dirtyRef.current = false;
     setTab('datos');
-   
+
     const partes = (user?.name ?? '').split(' ');
     setNombre(partes[0] ?? '');
     setApellido(partes.slice(1).join(' ') ?? '');
-    
+
     apiClient.get('/me').then(({ data }) => {
       if (dirtyRef.current) return;
-      
+
       const u = data?.usuario ?? data?.user ?? data;
       if (u) {
         if (u.nombre) setNombre(u.nombre);
@@ -75,7 +74,6 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
         if (u.correo && !correo) {/* */}
       }
     }).catch(() => {
-    
       try {
         const raw = localStorage.getItem('perfil_extra');
         if (raw) {
@@ -109,7 +107,7 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
         telefono,
       });
       showToast('Datos actualizados correctamente.');
-   
+
       updateUser({ name: nombreCompleto });
       localStorage.setItem(
         'perfil_extra',
@@ -134,8 +132,8 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
     try {
       await apiClient.post('/perfil/password', { actual, nueva, confirmar });
 
-    
-      sessionStorage.setItem('login_toast', 'password_ok');
+      await new Promise((r) => setTimeout(r, 1200)); // deja ver el loading
+      sessionStorage.setItem('aviso_login', 'password_ok');
       logout();
       window.location.replace('/login');
     } catch (err) {
@@ -146,7 +144,6 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
       } else {
         showToast(msg, true);
       }
-    } finally {
       setEnviandoPwd(false);
     }
   };
@@ -159,6 +156,9 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
 
   return (
     <>
+      {enviandoPwd && (
+        <AdminLoading texto="Cambiando contraseña" subtexto="Guardando tu nueva contraseña" />
+      )}
       <div className="mp-overlay mp-show" onClick={onClose} />
       <div className="mp-panel mp-show" role="dialog" aria-modal="true" aria-label="Mi perfil">
         <div className="mp-head">
@@ -179,7 +179,6 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
         </div>
 
         <div className="mp-body">
-
 
           <div className="mp-tabs-container">
             <button type="button" className={`mp-tab ${tab === 'datos' ? 'mp-tab-active' : ''}`} data-tooltip="Mis datos" onClick={() => { setTab('datos'); }}>
@@ -216,32 +215,32 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
               <div className="mp-grid">
                 <div className="mp-field">
                   <label className="mp-label">Nombre <span className="mp-req">*</span></label>
-                  <input 
-                    type="text" 
-                    value={nombre} 
-                    onChange={(e) => { 
-                      marcarEditado(); 
-                      const v = e.target.value.replace(/[^a-zA-ZÁÉÍÓÚÑáéíóúñ\s]/g, ''); 
-                      setNombre(v.charAt(0).toUpperCase() + v.slice(1)); 
-                    }} 
-                    placeholder="Tu nombre" 
-                    required 
-                    maxLength={20} 
+                  <input
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => {
+                      marcarEditado();
+                      const v = e.target.value.replace(/[^a-zA-ZÁÉÍÓÚÑáéíóúñ\s]/g, '');
+                      setNombre(v.charAt(0).toUpperCase() + v.slice(1));
+                    }}
+                    placeholder="Tu nombre"
+                    required
+                    maxLength={20}
                   />
                 </div>
                 <div className="mp-field">
                   <label className="mp-label">Apellido <span className="mp-req">*</span></label>
-                  <input 
-                    type="text" 
-                    value={apellido} 
-                    onChange={(e) => { 
-                      marcarEditado(); 
-                      const v = e.target.value.replace(/[^a-zA-ZÁÉÍÓÚÑáéíóúñ\s]/g, ''); 
-                      setApellido(v.charAt(0).toUpperCase() + v.slice(1)); 
-                    }} 
-                    placeholder="Tu apellido" 
-                    required 
-                    maxLength={20} 
+                  <input
+                    type="text"
+                    value={apellido}
+                    onChange={(e) => {
+                      marcarEditado();
+                      const v = e.target.value.replace(/[^a-zA-ZÁÉÍÓÚÑáéíóúñ\s]/g, '');
+                      setApellido(v.charAt(0).toUpperCase() + v.slice(1));
+                    }}
+                    placeholder="Tu apellido"
+                    required
+                    maxLength={20}
                   />
                 </div>
                 <div className="mp-field">

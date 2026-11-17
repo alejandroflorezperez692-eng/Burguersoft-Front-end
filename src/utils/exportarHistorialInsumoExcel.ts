@@ -105,7 +105,6 @@ export function armarPeriodos(compras: CompraInsumo[], cierres: CierreInsumo[]):
 
 /* ---------- Constantes y utilidades ---------- */
 const COLOR = 'FFE8821A'; // naranja de la marca
-const CLAVE_HOJAS = 'burguersoft-reportes';
 const FMT_MONEDA = '"$"#,##0';
 const FMT_NUM = '#,##0.##';
 const FMT_FECHA = 'dd/mm/yyyy';

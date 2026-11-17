@@ -150,9 +150,13 @@ export default function ConfiguracionAdmin() {
       return;
     }
     setActualizandoPwd(true);
+    const inicio = Date.now();
     try {
       await apiClient.post('/perfil/password', { actual, nueva, confirmar });
-      sessionStorage.setItem('login_toast', 'password_ok');
+      // Deja el loading visible al menos 1.2 s para que se alcance a ver
+      const resto = 1200 - (Date.now() - inicio);
+      if (resto > 0) await new Promise((r) => setTimeout(r, resto));
+      sessionStorage.setItem('aviso_login', 'password_ok');
       logout();
       window.location.replace('/login');
     } catch (error: unknown) {
@@ -162,7 +166,6 @@ export default function ConfiguracionAdmin() {
       } else {
         showToast(msg, true);
       }
-    } finally {
       setActualizandoPwd(false);
     }
   };
@@ -177,7 +180,10 @@ export default function ConfiguracionAdmin() {
 
   return (
     <div className="page-inner">
-      {cargando && <AdminLoading area texto="Cargando configuración" subtexto="Revisando tus datos" />}
+      {cargando && <AdminLoading compact texto="Cargando configuración" subtexto="Revisando tus datos" />}
+      {actualizandoPwd && (
+        <AdminLoading texto="Cambiando contraseña" subtexto="Guardando tu nueva contraseña" />
+      )}
       <div className="page-header">
         <div>
           <h1>Configuración de Cuenta</h1>

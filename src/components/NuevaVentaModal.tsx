@@ -81,12 +81,10 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const rol = normalizarRol(user?.role);
   const esMesero = rol === 'mesero';
   const esAdmin = rol === 'admin';
-  const puedeAsignarMesero = rol === 'admin' || rol === 'cajero';
 
   const [productos, setProductos] = useState<Producto[]>(cache.productos ?? []);
   const [promociones, setPromociones] = useState<Promocion[]>(cache.promociones ?? []);
   const [mesas, setMesas] = useState<Mesa[]>(cache.mesas ?? []);
-  const [meseros, setMeseros] = useState<{ id: number; nombre: string; apellido: string }[]>([]);
   const [cargandoProd, setCargandoProd] = useState(!cache.productos);
 
   const [enviando, setEnviando] = useState(false);
@@ -154,16 +152,10 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
       .catch(() => {});
     cargarMesas();
 
-    if (puedeAsignarMesero) {
-      apiClient.get('/mesas/meseros')
-        .then(({ data }) => { if (vivo) setMeseros(Array.isArray(data) ? data : []); })
-        .catch(() => {});
-    }
-
     setTipoEntrega('Consumir');
     if (mesaInicial) setMesa(mesaInicial);
     return () => { vivo = false; };
-  }, [abierto, mesaInicial, cargarMesas, puedeAsignarMesero]);
+  }, [abierto, mesaInicial, cargarMesas]);
 
   const todos = useMemo<Item[]>(() => [
     ...productos.map((p) => ({
@@ -241,29 +233,6 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
     : tipoEntrega === 'Domicilio' ? 'Domicilio' : 'Para recoger';
 
   /* ---------- Mesas ---------- */
-  const asignarMesero = async (numero: number, meseroId: string) => {
-    try {
-      const { data } = await apiClient.patch(`/mesas/${numero}/mesero`, {
-        mesero_id: meseroId ? Number(meseroId) : null,
-      });
-
-      const actualizadas = mesas.map((m) =>
-        m.numero === numero ? { ...m, mesero: data.mesero ?? null } : m,
-      );
-      setMesas(actualizadas);
-      fijar('mesas', actualizadas);
-
-      showToast(
-        data.mesero
-          ? `Mesa ${numero}: ${data.mesero.nombre} ${data.mesero.apellido}`
-          : `Mesa ${numero} sin mesero`,
-      );
-    } catch (e) {
-      const d = (e as { response?: { data?: { error?: string; message?: string } } })?.response?.data;
-      alertar(d?.error || d?.message || 'No se pudo asignar el mesero');
-    }
-  };
-
   const crearMesa = async () => {
     try {
       const { data } = await apiClient.post('/mesas');

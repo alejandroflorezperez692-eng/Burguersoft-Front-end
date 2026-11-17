@@ -4,13 +4,14 @@ import { isAxiosError } from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
+import { useToast } from '../components/Toast';
 import iconoBloqueo from '../assets/img/bloquear.png';
 
 export default function VerificarCodigo() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const correo = sessionStorage.getItem('correo_recuperacion') ?? '';
   const [digitos, setDigitos] = useState<string[]>(['', '', '', '', '', '']);
-  const [error, setError] = useState('');
   const [bloqueado, setBloqueado] = useState(false);
   const [segundos, setSegundos] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -42,7 +43,7 @@ export default function VerificarCodigo() {
   };
 
   const fallarConAnimacion = (mensaje: string) => {
-    setError(mensaje);
+    showToast(mensaje, true);
     dispararAgitado();
     
     setTimeout(() => {
@@ -106,10 +107,9 @@ export default function VerificarCodigo() {
   const handleSubmit = async (e?: FormEvent) => {
     e?.preventDefault();
     if (exito || loading) return;
-    setError('');
     const codigo = digitos.join('');
     if (codigo.length !== 6) {
-      setError('Ingresa los 6 dígitos del código.');
+      showToast('Ingresa los 6 dígitos del código.', true);
       dispararAgitado();
       return;
     }
@@ -119,7 +119,6 @@ export default function VerificarCodigo() {
       sessionStorage.setItem('codigo_verificado', codigo);
       sessionStorage.setItem(`fallos_${correo}`, '0');
       setExito(true);
-      setError('');
    
       setTimeout(() => navigate('/restablecer-contrasena', { replace: true }), 1400);
     } catch (err) {
@@ -164,11 +163,6 @@ export default function VerificarCodigo() {
           {bloqueado && (
             <div className="alerta-codigo" role="alert" style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 2147483647, maxWidth: 520, width: 'calc(100% - 24px)', textAlign: 'center', margin: 0, boxShadow: '0 10px 30px rgba(0,0,0,.25)' }}>
               Demasiados intentos fallidos. Espera <span>{segundos}</span> segundo(s).
-            </div>
-          )}
-          {error && !bloqueado && (
-            <div className="auth-error" role="alert" style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 2147483647, maxWidth: 520, width: 'calc(100% - 24px)', textAlign: 'center', margin: 0, boxShadow: '0 10px 30px rgba(0,0,0,.25)' }}>
-              {error}
             </div>
           )}
         </>,

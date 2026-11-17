@@ -20,6 +20,16 @@ import SelectOscuro from '../../components/SelectOscuro';
 import { nuevaClaveIdempotencia } from '../../utils/idempotencia';
 import { METODOS_MOSTRADOR, esPagoElectronico } from '../../utils/pagos';
 
+const separarNotasPedido = (notas: string) =>
+  notas.split(' | ').map((bloque) => {
+    const i = bloque.indexOf(': ');
+    if (i === -1) return { producto: '', detalles: [bloque.trim()] };
+    return {
+      producto: bloque.slice(0, i).trim(),
+      detalles: bloque.slice(i + 2).split(', ').map((s) => s.trim()).filter(Boolean),
+    };
+  });
+
 const MOTIVO_DEVOLUCION_DEFECTO =
   'El comprobante no coincide con el valor del pedido. Por favor sube uno nuevo.';
 
@@ -46,9 +56,15 @@ interface Venta {
   usuario_id: number;
   cliente_nombre?: string | null;
   telefono_contacto?: string | null;
+  recibe_nombre?: string | null;
   recibe_telefono?: string | null;
   mesa?: number | null;
   notas?: string | null;
+  direccion?: string | null;
+  barrio?: string | null;
+  referencia?: string | null;
+  programado_para?: string | null;
+  fecha_programada?: string | null;
   usuario?: {
     nombre: string;
     apellido: string;
@@ -364,6 +380,7 @@ export default function VentasAdmin() {
   const [loading, setLoading] = useState(true);
   const [historialId, setHistorialId] = useState<number | null>(null);
   const [detalleId, setDetalleId] = useState<number | null>(null);
+  const [cargandoFactura, setCargandoFactura] = useState(false);
   const [cierreAbierto, setCierreAbierto] = useState(false);
   const [cierreDesde, setCierreDesde] = useState('');
   const [cierreHasta, setCierreHasta] = useState('');
@@ -455,6 +472,40 @@ const load = async (silencioso = false) => {
     const numero = usuarioEsCliente(v) ? v?.usuario?.Ndocumento : null;
     if (!numero) return '';
     return [v?.usuario?.Tdocumento, numero].filter(Boolean).join(' ');
+  };
+
+  // Tipo de entrega normalizado: el dato puede venir como "Consumir",
+  // "En el local", "Recoger", etc. según el origen del pedido.
+  const esEnLocal = (v: Venta) => {
+    const t = normalizar(v?.tipo_entrega).trim();
+    return t.includes('consum') || t.includes('restaurante') || t.includes('local') || t.includes('mesa');
+  };
+
+  const esParaRecoger = (v: Venta) => {
+    const t = normalizar(v?.tipo_entrega).trim();
+    return !esEnLocal(v) && (t.includes('recog') || t.includes('llevar'));
+  };
+
+  const esADomicilio = (v: Venta) => {
+    const t = normalizar(v?.tipo_entrega).trim();
+    return !esEnLocal(v) && !esParaRecoger(v) && (t.includes('domicilio') || !!v?.direccion);
+  };
+
+  const etiquetaEntrega = (tipo?: string | null) => {
+    const t = normalizar(tipo).trim();
+    if (t.includes('consum') || t.includes('restaurante') || t.includes('local') || t.includes('mesa')) return 'En el local';
+    if (t.includes('recog') || t.includes('llevar')) return 'Para recoger';
+    if (t.includes('domicilio')) return 'Domicilio';
+    return tipo || '—';
+  };
+
+  const telefonoDeContacto = (v: Venta) =>
+    v?.recibe_telefono || telefonoCliente(v) || '';
+
+  const textoProgramado = (v: Venta) => {
+    const f = v?.programado_para || v?.fecha_programada;
+    if (!f) return 'Lo antes posible';
+    return /^\d{4}-\d{2}-\d{2}$/.test(f) ? fmtDia(f) : `${fmtDia(f)} · ${fmtHora(f)}`;
   };
 
   const textoBusqueda = normalizar(q).trim();
@@ -620,6 +671,115 @@ const load = async (silencioso = false) => {
 
   const totalCarrito = totalProductos + totalCombos;
 
+  // Factura armada con los datos que entrega el backend (/ventas/{id}/recibo.json).
+  const htmlFacturaDatos = (d: any) => {
+    const logoUrl = new URL(logoImg, window.location.origin).href;
+    const neg = d.negocio ?? {};
+    const lineas: any[] = d.lineas ?? [];
+    const notas: any[] = d.notas ?? [];
+    const nNotas = notas.reduce((a, n) => a + 1 + (n.detalles?.length ?? 0), 0);
+    const alto = 150 + lineas.length * 8 + nNotas * 4 + (d.direccion ? 6 : 0) + (d.recibe ? 6 : 0);
+
+    const u = (mm: number) => `calc(var(--u) * ${mm})`;
+    const f = (pt: number) => u(+(pt * 0.3528).toFixed(3));
+    const px = (n: number) => u(+(n * 0.2646).toFixed(3));
+
+    const fila = (etq: string, val: unknown, negrita = false) =>
+      val ? `<tr><td class="etq">${escHtml(etq)}</td><td>${negrita ? `<strong>${escHtml(val)}</strong>` : escHtml(val)}</td></tr>` : '';
+
+    const recibe = d.recibe ? [d.recibe.nombre, d.recibe.telefono].filter(Boolean).join(' · ') : '';
+
+    const filas = lineas.map((l) =>
+      `<tr><td>${escHtml(l.nombre)}${(l.integrantes ?? []).map((x: string) => `<div class="sub">${escHtml(x)}</div>`).join('')}</td>` +
+      `<td class="c">${escHtml(l.cantidad)}</td><td class="r">${escHtml(l.precio_fmt)}</td><td class="r">${escHtml(l.subtotal_fmt)}</td></tr>`).join('');
+
+    const notasHtml = notas.length
+      ? `<div class="sep"></div><div class="titulo" style="font-size:${f(7.5)}">Detalle del pedido</div>` +
+        notas.map((n) =>
+          `<div style="margin-top:${u(1)};font-size:${f(7.5)}">${n.producto ? `<strong>${escHtml(n.producto)}</strong>` : ''}` +
+          (n.detalles ?? []).map((x: string) => `<div class="sub">· ${escHtml(x)}</div>`).join('') + `</div>`).join('')
+      : '';
+
+    return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Factura ${escHtml(d.numero)}</title>
+<style>
+*{box-sizing:border-box}
+@page{size:auto;margin:0}
+:root{--u:min(1.25vw, calc(100vh / ${alto + 6}))}
+html,body{margin:0}
+body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:Helvetica,Arial,sans-serif;font-size:${f(8)};color:#000}
+.centro{text-align:center}
+.logo{width:${u(26)};height:auto;margin-bottom:${u(1.5)}}
+.negocio{font-size:${f(13)};font-weight:bold;letter-spacing:${px(1)}}
+.eslogan{font-size:${f(7.5)};letter-spacing:${px(2)};text-transform:uppercase;margin-top:${u(1)}}
+.dato{font-size:${f(7)};color:#333;margin-top:${u(0.6)}}
+.sep{border-top:1px dashed #000;margin:${u(2.5)} 0}
+.titulo{font-size:${f(9)};font-weight:bold;letter-spacing:${px(1.5)};text-transform:uppercase}
+.num{font-size:${f(8)};margin-top:${u(0.5)}}
+.fila{width:100%;border-collapse:collapse}
+.fila td{font-size:${f(7.8)};padding:${u(0.6)} 0;vertical-align:top}
+.fila td.etq{width:34%;color:#444}
+.items{width:100%;border-collapse:collapse;margin-top:${u(1)}}
+.items th{font-size:${f(6.6)};text-transform:uppercase;letter-spacing:${px(0.5)};text-align:left;border-bottom:1px solid #000;padding:${u(1)} 0}
+.items td{font-size:${f(7.8)};padding:${u(1.2)} 0;vertical-align:top;border-bottom:1px dotted #ccc}
+.items .c{text-align:center}
+.items .r{text-align:right;white-space:nowrap}
+.sub{font-size:${f(6.6)};color:#444;margin-top:${u(0.4)}}
+.totales{width:100%;border-collapse:collapse;margin-top:${u(2)}}
+.totales td{padding:${u(1)} 0}
+.tl{font-size:${f(7.8)};color:#333}
+.tv{font-size:${f(8)};text-align:right;white-space:nowrap}
+.total-etq{font-size:${f(9)};font-weight:bold;text-transform:uppercase;letter-spacing:${px(1)}}
+.total-val{font-size:${f(13)};font-weight:bold;text-align:right;white-space:nowrap}
+.pie{text-align:center;margin-top:${u(3)};font-size:${f(7)};color:#333}
+.gracias{font-size:${f(9)};font-weight:bold;color:#000;margin-bottom:${u(1)}}
+</style></head><body>
+<div class="centro">
+  <img class="logo" src="${logoUrl}" alt="Burguersoft" onerror="this.style.display='none'">
+  <div class="negocio">${escHtml(neg.nombre)}</div>
+  <div class="eslogan">${escHtml(neg.eslogan)}</div>
+  ${neg.nit ? `<div class="dato">NIT ${escHtml(neg.nit)}</div>` : ''}
+  <div class="dato">${escHtml(neg.direccion)}</div>
+  <div class="dato">${escHtml(neg.ciudad)}</div>
+  <div class="dato">Tel. ${escHtml(neg.telefono)}</div>
+</div>
+<div class="sep"></div>
+<div class="centro titulo">Recibo de venta</div>
+<div class="centro num">No. ${escHtml(d.numero)}</div>
+<div class="sep"></div>
+<table class="fila">
+  ${fila('Fecha', d.fecha)}
+  ${fila('Cliente', d.cliente?.nombre)}
+  ${fila('Documento', d.cliente?.documento)}
+  ${fila('Teléfono', d.cliente?.telefono)}
+  ${fila('Correo', d.cliente?.correo)}
+  ${fila('Entrega', d.entrega_texto ?? d.tipo_entrega, true)}
+  ${fila('Mesa', d.mesa ? `N.º ${d.mesa}` : '', true)}
+  ${fila(d.etiqueta_hora ?? 'Hora', d.cuando)}
+  ${fila('Dirección', d.direccion)}
+  ${fila('Persona que recibe', recibe)}
+  ${fila('Recoger en', d.sede_recoger)}
+  ${fila('Pago', d.metodo_pago)}
+</table>
+<div class="sep"></div>
+<table class="items">
+  <thead><tr><th>Producto</th><th class="c" style="width:11%">Cant</th><th class="r" style="width:25%">Vr. Unit</th><th class="r" style="width:27%">Subtotal</th></tr></thead>
+  <tbody>${filas}</tbody>
+</table>
+${notasHtml}
+<table class="totales">
+  <tr><td class="tl">Subtotal</td><td class="tv">${escHtml(d.subtotal_fmt)}</td></tr>
+  <tr><td class="tl">Impuesto (${escHtml(d.impuesto_pct)}%)</td><td class="tv">${escHtml(d.impuesto_fmt)}</td></tr>
+  <tr><td class="total-etq">Total</td><td class="total-val">${escHtml(d.total_fmt)}</td></tr>
+</table>
+<div class="sep"></div>
+<div class="pie">
+  <div class="gracias">¡Gracias por tu compra!</div>
+  <div>${escHtml(neg.nombre)} · ${escHtml(neg.eslogan)}</div>
+  <div>${escHtml(neg.correo)}</div>
+</div>
+</body></html>`;
+  };
+
   const htmlFactura = (v: Venta) => {
     const logoUrl = new URL(logoImg, window.location.origin).href;
     const numero = String(v.id).padStart(6, '0');
@@ -637,7 +797,7 @@ const load = async (silencioso = false) => {
     };
 
     const usu = v.usuario;
-    const mostrador = Number(usu?.rol_id ?? 0) === 1;
+    const mostrador = !usuarioEsCliente(v);
     const nombre = mostrador
       ? (v.cliente_nombre || 'Consumidor final')
       : (`${usu?.nombre ?? ''} ${usu?.apellido ?? ''}`.trim() || 'Cliente');
@@ -650,13 +810,39 @@ const load = async (silencioso = false) => {
     const filasCombos = (v.promociones ?? []).map((pr) =>
       `<tr><td>${escHtml(pr.nombre)}</td><td class="c">1</td><td class="r">—</td><td class="r">—</td></tr>`).join('');
 
-    const nLineas = (v.detalles?.length ?? 0) + (v.promociones?.length ?? 0);
-    const extras = [documento, telefono, correo].filter(Boolean).length;
-    const alto = 130 + nLineas * 7 + extras * 5; 
-
     const u = (mm: number) => `calc(var(--u) * ${mm})`;
     const f = (pt: number) => u(+(pt * 0.3528).toFixed(3));
     const px = (n: number) => u(+(n * 0.2646).toFixed(3));
+
+    const enLocal = esEnLocal(v);
+    const recoger = esParaRecoger(v);
+    const domicilio = esADomicilio(v);
+
+    const filaMesa = v.mesa
+      ? `<tr><td class="etq">Mesa</td><td><strong>N.º ${escHtml(v.mesa)}</strong></td></tr>`
+      : '';
+    const filaHora = enLocal
+      ? ''
+      : `<tr><td class="etq">${recoger ? 'Hora de recogida' : 'Hora de entrega'}</td><td>${escHtml(textoProgramado(v))}</td></tr>`;
+    const filaDireccion = domicilio && v.direccion
+      ? `<tr><td class="etq">Dirección</td><td>${escHtml([v.direccion, v.barrio, v.referencia].filter(Boolean).join(' · '))}</td></tr>`
+      : '';
+    const filaRecibe = !enLocal && (v.recibe_nombre || v.recibe_telefono)
+      ? `<tr><td class="etq">${recoger ? 'Recoge a nombre de' : 'Persona que recibe'}</td><td>${escHtml([v.recibe_nombre, v.recibe_telefono].filter(Boolean).join(' · '))}</td></tr>`
+      : '';
+
+    const notasHtml = v.notas
+      ? `<div class="sep"></div><div class="titulo" style="font-size:${f(7.5)}">Detalle del pedido</div>` +
+        separarNotasPedido(v.notas).map((n) =>
+          `<div style="margin-top:${u(1)};font-size:${f(7.5)}">${n.producto ? `<strong>${escHtml(n.producto)}</strong>` : ''}` +
+          n.detalles.map((x) => `<div style="font-size:${f(6.6)};color:#444">· ${escHtml(x)}</div>`).join('') +
+          `</div>`).join('')
+      : '';
+
+    const nLineas = (v.detalles?.length ?? 0) + (v.promociones?.length ?? 0);
+    const extras = [documento, telefono, correo].filter(Boolean).length;
+    const filasExtra = [filaMesa, filaHora, filaDireccion, filaRecibe].filter(Boolean).length;
+    const alto = 130 + nLineas * 7 + extras * 5 + filasExtra * 5 + (v.notas ? 25 : 0);
 
     return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Factura ${numero}</title>
 <style>
@@ -706,7 +892,11 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
   ${documento ? `<tr><td class="etq">Documento</td><td>${escHtml(documento)}</td></tr>` : ''}
   ${telefono ? `<tr><td class="etq">Teléfono</td><td>${escHtml(telefono)}</td></tr>` : ''}
   ${correo ? `<tr><td class="etq">Correo</td><td style="word-break:break-all">${escHtml(correo)}</td></tr>` : ''}
-  <tr><td class="etq">Entrega</td><td>${escHtml(v.tipo_entrega)}</td></tr>
+  <tr><td class="etq">Entrega</td><td><strong>${escHtml(etiquetaEntrega(v.tipo_entrega))}</strong></td></tr>
+  ${filaMesa}
+  ${filaHora}
+  ${filaDireccion}
+  ${filaRecibe}
   <tr><td class="etq">Pago</td><td>${escHtml(v.metodo_pago)}</td></tr>
 </table>
 <div class="sep"></div>
@@ -714,6 +904,7 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
   <thead><tr><th>Producto</th><th class="c" style="width:11%">Cant</th><th class="r" style="width:25%">Vr. Unit</th><th class="r" style="width:27%">Subtotal</th></tr></thead>
   <tbody>${filas}${filasCombos}</tbody>
 </table>
+${notasHtml}
 <table class="totales"><tr><td class="total-etq">Total</td><td class="total-val">${monedaRecibo(Number(v.valor_total))}</td></tr></table>
 <div class="sep"></div>
 <div class="pie">
@@ -773,27 +964,21 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
   };
 
   const verFactura = async (id: number) => {
-    const ventana = window.open('', '_blank');
+    if (cargandoFactura) return;
+    setCargandoFactura(true);
 
     try {
-      const respuesta = await apiClient.get(`/ventas/${id}/recibo.pdf`, { responseType: 'blob' });
-      const url = URL.createObjectURL(new Blob([respuesta.data], { type: 'application/pdf' }));
-
-      if (ventana) {
-        ventana.location.href = url;
-      } else {
-        window.open(url, '_blank');
-      }
-
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      const { data } = await apiClient.get(`/ventas/${id}/recibo.json`);
+      imprimirEnPagina(htmlFacturaDatos(data));
     } catch {
-      ventana?.close();
       const venta = (items ?? []).find((x) => x.id === id);
       if (!venta) {
         alertar('No se pudo abrir la factura.');
-        return;
+      } else {
+        imprimirEnPagina(htmlFactura(venta));
       }
-      imprimirEnPagina(htmlFactura(venta));
+    } finally {
+      setCargandoFactura(false);
     }
   };
 
@@ -1396,7 +1581,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                 <td className="vt-cliente">
                   <strong>{nombreCliente(v) || '—'}</strong>
                   <small>
-                    {v?.tipo_entrega === 'Consumir' && v?.mesa ? `Mesa ${v.mesa}` : v?.tipo_entrega ?? ''}
+                    {v?.tipo_entrega === 'Consumir' && v?.mesa ? `Mesa ${v.mesa}` : etiquetaEntrega(v?.tipo_entrega)}
                   </small>
                 </td>
                 <td>
@@ -1490,15 +1675,64 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </section>
 
             <section className="vt-det-sec">
+              <h4>Entrega</h4>
+              <dl className="vt-det-grid">
+                <div><dt>Tipo</dt><dd>{etiquetaEntrega(detalle.tipo_entrega)}</dd></div>
+                {esEnLocal(detalle) && (
+                  <div><dt>Mesa</dt><dd>{detalle.mesa ? `Mesa ${detalle.mesa}` : 'Sin asignar'}</dd></div>
+                )}
+                {!esEnLocal(detalle) && (
+                  <>
+                    <div>
+                      <dt>{esParaRecoger(detalle) ? 'Recoge a nombre de' : 'Quién recibe'}</dt>
+                      <dd>{detalle.recibe_nombre || nombreCliente(detalle) || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>Teléfono de quien recibe</dt>
+                      <dd>{telefonoDeContacto(detalle) || '—'}</dd>
+                    </div>
+                    <div>
+                      <dt>{esParaRecoger(detalle) ? 'Hora de recogida' : 'Hora de entrega'}</dt>
+                      <dd>{textoProgramado(detalle)}</dd>
+                    </div>
+                  </>
+                )}
+                {esADomicilio(detalle) && (
+                  <>
+                    <div><dt>Dirección</dt><dd>{detalle.direccion || '—'}</dd></div>
+                    <div><dt>Barrio</dt><dd>{detalle.barrio || '—'}</dd></div>
+                    {detalle.referencia ? (
+                      <div className="vt-det-full"><dt>Referencia</dt><dd>{detalle.referencia}</dd></div>
+                    ) : null}
+                  </>
+                )}
+              </dl>
+            </section>
+
+            <section className="vt-det-sec">
               <h4>Pedido</h4>
               <dl className="vt-det-grid">
-                <div><dt>Entrega</dt><dd>{detalle.tipo_entrega || '—'}</dd></div>
-                {detalle.tipo_entrega === 'Consumir' && detalle.mesa ? (
-                  <div><dt>Mesa</dt><dd>{detalle.mesa}</dd></div>
-                ) : null}
                 <div><dt>Método de pago</dt><dd>{detalle.metodo_pago || '—'}</dd></div>
+                <div><dt>Hora del pedido</dt><dd>{fmtDia(detalle.fecha)} · {fmtHora(detalle.fecha)}</dd></div>
+                {detalle.programado_para ? (
+                  <div><dt>Programado para</dt><dd>{fmtDia(detalle.programado_para)} · {fmtHora(detalle.programado_para)}</dd></div>
+                ) : null}
                 {detalle.notas ? (
-                  <div className="vt-det-full"><dt>Notas</dt><dd>{detalle.notas}</dd></div>
+                  <div className="vt-det-full">
+                    <dt>Detalle del pedido</dt>
+                    <dd>
+                      {separarNotasPedido(detalle.notas).map((n, i) => (
+                        <div key={i} style={{ marginBottom: 10 }}>
+                          {n.producto && <strong>{n.producto}</strong>}
+                          {n.detalles.map((d, j) => (
+                            <div key={j} style={{ paddingLeft: 12, fontSize: '0.9em', fontWeight: 400, color: /^sin/i.test(d) ? '#c0392b' : '#27863f' }}>
+                              · {d}
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </dd>
+                  </div>
                 ) : null}
               </dl>
             </section>

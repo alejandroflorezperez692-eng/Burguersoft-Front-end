@@ -140,7 +140,7 @@ function encontrarElemento(target: EventTarget | null): Element | null {
   const cajaContacto = target.closest('.icon-box[data-tooltip]');
   if (cajaContacto) return cajaContacto;
 
-  const chipUsuario = target.closest('.header-user[data-tooltip]');
+  const chipUsuario = target.closest('.header-user[data-tooltip], .btn-perfil[data-tooltip]');
   if (chipUsuario) return chipUsuario;
 
   const enlace = target.closest('a[data-tooltip]');
