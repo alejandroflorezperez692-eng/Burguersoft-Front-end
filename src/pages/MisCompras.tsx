@@ -14,6 +14,16 @@ import '../styles/mis-pedidos.css';
 import { mensajeError } from '../utils/errores';
 import { useToast } from '../components/Toast';
 
+const separarNotasPedido = (notas: string) =>
+  notas.split(' | ').map((bloque) => {
+    const i = bloque.indexOf(': ');
+    if (i === -1) return { producto: '', detalles: [bloque.trim()] };
+    return {
+      producto: bloque.slice(0, i).trim(),
+      detalles: bloque.slice(i + 2).split(', ').map((s) => s.trim()).filter(Boolean),
+    };
+  });
+
 type ItemUI = {
   nombre: string;
   cantidad: number;
@@ -748,8 +758,19 @@ export default function MisCompras() {
                   </div>
                   {p.notas && (
                     <div className="pedido-info-item pedido-info-full">
-                      <span className="pedido-info-label">Notas</span>
-                      <span className="pedido-info-valor pedido-info-notas">{p.notas}</span>
+                      <span className="pedido-info-label">Detalle del pedido</span>
+                      <div className="pedido-info-notas">
+                        {separarNotasPedido(p.notas).map((n, i) => (
+                          <div key={i} style={{ marginBottom: 10 }}>
+                            {n.producto && <strong>{n.producto}</strong>}
+                            {n.detalles.map((d, j) => (
+                              <div key={j} style={{ paddingLeft: 12, fontSize: '0.9em', fontWeight: 400, color: /^sin/i.test(d) ? '#c0392b' : '#27863f' }}>
+                                · {d}
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

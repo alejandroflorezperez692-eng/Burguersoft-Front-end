@@ -1747,7 +1747,6 @@ body.dark-mode .modal-x::before {
   inset: 0;
   display: grid;
   place-items: center;
-  transform: translateY(-2px);
   font-size: 22px;
   line-height: 1;
 }
@@ -2413,7 +2412,7 @@ body:not(.dark-mode) .vt-det .modal-x {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0 3px 0;
+  padding: 0;
   line-height: 1;
   background: #ffffff;
   border: 1.5px solid #e8851a;
@@ -2510,7 +2509,7 @@ body:not(.dark-mode) .cierre-box .modal-x {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0 3px 0;
+  padding: 0;
   line-height: 1;
   background: #ffffff;
   border: 1.5px solid #e8851a;
@@ -2582,7 +2581,7 @@ body:not(.dark-mode) .tz-box .modal-x {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 0 3px 0;
+  padding: 0;
   line-height: 1;
   background: #ffffff;
   border: 1.5px solid #e8851a;

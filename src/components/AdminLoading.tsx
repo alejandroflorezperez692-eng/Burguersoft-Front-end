@@ -10,11 +10,13 @@ export default function AdminLoading({
   subtexto = 'Preparando tus datos',
   compact = false,
   progreso,
+  area = false,
 }: {
   texto?: string;
   subtexto?: string;
   compact?: boolean;
   progreso?: number;
+  area?: boolean;
 }) {
 
   useEffect(() => {
