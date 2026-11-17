@@ -1,5 +1,3 @@
-
-
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 
@@ -9,6 +7,7 @@ import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
 import { useToast } from '../components/Toast';
 import { useAuth } from '../hooks/useAuth';
+import AdminLoading from '../components/AdminLoading';
 
 
 
@@ -59,6 +58,7 @@ export default function RestablecerContrasena() {
       return;
     }
     setLoading(true);
+    const inicio = Date.now();
     try {
       await apiClient.post('/restablecer-contrasena', {
         email: correo,
@@ -71,26 +71,25 @@ export default function RestablecerContrasena() {
       sessionStorage.removeItem('correo_recuperacion');
       sessionStorage.removeItem('codigo_verificado');
 
+      // Deja el loading visible al menos 1.2 s para que se alcance a ver
+      const resto = 1200 - (Date.now() - inicio);
+      if (resto > 0) await new Promise((r) => setTimeout(r, resto));
 
-      sessionStorage.setItem('login_toast', 'password_ok');
-      logout();
-      window.location.replace('/login');
-
-
-     
+      // El Login lee 'aviso_login' para mostrar la alerta de contraseña cambiada
       sessionStorage.setItem('aviso_login', 'password_ok');
       logout();
       navigate('/login', { replace: true, state: { toast: 'password_ok' } });
-
     } catch (err) {
       showToast(mensajeError(err, 'No se pudo cambiar la contraseña'), true);
-    } finally {
       setLoading(false);
     }
   };
 
   return (
     <AuthLayout regresarA="/recuperar-contrasena">
+      {loading && (
+        <AdminLoading texto="Cambiando contraseña" subtexto="Guardando tu nueva contraseña" />
+      )}
       <div className="header-bar">NUEVA CONTRASEÑA</div>
       <div className="card">
         <div className="icono-card">
