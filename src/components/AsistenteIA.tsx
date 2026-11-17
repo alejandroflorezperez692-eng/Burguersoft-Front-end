@@ -307,7 +307,7 @@ export default function AsistenteIA() {
           'No pude completar la respuesta. Verifica tu conexión e inténtalo de nuevo; no cierres la sesión.';
       else if (status === 401) aviso = 'Tu sesión expiró. Cierra sesión y vuelve a entrar.';
       else if (status === 403) aviso = 'No tienes permiso para usar a Burgi.';
-      else if (status >= 500) aviso = `El servidor tuvo un error (${status}). El detalle está en storage/logs/laravel.log del backend.`;
+      else if (status >= 500) aviso = `El servidor tuvo un error (${status}). Intenta de nuevo en un momento.`;
       else aviso = `No pude responder (error ${status}).`;
       setMensajes((m) => [...m, { role: 'assistant', content: aviso, error: true }]);
     } finally {

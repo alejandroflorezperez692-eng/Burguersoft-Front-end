@@ -179,7 +179,7 @@ export default function AyudaCliente() {
 
         <section className="ayuda-contacto">
           <p>¿Necesitas ayuda con tu pedido?</p>
-          <Link to="/contactanos">Visita nuestra página de contactanos <span aria-hidden="true" /></Link>
+          <Link to="/contactanos">Visita nuestra página de Contáctanos <span aria-hidden="true" /></Link>
         </section>
       </main>
 

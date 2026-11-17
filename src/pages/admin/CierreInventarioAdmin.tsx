@@ -8,6 +8,7 @@ import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
+import logoImg from '../../assets/img/logo-burguersoft.png';
 
 interface FilaCierre {
   id: number;
@@ -195,42 +196,119 @@ export default function CierreInventarioAdmin() {
   const textoCambio = (dif: number, u: string): string =>
     Math.abs(dif) < 0.005 ? 'Sin cambio' : dif < 0 ? `Usado ${fmt(-dif)} ${u}` : `Sobra ${fmt(dif)} ${u}`;
 
-  const descargarPdf = (d: DetalleCierre) => {
-    const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    const f = new Date(d.created_at);
-    const filasHtml = d.items.map((i) => {
-      const u = i.unidad_medida ?? '';
-      return `<tr>
-        <td>${esc(i.nombre)}</td>
-        <td>${fmt(n(i.stock_esperado))} ${esc(u)}</td>
-        <td>${fmt(n(i.conteo_real))} ${esc(u)}</td>
-        <td>${esc(textoCambio(n(i.diferencia), u))}</td>
-      </tr>`;
-    }).join('');
+  const descargarPdf = async (d: DetalleCierre) => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const M = 14;
+      const limpio = (t: string) => t.replace(/[\u2013\u2014]/g, '-');
+      const f = new Date(d.created_at);
 
-    const w = window.open('', '_blank');
-    if (!w) { showToast('Permite las ventanas emergentes para descargar el PDF', false, true); return; }
-    w.document.write(`<!doctype html><html lang="es"><head><meta charset="utf-8">
-      <title>Cierre de inventario N.º ${d.id}</title>
-      <style>
-        body{font-family:Arial,sans-serif;color:#1a0a00;padding:32px}
-        h1{margin:0 0 4px;font-size:22px} p{margin:2px 0;font-size:13px}
-        table{width:100%;border-collapse:collapse;margin-top:20px;font-size:13px}
-        th{background:#1a0a00;color:#fff;text-align:left;padding:8px 10px}
-        td{padding:8px 10px;border-bottom:1px solid #ddd}
-      </style></head><body>
-      <h1>Cierre de inventario N.º ${d.id}</h1>
-      <p><b>Empresa:</b> El Oriente</p>
-      <p><b>Fecha:</b> ${f.toLocaleDateString('es-CO')} &nbsp; <b>Hora:</b> ${f.toLocaleTimeString('es-CO')}</p>
-      <p><b>Responsable:</b> ${esc(d.usuario ?? '—')}</p>
-      <p><b>Observación:</b> ${esc(d.observacion ?? '—')}</p>
-      <table>
-        <thead><tr><th>Materia prima</th><th>Había</th><th>Contó</th><th>Resultado</th></tr></thead>
-        <tbody>${filasHtml}</tbody>
-      </table></body></html>`);
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 300);
+      const logo = await new Promise<HTMLImageElement | null>((res) => {
+        const im = new Image();
+        im.onload = () => res(im);
+        im.onerror = () => res(null);
+        im.src = logoImg;
+      });
+
+      // Encabezado del local
+      let y = 16;
+      const logoW = 24;
+      const logoH = logo ? (logo.naturalHeight / logo.naturalWidth) * logoW : 0;
+      let xTexto = M;
+      if (logo) {
+        doc.addImage(logo, 'PNG', M, y, logoW, logoH);
+        xTexto = M + logoW + 6;
+      }
+      doc.setTextColor(26, 10, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.text('Burguersoft', xTexto, y + 8);
+      doc.setFontSize(10);
+      doc.text('EL ORIENTE', xTexto, y + 14, { charSpace: 1.5 });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(80, 70, 60);
+      doc.text('Calle 9 # 1A-43, Barrio El Oriente · Sogamoso, Boyacá', xTexto, y + 20);
+      doc.text('Tel. 314 2208706 · burguersoft@gmail.com', xTexto, y + 25);
+
+      y += Math.max(logoH, 27) + 5;
+      doc.setDrawColor(232, 130, 26);
+      doc.setLineWidth(0.6);
+      doc.line(M, y, W - M, y);
+      y += 12;
+
+      // Título
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(26, 10, 0);
+      doc.text(`Cierre de inventario N.º ${d.id}`, M, y);
+      y += 9;
+
+      const linea = (etq: string, val: string) => {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${etq}:`, M, y);
+        doc.setFont('helvetica', 'normal');
+        const partes = doc.splitTextToSize(limpio(val), W - 2 * M - 32) as string[];
+        doc.text(partes, M + 32, y);
+        y += 5.5 * partes.length;
+      };
+      linea('Fecha', f.toLocaleDateString('es-CO'));
+      linea('Hora', f.toLocaleTimeString('es-CO'));
+      linea('Responsable', d.usuario ?? '-');
+      linea('Observación', d.observacion ?? '-');
+      y += 4;
+
+      const cols = [M + 2, M + 72, M + 108, M + 144];
+      const encabezado = () => {
+        doc.setFillColor(26, 10, 0);
+        doc.rect(M, y, W - 2 * M, 9, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(255, 255, 255);
+        ['Materia prima', 'Había', 'Contó', 'Resultado'].forEach((t, i) => doc.text(t, cols[i], y + 6));
+        y += 9;
+        doc.setTextColor(26, 10, 0);
+      };
+      encabezado();
+
+      d.items.forEach((i, idx) => {
+        if (y + 9 > H - 16) {
+          doc.addPage();
+          y = 18;
+          encabezado();
+        }
+        const u = i.unidad_medida ?? '';
+        const dif = n(i.diferencia);
+        if (idx % 2 === 0) {
+          doc.setFillColor(250, 245, 238);
+          doc.rect(M, y, W - 2 * M, 9, 'F');
+        }
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(26, 10, 0);
+        doc.text(limpio(i.nombre).slice(0, 34), cols[0], y + 6);
+        doc.text(`${fmt(n(i.stock_esperado))} ${u}`, cols[1], y + 6);
+        doc.text(`${fmt(n(i.conteo_real))} ${u}`, cols[2], y + 6);
+        if (Math.abs(dif) < 0.005) doc.setTextColor(30, 130, 70);
+        else if (dif < 0) doc.setTextColor(190, 110, 10);
+        else doc.setTextColor(190, 40, 40);
+        doc.text(textoCambio(dif, u), cols[3], y + 6);
+        y += 9;
+      });
+
+      if (d.items.length === 0) {
+        doc.setTextColor(120, 100, 80);
+        doc.text('Este cierre no tiene materias primas', M + 2, y + 7);
+      }
+
+      doc.save(`cierre-inventario-${d.id}.pdf`);
+    } catch {
+      showToast('No se pudo generar el PDF', true);
+    }
   };
 
   const guardar = async () => {
@@ -382,11 +460,19 @@ export default function CierreInventarioAdmin() {
             <label>Observación (opcional)</label>
             <input value={observacion} maxLength={120} onChange={(e) => setObservacion(e.target.value)} placeholder="Ej: cierre del turno de la noche" />
           </div>
-          <div className="modal-actions" style={{ marginTop: 12, alignItems: 'center' }}>
-            <span style={{ fontSize: 13, color: 'var(--text-400)', fontWeight: 600, marginRight: 'auto' }}>
-              Contadas {contados.length} de {filas.length}
-            </span>
-            <button className="btn-save" disabled={guardando} onClick={guardar}>
+          <div className="ci-barra">
+            <div className="ci-progreso">
+              <span className="ci-progreso-txt">
+                Contadas <b>{contados.length}</b> de <b>{filas.length}</b>
+              </span>
+              <div className="ci-progreso-pista">
+                <div
+                  className="ci-progreso-fill"
+                  style={{ width: `${filas.length ? Math.round((contados.length / filas.length) * 100) : 0}%` }}
+                />
+              </div>
+            </div>
+            <button type="button" className="ci-btn-guardar" disabled={guardando} onClick={guardar}>
               {guardando ? 'Guardando...' : 'Guardar cierre'}
             </button>
           </div>
@@ -488,7 +574,7 @@ export default function CierreInventarioAdmin() {
       {detalle && (
         <div className="modal-overlay open" onClick={() => setDetalle(null)}>
           <div className="modal-box" style={{ maxWidth: 680, padding: '28px 32px' }} onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="modal-x" onClick={() => setDetalle(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
+            <button type="button" className="modal-x" onClick={() => setDetalle(null)} aria-label="Cerrar">×</button>
             <h2 style={{ marginBottom: 6 }}>Cierre N.º {detalle.id}</h2>
             <p style={{ fontSize: 14, color: 'var(--text-400)', fontWeight: 500, marginBottom: 4 }}>
               {new Date(detalle.created_at).toLocaleDateString('es-CO')} · a las {new Date(detalle.created_at).toLocaleTimeString('es-CO')}

@@ -226,8 +226,8 @@ export default function ConfiguracionAdmin() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <form onSubmit={handleInfo} className="cfg-card">
-            <h3 className="cfg-titulo">Información Personal</h3>
+          <form onSubmit={handleInfo} className="cfg-card" noValidate>
+            <h3 className="cfg-titulo">Información personal</h3>
 
             <div className="grid-2col">
               <div className="form-group"> 
@@ -366,7 +366,7 @@ export default function ConfiguracionAdmin() {
             </div>
           </form>
 
-          <form onSubmit={handlePass} className="cfg-card">
+          <form onSubmit={handlePass} className="cfg-card" noValidate>
             <h3 className="cfg-titulo">Seguridad</h3>
 
             <div className="form-group">
@@ -435,7 +435,7 @@ export default function ConfiguracionAdmin() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="admin-pass-confirmar">Confirmar nueva <span className="cfg-req">*</span></label>
+              <label htmlFor="admin-pass-confirmar">Confirmar nueva contraseña <span className="cfg-req">*</span></label>
               <div className="cfg-pw">
                 <input
                   id="admin-pass-confirmar"

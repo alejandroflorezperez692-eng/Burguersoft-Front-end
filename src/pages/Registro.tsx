@@ -138,15 +138,15 @@ export default function Registro() {
     event.preventDefault();
 
     if (!nombre.trim() || nombre.trim().length < 2) {
-      showToast('Ingrese un nombre válido (solo letras, mínimo 2 caracteres).', true);
+      showToast('Ingresa un nombre válido (solo letras, mínimo 2 caracteres).', true);
       return;
     }
     if (!apellido.trim() || apellido.trim().length < 2) {
-      showToast('Ingrese un apellido válido (solo letras, mínimo 2 caracteres).', true);
+      showToast('Ingresa un apellido válido (solo letras, mínimo 2 caracteres).', true);
       return;
     }
     if (!tipoDocumento) {
-      showToast('Seleccione el tipo de documento.', true);
+      showToast('Selecciona el tipo de documento.', true);
       return;
     }
     if (!/^[0-9]{6,12}$/.test(numeroDocumento)) {
@@ -154,7 +154,7 @@ export default function Registro() {
       return;
     }
     if (!correo.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
-      showToast('Ingrese un correo electrónico válido.', true);
+      showToast('Ingresa un correo electrónico válido.', true);
       return;
     }
     if (!cumpleRequisitos) {
@@ -214,7 +214,7 @@ export default function Registro() {
         <div className="contenedor-registro">
           <div className="encabezado">
             <h2>CREAR UNA CUENTA</h2>
-            <p>Crea tu cuenta en el Sistema.</p>
+            <p>Crea tu cuenta en el sistema.</p>
           </div>
 
           <p className="descripcion-registro">
@@ -438,7 +438,7 @@ export default function Registro() {
 
       <div className="enlace-externo">
         ¿Ya tienes una cuenta?
-        <Link to="/login">Inicio sesión</Link>
+        <Link to="/login">Inicia sesión</Link>
       </div>
 
       {modalAbierto && (

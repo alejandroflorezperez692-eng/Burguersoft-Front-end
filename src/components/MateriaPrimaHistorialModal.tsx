@@ -141,7 +141,7 @@ export default function MateriaPrimaHistorialModal({ insumo, proveedor, onClose 
 
         <div className="hm-kpis">
           <div className="hm-kpi">
-            <span>cantidad actual</span>
+            <span>Cantidad actual</span>
             <strong>{cant(insumo.cantidad)}{unidad}</strong>
           </div>
           <div className="hm-kpi">
@@ -171,7 +171,7 @@ export default function MateriaPrimaHistorialModal({ insumo, proveedor, onClose 
                   <th style={{ textAlign: 'right' }}># Compras</th>
                   <th style={{ textAlign: 'right' }}>Cantidad</th>
                   <th style={{ textAlign: 'right' }}>Total gastado</th>
-                  <th style={{ textAlign: 'right' }} className="hm-sep">cantidad inicial</th>
+                  <th style={{ textAlign: 'right' }} className="hm-sep">Cantidad inicial</th>
                   <th style={{ textAlign: 'right' }}>Esperado</th>
                   <th style={{ textAlign: 'right' }}>Conteo real</th>
                   <th>Diferencia</th>

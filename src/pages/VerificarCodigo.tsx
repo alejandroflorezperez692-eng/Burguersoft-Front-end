@@ -188,7 +188,7 @@ export default function VerificarCodigo() {
             loading && <span className="otp-spinner" />
           )}
         </div>
-        <form onSubmit={handleSubmit} className="otp-paso">
+        <form onSubmit={handleSubmit} className="otp-paso" noValidate>
           <div className={`otp-slots${agitar ? ' otp-slots--agitar' : ''}`} onPaste={handlePaste}>
             {digitos.map((d, i) => (
               <input
