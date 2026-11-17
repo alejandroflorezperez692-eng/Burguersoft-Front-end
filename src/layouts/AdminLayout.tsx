@@ -159,7 +159,7 @@ const salirDesdeMenuUsuario = () => {
           <img src={logoClaro} alt="Logo" className="logo logo-claro" />
           <img src={logoOscuro} alt="Logo" className="logo logo-oscuro" />
           <hr className="sidebar-divider" />
-          <span className="nom-local">El Oriente</span>
+          <span className="nom-local" data-no-fuente>El Oriente</span>
         </div>
 
         <button
@@ -185,7 +185,7 @@ const salirDesdeMenuUsuario = () => {
                 className={({ isActive }) => (isActive ? 'active' : undefined)}
               >
                 <img src={item.icono} alt="" className="icono-sidebar" />
-                {item.label}
+                <span className="sidebar-label">{item.label}</span>
               </NavLink>
             </div>
           ))}

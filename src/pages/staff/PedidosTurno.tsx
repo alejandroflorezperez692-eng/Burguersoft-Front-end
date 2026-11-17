@@ -37,7 +37,7 @@ interface VistaConfig {
 const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   cocina: {
     titulo: 'Cocina',
-    subtitulo: 'Pedidos por preparar. Muévelos a «En preparación» y avisa con «Preparado».',
+    subtitulo: 'Pedidos por tomar y pedidos en preparación.',
     estados: ['Recepcionado', 'En preparación'],
     acciones: {
       Recepcionado: { sig: 'En preparación', texto: 'Empezar a preparar' },
@@ -46,21 +46,21 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   },
     meseros: {
     titulo: 'Meseros',
-    subtitulo: 'Pedidos recibidos y pedidos preparados para servir en las mesas.',
-    estados: ['Recepcionado', 'Preparado'],
-    columnas: ['Recepcionado', 'Preparado'],
+    subtitulo: 'Pedidos del local por recibir, en cocina y por servir.',
+    estados: ['Registrado', 'Preparado', 'En preparación'],
+    columnas: ['Registrado', 'En preparación', 'Preparado'],
     acciones: {
-      Recepcionado: { sig: 'En preparación', texto: 'Empezar a preparar' },
+      Registrado: { sig: 'Recepcionado', texto: 'Recibir pedido' },
       Preparado: { sig: 'Servido', texto: 'Marcar servido' },
     },
   },
   cajero: {
     titulo: 'Cajero',
-    subtitulo: 'Verifica pedidos, entrega pedidos listos y cobra las mesas pendientes.',
-    estados: ['Por verificar', 'Preparado', 'Servido', 'Pendiente de pago'],
-    columnas: ['Por verificar', 'Preparado', 'Pendiente de pago', 'Ya pagados'],
+    subtitulo: 'Recibe pedidos, entrega los de mostrador y cobra los pedidos.',
+    estados: ['Registrado', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'],
+    columnas: ['Registrado', 'Preparado', 'Pendiente de pago', 'Ya pagados'],
     acciones: {
-      'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
+      Registrado: { sig: 'Recepcionado', texto: 'Recibir pedido' },
       Preparado: { sig: 'Servido', texto: 'Entregar' },
       Servido: { sig: 'Pagado', texto: 'Registrar pago' },
       'Pendiente de pago': { sig: 'Pagado', texto: 'Registrar pago' },
@@ -69,10 +69,16 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
   todos: {
     titulo: 'Todos',
     subtitulo: 'Vista completa del flujo de pedidos.',
-    estados: ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago'],
+    estados: [
+      'Registrado', 'Recepcionado', 'En preparación', 'Preparado', 'Servido',
+      'Pendiente de pago', 'Pagado', 'Cancelado', 'Rechazada', 'Reembolsada',
+    ],
+    columnas: [
+      'Registrado', 'Recepcionado', 'En preparación', 'Preparado',
+      'Pendiente de pago', 'Ya pagados', 'Cerrados',
+    ],
     acciones: {
-      Registrado: { sig: 'Por verificar', texto: 'Verificar' },
-      'Por verificar': { sig: 'Recepcionado', texto: 'Recibir pedido' },
+      Registrado: { sig: 'Recepcionado', texto: 'Recibir pedido' },
       Recepcionado: { sig: 'En preparación', texto: 'Empezar a preparar' },
       'En preparación': { sig: 'Preparado', texto: 'Marcar preparado' },
       Preparado: { sig: 'Servido', texto: 'Marcar servido' },
@@ -84,9 +90,13 @@ const VISTA_CONFIG: Record<Vista, VistaConfig> = {
 
 const VISTA_INICIAL: Record<string, Vista> = { admin: 'todos', cocinero: 'cocina', mesero: 'meseros', cajero: 'cajero' };
 
+const ESTADOS_CERRADOS = ['Cancelado', 'Rechazada', 'Reembolsada'];
+
 const ETIQUETA: Partial<Record<Vista, Record<string, string>>> = {
   cocina: { Recepcionado: 'Por tomar' },
-  cajero: { Preparado: 'Por entregar' },
+  meseros: { Registrado: 'Por recibir', 'En preparación': 'En cocina', Preparado: 'Por servir' },
+  cajero: { Registrado: 'Por recibir', Preparado: 'Por entregar', 'Pendiente de pago': 'Por cobrar' },
+  todos: { 'Ya pagados': 'Ya pagados', Cerrados: 'Cancelados / Rechazados / Reembolsados' },
 };
 
 interface ItemVenta {
@@ -153,7 +163,7 @@ const duracion = (min: number): string =>
 type Entrega = 'todos' | 'Domicilio' | 'Recoger' | 'Consumir';
 
 const METODOS_CON_COMPROBANTE = [
-  'Nequi', 'Daviplata', 'Bancolombia', 'Transferencia', 'Tarjeta', 'PSE',
+  'Nequi', 'Daviplata', 'Bancolombia',
 ];
 
 const requiereComprobante = (v: Venta): boolean =>
@@ -174,9 +184,17 @@ const pagoConComprobanteAprobado = (v: Venta): boolean =>
   v.comprobante_estado === 'Aprobado';
 
 const columnaDe = (v: Venta, vista: Vista): string => {
-  if (vista !== 'cajero') return v.estado ?? '';
-  if (v.estado === 'Servido' || v.estado === 'Pendiente de pago') {
-    return yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago';
+  if (vista === 'cajero') {
+    if (v.estado === 'Pagado') return 'Ya pagados';
+    if (v.estado === 'Servido' || v.estado === 'Pendiente de pago') {
+      return yaPagado(v) ? 'Ya pagados' : 'Pendiente de pago';
+    }
+    return v.estado ?? '';
+  }
+  if (vista === 'todos') {
+    if (v.estado === 'Pagado') return 'Ya pagados';
+    if (ESTADOS_CERRADOS.includes(v.estado ?? '')) return 'Cerrados';
+    if (v.estado === 'Servido') return 'Pendiente de pago';
   }
   return v.estado ?? '';
 };
@@ -354,7 +372,7 @@ export default function PedidosTurno() {
       setCambioConMotivo({ venta, accion });
       return;
     }
-    if (actual === 'Registrado' && accion.sig === 'Por verificar') {
+    if (actual === 'Registrado' && accion.sig === 'Recepcionado' && venta.tipo_entrega === 'Domicilio') {
       const metodo = (venta.metodo_pago ?? '').trim();
       if (!metodo) {
         alertar(`El pedido #${venta.id} no tiene método de pago. Verifícalo antes de avanzar.`);
@@ -464,11 +482,13 @@ export default function PedidosTurno() {
     setColHover(null);
     if (!venta || venta.estado === estadoDestino) return;
     if (vista === 'cajero') return;
+    if (!config.estados.includes(estadoDestino)) return;
     intentarCambio(venta, { sig: estadoDestino, texto: `Mover a ${estadoDestino}` });
   };
 
   const visibles = items.filter((v) => {
     if (rol === 'mesero' && v.tipo_entrega !== 'Consumir') return false;
+    if (rol === 'cajero' && v.estado === 'Registrado' && v.tipo_entrega === 'Consumir') return false;
     if (rol === 'cajero' && v.estado === 'Preparado' && v.tipo_entrega === 'Consumir') return false;
     if (rol === 'cajero' && v.estado === 'Pendiente de pago' && v.tipo_entrega !== 'Consumir') return false;
     if (filtroEntrega !== 'todos' && v.tipo_entrega !== filtroEntrega) return false;
@@ -557,11 +577,13 @@ export default function PedidosTurno() {
 
   const tarjeta = (v: Venta) => {
     const accionBase = config.acciones[v.estado ?? ''];
-    let accion =
-      accionBase ??
-      (rol === 'cajero' && v.estado === 'Preparado' && v.tipo_entrega !== 'Consumir'
-        ? { sig: 'Servido', texto: 'Entregar' }
-        : undefined);
+    let accion = accionBase;
+    if (vista === 'cajero' && v.estado === 'Preparado' && accion) {
+      accion = {
+        ...accion,
+        texto: v.tipo_entrega === 'Domicilio' ? 'Entregar al domiciliario' : 'Entregar al cliente',
+      };
+    }
         
     if (vista === 'cajero' && accion && accion.sig === 'Pagado' && yaPagado(v)) {
       accion = { ...accion, texto: 'Cerrar pedido' };
@@ -591,8 +613,6 @@ export default function PedidosTurno() {
       if (rol === 'admin') {
         puedeRechazar = true;
       } else if (rol === 'cocinero' && ['Recepcionado', 'En preparación'].includes(v.estado ?? '')) {
-        puedeRechazar = true;
-      } else if (['cajero', 'mesero'].includes(rol) && ['Registrado', 'Por verificar', 'Recepcionado'].includes(v.estado ?? '')) {
         puedeRechazar = true;
       }
     }
@@ -1097,11 +1117,12 @@ export default function PedidosTurno() {
             </div>
 
             {detalle.estado === 'Registrado' && (() => {
-              const devuelto = requiereComprobante(detalle) && detalle.comprobante_estado === 'Rechazado';
+              const esDomicilio = detalle.tipo_entrega === 'Domicilio';
+              const devuelto = esDomicilio && requiereComprobante(detalle) && detalle.comprobante_estado === 'Rechazado';
               const bloqueado =
                 !detalle.metodo_pago ||
                 devuelto ||
-                (requiereComprobante(detalle) && !comprobanteAprobado(detalle));
+                (esDomicilio && requiereComprobante(detalle) && !comprobanteAprobado(detalle));
 
               return (
                 <div className="vt-comprobante-acciones" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
@@ -1118,10 +1139,10 @@ export default function PedidosTurno() {
                     onClick={() => {
                       const v = detalle;
                       setDetalleId(null);
-                      intentarCambio(v, { sig: 'Por verificar', texto: 'Verificar' });
+                      intentarCambio(v, { sig: 'Recepcionado', texto: 'Recibir pedido' });
                     }}
                   >
-                    Verificar y continuar
+                    Recibir pedido
                   </button>
                 </div>
               );

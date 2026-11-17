@@ -55,16 +55,16 @@ interface Venta {
   tipo_entrega: string;
   usuario_id: number;
   cliente_nombre?: string | null;
-  mesa?: number | null;
-  notas?: string | null;
   telefono_contacto?: string | null;
   recibe_nombre?: string | null;
   recibe_telefono?: string | null;
+  mesa?: number | null;
+  notas?: string | null;
   direccion?: string | null;
   barrio?: string | null;
   referencia?: string | null;
-  fecha_programada?: string | null;
   programado_para?: string | null;
+  fecha_programada?: string | null;
   usuario?: {
     nombre: string;
     apellido: string;
@@ -113,7 +113,7 @@ interface Promocion {
 
 const METODOS = METODOS_MOSTRADOR;
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
-const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
+const ESTADOS = ['Registrado', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
 
 const requiereComprobante = (v: Venta): boolean => esPagoElectronico(v.metodo_pago);
 
@@ -364,6 +364,12 @@ export default function VentasAdmin() {
   const [notas, setNotas] = useState('');
   const [intentado, setIntentado] = useState(false);
   const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    if (tipoEntrega === 'Domicilio' && metodoPago === 'Efectivo') {
+      setMetodoPago('Nequi');
+    }
+  }, [tipoEntrega, metodoPago]);
   const claveIdempotencia = useRef(nuevaClaveIdempotencia());
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
@@ -374,6 +380,7 @@ export default function VentasAdmin() {
   const [loading, setLoading] = useState(true);
   const [historialId, setHistorialId] = useState<number | null>(null);
   const [detalleId, setDetalleId] = useState<number | null>(null);
+  const [cargandoFactura, setCargandoFactura] = useState(false);
   const [cierreAbierto, setCierreAbierto] = useState(false);
   const [cierreDesde, setCierreDesde] = useState('');
   const [cierreHasta, setCierreHasta] = useState('');
@@ -381,7 +388,6 @@ export default function VentasAdmin() {
   const [comprobanteASubir, setComprobanteASubir] = useState<Venta | null>(null);
   const [procesandoComprobante, setProcesandoComprobante] = useState(false);
   const [, setVersion] = useState(0);
-  const [cargandoFactura, setCargandoFactura] = useState(false);
 
 const load = async (silencioso = false) => {
   if (!silencioso) setLoading(true);
@@ -426,9 +432,50 @@ const load = async (silencioso = false) => {
 
   useEffect(() => { load(); }, []);
 
+  // Al abrir el detalle se piden los datos completos de la venta: así se ven el
+  // correo y el documento del cliente, además del estado real del pedido.
+  useEffect(() => {
+    if (detalleId === null) return;
+    let vigente = true;
+    apiClient
+      .get<Venta>(`/ventas/${detalleId}`)
+      .then(({ data }) => {
+        if (!vigente || !data?.id) return;
+        setItems((prev) => prev.map((v) => (v.id === data.id ? { ...v, ...data } : v)));
+      })
+      .catch(() => {
+        // Si falla, se conserva lo que ya traía el listado.
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [detalleId]);
+
   const nombreCliente = (v: Venta) =>
     v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
+  // El usuario de la venta es el cliente solo cuando el pedido se hizo desde su
+  // cuenta. En ventas de mostrador el usuario es el empleado y el cliente es un
+  // nombre suelto, así que no se muestran los datos personales del empleado.
+  const usuarioEsCliente = (v?: Venta | null) => Number(v?.usuario?.rol_id) === 2;
+
+  const correoCliente = (v?: Venta | null) =>
+    usuarioEsCliente(v) ? v?.usuario?.correo || v?.usuario?.email || '' : '';
+
+  const telefonoCliente = (v?: Venta | null) =>
+    v?.telefono_contacto ||
+    (usuarioEsCliente(v) ? v?.usuario?.telefono || v?.usuario?.phone || '' : '') ||
+    v?.recibe_telefono ||
+    '';
+
+  const documentoCliente = (v?: Venta | null) => {
+    const numero = usuarioEsCliente(v) ? v?.usuario?.Ndocumento : null;
+    if (!numero) return '';
+    return [v?.usuario?.Tdocumento, numero].filter(Boolean).join(' ');
+  };
+
+  // Tipo de entrega normalizado: el dato puede venir como "Consumir",
+  // "En el local", "Recoger", etc. según el origen del pedido.
   const esEnLocal = (v: Venta) => {
     const t = normalizar(v?.tipo_entrega).trim();
     return t.includes('consum') || t.includes('restaurante') || t.includes('local') || t.includes('mesa');
@@ -453,10 +500,10 @@ const load = async (silencioso = false) => {
   };
 
   const telefonoDeContacto = (v: Venta) =>
-    v?.recibe_telefono || v?.usuario?.telefono || v?.usuario?.phone || v?.telefono_contacto || '';
+    v?.recibe_telefono || telefonoCliente(v) || '';
 
   const textoProgramado = (v: Venta) => {
-    const f = v?.fecha_programada;
+    const f = v?.programado_para || v?.fecha_programada;
     if (!f) return 'Lo antes posible';
     return /^\d{4}-\d{2}-\d{2}$/.test(f) ? fmtDia(f) : `${fmtDia(f)} · ${fmtHora(f)}`;
   };
@@ -624,7 +671,8 @@ const load = async (silencioso = false) => {
 
   const totalCarrito = totalProductos + totalCombos;
 
-    const htmlFacturaDatos = (d: any) => {
+  // Factura armada con los datos que entrega el backend (/ventas/{id}/recibo.json).
+  const htmlFacturaDatos = (d: any) => {
     const logoUrl = new URL(logoImg, window.location.origin).href;
     const neg = d.negocio ?? {};
     const lineas: any[] = d.lineas ?? [];
@@ -738,9 +786,7 @@ ${notasHtml}
 
     const d = new Date(v.fecha);
     const p2 = (n: number) => String(n).padStart(2, '0');
-    const h12 = d.getHours() % 12 || 12;
-    const ampm = d.getHours() >= 12 ? 'PM' : 'AM';
-    const fecha = `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()} ${p2(h12)}:${p2(d.getMinutes())} ${ampm}`;
+    const fecha = `${p2(d.getDate())}/${p2(d.getMonth() + 1)}/${d.getFullYear()} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
 
     const monedaRecibo = (n: number) => {
       const x = Number(n) || 0;
@@ -751,21 +797,18 @@ ${notasHtml}
     };
 
     const usu = v.usuario;
-    const mostrador = Number(usu?.rol_id ?? 0) === 1 && !v.telefono_contacto;
+    const mostrador = !usuarioEsCliente(v);
     const nombre = mostrador
       ? (v.cliente_nombre || 'Consumidor final')
       : (`${usu?.nombre ?? ''} ${usu?.apellido ?? ''}`.trim() || 'Cliente');
     const documento = !mostrador ? (usu?.Ndocumento ?? '') : '';
-    const telefono = !mostrador ? (usu?.telefono || v.telefono_contacto || '') : '';
+    const telefono = !mostrador ? (usu?.telefono ?? '') : '';
     const correo = !mostrador ? (usu?.email ?? usu?.correo ?? '') : '';
 
     const filas = (v.detalles ?? []).map((l) =>
       `<tr><td>${escHtml(l.producto?.nombre ?? 'Producto')}</td><td class="c">${l.cantidad}</td><td class="r">${monedaRecibo(Number(l.precio_unitario))}</td><td class="r">${monedaRecibo(Number(l.subtotal))}</td></tr>`).join('');
     const filasCombos = (v.promociones ?? []).map((pr) =>
       `<tr><td>${escHtml(pr.nombre)}</td><td class="c">1</td><td class="r">—</td><td class="r">—</td></tr>`).join('');
-
-    const nLineas = (v.detalles?.length ?? 0) + (v.promociones?.length ?? 0);
-    const extras = [documento, telefono, correo].filter(Boolean).length;
 
     const u = (mm: number) => `calc(var(--u) * ${mm})`;
     const f = (pt: number) => u(+(pt * 0.3528).toFixed(3));
@@ -775,24 +818,18 @@ ${notasHtml}
     const recoger = esParaRecoger(v);
     const domicilio = esADomicilio(v);
 
-    const filaRecibe = !enLocal && (v.recibe_nombre || v.recibe_telefono)
-      ? `<tr><td class="etq">${recoger ? 'Recoge a nombre de' : 'Persona que recibe'}</td><td>${escHtml([v.recibe_nombre, v.recibe_telefono].filter(Boolean).join(' · '))}</td></tr>`
-      : '';
-
     const filaMesa = v.mesa
       ? `<tr><td class="etq">Mesa</td><td><strong>N.º ${escHtml(v.mesa)}</strong></td></tr>`
       : '';
-
     const filaHora = enLocal
       ? ''
       : `<tr><td class="etq">${recoger ? 'Hora de recogida' : 'Hora de entrega'}</td><td>${escHtml(textoProgramado(v))}</td></tr>`;
-
     const filaDireccion = domicilio && v.direccion
       ? `<tr><td class="etq">Dirección</td><td>${escHtml([v.direccion, v.barrio, v.referencia].filter(Boolean).join(' · '))}</td></tr>`
       : '';
-
-    const filasExtra = [filaMesa, filaHora, filaDireccion, filaRecibe].filter(Boolean).length;
-    const alto = 130 + nLineas * 7 + extras * 5 + filasExtra * 5 + (v.notas ? 25 : 0);
+    const filaRecibe = !enLocal && (v.recibe_nombre || v.recibe_telefono)
+      ? `<tr><td class="etq">${recoger ? 'Recoge a nombre de' : 'Persona que recibe'}</td><td>${escHtml([v.recibe_nombre, v.recibe_telefono].filter(Boolean).join(' · '))}</td></tr>`
+      : '';
 
     const notasHtml = v.notas
       ? `<div class="sep"></div><div class="titulo" style="font-size:${f(7.5)}">Detalle del pedido</div>` +
@@ -801,6 +838,11 @@ ${notasHtml}
           n.detalles.map((x) => `<div style="font-size:${f(6.6)};color:#444">· ${escHtml(x)}</div>`).join('') +
           `</div>`).join('')
       : '';
+
+    const nLineas = (v.detalles?.length ?? 0) + (v.promociones?.length ?? 0);
+    const extras = [documento, telefono, correo].filter(Boolean).length;
+    const filasExtra = [filaMesa, filaHora, filaDireccion, filaRecibe].filter(Boolean).length;
+    const alto = 130 + nLineas * 7 + extras * 5 + filasExtra * 5 + (v.notas ? 25 : 0);
 
     return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Factura ${numero}</title>
 <style>
@@ -850,7 +892,7 @@ body{width:${u(80)};margin:0 auto;padding:${u(4)} ${u(3)} ${u(5)};font-family:He
   ${documento ? `<tr><td class="etq">Documento</td><td>${escHtml(documento)}</td></tr>` : ''}
   ${telefono ? `<tr><td class="etq">Teléfono</td><td>${escHtml(telefono)}</td></tr>` : ''}
   ${correo ? `<tr><td class="etq">Correo</td><td style="word-break:break-all">${escHtml(correo)}</td></tr>` : ''}
-  <tr><td class="etq">Entrega</td><td>${escHtml(etiquetaEntrega(v.tipo_entrega))}</td></tr>
+  <tr><td class="etq">Entrega</td><td><strong>${escHtml(etiquetaEntrega(v.tipo_entrega))}</strong></td></tr>
   ${filaMesa}
   ${filaHora}
   ${filaDireccion}
@@ -921,8 +963,7 @@ ${notasHtml}
     return 'badge-info';
   };
 
-  // Imprime la factura del servidor (PDF) en esta misma página, con el diálogo de impresión del navegador.
-    const verFactura = async (id: number) => {
+  const verFactura = async (id: number) => {
     if (cargandoFactura) return;
     setCargandoFactura(true);
 
@@ -941,7 +982,7 @@ ${notasHtml}
     }
   };
 
-  /* ===== Días, cierre del día e impresión ===== */
+    /* ===== Días, cierre del día e impresión ===== */
   const esVendida = (v: Venta) => v?.estado === 'Pagado';
   const hoyStr = new Date().toLocaleDateString('en-CA');
   const moneda = (n: number) => `$${Math.round(n || 0).toLocaleString('es-CO')}`;
@@ -1350,8 +1391,13 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <div className="form-group">
               <label>Método de pago</label>
               <SelectOscuro value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
-                {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
+                {METODOS.map((m) => (
+                  <option key={m} value={m} disabled={tipoEntrega === 'Domicilio' && m === 'Efectivo'}>{m}</option>
+                ))}
               </SelectOscuro>
+              {tipoEntrega === 'Domicilio' && (
+                <p className="vt-comprobante-aviso">Domicilio solo con transferencia</p>
+              )}
             </div>
             <div className="form-group">
               <label>Tipo de entrega</label>
@@ -1535,7 +1581,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                 <td className="vt-cliente">
                   <strong>{nombreCliente(v) || '—'}</strong>
                   <small>
-                    {v?.tipo_entrega === 'Consumir' && v?.mesa ? `Mesa ${v.mesa}` : v?.tipo_entrega ?? ''}
+                    {v?.tipo_entrega === 'Consumir' && v?.mesa ? `Mesa ${v.mesa}` : etiquetaEntrega(v?.tipo_entrega)}
                   </small>
                 </td>
                 <td>
@@ -1622,20 +1668,12 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               <h4>Cliente</h4>
               <dl className="vt-det-grid">
                 <div><dt>Nombre</dt><dd>{nombreCliente(detalle) || '—'}</dd></div>
-                {(() => {
-                  const mostrador = Number(detalle.usuario?.rol_id ?? 0) === 1 && !detalle.telefono_contacto;
-                  const u = mostrador ? undefined : detalle.usuario;
-                  return (
-                    <>
-                      <div><dt>Correo</dt><dd>{u?.correo || u?.email || '—'}</dd></div>
-                      <div><dt>Teléfono del cliente</dt><dd>{u?.telefono || u?.phone || detalle.telefono_contacto || '—'}</dd></div>
-                      <div>
-                        <dt>Documento</dt>
-                        <dd>{u?.Ndocumento ? `${u.Tdocumento ? u.Tdocumento + ' ' : ''}${u.Ndocumento}` : '—'}</dd>
-                      </div>
-                    </>
-                  );
-                })()}
+                <div><dt>Correo</dt><dd>{correoCliente(detalle) || '—'}</dd></div>
+                <div><dt>Teléfono</dt><dd>{telefonoCliente(detalle) || '—'}</dd></div>
+                <div>
+                  <dt>Documento</dt>
+                  <dd>{documentoCliente(detalle) || '—'}</dd>
+                </div>
               </dl>
             </section>
 
@@ -1803,7 +1841,10 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                         {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
                       </button>
                     )}
-                    {esAdmin && detalle.comprobante_estado !== 'Rechazado' && (
+                    {esAdmin &&
+                      detalle.estado === 'Registrado' &&
+                      detalle.comprobante_estado !== 'Aprobado' &&
+                      detalle.comprobante_estado !== 'Rechazado' && (
                       <button
                         type="button"
                         className="btn-cancel"

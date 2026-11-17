@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   BookOpen,
@@ -102,15 +102,29 @@ function leerVelocidadSeleccionada(): VelocidadLectura | null {
 function aplicarEscala(factor: number) {
   const elementosPagina = Array.from(
     document.querySelectorAll<HTMLElement>(SELECTOR_TEXTO),
-  ).filter((el) => !el.closest('.acc-panel'));
+  ).filter((el) => !el.closest('.acc-panel') && !el.closest('[data-no-escala]'));
   const titulosPanel = Array.from(
     document.querySelectorAll<HTMLElement>('.acc-panel-title > span, .acc-row-label'),
   );
   const elementos = [...new Set([...elementosPagina, ...titulosPanel])];
-  const tamanosOriginales = elementos.map((el) => {
-    if (!el.dataset.origSize) {
-      const estilo = window.getComputedStyle(el);
-      const tamanoActual = Number.parseFloat(estilo.fontSize);
+
+  elementos.forEach((el) => {
+    let tamanoOriginal = Number.parseFloat(el.dataset.origSize ?? '');
+
+    if (!Number.isFinite(tamanoOriginal) || tamanoOriginal <= 0) {
+      const tamanoActual = Number.parseFloat(
+        window.getComputedStyle(el).fontSize,
+      );
+
+      // Elementos ocultos a propósito con font-size: 0 (por ejemplo botones
+      // que solo muestran un ícono): se dejan intactos para no revelar su
+      // texto auxiliar ni bloquearlos en 0px.
+      if (!Number.isFinite(tamanoActual) || tamanoActual <= 0) {
+        el.style.removeProperty('font-size');
+        delete el.dataset.origSize;
+        return;
+      }
+
       let ancestro = el.parentElement;
       while (ancestro && !ancestro.dataset.origSize) {
         ancestro = ancestro.parentElement;
@@ -126,17 +140,15 @@ function aplicarEscala(factor: number) {
         Number.isFinite(tamanoAncestro) &&
         Number.isFinite(tamanoOriginalAncestro) &&
         Math.abs(tamanoActual - tamanoAncestro) < 0.1;
-      el.dataset.origSize = String(
-        heredaTamanoEscalado ? tamanoOriginalAncestro : tamanoActual,
-      );
+      tamanoOriginal = heredaTamanoEscalado
+        ? tamanoOriginalAncestro
+        : tamanoActual;
+      el.dataset.origSize = String(tamanoOriginal);
     }
-    return parseFloat(el.dataset.origSize);
-  });
 
-  elementos.forEach((el, indice) => {
     el.style.setProperty(
       'font-size',
-      `${tamanosOriginales[indice] * factor}px`,
+      `${tamanoOriginal * factor}px`,
       'important',
     );
   });
@@ -146,7 +158,10 @@ function aplicarFuente(fuente: string) {
   document.body.style.setProperty('font-family', fuente, 'important');
   document
     .querySelectorAll<HTMLElement>(SELECTOR_TEXTO)
-    .forEach((el) => el.style.setProperty('font-family', fuente, 'important'));
+    .forEach((el) => {
+      if (el.closest('[data-no-fuente]')) return;
+      el.style.setProperty('font-family', fuente, 'important');
+    });
 }
 
 function quitarFuente() {
@@ -392,8 +407,9 @@ export default function Accesibilidad() {
     document.body.classList.toggle('dark-mode', tema === 'oscuro');
   }, [tema]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.body.classList.toggle('acc-texto-ampliado', factor > 1);
+    document.body.style.setProperty('--acc-factor', String(factor));
   }, [factor]);
 
   useEffect(() => {
