@@ -17,7 +17,7 @@ export const NOMBRE_QR: Record<string, string> = {
   bancolombia: 'Bancolombia',
 };
 
-/** Acepta 'Nequi', 'nequi', etc. y devuelve la clave del QR o null (efectivo, tarjeta...). */
+/** Acepta 'Nequi', 'nequi', etc. y devuelve la clave del QR o null (efectivo, por ejemplo). */
 export function claveQr(metodo: string | null | undefined): string | null {
   const k = (metodo ?? '').trim().toLowerCase();
   return k in QR_RUTAS ? k : null;

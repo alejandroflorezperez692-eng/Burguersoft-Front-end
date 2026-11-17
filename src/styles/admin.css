@@ -33,16 +33,17 @@
   height: var(--header-h);
   display: flex;
   align-items: center;
-  padding: 0 14px;
-  gap: 8px;
+  padding: 0 10px;
+  gap: 6px;
   border-bottom: 1px solid rgba(232, 130, 26, 0.12);
   background: var(--header-bg);
   flex-shrink: 0;
+  min-width: 0;
 }
 
 .sidebar-header .logo {
-  width: 70px;
-  height: 70px;
+  width: 62px;
+  height: 62px;
   object-fit: contain;
   flex-shrink: 0;
 }
@@ -76,11 +77,15 @@ body.dark-mode .sidebar-header .logo-oscuro {
   margin-left: 0;
 }
 
+.sidebar-header .nom-local {
+  flex-shrink: 0;
+}
+
 .sidebar-divider {
   width: 2px;
   height: 60%;
   background: rgba(232, 130, 26, 0.35);
-  margin: 0 6px;
+  margin: 0 4px;
   border: none !important;
   flex-shrink: 0;
 }
@@ -4694,6 +4699,11 @@ body.dark-mode .admin-body :is(input, textarea, select)::placeholder {
   .header-nav,
   .main-content { transition: none !important; }
 
+  body {
+    /* Al ampliar la letra con accesibilidad, el sidebar (y su encabezado)
+       crecen lo justo para que "El Oriente" y los ítems se vean completos. */
+    --sidebar-w: clamp(240px, calc(110px + 130px * var(--acc-factor, 1)), 320px);
+  }
   body { --sidebar-w-open: var(--sidebar-w); }
 
   .admin-body.sidebar-collapsed { --sidebar-w: 72px; }
@@ -4733,11 +4743,16 @@ body.dark-mode .admin-body :is(input, textarea, select)::placeholder {
 
   .admin-body.sidebar-collapsed .sidebar-item { padding: 0 8px; }
   .admin-body.sidebar-collapsed .sidebar-item a {
-    font-size: 0;
-    letter-spacing: 0;        /* evita que el texto oculto ocupe ancho */
+    letter-spacing: 0;
     gap: 0;
     justify-content: center;
     padding: 10px 0;
+  }
+  /* El texto se oculta con display: none (no con font-size: 0) para que el
+     escalado de accesibilidad, que aplica font-size en línea, no pueda
+     volver a mostrarlo ni dejarlo bloqueado en 0px. */
+  .admin-body.sidebar-collapsed .sidebar-label {
+    display: none !important;
   }
   .admin-body.sidebar-collapsed .icono-sidebar {
     width: 18px;
@@ -4745,6 +4760,15 @@ body.dark-mode .admin-body :is(input, textarea, select)::placeholder {
     margin: 0 auto;
     display: block;
     opacity: 0.85;
+  }
+}
+
+/* En móvil/tablet el sidebar también se ensancha al ampliar la letra para que
+   "El Oriente" y los ítems se vean completos. */
+@media (max-width: 900px) {
+  body.acc-texto-ampliado .admin-body .sidebar {
+    width: min(calc(110px + 130px * var(--acc-factor, 1)), 94vw);
+    max-width: 94vw;
   }
 }
 
