@@ -12,9 +12,6 @@ export const METODOS_CON_COMPROBANTE = [
   'Nequi',
   'Daviplata',
   'Bancolombia',
-  'Transferencia',
-  'Tarjeta',
-  'PSE',
 ];
 
 /** True si el método de pago exige comprobante (sin distinguir mayúsculas). */

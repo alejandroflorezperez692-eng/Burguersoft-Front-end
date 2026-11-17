@@ -259,7 +259,6 @@ export default function Checkout() {
   const [searchParams] = useSearchParams();
   const mesaUrl = Number(searchParams.get('mesa'));
   const mesaDesdeUrl = Number.isInteger(mesaUrl) && mesaUrl > 0;
-  const [mesa, setMesa] = useState<number | ''>(mesaDesdeUrl ? mesaUrl : '');
 
   const partesNombre = (user?.name ?? '').trim().split(' ');
   const nombreInicial = partesNombre[0] ?? '';
@@ -354,13 +353,16 @@ export default function Checkout() {
         .get('/mesas/disponibilidad')
         .then(({ data }) => {
           if (!vivo) return;
-          const lista = Array.isArray(data) ? data : [];
+          const lista: { numero: number; estado: string }[] = Array.isArray(data) ? data : [];
           setMesas(lista);
-          setMesaSel((actual) =>
-            actual && lista.find((m: { numero: number; estado: string }) => m.numero === actual && m.estado === 'Libre')
-              ? actual
-              : null,
-          );
+          setMesaSel((actual) => {
+            // Si el cliente llegó por el QR de una mesa, se preselecciona sola,
+            // pero solo si sigue libre.
+            const candidata = actual ?? (mesaDesdeUrl ? mesaUrl : null);
+            return candidata && lista.some((m) => m.numero === candidata && m.estado === 'Libre')
+              ? candidata
+              : null;
+          });
         })
         .catch(() => {});
     };
@@ -370,7 +372,7 @@ export default function Checkout() {
       vivo = false;
       window.clearInterval(t);
     };
-  }, [tipoEntrega]);
+  }, [tipoEntrega, mesaDesdeUrl, mesaUrl]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -401,6 +403,12 @@ export default function Checkout() {
 
   const [metodoPago, setMetodoPago] = useState<'nequi' | 'daviplata' | 'bancolombia' | 'efectivo'>('nequi');
   const [qrNoDisponible, setQrNoDisponible] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (tipoEntrega === 'Domicilio' && metodoPago === 'efectivo') {
+      setMetodoPago('nequi');
+    }
+  }, [tipoEntrega, metodoPago]);
 
   const PEDIDO_KEY = 'checkout_pedido_confirmado';
   type PedidoConfirmado = {
@@ -545,8 +553,8 @@ export default function Checkout() {
     if (requiereDireccion && (!recibeNombre.trim() || !recibeTelefono.trim())) {
       return 'Indica el nombre y el teléfono de quien recibe el pedido.';
     }
-    if (tipoEntrega === 'En restaurante' && !mesa && !mesaSel) {
-      return 'Indica el número de mesa o elige una mesa para los pedidos en el restaurante.';
+    if (tipoEntrega === 'En restaurante' && !mesaSel) {
+      return 'Elige una mesa disponible para los pedidos en el restaurante.';
     }
     if (!numeroDocumento || !nombre || !apellido || !correo || !telefono) {
       return 'Completa todos los datos de la compra.';
@@ -585,9 +593,8 @@ export default function Checkout() {
 
       form.append('tipo_entrega', TIPO_ENTREGA_BACKEND[tipoEntrega] ?? 'Domicilio');
       
-      if (tipoEntrega === 'En restaurante') {
-        const mesaFinal = mesa || mesaSel;
-        if (mesaFinal) form.append('mesa', String(mesaFinal));
+      if (tipoEntrega === 'En restaurante' && mesaSel) {
+        form.append('mesa', String(mesaSel));
       }
 
       form.append('metodo_pago', METODO_PAGO_BACKEND[metodoPago] ?? 'Efectivo');
@@ -718,7 +725,7 @@ export default function Checkout() {
   const METODOS_PAGO = [
     { id: 'nequi' as const, etiqueta: 'Nequi', icono: <IconoNequi /> },
     { id: 'daviplata' as const, etiqueta: 'Daviplata', icono: <IconoDaviplata /> },
-    { id: 'bancolombia' as const, etiqueta: 'Transferencia Bancolombia', icono: <IconoBancolombia /> },
+    { id: 'bancolombia' as const, etiqueta: 'Bancolombia', icono: <IconoBancolombia /> },
     { id: 'efectivo' as const, etiqueta: 'Contra entrega (efectivo)', icono: <IconoEfectivo /> },
   ];
 
@@ -867,28 +874,6 @@ export default function Checkout() {
                   </div>
                 ) : (
                   <>
-                    {tipoEntrega === 'En restaurante' && (
-                      <div className="checkout-form">
-                        <div className="form-group">
-                          <label>Mesa <span className="checkout-required">*</span></label>
-                          <input
-                            type="number"
-                            inputMode="numeric"
-                            min={1}
-                            value={mesa}
-                            onChange={(e) => {
-                              const valor = Number(e.target.value);
-                              setMesa(Number.isInteger(valor) && valor > 0 ? valor : '');
-                            }}
-                            placeholder="Número de mesa"
-                            required
-                          />
-                          {mesaDesdeUrl && (
-                            <span className="checkout-hint">Mesa tomada del código QR.</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
                     <div className="checkout-info-row">
                       <span className="checkout-info-icon">🕒</span>
                       <div>
@@ -904,6 +889,11 @@ export default function Checkout() {
                     <strong style={{ display: 'block', marginBottom: 8 }}>
                       Elige tu mesa <span className="checkout-required">*</span>
                     </strong>
+                    {mesaDesdeUrl && (
+                      <p className="checkout-hint" style={{ marginBottom: 8 }}>
+                        Mesa tomada del código QR. Si ya está ocupada, elige otra.
+                      </p>
+                    )}
                     {mesas.length === 0 && <p className="checkout-hint">Cargando mesas…</p>}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: 10 }}>
                       {mesas.map((m) => {
@@ -987,6 +977,7 @@ export default function Checkout() {
                           type="radio"
                           name="metodo"
                           checked={metodoPago === m.id}
+                          disabled={tipoEntrega === 'Domicilio' && m.id === 'efectivo'}
                           onChange={() => {
                             setMetodoPago(m.id);
                             if (m.id === 'efectivo') setComprobante(null);
@@ -997,6 +988,10 @@ export default function Checkout() {
                       </label>
                     ))}
                   </div>
+
+                  {tipoEntrega === 'Domicilio' && (
+                    <p className="pago-chip-texto">Domicilio solo con transferencia</p>
+                  )}
 
                   {esPagoElectronico(metodoPago) && (
                     <div className="pago-qr-caja" key={metodoPago}>

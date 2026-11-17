@@ -45,6 +45,8 @@ interface Venta {
   tipo_entrega: string;
   usuario_id: number;
   cliente_nombre?: string | null;
+  telefono_contacto?: string | null;
+  recibe_telefono?: string | null;
   mesa?: number | null;
   notas?: string | null;
   usuario?: {
@@ -95,7 +97,7 @@ interface Promocion {
 
 const METODOS = METODOS_MOSTRADOR;
 const TIPOS_ENTREGA = ['Domicilio', 'Recoger', 'Consumir'];
-const ESTADOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
+const ESTADOS = ['Registrado', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado', 'Cancelado', 'Reembolsada', 'Rechazada'];
 
 const requiereComprobante = (v: Venta): boolean => esPagoElectronico(v.metodo_pago);
 
@@ -346,6 +348,12 @@ export default function VentasAdmin() {
   const [notas, setNotas] = useState('');
   const [intentado, setIntentado] = useState(false);
   const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    if (tipoEntrega === 'Domicilio' && metodoPago === 'Efectivo') {
+      setMetodoPago('Nequi');
+    }
+  }, [tipoEntrega, metodoPago]);
   const claveIdempotencia = useRef(nuevaClaveIdempotencia());
   const [productoId, setProductoId] = useState<number>(0);
   const [cantidad, setCantidad] = useState('1');
@@ -407,8 +415,47 @@ const load = async (silencioso = false) => {
 
   useEffect(() => { load(); }, []);
 
+  // Al abrir el detalle se piden los datos completos de la venta: así se ven el
+  // correo y el documento del cliente, además del estado real del pedido.
+  useEffect(() => {
+    if (detalleId === null) return;
+    let vigente = true;
+    apiClient
+      .get<Venta>(`/ventas/${detalleId}`)
+      .then(({ data }) => {
+        if (!vigente || !data?.id) return;
+        setItems((prev) => prev.map((v) => (v.id === data.id ? { ...v, ...data } : v)));
+      })
+      .catch(() => {
+        // Si falla, se conserva lo que ya traía el listado.
+      });
+    return () => {
+      vigente = false;
+    };
+  }, [detalleId]);
+
   const nombreCliente = (v: Venta) =>
     v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
+
+  // El usuario de la venta es el cliente solo cuando el pedido se hizo desde su
+  // cuenta. En ventas de mostrador el usuario es el empleado y el cliente es un
+  // nombre suelto, así que no se muestran los datos personales del empleado.
+  const usuarioEsCliente = (v?: Venta | null) => Number(v?.usuario?.rol_id) === 2;
+
+  const correoCliente = (v?: Venta | null) =>
+    usuarioEsCliente(v) ? v?.usuario?.correo || v?.usuario?.email || '' : '';
+
+  const telefonoCliente = (v?: Venta | null) =>
+    v?.telefono_contacto ||
+    (usuarioEsCliente(v) ? v?.usuario?.telefono || v?.usuario?.phone || '' : '') ||
+    v?.recibe_telefono ||
+    '';
+
+  const documentoCliente = (v?: Venta | null) => {
+    const numero = usuarioEsCliente(v) ? v?.usuario?.Ndocumento : null;
+    if (!numero) return '';
+    return [v?.usuario?.Tdocumento, numero].filter(Boolean).join(' ');
+  };
 
   const textoBusqueda = normalizar(q).trim();
 
@@ -1159,8 +1206,13 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <div className="form-group">
               <label>Método de pago</label>
               <SelectOscuro value={metodoPago} onChange={(e) => setMetodoPago(e.target.value)}>
-                {METODOS.map((m) => <option key={m} value={m}>{m}</option>)}
+                {METODOS.map((m) => (
+                  <option key={m} value={m} disabled={tipoEntrega === 'Domicilio' && m === 'Efectivo'}>{m}</option>
+                ))}
               </SelectOscuro>
+              {tipoEntrega === 'Domicilio' && (
+                <p className="vt-comprobante-aviso">Domicilio solo con transferencia</p>
+              )}
             </div>
             <div className="form-group">
               <label>Tipo de entrega</label>
@@ -1428,15 +1480,11 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               <h4>Cliente</h4>
               <dl className="vt-det-grid">
                 <div><dt>Nombre</dt><dd>{nombreCliente(detalle) || '—'}</dd></div>
-                <div><dt>Correo</dt><dd>{detalle.usuario?.correo || detalle.usuario?.email || '—'}</dd></div>
-                <div><dt>Teléfono</dt><dd>{detalle.usuario?.telefono || detalle.usuario?.phone || '—'}</dd></div>
+                <div><dt>Correo</dt><dd>{correoCliente(detalle) || '—'}</dd></div>
+                <div><dt>Teléfono</dt><dd>{telefonoCliente(detalle) || '—'}</dd></div>
                 <div>
                   <dt>Documento</dt>
-                  <dd>
-                    {detalle.usuario?.Ndocumento
-                      ? `${detalle.usuario?.Tdocumento ? detalle.usuario.Tdocumento + ' ' : ''}${detalle.usuario.Ndocumento}`
-                      : '—'}
-                  </dd>
+                  <dd>{documentoCliente(detalle) || '—'}</dd>
                 </div>
               </dl>
             </section>
@@ -1556,7 +1604,10 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                         {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
                       </button>
                     )}
-                    {esAdmin && detalle.comprobante_estado !== 'Rechazado' && (
+                    {esAdmin &&
+                      detalle.estado === 'Registrado' &&
+                      detalle.comprobante_estado !== 'Aprobado' &&
+                      detalle.comprobante_estado !== 'Rechazado' && (
                       <button
                         type="button"
                         className="btn-cancel"

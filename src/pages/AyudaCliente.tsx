@@ -110,7 +110,7 @@ export default function AyudaCliente() {
                     <li>Revisa los datos de tu pedido. Para domicilio, completa la dirección y el barrio; puedes usar tu ubicación actual o escribirlos manualmente.</li>
                     <li>Verifica tus datos y agrega un teléfono de contacto. Si necesitas otros datos en la factura, desmarca la opción de usar tu información.</li>
                     <li>Escoge pago por <strong>Nequi</strong>, <strong>Daviplata</strong>, <strong>Bancolombia</strong> o <strong>efectivo contra entrega</strong>.</li>
-                    <li>Selecciona <strong>Pagar ahora</strong>. Si pagaste por transferencia, envía el comprobante por el chat de WhatsApp que se abre al confirmar el pedido.</li>
+                    <li>Selecciona <strong>Pagar ahora</strong>. Si pagaste con <strong>Nequi</strong>, <strong>Daviplata</strong> o <strong>Bancolombia</strong>, envía el comprobante por el chat de WhatsApp que se abre al confirmar el pedido.</li>
                   </ol>
                   <p className="ayuda-nota">
                     Si el navegador bloquea WhatsApp, usa el botón para volver a abrir el chat en la pantalla de confirmación. La factura también puede enviarse al correo mostrado allí.
@@ -139,7 +139,7 @@ export default function AyudaCliente() {
                   <ol className="ayuda-pasos">
                     <li>Abre tu menú de perfil y selecciona <strong>Mis compras</strong> para ver el estado, el tipo de entrega, los productos y el total.</li>
                     <li>La lista se actualiza automáticamente y también puedes usar <strong>Actualizar</strong> para consultar el estado más reciente.</li>
-                    <li>Si el pedido aún está <strong>Registrado</strong>, <strong>Por verificar</strong> o <strong>Recepcionado</strong>, puedes seleccionar <strong>Cancelar pedido</strong> y confirmar la acción.</li>
+                    <li>Si el pedido aún está <strong>Registrado</strong> o <strong>Recepcionado</strong>, puedes seleccionar <strong>Cancelar pedido</strong> y confirmar la acción.</li>
                   </ol>
                   <p className="ayuda-nota">
                     Cuando el pedido avance a otro estado, la opción de cancelación puede dejar de estar disponible. En ese caso, comunícate con el local.

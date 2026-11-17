@@ -22,6 +22,18 @@ type ItemUI = {
   es_combo?: boolean;
 };
 
+type ComboUI = {
+  nombre: string;
+  cantidad: number;
+  precio: number;
+  precio_normal: number;
+  descuento: number;
+  descuento_porcentaje: number;
+  total: number;
+  descuento_total: number;
+  productos?: string[];
+};
+
 type PedidoUI = {
   id: number;
   numero_secuencial: number;
@@ -34,7 +46,7 @@ type PedidoUI = {
   telefono?: string;
   telefono_recibe?: string;
   recibe_nombre?: string;
-  combos?: { nombre: string; precio: number }[];
+  combos?: ComboUI[];
   direccion?: string;
   barrio?: string;
   referencia?: string;
@@ -69,11 +81,11 @@ function numero(valor: unknown): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-const PASOS = ['Registrado', 'Por verificar', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'];
-const PASOS_DOMICILIO = PASOS;
-const PASOS_RECOGER = PASOS;
-const PASOS_CONSUMIR = PASOS;
-const CANCELABLES = ['Registrado', 'Por verificar', 'Recepcionado'];
+const PASOS_CONSUMIR = ['Registrado', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pendiente de pago', 'Pagado'];
+const PASOS_DOMICILIO = ['Registrado', 'Recepcionado', 'En preparación', 'Preparado', 'Servido', 'Pagado'];
+const PASOS_RECOGER = PASOS_DOMICILIO;
+const PASOS = PASOS_CONSUMIR;
+const CANCELABLES = ['Registrado', 'Recepcionado'];
 
 const ORDEN_GLOBAL = PASOS;
 
@@ -115,6 +127,10 @@ function formatoMoneda(valor: number): string {
   return `$${Number(valor ?? 0).toLocaleString('es-CO', { maximumFractionDigits: 0 })}`;
 }
 
+function formatoPorcentaje(valor: number): string {
+  return Number(valor ?? 0).toLocaleString('es-CO', { maximumFractionDigits: 1 });
+}
+
 function formatearTelefono(valor?: string): string | undefined {
   if (!valor) return undefined;
   let digitos = valor.replace(/\D/g, '');
@@ -123,6 +139,62 @@ function formatearTelefono(valor?: string): string | undefined {
     return `${digitos.slice(0, 3)} ${digitos.slice(3, 6)} ${digitos.slice(6)}`;
   }
   return valor;
+}
+
+function normalizarCombos(combosRaw: any, promocionesRaw: any): ComboUI[] {
+  if (Array.isArray(combosRaw) && combosRaw.length > 0) {
+    return combosRaw.map((combo: any): ComboUI => {
+      const cantidad = Number(combo?.cantidad ?? 1);
+      const precio = Number(combo?.precio ?? 0) || 0;
+      const precioNormal = Number(combo?.precio_normal ?? 0) || 0;
+      const descuento =
+        combo?.descuento !== undefined
+          ? Number(combo.descuento) || 0
+          : Math.max(0, precioNormal - precio);
+      const porcentaje =
+        combo?.descuento_porcentaje !== undefined
+          ? Number(combo.descuento_porcentaje) || 0
+          : precioNormal > 0
+            ? (descuento / precioNormal) * 100
+            : 0;
+      return {
+        nombre: String(combo?.nombre ?? 'Combo'),
+        cantidad: Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 1,
+        precio,
+        precio_normal: precioNormal,
+        descuento,
+        descuento_porcentaje: porcentaje,
+        total: Number(combo?.total ?? precio * cantidad) || 0,
+        descuento_total: Number(combo?.descuento_total ?? descuento * cantidad) || 0,
+        productos: Array.isArray(combo?.productos)
+          ? combo.productos.map((p: unknown) => String(p)).filter(Boolean)
+          : undefined,
+      };
+    });
+  }
+
+  // Respaldo cuando la respuesta solo trae la relación de promociones.
+  const vistas = new Set<string>();
+  return (Array.isArray(promocionesRaw) ? promocionesRaw : [])
+    .map((promo: any): ComboUI => {
+      const precio = Number(promo?.precio ?? 0) || 0;
+      return {
+        nombre: String(promo?.nombre ?? 'Combo'),
+        cantidad: 1,
+        precio,
+        precio_normal: 0,
+        descuento: 0,
+        descuento_porcentaje: 0,
+        total: precio,
+        descuento_total: 0,
+      };
+    })
+    .filter((combo) => {
+      const clave = `${combo.nombre}|${combo.precio}`;
+      if (vistas.has(clave)) return false;
+      vistas.add(clave);
+      return true;
+    });
 }
 
 function normalizarPedidos(raw: any): PedidoUI[] {
@@ -242,7 +314,10 @@ function normalizarPedidos(raw: any): PedidoUI[] {
 
       const id = Number(v.id ?? v.id_venta ?? v.venta_id ?? 0);
       if (!Number.isFinite(id) || id === 0) return null;
-      const totalCalculado = detalles.reduce((a: number, d: ItemUI) => a + d.subtotal, 0);
+      const combos = normalizarCombos(v.combos, v.promociones);
+      const totalItems = detalles.reduce((a: number, d: ItemUI) => a + d.subtotal, 0);
+      const totalCombos = combos.reduce((a: number, c: ComboUI) => a + c.total, 0);
+      const totalCalculado = totalItems + totalCombos;
       const totalBD = Number(v.valor_total ?? v.total ?? NaN);
       return {
         id,
@@ -258,12 +333,7 @@ function normalizarPedidos(raw: any): PedidoUI[] {
         ),
         telefono_recibe: texto(v.recibe_telefono),
         recibe_nombre: texto(v.recibe_nombre),
-        combos: Array.isArray(v.promociones)
-          ? v.promociones.map((promo: any) => ({
-              nombre: String(promo?.nombre ?? 'Combo'),
-              precio: Number(promo?.precio ?? 0) || 0,
-            }))
-          : [],
+        combos,
         direccion: texto(v.direccion),
         barrio: texto(v.barrio),
         referencia: texto(v.referencia),
@@ -612,6 +682,12 @@ export default function MisCompras() {
               (estadoComprobante === 'rechazado' ||
                 (!p.tiene_comprobante && pagoElectronico));
 
+            const combos = p.combos ?? [];
+            // Si ya tenemos el resumen de combos, sus productos se muestran
+            // dentro de la fila del combo y no como líneas "Incluido" sueltas.
+            const itemsVisibles =
+              combos.length > 0 ? p.items.filter((item) => !item.es_combo) : p.items;
+
             return (
               <div className="pedido-card" key={p.id}>
                 <div className="pedido-head">
@@ -765,7 +841,7 @@ export default function MisCompras() {
                       </tr>
                     </thead>
                     <tbody>
-                      {p.items.map((item, idx) => (
+                      {itemsVisibles.map((item, idx) => (
                         <tr key={`${p.id}-${idx}`}>
                           <td>
                             <span className="producto-nombre">{item.nombre}</span>
@@ -779,18 +855,43 @@ export default function MisCompras() {
                           <td>{item.es_combo ? '—' : formatoMoneda(item.subtotal)}</td>
                         </tr>
                       ))}
-                      {(p.combos ?? []).map((combo, idx) => (
-                        <tr key={`${p.id}-combo-${idx}`} className="pedido-combo-row">
-                          <td>
-                            <span className="producto-nombre">{combo.nombre} (combo)</span>
-                          </td>
-                          <td>
-                            <span className="precio-unit">{formatoMoneda(combo.precio)}</span>
-                          </td>
-                          <td>1</td>
-                          <td>{formatoMoneda(combo.precio)}</td>
-                        </tr>
-                      ))}
+                      {combos.map((combo, idx) => {
+                        const tieneDescuento =
+                          combo.descuento_total > 0 ||
+                          (combo.precio_normal > 0 && combo.precio_normal > combo.precio);
+                        return (
+                          <tr key={`${p.id}-combo-${idx}`} className="pedido-combo-row">
+                            <td>
+                              <span className="producto-nombre">{combo.nombre} (combo)</span>
+                              {combo.productos && combo.productos.length > 0 && (
+                                <span className="pedido-combo-productos">
+                                  {combo.productos.join(' · ')}
+                                </span>
+                              )}
+                              {tieneDescuento && (
+                                <span className="pedido-combo-ahorro">
+                                  {combo.descuento_total > 0
+                                    ? `Ahorras ${formatoMoneda(combo.descuento_total)}`
+                                    : 'Precio con descuento'}
+                                  {combo.descuento_porcentaje > 0
+                                    ? ` (${formatoPorcentaje(combo.descuento_porcentaje)}%)`
+                                    : ''}
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <span className="precio-unit">{formatoMoneda(combo.precio)}</span>
+                              {tieneDescuento && combo.precio_normal > combo.precio && (
+                                <span className="precio-tachado">
+                                  {formatoMoneda(combo.precio_normal)}
+                                </span>
+                              )}
+                            </td>
+                            <td>{combo.cantidad}</td>
+                            <td>{formatoMoneda(combo.total)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 )}
@@ -817,36 +918,38 @@ export default function MisCompras() {
       </div>
       <Footer />
 
-      {pedidoACancelar && (
-        <MotivoModal
-          titulo={`Cancelar el pedido #${pedidoACancelar.numero_secuencial}`}
-          descripcion="Cuéntanos por qué lo cancelas. Esto nos ayuda a mejorar."
-          confirmarTexto="Sí, cancelar pedido"
-          peligro
-          onClose={() => setPedidoACancelar(null)}
-          onConfirm={(motivo) => void confirmarCancelacion(pedidoACancelar, motivo)}
-        />
-      )}
       {pedidoDetalle && (
         <DetallePedidoCliente
           pedido={pedidoDetalle}
           onClose={() => setPedidoDetalle(null)}
         />
       )}
-      {pedidoComprobante && (
-        <ComprobanteModal
-          ventaId={pedidoComprobante.id}
-          numero={pedidoComprobante.numero_secuencial}
-          onClose={() => setPedidoComprobante(null)}
-          onSubido={() => {
-            showToast(
-              'Comprobante subido. La IA confirmó que es un comprobante de pago y quedó en revisión del administrador.',
-              false,
-            );
-            void cargar();
-          }}
-        />
-      )}
+      <div className="mp-modales">
+        {pedidoACancelar && (
+          <MotivoModal
+            titulo={`Cancelar el pedido #${pedidoACancelar.numero_secuencial}`}
+            descripcion="Cuéntanos por qué lo cancelas. Esto nos ayuda a mejorar."
+            confirmarTexto="Sí, cancelar pedido"
+            peligro
+            onClose={() => setPedidoACancelar(null)}
+            onConfirm={(motivo) => void confirmarCancelacion(pedidoACancelar, motivo)}
+          />
+        )}
+        {pedidoComprobante && (
+          <ComprobanteModal
+            ventaId={pedidoComprobante.id}
+            numero={pedidoComprobante.numero_secuencial}
+            onClose={() => setPedidoComprobante(null)}
+            onSubido={() => {
+              showToast(
+                'Comprobante subido. La IA confirmó que es un comprobante de pago y quedó en revisión del administrador.',
+                false,
+              );
+              void cargar();
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -98,7 +98,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   const [direccion, setDireccion] = useState('');
   const [telefono, setTelefono] = useState('');
   const [recibeNombre, setRecibeNombre] = useState('');
-  const [metodoPago] = useState('Efectivo');
+  const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [notas, setNotas] = useState('');
   const [buscar, setBuscar] = useState('');
   const [pagina, setPagina] = useState(1);
@@ -112,6 +112,12 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   useEffect(() => {
     try { localStorage.setItem('nuevoPedidoVista', vista); } catch { /* sin storage */ }
   }, [vista]);
+
+  useEffect(() => {
+    if (tipoEntrega === 'Domicilio' && metodoPago === 'Efectivo') {
+      setMetodoPago('Nequi');
+    }
+  }, [tipoEntrega, metodoPago]);
 
   useEffect(() => { setPagina(1); }, [buscar, vista, cat]);
 
@@ -343,6 +349,10 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                 <option key={t.v} value={t.v}>{t.t}</option>
               ))}
             </SelectOscuro>
+
+            {tipoEntrega === 'Domicilio' && (
+              <p className="np-hint">Domicilio solo con transferencia</p>
+            )}
 
             {tipoEntrega === 'Consumir' ? (
               <>
