@@ -10,6 +10,7 @@ import { normalizarRol } from '../../utils/roles';
 import { mensajeError as mensajeErrorBase } from '../../utils/errores';
 import { categoriaSinExtras } from '../../utils/categorias';
 import SelectOscuro from '../../components/SelectOscuro';
+import DataTable, { type DataTableColumn } from '../../components/DataTable';
 
 type Estado = 'Disponible' | 'Agotado';
 
@@ -749,6 +750,77 @@ export default function MenuAdmin() {
     [mostrarForm || editId !== null, limpiarFormulario],
   ]);
 
+  const columnas: DataTableColumn<Producto>[] = [
+    {
+      id: 'producto',
+      header: 'Producto',
+      accessor: (p) => p.nombre,
+      cell: (p) => (
+        <div className="mn-table-prod">
+          <div className="mn-table-img"><CardImg img={p.img} nombre={p.nombre} /></div>
+          <strong>{p.nombre}</strong>
+        </div>
+      ),
+    },
+    {
+      id: 'categoria',
+      header: 'Categoría',
+      accessor: (p) => catLabel(p.categoria),
+    },
+    {
+      id: 'descripcion',
+      header: 'Descripción',
+      accessor: (p) => p.descripcion ?? '',
+      cell: (p) => <span className="mn-table-desc">{p.descripcion || '—'}</span>,
+    },
+    {
+      id: 'precio',
+      header: 'Precio',
+      accessor: (p) => Number(p.valor) || 0,
+      exportValue: (p) => `$${Number(p.valor).toLocaleString('es-CO')}`,
+      align: 'right',
+      cell: (p) => <span className="mn-table-price">${Number(p.valor).toLocaleString('es-CO')}</span>,
+    },
+    {
+      id: 'estado',
+      header: 'Estado',
+      accessor: (p) => estadoVisible(p),
+      cell: (p) => {
+        const est = estadoVisible(p);
+        return (
+          <>
+            <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
+            {p.activo === false && <span className="mn-badge-inactivo">Inactivo</span>}
+          </>
+        );
+      },
+    },
+    ...(esAdmin
+      ? [{
+          id: 'acciones',
+          header: 'Acciones',
+          accessor: () => '',
+          sortable: false,
+          searchable: false,
+          exportable: false,
+          align: 'center' as const,
+          cell: (p: Producto) => (
+            <div className="mn-table-actions">
+              <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
+              <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+              <button
+                type="button"
+                className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
+                onClick={() => setCambiarEstado(p)}
+              >
+                {p.activo === false ? 'Activar' : 'Desactivar'}
+              </button>
+            </div>
+          ),
+        }]
+      : []),
+  ];
+
   return (
     <div className="page-inner mn-page mn-menu-admin">
       <div className="page-header">
@@ -877,61 +949,18 @@ export default function MenuAdmin() {
           {hayFiltros ? ' con los filtros seleccionados' : ''}.
         </div>
       ) : vista === 'lista' ? (
-        <div className="mn-table-wrap">
-          <table className="mn-table">
-            <thead>
-              <tr>
-                <th>Producto</th>
-                <th>Categoría</th>
-                <th>Descripción</th>
-                <th>Precio</th>
-                <th>Estado</th>
-                <th className="th-acciones">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {grupos.flatMap(([, lista]) => lista).map((p) => {
-                const est = estadoVisible(p);
-                return (
-                  <tr
-                    key={p.id}
-                    className={`${est === 'Agotado' ? 'agotado' : ''}${p.activo === false ? ' inactivo' : ''}`.trim()}
-                  >
-                    <td>
-                      <div className="mn-table-prod">
-                        <div className="mn-table-img"><CardImg img={p.img} nombre={p.nombre} /></div>
-                        <strong>{p.nombre}</strong>
-                      </div>
-                    </td>
-                    <td>{catLabel(p.categoria)}</td>
-                    <td className="mn-table-desc">{p.descripcion || '—'}</td>
-                    <td className="mn-table-price">${Number(p.valor).toLocaleString('es-CO')}</td>
-                    <td>
-                      <span className={`mn-card-estado ${estadoClase(est)}`}>{est}</span>
-                      {p.activo === false && <span className="mn-badge-inactivo">Inactivo</span>}
-                    </td>
-                    <td>
-                      {esAdmin && (
-                        <div className="mn-table-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
-
-                          <button
-                            type="button"
-                            className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
-                            onClick={() => setCambiarEstado(p)}
-                          >
-                            {p.activo === false ? 'Activar' : 'Desactivar'}
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columnas={columnas}
+          datos={grupos.flatMap(([, lista]) => lista)}
+          obtenerId={(p) => p.id}
+          tituloExportar="Menú de Productos"
+          archivoExportar="menu"
+          etiqueta="producto"
+          busqueda={false}
+          mensajeVacio="No se encontraron productos"
+          minWidth={900}
+          classNameFila={(p) => (p.activo === false || estadoVisible(p) === 'Agotado' ? 'fila-inactiva' : undefined)}
+        />
       ) : (
         <div className="mn-container">
           {grupos.map(([cat, lista]) => (

@@ -58,7 +58,7 @@ const CONFIRM_CSS = `
 .confirm-modal-box{background:var(--surface,#fff);border-radius:var(--r-lg,20px);padding:32px;max-width:380px;width:92%;box-shadow:var(--shadow-lg,0 16px 56px rgba(22,8,0,.18));text-align:center;animation:confirmSlide .22s}
 .confirm-modal-box p{font-size:15px;color:var(--text-900,#160800);margin:0 0 24px;line-height:1.5;white-space:pre-line}
 .confirm-modal-actions{display:flex;gap:10px;justify-content:center}
-.confirm-modal-actions button{font-family:var(--font-sans,'Plus Jakarta Sans',system-ui,sans-serif);font-weight:700;font-size:13px;cursor:pointer}
+.confirm-modal-actions button{font-family:var(--font-sans);font-weight:700;font-size:13px;cursor:pointer}
 .confirm-btn-cancel{padding:11px 24px;background:transparent;border:1.5px solid var(--border-strong,rgba(232,130,26,.35));border-radius:var(--r-sm,8px);color:var(--text-600,#6b4c38)}
 .confirm-btn-cancel:hover{background:var(--surface-3,#fff)}
 .confirm-btn-ok{padding:10px 28px;background:var(--danger,#C8382A);color:#fff;border:none;border-radius:var(--r-sm,8px);box-shadow:0 4px 14px rgba(200,56,42,.3)}

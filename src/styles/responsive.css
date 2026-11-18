@@ -389,7 +389,7 @@ canvas {
   .acc-btn-toggle {
     min-height: 36px;
     padding: 6px 8px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
     line-height: 1.25;
   }
 
@@ -425,7 +425,7 @@ canvas {
     background: #fff;
     color: #000;
     font: inherit;
-    font-size: 13px;
+    font-size: var(--fs-xs);
     font-weight: 700;
     box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
     opacity: 0;
@@ -530,7 +530,7 @@ canvas {
   }
 
   .mp-tab-label {
-    font-size: 10px;
+    font-size: var(--fs-xs);
   }
 
   .mp-grid {
@@ -554,7 +554,7 @@ canvas {
   .mp-btn-save {
     min-width: 0;
     padding: 12px 8px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
     letter-spacing: 0.8px;
   }
 }
@@ -585,17 +585,17 @@ canvas {
   }
 
   .public-body .nom-local {
-    font-size: 17px;
+    font-size: var(--fs-md);
   }
 
   .public-body .header-center a {
     padding-right: 8px;
     padding-left: 8px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
 
   .admin-body .page-header h1 {
-    font-size: 19px;
+    font-size: var(--fs-lg);
     overflow-wrap: anywhere;
   }
 }
@@ -639,7 +639,7 @@ canvas {
   }
 
   .auth-shell .card h2 {
-    font-size: 12px;
+    font-size: var(--fs-xs);
     letter-spacing: 1px;
   }
 
@@ -660,7 +660,7 @@ canvas {
   }
 
   .auth-shell .input {
-    font-size: 16px;
+    font-size: var(--fs-md);
   }
 
   .auth-shell .auth-center > #registroForm {
@@ -871,12 +871,12 @@ body {
 
   .public-body .header-center a {
     padding: 7px 4px;
-    font-size: 10.5px;
+    font-size: var(--fs-xs);
     letter-spacing: 0;
   }
 
   .public-body .nom-local {
-    font-size: 15px;
+    font-size: var(--fs-sm);
   }
 }
 
@@ -1075,7 +1075,7 @@ body {
 
   .public-body .cart-entrega-toggle button {
     padding: 9px 6px;
-    font-size: 11px;
+    font-size: var(--fs-xs);
   }
 
   .public-body .cart-cuando-row,
@@ -1090,12 +1090,12 @@ body {
 
   .public-body .btn-ir-pagar {
     padding: 13px 16px;
-    font-size: 13px;
+    font-size: var(--fs-xs);
   }
 
   .public-body .btn-vaciar-pill {
     padding: 10px 18px;
-    font-size: 12px;
+    font-size: var(--fs-xs);
   }
 }
 
@@ -1202,7 +1202,7 @@ body {
   }
 
   .checkout-encabezado h2 {
-    font-size: 18px;
+    font-size: var(--fs-lg);
   }
 
   .checkout-seccion {
@@ -1210,7 +1210,7 @@ body {
   }
 
   .checkout-seccion-titulo h3 {
-    font-size: 14.5px;
+    font-size: var(--fs-sm);
   }
 
   .checkout-datos-fila {
@@ -1221,7 +1221,7 @@ body {
   .checkout-form .form-group input,
   .checkout-form .form-group select,
   .checkout-form .form-group textarea {
-    font-size: 16px;
+    font-size: var(--fs-md);
   }
 }
 
@@ -1342,7 +1342,7 @@ body {
   .admin-body .mn-field input,
   .admin-body .mn-field select,
   .admin-body .mn-field textarea {
-    font-size: 16px;
+    font-size: var(--fs-md);
   }
 }
 

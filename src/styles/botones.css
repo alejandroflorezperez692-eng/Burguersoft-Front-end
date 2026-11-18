@@ -1,0 +1,31 @@
+/* Base única para botones de acción */
+.btn-save, .mn-btn-confirm, .mp-btn-save, .btn-primario {
+  background: var(--color-primario);
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+.btn-save:hover, .mn-btn-confirm:hover, .mp-btn-save:hover, .btn-primario:hover {
+  background: var(--brand-deep);
+}
+
+.btn-cancel, .mn-btn-cancel {
+  background: transparent;
+  color: var(--color-oscuro);
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  padding: 0.6rem 1.1rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}

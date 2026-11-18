@@ -10,13 +10,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/atkinson-hyperlegible": "^5.3.0",
+    "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@lottiefiles/dotlottie-react": "^0.19.16",
     "@marsidev/react-turnstile": "^1.6.3",
+    "@tanstack/react-table": "^8.21.3",
     "axios": "^1.19.0",
     "bootstrap": "^5.3.8",
     "exceljs": "^4.4.0",
     "firebase": "^12.18.0",
     "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.9",
     "laravel-echo": "^2.6.1",
     "lottie-react": "^3.1.2",
     "lucide-react": "^1.61.0",

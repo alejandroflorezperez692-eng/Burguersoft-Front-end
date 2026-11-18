@@ -17,7 +17,7 @@ export default function FacturaModal({ isOpen, onClose }: { isOpen: boolean; onC
       <div id="modalFactura" className="fac-show" style={{
         display: 'block', position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
         width: 'min(520px,94vw)', maxHeight: '85vh', overflowY: 'auto', background: '#fff', borderRadius: 16,
-        boxShadow: '0 20px 60px rgba(26,9,13,.35)', zIndex: 10003, fontFamily: 'Lato,sans-serif'
+        boxShadow: '0 20px 60px rgba(26,9,13,.35)', zIndex: 10003, fontFamily: 'var(--font-sans)'
       }}>
         <div style={{ background: '#1a090d', color: 'white', padding: '20px 24px', borderRadius: '16px 16px 0 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
@@ -28,7 +28,7 @@ export default function FacturaModal({ isOpen, onClose }: { isOpen: boolean; onC
         </div>
         <div style={{ padding: 24 }}>
           <div style={{ textAlign: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '2px dashed #E0D5C5' }}>
-            <div style={{ fontSize: 20, fontWeight: 900, color: '#1C1410', letterSpacing: 1, fontFamily: 'Playfair Display,serif' }}>El Oriente</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: '#1C1410', letterSpacing: 1, fontFamily: 'var(--font-sans)'}}>El Oriente</div>
             <div style={{ fontSize: 11, color: '#7A6855', marginTop: 4, letterSpacing: '.5px', textTransform: 'uppercase' }}>{fecha}</div>
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 16 }}>

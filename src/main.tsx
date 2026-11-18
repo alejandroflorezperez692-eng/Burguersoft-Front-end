@@ -1,6 +1,13 @@
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import '@fontsource/plus-jakarta-sans/400.css';
+import '@fontsource/plus-jakarta-sans/500.css';
+import '@fontsource/plus-jakarta-sans/600.css';
+import '@fontsource/plus-jakarta-sans/700.css';
+import '@fontsource/plus-jakarta-sans/800.css';
+import '@fontsource/atkinson-hyperlegible/400.css';
+import '@fontsource/atkinson-hyperlegible/700.css';
 import './index.css';
 import App from './App.tsx';
 import './styles/responsive.css';
@@ -9,6 +16,7 @@ import './styles/X-centradas.css';
 import './styles/oscuro-fixes.css';
 import { AuthProvider } from './context/AuthContext.tsx';
 import { CartProvider } from './context/CartContext.tsx';
+import './styles/formularios.css';
 
 document.addEventListener(
   'click',

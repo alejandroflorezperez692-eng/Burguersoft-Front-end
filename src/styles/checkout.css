@@ -21,14 +21,14 @@
 }
 .checkout-encabezado h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: var(--fs-xl);
   font-weight: 900;
   color: #1C1410;
   letter-spacing: -0.3px;
 }
 .checkout-encabezado p {
   margin: 4px 0 0;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   color: #6b5d4c;
   font-weight: 500;
 }
@@ -61,7 +61,7 @@
 }
 .checkout-seccion-titulo h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--fs-md);
   font-weight: 800;
   color: #1C1410;
   letter-spacing: 0.2px;
@@ -71,9 +71,9 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #E8622C, #E8821A);
+  background: linear-gradient(135deg, #E8622C, var(--brand));
   color: #fff;
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 800;
   flex-shrink: 0;
   display: inline-flex;
@@ -87,7 +87,7 @@
 
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group label {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: #8a7a63;
   text-transform: uppercase;
@@ -100,7 +100,7 @@
   border: 1.5px solid #eee2d0;
   border-radius: 12px;
   padding: 11px 14px;
-  font-size: 14px;
+  font-size: var(--fs-sm);
   color: #1C1410;
   font-family: inherit;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
@@ -128,7 +128,7 @@
   line-height: 1.5;
 }
 .checkout-hint {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: #a2917a;
 }
 
@@ -152,14 +152,14 @@
   min-width: 0;
 }
 .checkout-dato-label {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: #8a7a63;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
 .checkout-dato-valor {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   color: #1C1410;
   overflow: hidden;
@@ -173,17 +173,17 @@
   background: #FAF6EF; border-radius: 14px; padding: 16px 18px;
 }
 .checkout-info-icon {
-  font-size: 20px; width: 42px; height: 42px; flex-shrink: 0;
+  font-size: var(--fs-xl); width: 42px; height: 42px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   background: #fff; border-radius: 50%; border: 1.5px solid #eee2d0;
 }
-.checkout-info-row strong { font-size: 14px; color: #1C1410; }
-.checkout-info-row p { margin: 2px 0 0; font-size: 13px; color: #8a7a63; }
+.checkout-info-row strong { font-size: var(--fs-sm); color: #1C1410; }
+.checkout-info-row p { margin: 2px 0 0; font-size: var(--fs-xs); color: #8a7a63; }
 
 /* ---- Checkbox / subtitulo ---- */
 .checkout-checkbox-row {
   display: flex; align-items: center; gap: 10px;
-  font-weight: 600; font-size: 13.5px; color: #1C1410;
+  font-weight: 600; font-size: var(--fs-sm); color: #1C1410;
   padding: 8px 4px; border-radius: 10px; cursor: pointer;
   transition: background 0.15s ease;
 }
@@ -191,7 +191,7 @@
 .checkout-checkbox-row input { accent-color: #E8622C; width: 16px; height: 16px; cursor: pointer; }
 
 .checkout-subtitulo {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 800;
   color: #8a7a63;
   text-transform: uppercase;
@@ -241,7 +241,7 @@
 }
 
 .pago-chip-texto {
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: #1C1410;
   min-width: 0;
@@ -324,11 +324,11 @@
   text-align: center;
 }
 .pago-qr-cuenta strong {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   color: #1C1410;
 }
 .pago-qr-cuenta span {
-  font-size: 12px;
+  font-size: var(--fs-xs);
   color: #8a7a63;
 }
 
@@ -344,12 +344,12 @@
   border: 1.5px dashed #e5d6ae;
   border-radius: 8px;
   color: #8a7a63;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   line-height: 1.5;
 }
 
 .pago-qr-texto {
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   color: #6b5d4b;
   text-align: center;
   line-height: 1.55;
@@ -359,8 +359,8 @@
 .btn-ubicacion {
   align-self: flex-start;
   display: inline-flex; align-items: center; gap: 6px;
-  background: #fff5ec; border: 1.5px solid #E8821A; color: #E8622C;
-  font-weight: 700; font-size: 13px; padding: 9px 16px;
+  background: #fff5ec; border: 1.5px solid var(--brand); color: #E8622C;
+  font-weight: 700; font-size: var(--fs-xs); padding: 9px 16px;
   border-radius: 24px; cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
 }
@@ -387,7 +387,7 @@
 
 .checkout-resumen-titulo {
   margin: 0 0 14px;
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 800;
   color: #1C1410;
 }
@@ -405,7 +405,7 @@
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 13px;
+  font-size: var(--fs-xs);
   color: #6b5d4c;
 }
 
@@ -424,22 +424,22 @@
 }
 .checkout-resumen-rows > div {
   display: flex; justify-content: space-between;
-  font-size: 13.5px; color: #6b5d4c; padding: 6px 0;
+  font-size: var(--fs-sm); color: #6b5d4c; padding: 6px 0;
 }
 .checkout-resumen-total {
   font-weight: 800 !important;
   color: #1C1410 !important;
-  font-size: 16px !important;
+  font-size: var(--fs-md) !important;
   border-top: 1.5px dashed #eee2d0;
   margin-top: 10px;
   padding-top: 14px !important;
 }
 .btn-pagar-ahora {
   width: 100%; margin-top: 20px;
-  background: linear-gradient(135deg, #E8622C, #E8821A);
+  background: linear-gradient(135deg, #E8622C, var(--brand));
   color: #fff; border: none;
   border-radius: 30px; padding: 15px;
-  font-weight: 800; font-size: 14.5px; letter-spacing: 0.3px;
+  font-weight: 800; font-size: var(--fs-sm); letter-spacing: 0.3px;
   cursor: pointer;
   box-shadow: 0 6px 16px rgba(232, 98, 44, 0.3);
   transition: transform 0.12s ease, box-shadow 0.12s ease;
@@ -464,7 +464,7 @@ a.btn-pagar-ahora {
   background: #FFF7E8;
   border: 1.5px solid #F0DFAE;
   color: #7a5c1e;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   line-height: 1.4;
   padding: 10px 14px;
@@ -500,7 +500,7 @@ a.btn-pagar-ahora {
 }
 .checkout-comprobante-texto {
   margin: 0 0 12px;
-  font-size: 12.5px;
+  font-size: var(--fs-xs);
   line-height: 1.55;
   color: #6b5d4c;
 }
@@ -515,18 +515,18 @@ a.btn-pagar-ahora {
   border-radius: 12px;
   background: #fffaf4;
   color: #7a4a1e;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   cursor: pointer;
   text-align: center;
   transition: border-color 0.2s, background 0.2s;
 }
 .checkout-comprobante-label:hover {
-  border-color: #E8821A;
+  border-color: var(--brand);
   background: #fff3e6;
 }
 .checkout-comprobante-label small {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   font-weight: 500;
   color: #9a8169;
 }
@@ -554,14 +554,14 @@ a.btn-pagar-ahora {
   min-width: 0;
 }
 .checkout-comprobante-preview-info strong {
-  font-size: 13px;
+  font-size: var(--fs-xs);
   color: #3d2111;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .checkout-comprobante-preview-info span {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   color: #8a735c;
 }
 .checkout-comprobante-preview-info button {
@@ -570,7 +570,7 @@ a.btn-pagar-ahora {
   border: none;
   background: transparent;
   color: #c3402a;
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   padding: 0;
   cursor: pointer;
@@ -604,13 +604,13 @@ a.btn-pagar-ahora {
   text-align: center;
   box-shadow: 0 16px 56px rgba(22, 8, 0, 0.25);
 }
-.checkout-cargando-caja strong { font-size: 16px; color: #160800; }
-.checkout-cargando-caja small { font-size: 12.5px; color: #8a6d4f; }
+.checkout-cargando-caja strong { font-size: var(--fs-md); color: #160800; }
+.checkout-cargando-caja small { font-size: var(--fs-xs); color: #8a6d4f; }
 .checkout-spinner {
   width: 42px;
   height: 42px;
   border: 4px solid #f3d9b8;
-  border-top-color: #E8821A;
+  border-top-color: var(--brand);
   border-radius: 50%;
   animation: checkout-giro 0.8s linear infinite;
 }
@@ -639,7 +639,7 @@ a.btn-pagar-ahora {
 body.dark-mode .checkout-wrapper .checkout-card,
 body.dark-mode .checkout-wrapper .checkout-resumen {
   background: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
 }
 body.dark-mode .checkout-wrapper .checkout-card:hover {
@@ -649,7 +649,7 @@ body.dark-mode .checkout-wrapper .checkout-card:hover {
 /* Encabezado "Finaliza tu pedido" */
 body.dark-mode .checkout-wrapper .checkout-encabezado {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 body.dark-mode .checkout-wrapper .checkout-encabezado h2 { color: #ffffff !important; }
 body.dark-mode .checkout-wrapper .checkout-encabezado p { color: #ffffff !important; }
@@ -668,14 +668,14 @@ body.dark-mode .checkout-wrapper .checkout-paso { color: #ffffff; }
 body.dark-mode .checkout-wrapper .form-group label,
 body.dark-mode .checkout-wrapper .checkout-dato-label,
 body.dark-mode .checkout-wrapper .checkout-subtitulo {
-  color: #e8821a !important;
+  color: var(--brand) !important;
 }
 body.dark-mode .checkout-wrapper .checkout-hint,
 body.dark-mode .checkout-wrapper .checkout-comprobante-texto,
 body.dark-mode .checkout-wrapper .pago-qr-texto {
   color: #ffffff !important;
 }
-body.dark-mode .checkout-wrapper .checkout-required { color: #e8821a !important; }
+body.dark-mode .checkout-wrapper .checkout-required { color: var(--brand) !important; }
 
 /* Campos editables (teléfono, dirección, barrio, referencia, facturación) */
 body.dark-mode .checkout-wrapper .form-group input,
@@ -684,7 +684,7 @@ body.dark-mode .checkout-wrapper .form-group textarea {
   background: #000000 !important;
   color: #ffffff !important;
   -webkit-text-fill-color: #ffffff;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
 }
 body.dark-mode .checkout-wrapper .form-group input:hover,
 body.dark-mode .checkout-wrapper .form-group select:hover,
@@ -695,7 +695,7 @@ body.dark-mode .checkout-wrapper .form-group input:focus,
 body.dark-mode .checkout-wrapper .form-group select:focus,
 body.dark-mode .checkout-wrapper .form-group textarea:focus {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.3);
 }
 body.dark-mode .checkout-wrapper .form-group input::placeholder,
@@ -706,18 +706,18 @@ body.dark-mode .checkout-wrapper .form-group textarea::placeholder {
 /* Datos de solo lectura (Nombre, Documento, Correo) */
 body.dark-mode .checkout-wrapper .checkout-dato {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 body.dark-mode .checkout-wrapper .checkout-dato-valor { color: #ffffff !important; }
 
 /* Info row (Para llevar / Lo antes posible) */
 body.dark-mode .checkout-wrapper .checkout-info-row {
   background: #000000 !important;
-  border: 1.5px solid #e8821a;
+  border: 1.5px solid var(--brand);
 }
 body.dark-mode .checkout-wrapper .checkout-info-icon {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 body.dark-mode .checkout-wrapper .checkout-info-row strong { color: #ffffff !important; }
 body.dark-mode .checkout-wrapper .checkout-info-row p { color: #ffffff !important; }
@@ -729,17 +729,17 @@ body.dark-mode .checkout-wrapper .checkout-checkbox-row:hover { background: rgba
 /* Métodos de pago */
 body.dark-mode .checkout-wrapper .pago-chip {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 body.dark-mode .checkout-wrapper .pago-chip:hover,
 body.dark-mode .checkout-wrapper .pago-chip:has(input:checked):hover {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
 }
 body.dark-mode .checkout-wrapper .pago-chip:hover .pago-chip-texto { color: #ffffff !important; }
 body.dark-mode .checkout-wrapper .pago-chip:has(input:checked) {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.35);
 }
 body.dark-mode .checkout-wrapper .pago-chip:has(input:checked) .pago-chip-texto {
@@ -752,29 +752,29 @@ body.dark-mode .checkout-wrapper .pago-icono { background: #ffffff !important; }
 /* Panel del QR (la imagen del QR sigue en blanco para poder escanearla) */
 body.dark-mode .checkout-wrapper .pago-qr-caja {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 6px 22px rgba(232, 130, 26, 0.15);
 }
 body.dark-mode .checkout-wrapper .pago-qr-cuenta strong,
 body.dark-mode .checkout-wrapper .pago-qr-cuenta span { color: #ffffff !important; }
 body.dark-mode .checkout-wrapper .pago-qr-vacio {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
 }
 
 /* Botón de ubicación */
 body.dark-mode .checkout-wrapper .btn-ubicacion {
   background: #000000 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   color: #ffffff !important;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 body.dark-mode .checkout-wrapper .btn-ubicacion:hover:not(:disabled),
 body.dark-mode .checkout-wrapper .btn-ubicacion:focus-visible:not(:disabled),
 body.dark-mode .checkout-wrapper .btn-ubicacion:active:not(:disabled) {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
 }
 /* Estáticos: sin flotar, sin sombra y sin cambiar de tamaño */
@@ -794,37 +794,37 @@ body.dark-mode .checkout-wrapper .checkout-resumen-rows > div { color: #ffffff !
 body.dark-mode .checkout-wrapper .checkout-resumen-item span:last-child { color: #ffffff !important; }
 body.dark-mode .checkout-wrapper .checkout-resumen-total,
 body.dark-mode .checkout-wrapper .checkout-resumen-total span {
-  color: #e8821a !important;
+  color: var(--brand) !important;
 }
 
 /* Aviso */
 body.dark-mode .checkout-wrapper .checkout-aviso {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
 }
 
 /* Comprobante de pago */
 body.dark-mode .checkout-wrapper .checkout-comprobante-label {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
 }
 body.dark-mode .checkout-wrapper .checkout-comprobante-label:hover {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
 }
 body.dark-mode .checkout-wrapper .checkout-comprobante-label:hover small { color: #ffffff !important; }
 body.dark-mode .checkout-wrapper .checkout-comprobante-label small { color: #ffffff !important; }
 body.dark-mode .checkout-wrapper .checkout-comprobante-preview {
   background: #000000 !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
-body.dark-mode .checkout-wrapper .checkout-comprobante-preview img { border-color: #e8821a; }
+body.dark-mode .checkout-wrapper .checkout-comprobante-preview img { border-color: var(--brand); }
 body.dark-mode .checkout-wrapper .checkout-comprobante-preview-info strong { color: #ffffff !important; }
 body.dark-mode .checkout-wrapper .checkout-comprobante-preview-info span { color: #ffffff !important; }
-body.dark-mode .checkout-wrapper .checkout-comprobante-preview-info button { color: #e8821a !important; }
+body.dark-mode .checkout-wrapper .checkout-comprobante-preview-info button { color: var(--brand) !important; }
 
 /* =====================================================================
    MODO CLARO (clientes): página de Checkout
@@ -848,7 +848,7 @@ body:not(.dark-mode) .checkout-wrapper :is(
   .form-group textarea
 ) {
   background: #ffffff !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 
 body:not(.dark-mode) .checkout-wrapper :is(.checkout-card, .checkout-resumen) { border-width: 1.5px; }
@@ -860,7 +860,7 @@ body:not(.dark-mode) .checkout-wrapper :is(
   .checkout-resumen-total,
   .checkout-comprobante
 ) {
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 body:not(.dark-mode) .checkout-wrapper .checkout-seccion:first-of-type { border-top: none !important; }
 
@@ -907,24 +907,24 @@ body:not(.dark-mode) .checkout-wrapper .checkout-encabezado { background: #fffff
 body:not(.dark-mode) .checkout-wrapper .pago-chip:hover { background: #ffffff !important; }
 body:not(.dark-mode) .checkout-wrapper .pago-chip:has(input:checked) {
   background: #ffffff !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.25);
 }
 body:not(.dark-mode) .checkout-wrapper .checkout-checkbox-row:hover { background: #ffffff; }
 body:not(.dark-mode) .checkout-wrapper .checkout-comprobante-label:hover { background: #ffffff !important; }
 body:not(.dark-mode) .checkout-wrapper .form-group :is(input, select, textarea):focus {
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18);
 }
 
 /* Se mantienen en naranja: pasos, asterisco y botones */
-body:not(.dark-mode) .checkout-wrapper .checkout-required { color: #e8821a !important; }
+body:not(.dark-mode) .checkout-wrapper .checkout-required { color: var(--brand) !important; }
 
 /* Métodos de pago (modo claro): fondo naranja y letra blanca al pasar o al elegir */
 body:not(.dark-mode) .checkout-wrapper .pago-chip:hover,
 body:not(.dark-mode) .checkout-wrapper .pago-chip:has(input:checked) {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   box-shadow: none;
 }
 body:not(.dark-mode) .checkout-wrapper .pago-chip:hover .pago-chip-texto,
@@ -935,13 +935,13 @@ body:not(.dark-mode) .checkout-wrapper .pago-chip:has(input:checked) .pago-chip-
 /* Botones "Ver el estado de mi pedido" / "Hacer otro pedido" (modo claro) */
 body:not(.dark-mode) .checkout-wrapper .btn-ubicacion {
   background: #ffffff;
-  border: 1.5px solid #e8821a;
+  border: 1.5px solid var(--brand);
   color: #000000;
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 body:not(.dark-mode) .checkout-wrapper .btn-ubicacion:hover:not(:disabled),
 body:not(.dark-mode) .checkout-wrapper .btn-ubicacion:focus-visible:not(:disabled) {
-  background: #e8821a;
-  border-color: #e8821a;
+  background: var(--brand);
+  border-color: var(--brand);
   color: #ffffff;
 }

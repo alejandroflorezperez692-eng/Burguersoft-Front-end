@@ -1,0 +1,32 @@
+/* Barra de exportación reutilizable (Copiar / Excel / PDF / Imprimir) */
+.barra-exportar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+/* .btn-cancel tiene flex: 1 por defecto (pensado para modales).
+   Aquí los botones deben ser compactos y no repartirse el ancho. */
+.barra-exportar .btn-cancel {
+  flex: 0 0 auto;
+  width: auto;
+  padding: 9px 16px;
+  white-space: nowrap;
+}
+
+.barra-exportar .btn-cancel:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+@media (max-width: 640px) {
+  .barra-exportar {
+    width: 100%;
+  }
+
+  .barra-exportar .btn-cancel {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

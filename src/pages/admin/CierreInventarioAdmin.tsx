@@ -4,6 +4,7 @@ import AdminDatePicker from '../../components/AdminDatePicker';
 import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
+import DataTable, { type DataTableColumn } from '../../components/DataTable';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
@@ -93,7 +94,6 @@ export default function CierreInventarioAdmin() {
 
  
   const [paginaConteo, setPaginaConteo] = useState(1);
-  const [paginaCierres, setPaginaCierres] = useState(1);
 
   const cargandoRef = useRef(false);
 
@@ -123,7 +123,6 @@ export default function CierreInventarioAdmin() {
 
 
   useEffect(() => { setPaginaConteo(1); }, [busqueda, estadoConteo]);
-  useEffect(() => { setPaginaCierres(1); }, [fDesde, fHasta, fResponsable, fSoloDiferencias]);
 
   const usado = (f: FilaCierre): number | null => {
     const c = conteos[f.id];
@@ -169,9 +168,6 @@ export default function CierreInventarioAdmin() {
     [historial, fDesde, fHasta, fResponsable, fSoloDiferencias],
   );
 
-
-  const cierresPag = paginar(historialFiltrado, paginaCierres);
-  const cierres = cierresPag.visibles;
 
   const hayFiltroHistorial = fDesde !== '' || fHasta !== '' || fResponsable !== '' || fSoloDiferencias;
 
@@ -338,6 +334,68 @@ export default function CierreInventarioAdmin() {
   useEscape([
     [!!detalle, () => setDetalle(null)],
   ]);
+
+  const columnasHistorial: DataTableColumn<CierreHistorial>[] = [
+    { id: 'id', header: '#', accessor: (h) => h.id, width: 70 },
+    {
+      id: 'fecha',
+      header: 'Fecha y hora',
+      accessor: (h) => new Date(h.created_at),
+      exportValue: (h) => new Date(h.created_at).toLocaleString('es-CO'),
+      cell: (h) => (
+        <>
+          <div>{new Date(h.created_at).toLocaleDateString('es-CO')}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-400)', fontWeight: 500 }}>
+            {new Date(h.created_at).toLocaleTimeString('es-CO')}
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 'responsable',
+      header: 'Responsable',
+      accessor: (h) => h.usuario ?? '',
+      cell: (h) => h.usuario ?? '—',
+    },
+    {
+      id: 'insumos',
+      header: 'Materias primas',
+      accessor: (h) => h.insumos,
+      align: 'right',
+    },
+    {
+      id: 'diferencias',
+      header: 'Con diferencia',
+      accessor: (h) => h.insumos_con_diferencia,
+      align: 'right',
+    },
+    {
+      id: 'observacion',
+      header: 'Observación',
+      accessor: (h) => h.observacion ?? '',
+      cell: (h) => (
+        <span title={h.observacion ?? ''} style={{ display: 'block', maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {h.observacion ?? '—'}
+        </span>
+      ),
+    },
+    {
+      id: 'detalle',
+      header: 'Detalle',
+      accessor: () => '',
+      sortable: false,
+      searchable: false,
+      exportable: false,
+      align: 'center',
+      cell: (h) => (
+        <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }}
+          disabled={cargandoDetalle === h.id} onClick={() => verDetalle(h.id)}
+          data-tooltip="Ver detalle">
+          {cargandoDetalle === h.id ? 'Cargando...' : 'Ver detalle'}
+        </button>
+      ),
+    },
+  ];
 
   return (
     <div className="page-inner cierre-page">
@@ -515,60 +573,17 @@ export default function CierreInventarioAdmin() {
             )}
           </div>
 
-          <div className="tabla-responsive">
-            <table className="data-table" style={{ tableLayout: 'fixed', minWidth: 900 }}>
-              <colgroup>
-                <col style={{ width: '6%' }} />
-                <col style={{ width: '15%' }} />
-                <col style={{ width: '15%' }} />
-                <col style={{ width: '11%' }} />
-                <col style={{ width: '11%' }} />
-                <col style={{ width: '26%' }} />
-                <col style={{ width: '16%' }} />
-              </colgroup>
-              <thead>
-                <tr><th>#</th><th>Fecha y hora</th><th>Responsable</th><th>Materias primas</th><th>Con diferencia</th><th>Observación</th><th>Detalle</th></tr>
-              </thead>
-              <tbody>
-                {cierres.map((h) => (
-                  <tr key={h.id}>
-                    <td>{h.id}</td>
-                    <td>
-                      <div>{new Date(h.created_at).toLocaleDateString('es-CO')}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-400)', fontWeight: 500 }}>
-                        {new Date(h.created_at).toLocaleTimeString('es-CO')}
-                      </div>
-                    </td>
-                    <td>{h.usuario ?? '—'}</td>
-                    <td>{h.insumos}</td>
-                    <td>{h.insumos_con_diferencia}</td>
-                    <td
-                      title={h.observacion ?? ''}
-                      style={{ maxWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    >
-                      {h.observacion ?? '—'}
-                    </td>
-                    <td>
-                      <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }}
-                        disabled={cargandoDetalle === h.id} onClick={() => verDetalle(h.id)}
-                        data-tooltip="Ver detalle">
-                        {cargandoDetalle === h.id ? 'Cargando...' : 'Ver detalle'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {cierres.length === 0 && (
-                  <tr>
-                    <td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
-                      {historial.length === 0 ? 'Aún no hay cierres' : 'Ningún cierre coincide con los filtros'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <Paginacion total={historialFiltrado.length} pagina={cierresPag.paginaActual} onCambiar={setPaginaCierres} etiqueta="cierres" siempre />
+          <DataTable
+            columnas={columnasHistorial}
+            datos={historialFiltrado}
+            obtenerId={(h) => h.id}
+            tituloExportar="Historial de cierres de inventario"
+            archivoExportar="cierres-inventario"
+            etiqueta="cierre"
+            busqueda={false}
+            mensajeVacio={historial.length === 0 ? 'Aún no hay cierres' : 'Ningún cierre coincide con los filtros'}
+            minWidth={900}
+          />
         </>
       )}
       {detalle && (

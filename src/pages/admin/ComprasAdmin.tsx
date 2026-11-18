@@ -1,9 +1,8 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
-
-import Paginacion, { paginar } from '../../components/Paginacion';
+import DataTable, { type DataTableColumn } from '../../components/DataTable';
 import { useToast } from '../../components/Toast';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
@@ -423,9 +422,6 @@ export default function ComprasAdmin() {
   const [fInsumo, setFInsumo] = useState('');
   const [fMarca, setFMarca] = useState('');
 
-  const DIAS_POR_PAGINA = 15;
-  const [pagina, setPagina] = useState(1);
-
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('');
   const [numeroFactura, setNumeroFactura] = useState('');
@@ -491,8 +487,6 @@ const load = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [modalDetalle]);
 
-  useEffect(() => { setPagina(1); }, [q, fDesde, fHasta, fMetodo, fInsumo, fMarca]);
-
   const hayFiltros = q !== '' || fDesde !== '' || fHasta !== '' || fMetodo !== '' || fInsumo !== '' || fMarca !== '';
 
   const limpiarFiltros = () => {
@@ -545,17 +539,10 @@ const load = () => {
     });
   }, [items, q, fDesde, fHasta, fMetodo, fInsumo, fMarca]);
 
-  const grupos = Object.entries(
-    [...filtered]
-      .sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id - a.id)
-      .reduce<Record<string, Compra[]>>((acc, c) => {
-        const clave = c.fecha.slice(0, 10);
-        (acc[clave] = acc[clave] || []).push(c);
-        return acc;
-      }, {})
+  const ordenadas = useMemo(
+    () => [...filtered].sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id - a.id),
+    [filtered],
   );
-
-  const { visibles: gruposVisibles, paginaActual } = paginar(grupos, pagina, DIAS_POR_PAGINA);
 
   const addLinea = () => {
     setLineas([...lineas, { materia_prima_id: null, cantidad: '', precio_unitario: '', marca_id: 0, nombre_nuevo: '', tipo: '', unidad_medida: '' }]);
@@ -872,7 +859,6 @@ const load = () => {
       showToast('Compra guardada como borrador');
       sinRed.current = false;
       borrarLocal();
-      setPagina(1);
       setRevisando(false);
       setConfirmando(false);
       setIntentado(false);
@@ -925,7 +911,6 @@ const load = () => {
       showToast('Compra registrada: la cantidad se sumó a Materia Prima');
       sinRed.current = false;
       borrarLocal();
-      setPagina(1);
       setRevisando(false);
       setIntentado(false);
       setShowForm(false);
@@ -976,6 +961,105 @@ const load = () => {
     [mostrarDictado, () => { vozRef.current?.stop(); setMostrarDictado(false); }],
     [showForm, cerrarForm],
   ]);
+
+  const columnas: DataTableColumn<Compra>[] = [
+    {
+      id: 'compra',
+      header: 'Compra',
+      accessor: (c) => c.id,
+      sortable: false,
+      exportValue: (c) => `N.º ${c.id}`,
+      cell: (c) => <span style={chipNumero}>N.º {c.id}</span>,
+    },
+    {
+      id: 'metodo',
+      header: 'Método de pago',
+      accessor: (c) => c.metodo_pago,
+      sortable: false,
+      cell: (c) => <span className="badge badge-info compras-metodo-badge">{c.metodo_pago}</span>,
+    },
+    {
+      id: 'insumos',
+      header: 'Insumos',
+      accessor: (c) => (c.detalles ?? []).length,
+      sortable: false,
+      align: 'right',
+    },
+    {
+      id: 'total',
+      header: 'Total',
+      accessor: (c) => Number(c.valor_total) || 0,
+      sortable: false,
+      align: 'right',
+      exportValue: (c) => `$${Number(c.valor_total).toLocaleString('es-CO')}`,
+      cell: (c) => <span style={{ fontWeight: 700 }}>${Number(c.valor_total).toLocaleString('es-CO')}</span>,
+    },
+    {
+      id: 'estado',
+      header: 'Estado',
+      accessor: (c) => c.estado,
+      sortable: false,
+      cell: (c) => <span className={`badge ${badgeEstado(c.estado)}`}>{c.estado}</span>,
+    },
+    {
+      id: 'acciones',
+      header: 'Acciones',
+      accessor: () => '',
+      sortable: false,
+      searchable: false,
+      exportable: false,
+      align: 'center',
+      cell: (c) => (
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)} data-tooltip="Ver detalle">Ver detalle</button>
+          {!soloLectura && c.estado !== 'Finalizada' && (
+            <>
+              <button
+                type="button"
+                className="mn-btn-edit compras-modificar-btn"
+                style={{ flex: 'none', padding: '7px 14px' }}
+                onClick={() => abrirEditar(c)}
+                data-tooltip="Modificar"
+              >
+                Modificar
+              </button>
+              <button
+                type="button"
+                className="mn-btn-del"
+                style={{ flex: 'none', padding: '7px 14px' }}
+                onClick={() => del(c)}
+                data-tooltip="Eliminar"
+              >
+                Eliminar
+              </button>
+            </>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  const filaDia = (c: Compra, indice: number, filasPagina: Compra[]) => {
+    const clave = c.fecha.slice(0, 10);
+    const anterior = indice > 0 ? filasPagina[indice - 1]?.fecha.slice(0, 10) : null;
+    if (indice > 0 && clave === anterior) return null;
+    const lista = filtered.filter((x) => x.fecha.slice(0, 10) === clave);
+    return (
+      <tr>
+        <td colSpan={columnas.length} style={{ background: 'var(--surface-2)', padding: '12px 16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-900)' }}>{etiquetaFecha(clave)}</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-400)' }}>
+              {lista.length} {lista.length === 1 ? 'compra' : 'compras'} ·{' '}
+              <span style={{ color: 'var(--brand)', fontWeight: 800 }}>
+                ${lista.filter((x) => x.estado === 'Finalizada').reduce((a, x) => a + Number(x.valor_total), 0).toLocaleString('es-CO')}
+              </span>
+            </span>
+          </div>
+        </td>
+      </tr>
+    );
+  };
 
   return (
     <div className="page-inner compras-page">
@@ -1286,86 +1370,20 @@ const load = () => {
       {loading ? (
         <AdminLoading area texto="Cargando compras" subtexto="Reuniendo tus abastecimientos" />
       ) : (
-        <>
-          <div className="tabla-responsive compras-table-wrap">
-            <table className="data-table compras-table">
-              <thead>
-                <tr>
-                  <th>Compra</th>
-                  <th>Método de pago</th>
-                  <th>Insumos</th>
-                  <th>Total</th>
-                  <th>Estado</th>
-                  <th className="th-acciones">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {gruposVisibles.map(([clave, lista]) => (
-                  <Fragment key={clave}>
-                    <tr>
-                      <td colSpan={6} style={{ background: 'var(--surface-2)', padding: '12px 16px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                          <span style={{ fontWeight: 800, fontSize: 14, color: 'var(--text-900)' }}>{etiquetaFecha(clave)}</span>
-                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-400)' }}>
-                            {lista.length} {lista.length === 1 ? 'compra' : 'compras'} ·{' '}
-                            <span style={{ color: 'var(--brand)', fontWeight: 800 }}>
-                              ${lista.filter((c) => c.estado === 'Finalizada').reduce((a, c) => a + Number(c.valor_total), 0).toLocaleString('es-CO')}
-                            </span>
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                    {lista.map((c) => (
-                      <tr key={c.id}>
-                        <td><span style={chipNumero}>N.º {c.id}</span></td>
-                        <td><span className="badge badge-info compras-metodo-badge">{c.metodo_pago}</span></td>
-                        <td>{(c.detalles ?? []).length}</td>
-                        <td style={{ fontWeight: 700 }}>${Number(c.valor_total).toLocaleString('es-CO')}</td>
-                        <td><span className={`badge ${badgeEstado(c.estado)}`}>{c.estado}</span></td>
-                        <td>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)} data-tooltip="Ver detalle">Ver detalle</button>
-                            {!soloLectura && c.estado !== 'Finalizada' && (
-                              <>
-                                <button
-                                  type="button"
-                                  className="mn-btn-edit compras-modificar-btn"
-                                  style={{ flex: 'none', padding: '7px 14px' }}
-                                  onClick={() => abrirEditar(c)}
-                                  data-tooltip="Modificar"
-                                >
-                                  Modificar
-                                </button>
-                                <button
-                                  type="button"
-                                  className="mn-btn-del"
-                                  style={{ flex: 'none', padding: '7px 14px' }}
-                                  onClick={() => del(c)}
-                                  data-tooltip="Eliminar"
-                                >
-                                  Eliminar
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </Fragment>
-                ))}
-                {grupos.length === 0 && (
-                  <tr>
-                    <td colSpan={6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
-                      {items.length === 0 ? 'Aún no hay compras' : 'No se encontraron compras con esos filtros'}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <Paginacion total={grupos.length} pagina={paginaActual} porPagina={DIAS_POR_PAGINA} etiqueta="días" onCambiar={setPagina} siempre />
-        </>
+        <DataTable
+          columnas={columnas}
+          datos={ordenadas}
+          obtenerId={(c) => c.id}
+          tituloExportar="Compras"
+          archivoExportar="compras"
+          etiqueta="compra"
+          busqueda={false}
+          mensajeVacio={items.length === 0 ? 'Aún no hay compras' : 'No se encontraron compras con esos filtros'}
+          filaExtra={filaDia}
+          className="compras-table-wrap"
+          classNameTabla="compras-table"
+          minWidth={860}
+        />
       )}
 
       {modalDetalle && (() => {

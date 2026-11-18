@@ -16,13 +16,13 @@ html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) {
 
 html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-card,
 html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .grid-perfil > div > div:first-child {
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
 }
 
 html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .form-group :is(input, select, textarea),
 html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-trigger,
 html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-options {
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   color: #000000 !important;
 }
 
@@ -43,10 +43,10 @@ html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-documen
   color: #000000;
 }
 html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-option + .cfg-document-option {
-  border-top: 1px solid #e8821a;
+  border-top: 1px solid var(--brand);
 }
 html body:not(.dark-mode) .admin-body .page-inner:has(.grid-perfil) .cfg-document-option:hover {
-  background: #e8821a;
+  background: var(--brand);
   color: #ffffff;
 }
 
@@ -61,12 +61,12 @@ html body:not(.dark-mode) .hist-page {
 }
 
 html body:not(.dark-mode) .hist-page :is(.hist-card, .hist-item) {
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
 }
 
 html body:not(.dark-mode) .hist-page .hist-ctl,
 html body:not(.dark-mode) .hist-page :is(input, select, button):not(.hist-ctl) {
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 
 html body:not(.dark-mode) .hist-page :is(input, select) {
@@ -82,7 +82,7 @@ html body:not(.dark-mode) .hist-page :is(.hist-dia, .hist-texto, .hist-rol, .his
 }
 
 html body:not(.dark-mode) .hist-page .hist-linea::before {
-  background: #e8821a;
+  background: var(--brand);
 }
 
 html body:not(.dark-mode) .hist-page label {
@@ -104,7 +104,7 @@ html body:not(.dark-mode) .admin-body .hist-page .hist-item::before {
 html body:not(.dark-mode) .admin-body .hist-page > div:first-of-type {
   margin-bottom: 24px !important;
   padding-bottom: 16px !important;
-  border-bottom: 1.5px solid #e8821a !important;
+  border-bottom: 1.5px solid var(--brand) !important;
 }
 
 /* Calendario dentro del Historial: sin bordes naranja en los botones de días */
@@ -119,26 +119,26 @@ html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown {
 }
 
 html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-trigger {
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   background: #ffffff !important;
   color: #000000 !important;
 }
 
 html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-options {
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   border-radius: 4px !important;
   background: #ffffff !important;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18) !important;
   padding: 0 !important;
   overflow-y: auto;
-  scrollbar-color: #e8821a #ffffff;
+  scrollbar-color: var(--brand) #ffffff;
   scrollbar-width: thin;
 }
 
 html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option {
   padding: 7px 12px !important;
   border: 0 !important;
-  border-bottom: 1px solid #e8821a !important;
+  border-bottom: 1px solid var(--brand) !important;
   background: #ffffff !important;
   color: #000000 !important;
   cursor: pointer;
@@ -151,7 +151,7 @@ html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option:last-child
 html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option:hover,
 html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option:focus-visible,
 html body:not(.dark-mode) .ventas-page .ventas-filter-dropdown-option.selected {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -179,7 +179,7 @@ html body:not(.dark-mode) .mn-field label[for="mn-cocina"] small {
   display: block;
   margin-top: 2px;
   color: #000000 !important;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 400;
   text-transform: none;
 }
@@ -197,12 +197,12 @@ html body:not(.dark-mode) :is(
   height: 32px !important;
   min-width: 32px !important;
   padding: 0 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 10px !important;
   background: #ffffff !important;
   color: #000000 !important;
   font-family: var(--font-sans, system-ui, sans-serif) !important;
-  font-size: 20px !important;
+  font-size: var(--fs-xl) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   cursor: pointer;
@@ -214,7 +214,7 @@ html body:not(.dark-mode) :is(
   .detalle-close, .verify-modal-close, .pers-cerrar,
   .mp-detalle-cerrar, .legal-modal-cerrar
 ):hover:not(:disabled) {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -223,7 +223,7 @@ html body:not(.dark-mode) :is(
   .detalle-close, .verify-modal-close, .pers-cerrar,
   .mp-detalle-cerrar, .legal-modal-cerrar
 ):focus-visible {
-  outline: 2px solid #e8821a;
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
 
@@ -249,7 +249,7 @@ html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][typ
   min-width: 18px !important;
   margin: 0;
   padding: 0 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 4px !important;
   background: #ffffff !important;
   box-shadow: none !important;
@@ -264,7 +264,7 @@ html body:not(.dark-mode) input[type=checkbox][type=checkbox][type=checkbox][typ
   position: absolute;
   inset: 0;
   border-radius: 2px;
-  background: #e8821a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4 12 10 18 20 6'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
+  background: var(--brand) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='4 12 10 18 20 6'/%3E%3C/svg%3E") center / 12px 12px no-repeat;
   opacity: 0;
   pointer-events: none;
 }
@@ -308,21 +308,21 @@ html body:not(.dark-mode) .tv-wrap .tv-col-count {
 
 /* Tarjetas de pedido */
 html body:not(.dark-mode) .tv-wrap :is(.tv-card, .tv-col[data-estado] .tv-card) {
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
 }
 
 html body:not(.dark-mode) .tv-wrap :is(.tv-card-foot, .tv-items) {
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 
 html body:not(.dark-mode) .tv-wrap .tv-chip {
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   color: #000000 !important;
 }
 
 /* Buscador, pestañas (Todos / Cocina / Meseros / Cajero) y botones */
 html body:not(.dark-mode) .tv-wrap :is(.tv-buscar, .tv-tabs, .tv-btn-sec, .tv-refrescar) {
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   color: #000000 !important;
 }
 
@@ -332,13 +332,13 @@ html body:not(.dark-mode) .tv-wrap .tv-pill:not(.activo) {
 
 /* Flechas del carrusel */
 html body:not(.dark-mode) .tv-wrap .tv-flechas button {
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   background: #ffffff !important;
   color: #000000 !important;
 }
 
 html body:not(.dark-mode) .tv-wrap .tv-flechas button:hover {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -362,13 +362,13 @@ html body:not(.dark-mode) .tv-det-box :is(
 html body:not(.dark-mode) .tv-det-box :is(
   .tv-det-info, .tv-det-total, .tv-det-lista li, .tv-cobro-resumen, .tv-fila
 ) {
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 
 /* Pedidos del turno: línea naranja que separa el título del resto (SOLO modo claro) */
 html body:not(.dark-mode) .tv-wrap .tv-head {
   padding-bottom: 18px;
-  border-bottom: 1.5px solid #e8821a;
+  border-bottom: 1.5px solid var(--brand);
 }
 
 /* ---------- Botones pequeños de flecha (‹ ›) en todo el sistema (SOLO modo claro) ---------- */
@@ -380,11 +380,11 @@ html body:not(.dark-mode) .tv-flechas button {
   width: 36px !important;
   height: 36px !important;
   padding: 0 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 50% !important;
   background: #ffffff !important;
   color: #000000 !important;
-  font-size: 20px !important;
+  font-size: var(--fs-xl) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   cursor: pointer;
@@ -398,11 +398,11 @@ html body:not(.dark-mode) .compras-calendar-header button {
   width: 24px !important;
   height: 24px !important;
   padding: 0 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 50% !important;
   background: #ffffff !important;
   color: #000000 !important;
-  font-size: 14px !important;
+  font-size: var(--fs-sm) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   cursor: pointer;
@@ -412,7 +412,7 @@ html body:not(.dark-mode) .compras-calendar-header button {
 /* Al pasar el cursor: fondo naranja y flecha blanca */
 html body:not(.dark-mode) .tv-flechas button:hover:not(:disabled),
 html body:not(.dark-mode) .compras-calendar-header button:hover:not(:disabled) {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -424,19 +424,19 @@ html body:not(.dark-mode) .compras-calendar-header button:disabled {
 
 /* Paginación (‹ Anterior, 1, 2, 3, Siguiente ›) y paginación del nuevo pedido */
 html body:not(.dark-mode) :is(.pag-btn, .np-pg) {
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   background: #ffffff !important;
   color: #000000 !important;
 }
 
 html body:not(.dark-mode) :is(.pag-btn, .np-pg):hover:not(:disabled):not(.activa) {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
 }
 
 html body:not(.dark-mode) .pag-btn.activa {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -454,12 +454,12 @@ html body:not(.dark-mode) :is(.np-step, .qty-stepper, .pers-mini, .pers-qty) > b
   height: 28px !important;
   min-width: 28px !important;
   padding: 0 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 50% !important;
   background: #ffffff !important;
   color: #000000 !important;
   font-family: var(--font-sans, system-ui, sans-serif) !important;
-  font-size: 18px !important;
+  font-size: var(--fs-lg) !important;
   font-weight: 700 !important;
   line-height: 1 !important;
   cursor: pointer;
@@ -468,7 +468,7 @@ html body:not(.dark-mode) :is(.np-step, .qty-stepper, .pers-mini, .pers-qty) > b
 
 /* Al pasar el cursor: fondo naranja y signo blanco */
 html body:not(.dark-mode) :is(.np-step, .qty-stepper, .pers-mini, .pers-qty) > button:hover:not(:disabled) {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -502,7 +502,7 @@ html body:not(.dark-mode) .ventas-page .ventas-filtros .form-group > label {
   display: block;
   margin: 0 0 6px;
   color: #000000 !important;
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   line-height: 1.2;
   letter-spacing: 0.4px;
@@ -525,12 +525,12 @@ html body:not(.dark-mode) .ventas-page .ventas-filtros :is(.ventas-filter-dropdo
   min-width: 170px;
   height: 40px !important;
   padding: 0 12px !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 10px !important;
   background-color: #ffffff !important;
   color: #000000 !important;
   font: inherit;
-  font-size: 13.5px !important;
+  font-size: var(--fs-sm) !important;
   text-align: left;
   cursor: pointer;
 }
@@ -593,12 +593,12 @@ html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros .ventas-date-
   height: 40px !important;
   min-height: 40px !important;
   padding: 0 12px !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 10px !important;
   background: #ffffff !important;
   color: #000000 !important;
   font-family: inherit;
-  font-size: 13.5px !important;
+  font-size: var(--fs-sm) !important;
   line-height: normal !important;
   text-align: left;
   cursor: pointer;
@@ -616,7 +616,7 @@ html body:not(.dark-mode) .admin-body .ventas-page .ventas-filtros .ventas-clear
   height: 40px;
   padding: 0 16px;
   border-radius: 10px;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
 }
 
 
@@ -629,7 +629,7 @@ html body:not(.dark-mode) .modal-box:has(> .motivo-modal-titulo) {
 html body:not(.dark-mode) .motivo-modal-titulo {
   margin: 0 calc(var(--mm-pad) * -1) !important;
   padding: 0 var(--mm-pad) 14px;
-  border-bottom: 1.5px solid #e8821a;
+  border-bottom: 1.5px solid var(--brand);
 }
 
 @media (max-width: 600px) {
@@ -644,13 +644,13 @@ html body:not(.dark-mode) .motivo-modal-titulo + p {
 }
 
 html body:not(.dark-mode) .motivo-modal-input {
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   background: #ffffff;
   color: #000000 !important;
 }
 
 html body:not(.dark-mode) .motivo-modal-input:focus {
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18);
 }
 
@@ -681,7 +681,7 @@ html body:not(.dark-mode) .vt-det .vt-det-grid {
 }
 
 html body:not(.dark-mode) .vt-det .vt-det-grid dt {
-  font-size: 11.5px;
+  font-size: var(--fs-xs);
   font-weight: 600;
 }
 
@@ -692,7 +692,7 @@ html body:not(.dark-mode) .vt-det .vt-det-lineas {
 
 html body:not(.dark-mode) .vt-det .vt-det-linea {
   padding: 8px 2px;
-  border-bottom: 1px solid #e8821a;
+  border-bottom: 1px solid var(--brand);
 }
 
 html body:not(.dark-mode) .vt-det .vt-det-linea:last-child {
@@ -709,7 +709,7 @@ html body:not(.dark-mode) .admin-body .main-content .modal-box.vt-det .modal-act
 html body:not(.dark-mode) .modal-box.vt-det .modal-actions {
   margin: 20px 0 0;
   padding: 18px 26px 26px;
-  border-top: 1.5px solid #e8821a;
+  border-top: 1.5px solid var(--brand);
 }
 
 
@@ -718,13 +718,13 @@ html body:not(.dark-mode) .modal-box.vt-det .modal-actions {
 html body:not(.dark-mode) .hm-box .hm-head {
   margin: 0 -32px;
   padding: 0 60px 16px 32px;
-  border-bottom: 1.5px solid #e8821a;
+  border-bottom: 1.5px solid var(--brand);
 }
 
 /* Tarjetas de datos: fondo blanco y borde naranja */
 html body:not(.dark-mode) .hm-box .hm-kpi {
   background: #ffffff;
-  border: 1.5px solid #e8821a;
+  border: 1.5px solid var(--brand);
 }
 
 /* Letras en negro */
@@ -742,7 +742,7 @@ html body:not(.dark-mode) .hm-box .hm-pendiente {
 html body:not(.dark-mode) .hm-box .mn-modal-actions {
   margin: 18px -32px 0 !important;
   padding: 18px 32px 0;
-  border-top: 1.5px solid #e8821a;
+  border-top: 1.5px solid var(--brand);
 }
 
 
@@ -754,12 +754,12 @@ html body:not(.dark-mode) .reportes-page input[placeholder="Buscar producto..."]
   padding-top: 0;
   padding-bottom: 0;
   padding-left: 14px;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 10px !important;
   background-color: #ffffff !important;
   color: #000000 !important;
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   outline: none;
 }
 
@@ -769,7 +769,7 @@ html body:not(.dark-mode) .reportes-page input[placeholder="Buscar producto..."]
 }
 
 html body:not(.dark-mode) .reportes-page input[placeholder="Buscar producto..."]:focus {
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   box-shadow: 0 0 0 3px rgba(232, 130, 26, 0.18);
 }
 
@@ -808,7 +808,7 @@ html body:not(.dark-mode) :is(
   button[aria-label="Mostrar contraseña"],
   button[aria-label="Ocultar contraseña"]
 ):not(:has(svg)) {
-  font-size: 11px;
+  font-size: var(--fs-xs);
   font-weight: 600;
 }
 
@@ -855,7 +855,7 @@ html body:not(.dark-mode) :is(.requisito, .cfg-requisito) {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   font-weight: 600;
   line-height: 1.3;
   color: #a0522d !important;
@@ -900,7 +900,7 @@ html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-modal-box {
 
 html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-modal-box p {
   margin: 0 0 24px;
-  font-size: 15px;
+  font-size: var(--fs-sm);
   line-height: 1.5;
   color: #000000;
 }
@@ -914,18 +914,18 @@ html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-modal-actions {
 /* Cancelar: blanco con borde naranja */
 html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-btn-cancel {
   padding: 11px 24px;
-  border: 1.5px solid #e8821a;
+  border: 1.5px solid var(--brand);
   border-radius: 8px;
   background: #ffffff;
   color: #000000;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
 }
 html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-btn-cancel:hover {
-  background: #e8821a;
+  background: var(--brand);
   color: #ffffff;
 }
 
@@ -937,7 +937,7 @@ html body:not(.dark-mode) .public-body .mn-modal-overlay .mn-btn-confirm {
   background: #c8382a;
   color: #ffffff;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--fs-xs);
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(200, 56, 42, 0.3);
@@ -962,8 +962,8 @@ html body.dark-mode .modal-overlay .modal-box.vt-det .modal-actions button.btn-c
   width: auto !important;
   min-width: 0;
   padding: 12px 32px !important;
-  background: #e8821a !important;
-  border: 1.5px solid #e8821a !important;
+  background: var(--brand) !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 14px;
   color: #ffffff !important;
   font-weight: 700;
@@ -1032,7 +1032,7 @@ html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-canc
 html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-cancel,
 html body:not(.dark-mode) .ventas-table td button.btn-cancel.vt-btn-anular {
   padding: 6px 14px !important;
-  font-size: 12px !important;
+  font-size: var(--fs-xs) !important;
   font-weight: 700 !important;
   line-height: 1.2;
   min-height: 30px;
@@ -1063,11 +1063,11 @@ html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-canc
 html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular):hover,
 html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular):focus,
 html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular):active {
-  background: #e8821a !important;
-  border: 1.5px solid #e8821a !important;
+  background: var(--brand) !important;
+  border: 1.5px solid var(--brand) !important;
   color: #ffffff !important;
   padding: 6px 14px !important;
-  font-size: 12px !important;
+  font-size: var(--fs-xs) !important;
   font-weight: 700 !important;
   min-height: 30px;
   border-radius: 12px !important;
@@ -1100,8 +1100,8 @@ html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button.btn-canc
 
 /* Ver historial (naranja) */
 html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button.btn-cancel:not(.vt-btn-anular):hover {
-  background: #d4761a !important;
-  border-color: #d4761a !important;
+  background: var(--brand-deep) !important;
+  border-color: var(--brand-deep) !important;
   box-shadow: 0 4px 12px rgba(232, 130, 26, 0.25) !important;
 }
 
@@ -1116,7 +1116,7 @@ html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(4) button,
 html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(8) button,
 html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(9) button {
   padding: 6px 14px !important;
-  font-size: 12px !important;
+  font-size: var(--fs-xs) !important;
   font-weight: 700 !important;
   line-height: 1.2;
   min-height: 30px;
@@ -1135,7 +1135,7 @@ html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(9) button:hover {
 
 /* Ver factura = mismo naranja del hover de "Cierre del día" */
 html body:not(.dark-mode) .ventas-table tbody tr td:nth-child(9) button:hover {
-  background: #d4761a !important;
+  background: var(--brand-deep) !important;
 }
 
 /* Historial del insumo: botón "Cerrar" naranja, pequeño y a la derecha (modo claro) */
@@ -1151,8 +1151,8 @@ html body:not(.dark-mode) .hm-box .mn-modal-actions button.mn-btn-cancel:active 
   width: auto !important;
   min-width: 0;
   padding: 12px 32px !important;
-  background: #e8821a !important;
-  border: 1.5px solid #e8821a !important;
+  background: var(--brand) !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 14px;
   color: #ffffff !important;
   font-weight: 700;
@@ -1162,8 +1162,8 @@ html body:not(.dark-mode) .hm-box .mn-modal-actions button.mn-btn-cancel:active 
 
 /* Hover igual que "Ver factura": sube 1px y se oscurece */
 html body:not(.dark-mode) .hm-box .mn-modal-actions button.mn-btn-cancel:hover:not(:disabled) {
-  background: #d4761a !important;
-  border-color: #d4761a !important;
+  background: var(--brand-deep) !important;
+  border-color: var(--brand-deep) !important;
   color: #ffffff !important;
   transform: translateY(-1px);
 }
@@ -1176,12 +1176,12 @@ html body:not(.dark-mode) .hm-box .mn-modal-actions button.mn-btn-cancel:hover:n
   flex-wrap: wrap;
   margin-top: 14px;
   padding: 14px 18px;
-  border: 1.5px solid #e8821a;
+  border: 1.5px solid var(--brand);
   border-radius: 14px;
   background: #fffaf3;
 }
 .ci-progreso { flex: 1 1 220px; min-width: 200px; }
-.ci-progreso-txt { font-size: 13px; font-weight: 600; color: #5b4636; }
+.ci-progreso-txt { font-size: var(--fs-xs); font-weight: 600; color: #5b4636; }
 .ci-progreso-txt b { color: #1a0f0a; }
 .ci-progreso-pista {
   height: 6px;
@@ -1193,26 +1193,26 @@ html body:not(.dark-mode) .hm-box .mn-modal-actions button.mn-btn-cancel:hover:n
 .ci-progreso-fill {
   height: 100%;
   border-radius: 999px;
-  background: #e8821a;
+  background: var(--brand);
   transition: width .25s ease;
 }
 
 .ci-btn-guardar {
   flex: 0 0 auto;
   padding: 11px 28px;
-  border: 1.5px solid #e8821a;
+  border: 1.5px solid var(--brand);
   border-radius: 12px;
-  background: #e8821a;
+  background: var(--brand);
   color: #ffffff;
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--fs-sm);
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(232, 130, 26, 0.25);
   transition: transform .15s ease, background .15s ease;
 }
 .ci-btn-guardar:hover:not(:disabled) {
-  background: #d4761a;
-  border-color: #d4761a;
+  background: var(--brand-deep);
+  border-color: var(--brand-deep);
   transform: translateY(-1px);
 }
 .ci-btn-guardar:disabled { opacity: .6; cursor: not-allowed; }

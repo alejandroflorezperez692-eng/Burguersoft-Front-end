@@ -14,7 +14,7 @@ html body.dark-mode :is(.vt-det, .tz-box, .hm-box) {
   --dm-pad: 28px;
   padding: 0 !important;
   background: #000000;
-  border: 1px solid #e8821a;
+  border: 1px solid var(--brand);
   color: #ffffff;
   overflow-x: hidden;
 }
@@ -26,7 +26,7 @@ html body.dark-mode :is(.vt-det, .tz-box, .hm-box) {
 /* ---- Detalle de venta ---- */
 html body.dark-mode .vt-det .vt-det-head {
   padding: var(--dm-pad) 64px 16px var(--dm-pad) !important;
-  border-bottom: 1.5px solid #e8821a;          /* línea bajo el título */
+  border-bottom: 1.5px solid var(--brand);          /* línea bajo el título */
 }
 html body.dark-mode .vt-det :is(.vt-det-sec, .vt-det-total) {
   padding-left: var(--dm-pad);
@@ -35,7 +35,7 @@ html body.dark-mode .vt-det :is(.vt-det-sec, .vt-det-total) {
 html body.dark-mode .vt-det > .modal-actions {
   margin-top: 0 !important;
   padding: 18px var(--dm-pad) var(--dm-pad) !important;
-  border-top: 1.5px solid #e8821a;             /* línea sobre los botones */
+  border-top: 1.5px solid var(--brand);             /* línea sobre los botones */
 }
 
 /* ---- Trazabilidad ---- */
@@ -48,7 +48,7 @@ html body.dark-mode .tz-box > .tz-sub {
   margin: 0 !important;
   padding: 6px var(--dm-pad) 16px !important;
   color: #b8b8b8;
-  border-bottom: 1.5px solid #e8821a;          /* línea bajo el título */
+  border-bottom: 1.5px solid var(--brand);          /* línea bajo el título */
 }
 html body.dark-mode .tz-box > .tz-list {
   margin: 0 !important;
@@ -59,7 +59,7 @@ html body.dark-mode .tz-box > .tz-list {
 }
 html body.dark-mode .tz-box .tz-item {
   padding: 13px var(--dm-pad);
-  border-bottom: 1px solid #e8821a;
+  border-bottom: 1px solid var(--brand);
 }
 html body.dark-mode .tz-box .tz-item:last-child { border-bottom: none; }
 html body.dark-mode .tz-box .tz-msg {
@@ -72,13 +72,13 @@ html body.dark-mode .tz-box :is(.tz-motivo, .tz-user, .tz-fecha small) { color: 
 html body.dark-mode .tz-box > .tz-footer {
   margin: 0 !important;
   padding: 16px var(--dm-pad) var(--dm-pad);
-  border-top: 1.5px solid #e8821a;             /* línea sobre el botón */
+  border-top: 1.5px solid var(--brand);             /* línea sobre el botón */
 }
 
 /* ---- Historial de insumo ---- */
 html body.dark-mode .hm-box > .hm-head {
   padding: var(--dm-pad) 64px 16px var(--dm-pad) !important;
-  border-bottom: 1.5px solid #e8821a;          /* línea bajo el título */
+  border-bottom: 1.5px solid var(--brand);          /* línea bajo el título */
 }
 html body.dark-mode .hm-box > :is(.hm-kpis, .hm-vacio, .hm-tabla) {
   padding-left: var(--dm-pad) !important;
@@ -87,13 +87,13 @@ html body.dark-mode .hm-box > :is(.hm-kpis, .hm-vacio, .hm-tabla) {
 html body.dark-mode .hm-box > .mn-modal-actions {
   margin: 18px 0 0 !important;
   padding: 18px var(--dm-pad) var(--dm-pad) !important;
-  border-top: 1.5px solid #e8821a;             /* línea sobre el botón */
+  border-top: 1.5px solid var(--brand);             /* línea sobre el botón */
 }
 
 /* Tarjetas de Stock / Precio / Valor: fondo negro y borde naranja */
 html body.dark-mode .hm-kpi {
   background: #000000 !important;
-  border: 1px solid #e8821a;
+  border: 1px solid var(--brand);
 }
 html body.dark-mode .hm-kpi span   { color: #b8b8b8; }
 html body.dark-mode .hm-kpi strong { color: #ffffff; }
@@ -110,7 +110,7 @@ html body.dark-mode .mn-field label > input[type="checkbox"] {
   height: 20px !important;
   margin: 0;
   padding: 0 !important;
-  border: 1.5px solid #e8821a;
+  border: 1.5px solid var(--brand);
   border-radius: 5px;
   background-color: #000000;
   background-repeat: no-repeat;
@@ -133,13 +133,13 @@ html body.dark-mode .tv-flechas button {
   display: grid;
   place-items: center;
   padding: 0 0 3px 0;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   background: #000000 !important;
   color: #ffffff !important;
   transition: background 0.15s ease;
 }
 html body.dark-mode .tv-flechas button:hover:not(:disabled) {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
 }
 html body.dark-mode .tv-flechas button:disabled {
@@ -156,11 +156,11 @@ html body.dark-mode input[type="text"][placeholder="Buscar producto..."] {
   padding-top: 0;
   padding-bottom: 0;
   padding-left: 14px !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   border-radius: 12px !important;
   background: #000000 !important;
   color: #ffffff !important;
-  font-size: 13.5px;
+  font-size: var(--fs-sm);
   outline: none;
 }
 html body.dark-mode input[type="text"][placeholder="Buscar producto..."]::placeholder {
@@ -176,7 +176,7 @@ html body.dark-mode input[type="text"][placeholder="Buscar producto..."]:focus {
    -------------------------------------------------------------------------- */
 html body.dark-mode .pedido-card {
   background: #000000;
-  border-color: #e8821a;
+  border-color: var(--brand);
 }
 
 html body.dark-mode .pedido-card :is(
@@ -188,17 +188,17 @@ html body.dark-mode .pedido-card :is(
 
 /* Líneas que dividen cada sección */
 html body.dark-mode .pedido-card :is(.pedido-head, .progreso-container, .pedido-info, .pedido-comprobante) {
-  border-bottom: 1px solid #e8821a;
+  border-bottom: 1px solid var(--brand);
 }
 html body.dark-mode .pedido-card .pedido-foot {
-  border-top: 1px solid #e8821a;
+  border-top: 1px solid var(--brand);
 }
 html body.dark-mode .pedido-card .pedido-table th {
-  border-bottom: 1px solid #e8821a;
+  border-bottom: 1px solid var(--brand);
   color: #ffffff;
 }
 html body.dark-mode .pedido-card .pedido-table td {
-  border-top: 1px solid #e8821a;
+  border-top: 1px solid var(--brand);
   color: #ffffff;
 }
 
@@ -208,5 +208,5 @@ html body.dark-mode .pedido-card :is(.pedido-info-valor, .pedido-info-notas, .pr
 
 /* Chip del método de pago */
 html body.dark-mode .pedido-card .pedido-metodo {
-  border: 1px solid #e8821a;
+  border: 1px solid var(--brand);
 }

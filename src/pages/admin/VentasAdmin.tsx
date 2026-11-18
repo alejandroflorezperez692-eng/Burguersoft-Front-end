@@ -1,7 +1,7 @@
-import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
-import Paginacion, { paginar } from '../../components/Paginacion';
+import DataTable, { type DataTableColumn } from '../../components/DataTable';
 
 import { useToast } from '../../components/Toast';
 
@@ -354,8 +354,6 @@ export default function VentasAdmin() {
   const [fechaHasta, setFechaHasta] = useState('');
   const [cambioMotivo, setCambioMotivo] = useState<{ id: number; estado: string } | null>(null);
 
-  const [pagina, setPagina] = useState(1);
-
   const [showForm, setShowForm] = useState(false);
   const [metodoPago, setMetodoPago] = useState('Efectivo');
   const [tipoEntrega, setTipoEntrega] = useState(esMesero ? 'Consumir' : 'Domicilio');
@@ -547,7 +545,6 @@ const load = async (silencioso = false) => {
     setFiltroEntrega('');
     setFechaDesde('');
     setFechaHasta('');
-    setPagina(1);
   };
 
   // Solo los pedidos entregados y en estado "Pagado" cuentan como dinero vendido.
@@ -555,8 +552,6 @@ const load = async (silencioso = false) => {
   const totalFiltrado = filtered
     .filter((v) => (filtroEstado ? true : v?.estado === 'Pagado'))
     .reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
-
-  const { visibles, paginaActual } = paginar(filtered, pagina);
 
   const sinNada = carrito.length === 0 && combos.length === 0;
   const rojoProducto: CSSProperties | undefined =
@@ -1168,6 +1163,156 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
     [showForm, cerrarFormulario],
   ]);
 
+  const columnas: DataTableColumn<Venta>[] = [
+    {
+      id: 'id',
+      header: '#',
+      accessor: (v) => v?.id,
+      sortable: false,
+      width: 84,
+      cell: (v) => <span className="vt-num">#{v?.id}</span>,
+    },
+    {
+      id: 'fecha',
+      header: 'Fecha',
+      accessor: (v) => new Date(v?.fecha),
+      sortable: false,
+      exportValue: (v) => `${fmtDia(v?.fecha)} ${fmtHora(v?.fecha)}`,
+      cell: (v) => (
+        <div className="vt-fecha">
+          <span>{fmtDia(v?.fecha)}</span>
+          <small>{fmtHora(v?.fecha)}</small>
+        </div>
+      ),
+    },
+    {
+      id: 'cliente',
+      header: 'Cliente',
+      accessor: (v) => nombreCliente(v) || '—',
+      sortable: false,
+      cell: (v) => (
+        <div className="vt-cliente">
+          <strong>{nombreCliente(v) || '—'}</strong>
+          <small>
+            {v?.tipo_entrega === 'Consumir' && v?.mesa ? `Mesa ${v.mesa}` : etiquetaEntrega(v?.tipo_entrega)}
+          </small>
+        </div>
+      ),
+    },
+    {
+      id: 'productos',
+      header: 'Productos',
+      accessor: (v) => (v?.detalles ?? []).map((d) => d?.producto?.nombre).filter(Boolean).join(', '),
+      sortable: false,
+      cell: (v) => (
+        <button
+          type="button"
+          className="btn-cancel"
+          style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+          onClick={() => setDetalleId(v.id)}
+        >
+          Ver detalle
+        </button>
+      ),
+    },
+    {
+      id: 'total',
+      header: 'Total',
+      accessor: (v) => Number(v?.valor_total) || 0,
+      sortable: false,
+      align: 'right',
+      exportValue: (v) => `$${Number(v?.valor_total || 0).toLocaleString('es-CO')}`,
+      cell: (v) => <span className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</span>,
+    },
+    {
+      id: 'metodo',
+      header: 'Método',
+      accessor: (v) => v?.metodo_pago ?? '',
+      sortable: false,
+      cell: (v) => <span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span>,
+    },
+    {
+      id: 'estado',
+      header: 'Estado',
+      accessor: (v) => v?.estado ?? '',
+      sortable: false,
+      cell: (v) => <span className={`badge ${claseEstado(v?.estado)}`}>{v?.estado ?? '—'}</span>,
+    },
+    {
+      id: 'historial',
+      header: 'Historial',
+      accessor: () => '',
+      sortable: false,
+      searchable: false,
+      exportable: false,
+      align: 'center',
+      cell: (v) => (
+        <button
+          type="button"
+          className="btn-cancel"
+          style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+          onClick={() => setHistorialId(v.id)}
+        >
+          Ver historial
+        </button>
+      ),
+    },
+    {
+      id: 'factura',
+      header: 'Factura',
+      accessor: () => '',
+      sortable: false,
+      searchable: false,
+      exportable: false,
+      cell: (v) => (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+          <button
+            type="button"
+            className="btn-save"
+            style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
+            onClick={() => verFactura(v.id)}
+          >
+            Ver factura
+          </button>
+
+          {esAdmin && !['Servido', 'Pendiente de pago', 'Pagado'].includes(v?.estado) && !NO_VENDIDOS.includes(v?.estado) && (
+            <button
+              type="button"
+              className="btn-cancel vt-btn-anular"
+              style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+              onClick={() => setCambioMotivo({ id: v.id, estado: 'Cancelado' })}
+            >
+              Cancelar
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ];
+
+  const filaDia = (v: Venta, indice: number, filasPagina: Venta[]) => {
+    const clave = fechaLocal(v?.fecha);
+    const anterior = indice > 0 ? fechaLocal(filasPagina[indice - 1]?.fecha) : null;
+    if (indice > 0 && clave === anterior) return null;
+    const r = resumenDia(clave);
+    return (
+      <tr className="vt-dia">
+        <td colSpan={columnas.length}>
+          <div className="vt-dia-bar">
+            <span className="vt-dia-label">{etiquetaDia(clave)}</span>
+            <span className="vt-dia-info">
+              {r.ventas} ventas · Vendido: <b>{moneda(r.total)}</b>
+              {r.anuladas > 0 && <> · {r.anuladas} cancelada{r.anuladas > 1 ? 's' : ''} (no suma{r.anuladas > 1 ? 'n' : ''})</>}
+            </span>
+            <button type="button" className="btn-save vt-dia-btn" onClick={() => abrirCierre(clave, clave)}>
+              Cierre del día
+            </button>
+          </div>
+        </td>
+      </tr>
+    );
+  };
+
   if (loading) {
     return <AdminLoading area texto="Cargando ventas" subtexto="Preparando tus pedidos y movimientos" />;
   }
@@ -1469,7 +1614,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             className="mn-search"
             placeholder="Buscar por #, cliente, producto o combo..."
             value={q}
-            onChange={(e) => { setQ(e.target.value); setPagina(1); }}
+            onChange={(e) => setQ(e.target.value)}
             style={{ paddingLeft: 42 }} // <-- Esto arregla la superposición con el icono
           />
         </div>
@@ -1480,7 +1625,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <label>Estado</label>
             <FiltroDesplegableVentas
               value={filtroEstado}
-              onChange={(value) => { setFiltroEstado(value); setPagina(1); }}
+              onChange={(value) => setFiltroEstado(value)}
               opciones={[{ value: '', label: 'Todos' }, ...ESTADOS.map((estado) => ({ value: estado, label: estado }))]}
             />
           </div>
@@ -1489,7 +1634,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <label>Método de pago</label>
             <FiltroDesplegableVentas
               value={filtroMetodo}
-              onChange={(value) => { setFiltroMetodo(value); setPagina(1); }}
+              onChange={(value) => setFiltroMetodo(value)}
               opciones={[{ value: '', label: 'Todos' }, ...METODOS.map((metodo) => ({ value: metodo, label: metodo }))]}
             />
           </div>
@@ -1498,7 +1643,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <label>Entrega</label>
             <FiltroDesplegableVentas
               value={filtroEntrega}
-              onChange={(value) => { setFiltroEntrega(value); setPagina(1); }}
+              onChange={(value) => setFiltroEntrega(value)}
               opciones={[{ value: '', label: 'Todas' }, ...TIPOS_ENTREGA.map((entrega) => ({ value: entrega, label: entrega }))]}
             />
           </div>
@@ -1508,7 +1653,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <SelectorFechaVentas
               value={fechaDesde}
               max={fechaHasta || undefined}
-              onChange={(fecha) => { setFechaDesde(fecha); setPagina(1); }}
+              onChange={(fecha) => setFechaDesde(fecha)}
             />
           </div>
 
@@ -1517,7 +1662,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <SelectorFechaVentas
               value={fechaHasta}
               min={fechaDesde || undefined}
-              onChange={(fecha) => { setFechaHasta(fecha); setPagina(1); }}
+              onChange={(fecha) => setFechaHasta(fecha)}
             />
           </div>
 
@@ -1528,123 +1673,27 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           )}
         </div>
 
-        <p className="vt-contador" style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
-          {filtered.length} de {items.length} ventas
-          {hayFiltros && ` · Total filtrado: $${Math.round(totalFiltrado).toLocaleString('es-CO')}`}
-        </p>
+        {hayFiltros && (
+          <p className="vt-contador" style={{ fontSize: 13, color: 'var(--text-600)', margin: 0 }}>
+            Total filtrado: ${Math.round(totalFiltrado).toLocaleString('es-CO')}
+          </p>
+        )}
       </div>
 
-      <div className="tabla-responsive ventas-table-wrap">
-        <table className="data-table ventas-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Fecha</th>
-              <th>Cliente</th>
-              <th>Productos</th>
-              <th>Total</th>
-              <th>Método</th>
-              <th>Estado</th>
-              <th>Historial</th>
-              <th>Factura</th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibles.map((v, i) => {
-              const clave = fechaLocal(v?.fecha);
-              const nuevoDia = i === 0 || clave !== fechaLocal(visibles[i - 1]?.fecha);
-              const r = nuevoDia ? resumenDia(clave) : null;
-              return (
-              <Fragment key={v?.id}>
-              {r && (
-                <tr className="vt-dia">
-                  <td colSpan={9}>
-                    <div className="vt-dia-bar">
-                      <span className="vt-dia-label">{etiquetaDia(clave)}</span>
-                      <span className="vt-dia-info">
-                        {r.ventas} ventas · Vendido: <b>{moneda(r.total)}</b>
-                        {r.anuladas > 0 && <> · {r.anuladas} cancelada{r.anuladas > 1 ? 's' : ''} (no suma{r.anuladas > 1 ? 'n' : ''})</>}
-                      </span>
-                      <button type="button" className="btn-save vt-dia-btn" onClick={() => abrirCierre(clave, clave)}>
-                        Cierre del día
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              )}
-              <tr>
-                <td className="vt-num">#{v?.id}</td>
-                <td className="vt-fecha">
-                  <span>{fmtDia(v?.fecha)}</span>
-                  <small>{fmtHora(v?.fecha)}</small>
-                </td>
-                <td className="vt-cliente">
-                  <strong>{nombreCliente(v) || '—'}</strong>
-                  <small>
-                    {v?.tipo_entrega === 'Consumir' && v?.mesa ? `Mesa ${v.mesa}` : etiquetaEntrega(v?.tipo_entrega)}
-                  </small>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn-cancel"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
-                    onClick={() => setDetalleId(v.id)}
-                  >
-                    Ver detalle
-                  </button>
-                </td>
-                <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
-
-                <td><span className="badge badge-info venta-metodo-badge">{v?.metodo_pago ?? ''}</span></td>
-                <td className="vt-estado-celda">
-                  <span className={`badge ${claseEstado(v?.estado)}`}>{v?.estado ?? '—'}</span>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn-cancel"
-                    style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
-                    onClick={() => setHistorialId(v.id)}
-                  >
-                    Ver historial
-                  </button>
-                </td>
-                <td>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
-                    <button
-                      type="button"
-                      className="btn-save"
-                      style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
-                      onClick={() => verFactura(v.id)}
-                    >
-                      Ver factura
-                    </button>
-
-                    {esAdmin && !['Servido', 'Pendiente de pago', 'Pagado'].includes(v?.estado) && !NO_VENDIDOS.includes(v?.estado) && (
-                      <button
-                        type="button"
-                        className="btn-cancel vt-btn-anular"
-                        style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                        onClick={() => setCambioMotivo({ id: v.id, estado: 'Cancelado' })}
-                      >
-                        Cancelar
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-              </Fragment>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr><td colSpan={9} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron ventas</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} siempre />
+      <DataTable
+        columnas={columnas}
+        datos={filtered}
+        obtenerId={(v) => v.id}
+        tituloExportar="Ventas"
+        archivoExportar="ventas"
+        etiqueta="venta"
+        busqueda={false}
+        mensajeVacio="No se encontraron ventas"
+        filaExtra={filaDia}
+        className="ventas-table-wrap"
+        classNameTabla="ventas-table"
+        minWidth={1040}
+      />
 
       {historialId !== null && (
         <TrazabilidadModal ventaId={historialId} onClose={() => setHistorialId(null)} />

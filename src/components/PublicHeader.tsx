@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, startTransition } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import logo from '../assets/img/icono1-oscuro.png';
 import iconoPersona from '../assets/img/icono-persona.png';
@@ -44,9 +44,13 @@ export default function PublicHeader() {
     setMenuAbierto(false);
     setSaliendo(true);
     setTimeout(() => {
-      logout();
-      navigate('/', { replace: true, state: { toast: 'logout_ok' } });
-      setSaliendo(false);
+      // Igual que en el panel: limpiar sesión y navegar en la misma transición
+      // para no renderizar un estado intermedio a mitad del cierre.
+      startTransition(() => {
+        logout();
+        navigate('/', { replace: true, state: { toast: 'logout_ok' } });
+        setSaliendo(false);
+      });
     }, 500);
   };
 

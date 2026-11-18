@@ -17,7 +17,7 @@ export default function AccesoDenegado({
         .acc-fab, .acc-panel { display: none !important; }
         .g-page{
           min-height:100vh; background:#fff; color:#202124;
-          font-family:'Google Sans', Roboto, Arial, sans-serif;
+          font-family:var(--font-sans);
           display:flex; flex-direction:column;
         }
         @media (prefers-color-scheme: dark){
@@ -39,7 +39,7 @@ export default function AccesoDenegado({
         .g-muted{ color:#5f6368; }
         .g-url{
           display:inline-block; max-width:100%; padding:2px 8px; border-radius:6px; background:#f1f3f4;
-          color:#202124; font-family:'Roboto Mono', Consolas, monospace; font-size:14px; word-break:break-all;
+          color:#202124; font-family:Consolas, 'Courier New', monospace;font-size:14px; word-break:break-all;
         }
         .g-actions{ display:flex; gap:8px; margin-top:28px; flex-wrap:wrap; }
         .g-btn{

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
-import Paginacion, { paginar } from '../../components/Paginacion';
+import DataTable, { type DataTableColumn } from '../../components/DataTable';
 import { useToast } from '../../components/Toast';
 import { MENSAJE_DESCONOCIDO, mensajeSeguro } from '../../utils/errores';
 import { useEscape } from '../../hooks/useEscape';
@@ -178,10 +178,7 @@ export default function BackupsAdmin() {
   const [buscar, setBuscar] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
-
-  const [pagina, setPagina] = useState(1);
-
- 
+  
   const [modalGen, setModalGen] = useState(false);
   const [passGen, setPassGen] = useState('');
   const [verPassGen, setVerPassGen] = useState(false);
@@ -218,9 +215,6 @@ export default function BackupsAdmin() {
       .toLowerCase()
       .includes(buscar.toLowerCase())
   );
-
-
-  const { visibles: copiasVisibles, paginaActual } = paginar(filteredItems, pagina);
 
   const load = () => {
     return Promise.all([
@@ -519,6 +513,127 @@ export default function BackupsAdmin() {
     </div>
   );
 
+  const columnas: DataTableColumn<Backup>[] = [
+    {
+      id: 'id',
+      header: '#',
+      accessor: (b) => b.id,
+      width: 70,
+    },
+    {
+      id: 'contenido',
+      header: 'Contenido',
+      accessor: (b) => {
+        const { texto, titulo } = resumenContenido(b);
+        return `${texto} ${titulo ?? ''}`.trim();
+      },
+      exportValue: (b) => resumenContenido(b).texto,
+      cell: (b) => {
+        const { texto, titulo } = resumenContenido(b);
+        return <span style={{ fontWeight: 600 }} title={titulo || undefined}>{texto}</span>;
+      },
+    },
+    {
+      id: 'fecha',
+      header: 'Fecha y hora',
+      accessor: (b) => (b.fecha ? new Date(b.fecha) : null),
+      exportValue: (b) => (b.fecha ? new Date(b.fecha).toLocaleString() : ''),
+      cell: (b) => (b.fecha ? new Date(b.fecha).toLocaleString() : '—'),
+    },
+    {
+      id: 'tamano',
+      header: 'Tamaño',
+      accessor: (b) => b.tamano_bytes ?? 0,
+      exportValue: (b) => formatBytes(b.tamano_bytes),
+      align: 'right',
+      cell: (b) => formatBytes(b.tamano_bytes),
+    },
+    {
+      id: 'registros',
+      header: 'Registros',
+      accessor: (b) => Number(b.total_registros ?? 0),
+      align: 'right',
+      cell: (b) => (b.total_registros != null ? Number(b.total_registros).toLocaleString('es-MX') : '—'),
+    },
+    ...(drive.configurada
+      ? [{
+          id: 'drive',
+          header: 'Drive',
+          accessor: (b: Backup) => (b.subido_drive ? 'En Drive' : 'Solo servidor'),
+          cell: (b: Backup) => {
+            const enDrive = Boolean(b.subido_drive);
+            return (
+              <span className={`bk-badge ${enDrive ? 'bk-badge-yes' : 'bk-badge-no'}`}>
+                {enDrive ? 'En Drive' : 'Solo servidor'}
+              </span>
+            );
+          },
+        }]
+      : []),
+    {
+      id: 'acciones',
+      header: 'Acciones',
+      accessor: () => '',
+      sortable: false,
+      searchable: false,
+      exportable: false,
+      align: 'center',
+      cell: (b) => {
+        const ocupado = restaurando || generando;
+        const enDrive = Boolean(b.subido_drive);
+        return (
+          <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              className="btn-icon btn-icon-restore btn-accion"
+              onClick={() => abrirModalRestore(b)}
+              disabled={ocupado}
+              title="Restaurar"
+            >
+              Restaurar
+            </button>
+            <button
+              className="btn-icon btn-icon-edit btn-accion"
+              onClick={() => descargarCifrado(b)}
+              disabled={ocupado || descargandoId === b.id}
+              title="Descargar esta copia cifrada a tu PC"
+            >
+              Descargar
+            </button>
+            {drive.conectada && (
+              !enDrive ? (
+                <button
+                  className="btn-accion"
+                  onClick={() => subirDrive(b)}
+                  disabled={ocupado || subiendoDrive === b.id}
+                  title="A Drive"
+                >
+                  {subiendoDrive === b.id ? 'Subiendo…' : 'A Drive'}
+                </button>
+              ) : (
+                <button
+                  className="btn-accion"
+                  onClick={() => descargarDeDrive(b)}
+                  disabled={ocupado || descargandoId === b.id}
+                  title="De Drive"
+                >
+                  {descargandoId === b.id ? 'Descargando…' : 'De Drive'}
+                </button>
+              )
+            )}
+            <button
+              className="btn-icon btn-icon-del btn-accion"
+              onClick={() => del(b)}
+              disabled={ocupado}
+              title="Eliminar"
+            >
+              Eliminar
+            </button>
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="page-inner backups-page">
       <style>{BACKUPS_CSS}</style>
@@ -540,7 +655,7 @@ export default function BackupsAdmin() {
             type="text" 
             placeholder="Buscar copia..." 
             value={buscar} 
-            onChange={(e) => { setBuscar(e.target.value); setPagina(1); }} 
+            onChange={(e) => setBuscar(e.target.value)} 
           />
         </div>
       </div>
@@ -566,101 +681,18 @@ export default function BackupsAdmin() {
       {loading ? (
         <AdminLoading area texto="Cargando copias" subtexto="Revisando tus respaldos" />
       ) : (
-        <>
-          <div className="tabla-responsive">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Contenido</th>
-                  <th>Fecha y hora</th>
-                  <th>Tamaño</th>
-                  <th>Registros</th>
-                  {drive.configurada && <th>Drive</th>}
-                  <th className="th-acciones">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {copiasVisibles.map((b) => {
-                  const { texto, titulo } = resumenContenido(b);
-                  const ocupado = restaurando || generando;
-                  const enDrive = Boolean(b.subido_drive);
-                  return (
-                    <tr key={b.id}>
-                      <td>{b.id}</td>
-                      <td style={{ fontWeight: 600 }} title={titulo || undefined}>{texto}</td>
-                      <td>{b.fecha ? new Date(b.fecha).toLocaleString() : '—'}</td>
-                      <td>{formatBytes(b.tamano_bytes)}</td>
-                      <td>{b.total_registros != null ? Number(b.total_registros).toLocaleString('es-MX') : '—'}</td>
-                      {drive.configurada && (
-                        <td>
-                          <span className={`bk-badge ${enDrive ? 'bk-badge-yes' : 'bk-badge-no'}`}>
-                            {enDrive ? 'En Drive' : 'Solo servidor'}
-                          </span>
-                        </td>
-                      )}
-                      <td className="td-acciones">
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button
-                            className="btn-icon btn-icon-restore btn-accion"
-                            onClick={() => abrirModalRestore(b)}
-                            disabled={ocupado}
-                            title="Restaurar"
-                          >
-                            Restaurar
-                          </button>
-                          <button
-                            className="btn-icon btn-icon-edit btn-accion"
-                            onClick={() => descargarCifrado(b)}
-                            disabled={ocupado || descargandoId === b.id}
-                            title="Descargar esta copia cifrada a tu PC"
-                          >
-                            Descargar
-                          </button>
-                          {drive.conectada && (
-                            !enDrive ? (
-                              <button
-                                className="btn-accion"
-                                onClick={() => subirDrive(b)}
-                                disabled={ocupado || subiendoDrive === b.id}
-                                title="A Drive"
-                              >
-                                {subiendoDrive === b.id ? 'Subiendo…' : 'A Drive'}
-                              </button>
-                            ) : (
-                              <button
-                                className="btn-accion"
-                                onClick={() => descargarDeDrive(b)}
-                                disabled={ocupado || descargandoId === b.id}
-                                title="De Drive"
-                              >
-                                {descargandoId === b.id ? 'Descargando…' : 'De Drive'}
-                              </button>
-                            )
-                          )}
-                          <button
-                            className="btn-icon btn-icon-del btn-accion"
-                            onClick={() => del(b)}
-                            disabled={ocupado}
-                            title="Eliminar"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {filteredItems.length === 0 && (
-                  <tr><td colSpan={drive.configurada ? 7 : 6} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>{items.length === 0 ? 'No hay registros de copias de seguridad' : 'No hay copias que coincidan con tu búsqueda'}</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Componente de paginación */}
-          <Paginacion total={filteredItems.length} pagina={paginaActual} onCambiar={setPagina} siempre />
-        </>
+        <DataTable
+          columnas={columnas}
+          datos={filteredItems}
+          obtenerId={(b) => b.id}
+          tituloExportar="Copias de seguridad"
+          archivoExportar="backups"
+          etiqueta="copia"
+          etiquetaPlural="copias"
+          busqueda={false}
+          mensajeVacio={items.length === 0 ? 'No hay registros de copias de seguridad' : 'No hay copias que coincidan con tu búsqueda'}
+          minWidth={860}
+        />
       )}
 
       {/* ===================== Google Drive ===================== */}

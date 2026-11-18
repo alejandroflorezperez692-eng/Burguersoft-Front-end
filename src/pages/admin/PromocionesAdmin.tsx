@@ -4,6 +4,7 @@ import type { ChangeEvent, FormEvent, CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import DataTable, { type DataTableColumn } from '../../components/DataTable';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
@@ -826,6 +827,96 @@ const cargar = useCallback(async () => {
     [!!eliminar, () => setEliminar(null)],
     [mostrarForm || editId !== null, limpiarFormulario],
   ]);
+
+  const columnas: DataTableColumn<Promocion>[] = [
+    {
+      id: 'promocion',
+      header: 'Promoción',
+      accessor: (p) => p.nombre,
+      cell: (p) => (
+        <div className="mn-table-prod">
+          <div className="mn-table-img"><CardImg img={p.imagen} nombre={p.nombre} /></div>
+          <strong>{p.nombre}</strong>
+        </div>
+      ),
+    },
+    {
+      id: 'descripcion',
+      header: 'Descripción',
+      accessor: (p) => p.descripcion ?? '',
+      cell: (p) => <span className="mn-table-desc">{p.descripcion || '—'}</span>,
+    },
+    {
+      id: 'productos',
+      header: 'Productos',
+      accessor: (p) => (p.productos ?? []).map((x) => x.nombre).join(', '),
+      cell: (p) => (
+        <div className="pm-chips" style={{ margin: 0 }}>
+          {(p.productos ?? []).map((x) => <span key={x.id} className="pm-chip">{x.nombre}</span>)}
+        </div>
+      ),
+    },
+    {
+      id: 'vigencia',
+      header: 'Vigencia',
+      accessor: (p) => {
+        if (!p.fecha_inicio && !p.fecha_fin) return '';
+        return `${fechaLegible(p.fecha_inicio)}${p.fecha_inicio && p.fecha_fin ? ' → ' : ''}${fechaLegible(p.fecha_fin)}`;
+      },
+      cell: (p) => (
+        <span className="pm-dates" style={{ whiteSpace: 'nowrap' }}>
+          {fechaLegible(p.fecha_inicio)}
+          {p.fecha_inicio && p.fecha_fin ? ' → ' : ''}
+          {fechaLegible(p.fecha_fin)}
+          {!p.fecha_inicio && !p.fecha_fin && '—'}
+        </span>
+      ),
+    },
+    {
+      id: 'precio',
+      header: 'Precio',
+      accessor: (p) => num(p.precio),
+      exportValue: (p) => fmt(num(p.precio)),
+      align: 'right',
+      cell: (p) => {
+        const normal = (p.productos ?? []).reduce((s, x) => s + num(x.valor), 0);
+        const ahorro = normal - num(p.precio);
+        return (
+          <span className="mn-table-price">
+            {fmt(num(p.precio))}
+            {ahorro > 0 && <span className="pm-old">{fmt(normal)}</span>}
+            {ahorro > 0 && <div className="pm-save">Ahorras {fmt(ahorro)}</div>}
+          </span>
+        );
+      },
+    },
+    {
+      id: 'estado',
+      header: 'Estado',
+      accessor: (p) => ETIQUETA[estadoPromo(p)],
+      cell: (p) => {
+        const estado = estadoPromo(p);
+        return <span className={`mn-card-estado mn-estado-${estado}`}>{ETIQUETA[estado]}</span>;
+      },
+    },
+    ...(esAdmin
+      ? [{
+          id: 'acciones',
+          header: 'Acciones',
+          accessor: () => '',
+          sortable: false,
+          searchable: false,
+          exportable: false,
+          align: 'center' as const,
+          cell: (p: Promocion) => (
+            <div className="mn-card-actions">
+              <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
+              <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+            </div>
+          ),
+        }]
+      : []),
+  ];
   
   return (
     <div className="page-inner mn-page">
@@ -948,63 +1039,19 @@ const cargar = useCallback(async () => {
           No se encontraron promociones{hayFiltros ? ' con los filtros seleccionados' : ''}.
         </div>
       ) : vista === 'lista' ? (
-        <div className="mn-table-wrap">
-          <table className="mn-table">
-            <thead>
-              <tr>
-                <th>Promoción</th>
-                <th>Descripción</th>
-                <th>Productos</th>
-                <th>Vigencia</th>
-                <th>Precio</th>
-                <th>Estado</th>
-                <th className="th-acciones">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {grupos.flatMap(([estado, lista]) => lista.map((p) => ({ p, estado }))).map(({ p, estado }) => {
-                const normal = (p.productos ?? []).reduce((s, x) => s + num(x.valor), 0);
-                const ahorro = normal - num(p.precio);
-                return (
-                  <tr key={p.id} className={estado === 'Inactiva' || estado === 'Finalizada' ? 'agotado' : ''}>
-                    <td>
-                      <div className="mn-table-prod">
-                        <div className="mn-table-img"><CardImg img={p.imagen} nombre={p.nombre} /></div>
-                        <strong>{p.nombre}</strong>
-                      </div>
-                    </td>
-                    <td className="mn-table-desc">{p.descripcion || '—'}</td>
-                    <td>
-                      <div className="pm-chips" style={{ margin: 0 }}>
-                        {(p.productos ?? []).map((x) => <span key={x.id} className="pm-chip">{x.nombre}</span>)}
-                      </div>
-                    </td>
-                    <td className="pm-dates" style={{ whiteSpace: 'nowrap' }}>
-                      {fechaLegible(p.fecha_inicio)}
-                      {p.fecha_inicio && p.fecha_fin ? ' → ' : ''}
-                      {fechaLegible(p.fecha_fin)}
-                      {!p.fecha_inicio && !p.fecha_fin && '—'}
-                    </td>
-                    <td className="mn-table-price">
-                      {fmt(num(p.precio))}
-                      {ahorro > 0 && <span className="pm-old">{fmt(normal)}</span>}
-                      {ahorro > 0 && <div className="pm-save">Ahorras {fmt(ahorro)}</div>}
-                    </td>
-                    <td><span className={`mn-card-estado mn-estado-${estado}`}>{ETIQUETA[estado]}</span></td>
-                    <td>
-                      {esAdmin && (
-                        <div className="mn-card-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columnas={columnas}
+          datos={grupos.flatMap(([, lista]) => lista)}
+          obtenerId={(p) => p.id}
+          tituloExportar="Combos y Promociones"
+          archivoExportar="promociones"
+          etiqueta="promoción"
+          etiquetaPlural="promociones"
+          busqueda={false}
+          mensajeVacio="No se encontraron promociones"
+          minWidth={1000}
+          classNameFila={(p) => (['Inactiva', 'Finalizada'].includes(estadoPromo(p)) ? 'fila-inactiva' : undefined)}
+        />
       ) : (
         <div className="mn-container">
           {grupos.map(([estado, lista]) => (

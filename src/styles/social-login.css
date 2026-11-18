@@ -16,7 +16,7 @@
   border: 1.5px solid var(--color-primario);
   background: #fff;
   color: var(--color-oscuro);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 900;
   font-family: var(--font-cuerpo);
   letter-spacing: 1.5px;
@@ -32,9 +32,9 @@
 }
 
 body:not(.dark-mode) .btn-social:hover {
-  background: #E8821A;
-  background-color: #E8821A;
-  border-color: #E8821A;
+  background: var(--brand);
+  background-color: var(--brand);
+  border-color: var(--brand);
   color: #ffffff;
   box-shadow: 0 4px 16px rgba(232, 130, 26, 0.45);
 }
@@ -55,7 +55,7 @@ body:not(.dark-mode) .btn-social:hover span {
   flex: 1;
   text-align: center;
   font-family: var(--font-cuerpo);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 900;
   letter-spacing: 1px;
 }
@@ -63,13 +63,13 @@ body:not(.dark-mode) .btn-social:hover span {
 body.dark-mode .btn-social {
   background: #000;
   color: #fff;
-  border-color: #E8821A;
+  border-color: var(--brand);
 }
 
 body.dark-mode .btn-social:hover {
-  background: #E8821A;
-  background-color: #E8821A;
-  border-color: #E8821A;
+  background: var(--brand);
+  background-color: var(--brand);
+  border-color: var(--brand);
   color: #ffffff;
 }
 
@@ -105,7 +105,7 @@ body.dark-mode .btn-social-phone:hover {
 
   .btn-social {
     padding: 12px;
-    font-size: 13px;
+    font-size: var(--fs-xs);
   }
 }
 
@@ -132,7 +132,7 @@ body.dark-mode .btn-social-phone:hover {
 
 .phone-modal h2 {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: var(--fs-xl);
   font-weight: 900;
   color: var(--color-primario);
   margin-bottom: 8px;
@@ -140,7 +140,7 @@ body.dark-mode .btn-social-phone:hover {
 }
 
 .phone-modal-desc {
-  font-size: 14px;
+  font-size: var(--fs-sm);
   color: var(--color-texto-suave);
   text-align: center;
   margin-bottom: 24px;
@@ -152,7 +152,7 @@ body.dark-mode .btn-social-phone:hover {
   right: 16px;
   background: none;
   border: none;
-  font-size: 28px;
+  font-size: var(--fs-2xl);
   color: var(--color-texto-suave);
   cursor: pointer;
   line-height: 1;
@@ -167,7 +167,7 @@ body.dark-mode .btn-social-phone:hover {
   display: block;
   text-align: center;
   margin-bottom: 16px;
-  font-size: 13px;
+  font-size: var(--fs-xs);
 }
 
 body.dark-mode .phone-modal {

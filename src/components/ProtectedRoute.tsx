@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { normalizarRol, type RolNormalizado } from '../utils/roles';
+import { normalizarRol, rutaInicio, ACCESO, type RolNormalizado } from '../utils/roles';
 import AccesoDenegado from '../pages/AccesoDenegado';
 
 type ProtectedRouteProps = {
@@ -23,6 +23,12 @@ export default function ProtectedRoute({
   }
 
   const rol = normalizarRol(user?.role);
+
+  // Páginas públicas (allowGuest): son para visitantes y clientes.
+  // El personal con sesión va siempre a su panel, sin importar la URL.
+  if (allowGuest && rol && ACCESO.personal.includes(rol)) {
+    return <Navigate to={rutaInicio(user?.role)} replace />;
+  }
 
   if (roles && (!rol || !roles.includes(rol))) {
     return <Navigate to={redirect} replace />;

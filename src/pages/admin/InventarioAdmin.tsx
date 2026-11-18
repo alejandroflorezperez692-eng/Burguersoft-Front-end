@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
-import Paginacion, { paginar } from '../../components/Paginacion';
+import DataTable, { type DataTableColumn } from '../../components/DataTable';
 import { useToast } from '../../components/Toast';
 import { useEscape } from '../../hooks/useEscape';
 import '../../styles/nu-admin.css';
@@ -49,9 +49,7 @@ const toArray = <T,>(v: unknown): T[] =>
 export default function InventarioAdmin() {
   const [items, setItems] = useState<MateriaPrima[]>([]);
   const [marcas, setMarcas] = useState<Marca[]>([]);
-  const [q, setQ] = useState('');
   const [filtroEstado, setFiltroEstado] = useState<'todos' | EstadoStock>('todos');
-  const [pagina, setPagina] = useState(1);
   const [loading, setLoading] = useState(true);
   const [detalle, setDetalle] = useState<MateriaPrima | null>(null);
   const { showToast } = useToast();
@@ -76,24 +74,82 @@ export default function InventarioAdmin() {
 
   useEffect(() => { load(); }, []);
 
-  useEffect(() => { setPagina(1); }, [q, filtroEstado]);
-
   useEscape([[!!detalle, () => setDetalle(null)]]);
 
   const marcaNombre = (id: unknown): string =>
     marcas.find((x) => x.id === id)?.nombre ?? '';
 
-  const filtered = items
-    .filter((m) => {
-      if (q && !(m.nombre ?? '').toLowerCase().includes(q.toLowerCase())) return false;
-      if (filtroEstado !== 'todos' && estadoKey(m.cantidad) !== filtroEstado) return false;
-      return true;
-    })
-    .sort((a, b) => (a.nombre ?? '').localeCompare(b.nombre ?? '', 'es'));
+  const filtrados = useMemo(
+    () =>
+      items.filter((m) => filtroEstado === 'todos' || estadoKey(m.cantidad) === filtroEstado),
+    [items, filtroEstado],
+  );
 
-  const { visibles, paginaActual } = paginar(filtered, pagina);
+  const columnas = useMemo<DataTableColumn<MateriaPrima>[]>(
+    () => [
+      {
+        id: 'nombre',
+        header: 'Nombre del insumo',
+        accessor: (m) => m.nombre ?? '',
+        cell: (m) => <span style={{ fontWeight: 600 }}>{m.nombre ?? 'Sin nombre'}</span>,
+        width: '32%',
+      },
+      {
+        id: 'tipo',
+        header: 'Tipo',
+        accessor: (m) => m.tipo ?? '',
+        cell: (m) => m.tipo || '—',
+        width: '18%',
+      },
+      {
+        id: 'cantidad',
+        header: 'Cantidad',
+        accessor: (m) => num(m.cantidad),
+        searchable: false,
+        align: 'right',
+        cell: (m) => (
+          <span style={{ fontWeight: 600 }}>
+            {num(m.cantidad).toLocaleString('es-CO')}
+            {m.unidad_medida ? (
+              <span style={{ marginLeft: 8, fontWeight: 500, color: 'var(--text-400)' }}>
+                {m.unidad_medida}
+              </span>
+            ) : null}
+          </span>
+        ),
+      },
+      {
+        id: 'disponibilidad',
+        header: 'Disponibilidad',
+        accessor: (m) => textoEstado(m.cantidad),
+        cell: (m) => <span className={`badge ${claseBadge(m.cantidad)}`}>{textoEstado(m.cantidad)}</span>,
+      },
+      {
+        id: 'acciones',
+        header: 'Acciones',
+        accessor: () => '',
+        sortable: false,
+        searchable: false,
+        exportable: false,
+        align: 'center',
+        cell: (m) => (
+          <button
+            type="button"
+            className="mn-btn-edit"
+            style={{ flex: 'none', padding: '7px 18px' }}
+            onClick={() => setDetalle(m)}
+            data-tooltip="Ver detalle"
+          >
+            Ver detalle
+          </button>
+        ),
+      },
+    ],
+    [],
+  );
+
   const esInactivo = (m: MateriaPrima) => m.estado === 'Inactivo';
-  const hayFiltros = q !== '' || filtroEstado !== 'todos';
+  const hayFiltros = filtroEstado !== 'todos';
 
   return (
     <div className="page-inner">
@@ -104,103 +160,51 @@ export default function InventarioAdmin() {
         </div>
       </div>
 
-      <div className="mn-search-wrap" style={{ marginBottom: 14 }}>
-        <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <circle cx="11" cy="11" r="7" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        <input
-          className="mn-search"
-          type="text"
-          placeholder="Buscar insumo..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </div>
-
-      <div className="mn-filtros">
-        <div className="mn-field">
-          <label>Cantidad</label>
-          <SelectOscuro
-            className={filtroEstado !== 'todos' ? 'activo' : ''}
-            value={filtroEstado}
-            onChange={(e) => setFiltroEstado(e.target.value as 'todos' | EstadoStock)}
-          >
-            <option value="todos">Todos</option>
-            <option value="disponible">Disponible</option>
-            <option value="bajo">Bajo</option>
-            <option value="agotado">Agotado</option>
-          </SelectOscuro>
-        </div>
-
-        {hayFiltros && (
-          <button
-            type="button"
-            className="mn-btn-cancel"
-            onClick={() => { setQ(''); setFiltroEstado('todos'); }}
-          >
-            Limpiar filtros
-          </button>
-        )}
-      </div>
-
       {loading ? (
         <AdminLoading area texto="Cargando inventario" subtexto="Revisando tus existencias" />
       ) : (
-        <div className="tabla-responsive">
-          <table className="data-table" style={{ minWidth: 760 }}>
-            <thead>
-              <tr>
-                <th>Nombre del insumo</th>
-                <th>Tipo</th>
-                <th>Cantidad</th>
-                <th>Disponibilidad</th>
-                <th className="th-acciones">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibles.map((m) => (
-                <tr key={m.id} className={esInactivo(m) ? 'fila-inactiva' : undefined}>
-                  <td style={{ fontWeight: 600 }}>{m.nombre ?? 'Sin nombre'}</td>
-                  <td>{m.tipo || '—'}</td>
-                  <td style={{ fontWeight: 600 }}>
-                    {num(m.cantidad).toLocaleString('es-CO')}
-                    {m.unidad_medida ? (
-                      <span style={{ marginLeft: 8, fontWeight: 500, color: 'var(--text-400)' }}>
-                        {m.unidad_medida}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td>
-                    <span className={`badge ${claseBadge(m.cantidad)}`}>{textoEstado(m.cantidad)}</span>
-                  </td>
-                  <td>
-                    <button
-                      type="button"
-                      className="mn-btn-edit"
-                      style={{ flex: 'none', padding: '7px 18px' }}
-                      onClick={() => setDetalle(m)}
-                      data-tooltip="Ver detalle"
-                    >
-                      Ver detalle
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>
-                    No se encontraron insumos
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
+        <DataTable
+          columnas={columnas}
+          datos={filtrados}
+          obtenerId={(m) => m.id}
+          tituloExportar="Inventario de materia prima"
+          archivoExportar="inventario"
+          placeholderBusqueda="Buscar por nombre, tipo o disponibilidad..."
+          etiqueta="insumo"
+          mensajeVacio="No se encontraron insumos"
+          minWidth={760}
+          ordenInicial={[{ id: 'nombre', desc: false }]}
+          classNameFila={(m) => (esInactivo(m) ? 'fila-inactiva' : undefined)}
+          filtros={
+            <>
+              <div className="mn-field" style={{ minWidth: 170 }}>
+                <label htmlFor="inv-filtro-estado">Cantidad</label>
+                <SelectOscuro
+                  id="inv-filtro-estado"
+                  className={filtroEstado !== 'todos' ? 'activo' : ''}
+                  value={filtroEstado}
+                  onChange={(e) => setFiltroEstado(e.target.value as 'todos' | EstadoStock)}
+                >
+                  <option value="todos">Todos</option>
+                  <option value="disponible">Disponible</option>
+                  <option value="bajo">Bajo</option>
+                  <option value="agotado">Agotado</option>
+                </SelectOscuro>
+              </div>
 
-      {!loading && <Paginacion total={filtered.length} pagina={paginaActual} onCambiar={setPagina} siempre />}
+              {hayFiltros && (
+                <button
+                  type="button"
+                  className="mn-btn-cancel"
+                  onClick={() => setFiltroEstado('todos')}
+                >
+                  Limpiar filtros
+                </button>
+              )}
+            </>
+          }
+        />
+      )}
 
       {detalle && (
         <MateriaPrimaHistorialModal

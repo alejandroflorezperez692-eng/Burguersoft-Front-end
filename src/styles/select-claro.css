@@ -3,11 +3,11 @@ body:not(.dark-mode) .so-lista {
   z-index: 2147483647;
   box-sizing: border-box;
   overflow-y: auto;
-  border: 1px solid #e8821a;
+  border: 1px solid var(--brand);
   border-radius: 4px;
   background: #ffffff;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
-  scrollbar-color: #e8821a #ffffff;
+  scrollbar-color: var(--brand) #ffffff;
   scrollbar-width: thin;
 }
 
@@ -22,7 +22,7 @@ body:not(.dark-mode) .so-lista::-webkit-scrollbar-track {
 body:not(.dark-mode) .so-lista::-webkit-scrollbar-thumb {
   border: 2px solid #ffffff;
   border-radius: 999px;
-  background: #e8821a;
+  background: var(--brand);
 }
 
 body:not(.dark-mode) .so-opcion {
@@ -31,7 +31,7 @@ body:not(.dark-mode) .so-opcion {
   width: 100%;
   padding: 7px 12px;
   border: 0;
-  border-bottom: 1px solid #e8821a;   
+  border-bottom: 1px solid var(--brand);   
   border-radius: 0;
   background: #ffffff;
   color: #000000;
@@ -48,7 +48,7 @@ body:not(.dark-mode) .so-opcion:last-child {
 
 body:not(.dark-mode) .so-opcion:hover,
 body:not(.dark-mode) .so-opcion.so-activa {
-  background: #e8821a;                
+  background: var(--brand);                
   color: #ffffff;
 }
 

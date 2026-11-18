@@ -2,12 +2,12 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
+import DataTable, { type DataTableColumn } from '../../components/DataTable';
 import '../../styles/nu-admin.css';
 import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
-import Paginacion from '../../components/Paginacion';
 import usuarioPerfil from '../../assets/img/usuario-perfil.png';
 
 interface Usuario {
@@ -19,8 +19,6 @@ interface Usuario {
   estado: string;
   rol: { nombre: string } | null;
 }
-
-const OPCIONES_POR_PAGINA = [15, 50, 100, 200, 500];
 
 const badgeClass = (e: string) =>
   e === 'Activo' ? 'badge-success' : e === 'Inactivo' ? 'badge-danger' : 'badge-warning';
@@ -91,23 +89,18 @@ export default function UsuariosAdmin() {
   const [verPass, setVerPass] = useState(false);
   const [loading, setLoading] = useState(true);
   const [intentado, setIntentado] = useState(false);
-  const [pagina, setPagina] = useState(1);
-  const [porPagina, setPorPagina] = useState(15);
 
-  const [q, setQ] = useState('');
   const [filtroRol, setFiltroRol] = useState('');
   const [filtroNombre, setFiltroNombre] = useState('');
 
   const { showToast, confirmar } = useToast();
   const { user: sesion } = useAuth();
 
-  const hayFiltros = q !== '' || filtroRol !== '' || filtroNombre !== '';
+  const hayFiltros = filtroRol !== '' || filtroNombre !== '';
 
   const limpiarFiltros = () => {
-    setQ('');
     setFiltroRol('');
     setFiltroNombre('');
-    setPagina(1);
   };
 
 const load = async (silencioso = false) => {
@@ -125,25 +118,11 @@ const load = async (silencioso = false) => {
   useEffect(() => { load(); }, []);
 
   const filtered = items
-    .filter((u) => {
-      if (!q) return true;
-      const t = q.toLowerCase();
-      return (
-        `${u.nombre} ${u.apellido}`.toLowerCase().includes(t) ||
-        u.correo.toLowerCase().includes(t) ||
-        (u.telefono && u.telefono.includes(t))
-      );
-    })
     .filter((u) => !filtroRol || u.rol?.nombre === filtroRol)
     .filter((u) => {
       if (!filtroNombre.trim()) return true;
       return `${u.nombre} ${u.apellido ?? ''}`.toLowerCase().includes(filtroNombre.trim().toLowerCase());
-    })
-    .sort((a, b) => a.id - b.id);
-
-  const totalPaginas = Math.max(1, Math.ceil(filtered.length / porPagina));
-  const paginaActual = Math.min(pagina, totalPaginas);
-  const visibles = filtered.slice((paginaActual - 1) * porPagina, paginaActual * porPagina);
+    });
 
   const openEdit = (u: Usuario) => {
     setSel(u);
@@ -316,6 +295,68 @@ const load = async (silencioso = false) => {
     [modal && !!sel, () => setModal(false)],
   ]);
 
+  const columnas: DataTableColumn<Usuario>[] = [
+    {
+      id: 'id',
+      header: '#',
+      accessor: (u) => u.id,
+      width: 70,
+      cell: (u) => <span style={{ fontWeight: 600, color: 'var(--text-600)' }}>{u.id}</span>,
+    },
+    {
+      id: 'usuario',
+      header: 'Usuario',
+      accessor: (u) => `${u.nombre} ${u.apellido ?? ''}`.trim(),
+      cell: (u) => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Avatar nombre={u.nombre} apellido={u.apellido} estado={u.estado} />
+          <span>{u.nombre} {u.apellido}</span>
+        </div>
+      ),
+    },
+    { id: 'correo', header: 'Correo', accessor: (u) => u.correo },
+    {
+      id: 'telefono',
+      header: 'Teléfono',
+      accessor: (u) => u.telefono ?? '',
+      cell: (u) => u.telefono || '—',
+    },
+    {
+      id: 'estado',
+      header: 'Estado',
+      accessor: (u) => u.estado,
+      cell: (u) => <span className={`badge ${badgeClass(u.estado)}`}>{u.estado}</span>,
+    },
+    {
+      id: 'rol',
+      header: 'Rol',
+      accessor: (u) => u.rol?.nombre ?? '',
+      cell: (u) => <span className="badge badge-info">{u.rol?.nombre ?? '—'}</span>,
+    },
+    {
+      id: 'acciones',
+      header: 'Acciones',
+      accessor: () => '',
+      sortable: false,
+      searchable: false,
+      exportable: false,
+      align: 'center',
+      cell: (u) => (
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar" data-tooltip="Editar">Editar</button>
+          <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar" data-tooltip="Eliminar">Eliminar</button>
+          <button
+            className={`btn-icon btn-icon-estado btn-accion ${u.estado === 'Activo' ? 'estado-inactivar' : 'estado-activar'}`}
+            onClick={() => alternarEstado(u)}
+            title={u.estado === 'Activo' ? 'Inactivar cuenta' : 'Activar cuenta'}
+          >
+            {u.estado === 'Activo' ? 'Inactivar' : 'Activar'}
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
     <div className="page-inner usuarios-page">
       <div className="page-header">
@@ -327,132 +368,56 @@ const load = async (silencioso = false) => {
 
 
     
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div className="mn-search-wrap" style={{ flex: 1, minWidth: 250, marginBottom: 0 }}>
-            <svg className="mn-search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
-            <label>Rol</label>
-            <SelectOscuro
-              value={filtroRol}
-              onChange={(e) => { setFiltroRol(e.target.value); setPagina(1); }}
-            >
-              <option value="">Todos los roles</option>
-              <option value="Administrador">Administrador</option>
-              <option value="Cajero">Cajero</option>
-              <option value="Cocinero">Cocinero</option>
-              <option value="Mesero">Mesero</option>
-              <option value="Cliente">Cliente</option>
-            </SelectOscuro>
-          </div>
-
-          <div className="form-group" style={{ marginBottom: 0, minWidth: 220 }}>
-            <label>Nombre</label>
-            <input
-              type="text"
-              placeholder="Filtrar por nombre..."
-              value={filtroNombre}
-              onChange={(e) => { setFiltroNombre(e.target.value); setPagina(1); }}
-            />
-          </div>
-
-          <div className="form-group" style={{ marginBottom: 0, minWidth: 150 }}>
-            <label>Mostrar</label>
-            <SelectOscuro
-              value={porPagina}
-              onChange={(e) => { setPorPagina(Number(e.target.value)); setPagina(1); }}
-            >
-              {OPCIONES_POR_PAGINA.map((n) => (
-                <option key={n} value={n}>{n} por página</option>
-              ))}
-            </SelectOscuro>
-          </div>
-
-          {hayFiltros && (
-            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>
-              Limpiar filtros
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="meta-bar">
-        <span>{filtered.length} usuario{filtered.length !== 1 ? 's' : ''}</span>
-      </div>
-
       {loading ? (
         <AdminLoading area texto="Cargando usuarios" subtexto="Listando tu equipo" />
       ) : (
-        <>
-        <div className="tabla-responsive">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Usuario</th>
-                <th>Correo</th>
-                <th>Teléfono</th>
-                <th>Estado</th>
-                <th>Rol</th>
-                <th className="th-acciones">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {visibles.map((u) => (
-                <tr key={u.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.15s' }}>
-                  <td style={{ fontWeight: 600, color: 'var(--text-600)' }}>{u.id}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <Avatar nombre={u.nombre} apellido={u.apellido} estado={u.estado} />
-                      <span>{u.nombre} {u.apellido}</span>
-                    </div>
-                  </td>
-                  <td>{u.correo}</td>
-                  <td>{u.telefono || '—'}</td>
-                  <td><span className={`badge ${badgeClass(u.estado)}`}>{u.estado}</span></td>
-                  <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
-                  <td className="td-acciones">
-                    <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                      <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar" data-tooltip="Editar">Editar</button>
-                      <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar" data-tooltip="Eliminar">Eliminar</button>
+        <DataTable
+          columnas={columnas}
+          datos={filtered}
+          obtenerId={(u) => u.id}
+          tituloExportar="Listado de Usuarios"
+          archivoExportar="usuarios"
+          etiqueta="usuario"
+          placeholderBusqueda="Buscar por nombre, correo o teléfono..."
+          mensajeVacio="No se encontraron usuarios"
+          ordenInicial={[{ id: 'id', desc: false }]}
+          filtros={
+            <>
+              <div className="mn-field" style={{ minWidth: 190 }}>
+                <label htmlFor="usr-filtro-rol">Rol</label>
+                <SelectOscuro
+                  id="usr-filtro-rol"
+                  value={filtroRol}
+                  onChange={(e) => setFiltroRol(e.target.value)}
+                >
+                  <option value="">Todos los roles</option>
+                  <option value="Administrador">Administrador</option>
+                  <option value="Cajero">Cajero</option>
+                  <option value="Cocinero">Cocinero</option>
+                  <option value="Mesero">Mesero</option>
+                  <option value="Cliente">Cliente</option>
+                </SelectOscuro>
+              </div>
 
-                      <button
-                        className={`btn-icon btn-icon-estado btn-accion ${u.estado === 'Activo' ? 'estado-inactivar' : 'estado-activar'}`}
-                        onClick={() => alternarEstado(u)}
-                        title={u.estado === 'Activo' ? 'Inactivar cuenta' : 'Activar cuenta'}
-                      >
-                        {u.estado === 'Activo' ? 'Inactivar' : 'Activar'}
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {(filtered.length === 0 && (items.length > 0)) && (
-                <tr><td colSpan={7} style={{ textAlign: 'center', padding: 30, color: 'var(--text-400)' }}>No se encontraron usuarios</td></tr>
+              <div className="mn-field" style={{ minWidth: 220 }}>
+                <label htmlFor="usr-filtro-nombre">Nombre</label>
+                <input
+                  id="usr-filtro-nombre"
+                  type="text"
+                  placeholder="Filtrar por nombre..."
+                  value={filtroNombre}
+                  onChange={(e) => setFiltroNombre(e.target.value)}
+                />
+              </div>
+
+              {hayFiltros && (
+                <button type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>
+                  Limpiar filtros
+                </button>
               )}
-            </tbody>
-          </table>
-        </div>
-
-        <Paginacion
-          total={filtered.length}
-          pagina={paginaActual}
-          porPagina={porPagina}
-          onCambiar={setPagina}
-          etiqueta="usuarios"
-          siempre
+            </>
+          }
         />
-
-        </>
       )}
 
       {modal && sel && (

@@ -24,7 +24,7 @@
 }
 
 .contact-section .descripcion {
-  font-size: 18px;
+  font-size: var(--fs-lg);
   color: var(--color-texto-suave);
   margin-bottom: 60px;
   line-height: 1.7;
@@ -72,7 +72,7 @@
 
 .icon-box p {
   font-family: var(--font-cuerpo);
-  font-size: 14px;
+  font-size: var(--fs-sm);
   font-weight: 700;
   color: #000000;
   margin-top: 6px;
@@ -142,7 +142,7 @@
   border: 2px solid #fff;
   color: #fff;
   font-family: var(--font-cuerpo);
-  font-size: 12px;
+  font-size: var(--fs-xs);
   font-weight: 800;
   line-height: 1;
   display: flex;
@@ -175,7 +175,7 @@
 
 @media screen and (max-width: 768px) {
   .contact-section h1 {
-    font-size: 36px;
+    font-size: var(--fs-3xl);
   }
 
   .icons-container {
@@ -190,6 +190,6 @@
 
 @media screen and (max-width: 480px) {
   .contact-section h1 {
-    font-size: 30px;
+    font-size: var(--fs-3xl);
   }
 }

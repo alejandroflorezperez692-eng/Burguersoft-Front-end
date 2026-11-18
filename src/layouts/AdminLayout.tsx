@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, startTransition } from 'react';
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import logoClaro from '../assets/img/icono1.png';
 import logoOscuro from '../assets/img/icono1-oscuro.png';
@@ -98,9 +98,16 @@ export default function AdminLayout() {
   const handleSalir = () => {
   setSaliendo(true);
   setTimeout(() => {
-    logout();
-    navigate('/', { replace: true, state: { toast: 'logout_ok' } }); 
-    setSaliendo(false);
+    // logout() y navigate() deben confirmarse en el mismo render.
+    // React Router 7 hace la navegación en una transición de baja prioridad;
+    // si se limpia la sesión antes, ProtectedRoute alcanza a pintar
+    // "Acceso denegado" por un instante. Al agrupar ambos en startTransition
+    // se evita ese estado intermedio.
+    startTransition(() => {
+      logout();
+      navigate('/', { replace: true, state: { toast: 'logout_ok' } });
+      setSaliendo(false);
+    });
   }, 500);
 };
 

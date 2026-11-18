@@ -17,7 +17,7 @@
   width: min(760px, 100%);
   max-height: min(85vh, 860px);
   overflow: hidden;
-  border: 1.5px solid #E8821A;
+  border: 1.5px solid var(--brand);
   border-radius: 16px;
   background: #fff;
   color: #1a1008;
@@ -37,7 +37,7 @@
   border-radius: 50%;
   background: transparent;
   color: #2c1810;
-  font-size: 30px;
+  font-size: var(--fs-3xl);
   line-height: 1;
   cursor: pointer;
 }
@@ -57,19 +57,19 @@
 
 .legal-modal-pestanas button {
   padding: 9px 14px;
-  border: 1px solid #E8821A;
+  border: 1px solid var(--brand);
   border-radius: 999px;
   background: #fff;
   color: #2c1810;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 
 .legal-modal-pestanas button.activa,
 .legal-modal-pestanas button:hover,
 .legal-modal-pestanas button:focus-visible {
-  background: #E8821A;
+  background: var(--brand);
   color: #fff;
 }
 
@@ -88,7 +88,7 @@
 .legal-modal-contenido h3 {
   margin: 20px 0 6px;
   color: #2c1810;
-  font-size: 1rem;
+  font-size: var(--fs-md);
 }
 
 .legal-modal-contenido p {
@@ -117,7 +117,7 @@ body.dark-mode .legal-modal-pestanas button {
 body.dark-mode .legal-modal-pestanas button.activa,
 body.dark-mode .legal-modal-pestanas button:hover,
 body.dark-mode .legal-modal-pestanas button:focus-visible {
-  background: #E8821A;
+  background: var(--brand);
   color: #fff;
 }
 
@@ -136,7 +136,7 @@ body.dark-mode .legal-modal-pestanas button:focus-visible {
 
   .legal-modal-pestanas button {
     padding: 8px 10px;
-    font-size: 0.8rem;
+    font-size: var(--fs-xs);
   }
 
   .legal-modal-contenido {

@@ -10,6 +10,7 @@ import { normalizarRol } from '../../utils/roles';
 import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
 import Paginacion, { paginar } from '../../components/Paginacion';
+import DataTable, { type DataTableColumn } from '../../components/DataTable';
 
 interface Proveedor {
   id: number;
@@ -203,6 +204,64 @@ const load = async (silencioso = false) => {
     [!!detalle, closeDetail],
   ]);
 
+  const columnas: DataTableColumn<Proveedor>[] = [
+    {
+      id: 'proveedor',
+      header: 'Proveedor',
+      accessor: (m) => m.nombre ?? '',
+      cell: (m) => (
+        <div className="mn-table-prod">
+          <div className="mn-table-img">
+            <img
+              src={m.img || proveedorFallback}
+              alt={m.nombre}
+              loading="lazy"
+              decoding="async"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              onError={(e) => { (e.target as HTMLImageElement).src = proveedorFallback; }}
+            />
+          </div>
+          <strong>{m.nombre}</strong>
+        </div>
+      ),
+    },
+    {
+      id: 'nit',
+      header: 'NIT',
+      accessor: (m) => m.nit ?? '',
+      cell: (m) => m.nit || '—',
+    },
+    {
+      id: 'telefono',
+      header: 'Teléfono',
+      accessor: (m) => m.telefono ?? '',
+      cell: (m) => m.telefono || '—',
+    },
+    {
+      id: 'correo',
+      header: 'Correo',
+      accessor: (m) => m.correo ?? '',
+      cell: (m) => m.correo || '—',
+    },
+    ...(esAdmin
+      ? [{
+          id: 'acciones',
+          header: 'Acciones',
+          accessor: () => '',
+          sortable: false,
+          searchable: false,
+          exportable: false,
+          align: 'center' as const,
+          cell: (m: Proveedor) => (
+            <div className="mn-table-actions">
+              <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
+              <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)} data-tooltip="Eliminar">Eliminar</button>
+            </div>
+          ),
+        }]
+      : []),
+  ];
+
   return (
     <div className="page-inner proveedores-page">
       <div className="page-header">
@@ -291,55 +350,19 @@ const load = async (silencioso = false) => {
       {loading ? (
         <AdminLoading area texto="Cargando proveedores" subtexto="Listando tus proveedores" />
       ) : vista === 'lista' ? (
-        filtered.length === 0 ? (
-          <div className="empty-state">No se encontraron proveedores</div>
-        ) : (
-          <div className="mn-table-wrap">
-            <table className="mn-table">
-              <thead>
-                <tr>
-                  <th>Proveedor</th>
-                  <th>NIT</th>
-                  <th>Teléfono</th>
-                  <th>Correo</th>
-                  <th className="th-acciones">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {proveedoresPagina.map((m) => (
-                  <tr key={m.id}>
-                    <td>
-                      <div className="mn-table-prod">
-                        <div className="mn-table-img">
-                          <img
-                            src={m.img || proveedorFallback}
-                            alt={m.nombre}
-                            loading="lazy"
-                            decoding="async"
-                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                            onError={(e) => { (e.target as HTMLImageElement).src = proveedorFallback; }}
-                          />
-                        </div>
-                        <strong>{m.nombre}</strong>
-                      </div>
-                    </td>
-                    <td>{m.nit || '—'}</td>
-                    <td>{m.telefono || '—'}</td>
-                    <td>{m.correo || '—'}</td>
-                    <td>
-                      {esAdmin && (
-                        <div className="mn-table-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)} data-tooltip="Eliminar">Eliminar</button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )
+        <DataTable
+          columnas={columnas}
+          datos={filtered}
+          obtenerId={(m) => m.id}
+          tituloExportar="Listado de Proveedores"
+          archivoExportar="proveedores"
+          etiqueta="proveedor"
+          etiquetaPlural="proveedores"
+          busqueda={false}
+          ordenInicial={[{ id: 'proveedor', desc: false }]}
+          mensajeVacio="No se encontraron proveedores"
+          minWidth={760}
+        />
       ) : (
         <div className="marcas-grid">
           {proveedoresPagina.map((m) => (
@@ -367,7 +390,7 @@ const load = async (silencioso = false) => {
         </div>
       )}
 
-      {!loading && filtered.length > 0 && (
+      {!loading && vista === 'tarjetas' && filtered.length > 0 && (
         <Paginacion
           total={filtered.length}
           pagina={paginaProveedores}

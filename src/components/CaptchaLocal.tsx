@@ -100,7 +100,7 @@ const CaptchaLocal = forwardRef<CaptchaLocalRef, Props>(({ onChange }, ref) => {
           borderRadius: 14,
           boxShadow: hover && activo ? P.sombraHover : P.sombra,
           transition: 'all .2s ease',
-          fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif',
+          fontFamily: 'var(--font-sans)',
           cursor: estado === 'error' ? 'pointer' : 'default', userSelect: 'none',
         }}
       >

@@ -13,7 +13,7 @@
 .ayuda-etiqueta {
   display: inline-block;
   color: var(--color-secundario);
-  font-size: 1.30rem;
+  font-size: var(--fs-xl);
   font-weight: 900;
   letter-spacing: 0.14em;
 }
@@ -34,7 +34,7 @@
   max-width: 680px;
   margin: 0 auto;
   color: var(--color-texto-suave);
-  font-size: 1.05rem;
+  font-size: var(--fs-md);
 }
 
 body:not(.dark-mode) .ayuda-hero h1,
@@ -53,7 +53,7 @@ body:not(.dark-mode) .ayuda-hero > p {
 
 .ayuda-seccion-numero {
   color: var(--color-secundario);
-  font-size: 1.8rem;
+  font-size: var(--fs-3xl);
   font-weight: 900;
 }
 
@@ -84,7 +84,7 @@ body:not(.dark-mode) .ayuda-hero > p {
   top: 50%;
   right: 4px;
   color: var(--color-secundario);
-  font-size: 2.2rem;
+  font-size: var(--fs-3xl);
   line-height: 1;
   transform: translateY(-50%) rotate(var(--ayuda-flecha-rotacion, 0deg)) scale(1);
   transform-origin: center;
@@ -194,24 +194,24 @@ body:not(.dark-mode) .ayuda-hero > p {
 }
 
 body:not(.dark-mode) .ayuda-page .ayuda-enlace {
-  color: #E8821A;
-  font-size: 14px;
+  color: var(--brand);
+  font-size: var(--fs-sm);
   font-weight: 700;
   font-family: var(--font-sans);
 }
 
 body:not(.dark-mode) .ayuda-page .ayuda-enlace:hover,
 body:not(.dark-mode) .ayuda-page .ayuda-enlace:focus-visible {
-  color: #E8821A;
+  color: var(--brand);
   background: transparent;
   text-decoration: underline;
 }
 
 body:not(.dark-mode) .ayuda-page .ayuda-enlace,
 body:not(.dark-mode) .ayuda-page .ayuda-contacto a {
-  color: #E8821A;
-  font-family: 'Lato', 'Segoe UI', sans-serif;
-  font-size: 14px;
+  color: var(--brand);
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
   font-weight: 700;
   line-height: normal;
   text-decoration: none;
@@ -221,7 +221,7 @@ body:not(.dark-mode) .ayuda-page .ayuda-enlace:hover,
 body:not(.dark-mode) .ayuda-page .ayuda-enlace:focus-visible,
 body:not(.dark-mode) .ayuda-page .ayuda-contacto a:hover,
 body:not(.dark-mode) .ayuda-page .ayuda-contacto a:focus-visible {
-  color: #E8821A;
+  color: var(--brand);
   background: transparent;
   text-decoration: underline;
 }
@@ -283,7 +283,7 @@ body:not(.dark-mode) .ayuda-page .ayuda-contacto a:focus-visible {
 
 .ayuda-enlaces-explorar span {
   color: var(--color-texto-suave);
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
   font-weight: 400;
 }
 
@@ -322,7 +322,7 @@ body:not(.dark-mode) .ayuda-page .ayuda-contacto > p {
 
 body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a,
 body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar button {
-  border-color: #E8821A;
+  border-color: var(--brand);
   background: #fff;
   color: #000;
 }
@@ -336,8 +336,8 @@ body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a:hover,
 body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar a:focus-visible,
 body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar button:hover,
 body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar button:focus-visible {
-  border-color: #E8821A;
-  background: #E8821A;
+  border-color: var(--brand);
+  background: var(--brand);
   color: #fff;
 }
 
@@ -365,7 +365,7 @@ body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar button:focus-visible sp
   }
 
   .ayuda-seccion-numero {
-    font-size: 1.4rem;
+    font-size: var(--fs-2xl);
   }
 
   .ayuda-explorar {
@@ -423,7 +423,7 @@ body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar button:focus-visible sp
 }
 
 .ayuda-hero .ayuda-etiqueta {
-  font-size: 1.78rem;
+  font-size: var(--fs-3xl);
   letter-spacing: 0.08em;
 }
 
@@ -435,7 +435,7 @@ body:not(.dark-mode) .ayuda-page .ayuda-enlaces-explorar button:focus-visible sp
 .ayuda-hero-contenido > p {
   max-width: 760px;
   margin: 6px 0 0;
-  font-size: 1.00rem;
+  font-size: var(--fs-md);
 }
 
 body:not(.dark-mode) .ayuda-hero-contenido > p {
@@ -468,7 +468,7 @@ body:not(.dark-mode) .ayuda-temas > .ayuda-seccion,
 body:not(.dark-mode) .ayuda-temas > .ayuda-explorar,
 body:not(.dark-mode) .ayuda-page .ayuda-contacto {
   background: #fff;
-  border-color: #E8821A;
+  border-color: var(--brand);
 }
 
 .ayuda-temas > .ayuda-seccion {
@@ -505,7 +505,7 @@ body:not(.dark-mode) .ayuda-page .ayuda-contacto {
   justify-content: center;
   border-radius: 9px;
   background: rgba(232, 130, 26, 0.12);
-  font-size: 1rem;
+  font-size: var(--fs-md);
 }
 
 .ayuda-acordeon-titulo {
@@ -514,13 +514,13 @@ body:not(.dark-mode) .ayuda-page .ayuda-contacto {
 
 .ayuda-temas .ayuda-seccion .ayuda-etiqueta,
 .ayuda-explorar-acordeon .ayuda-etiqueta {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   letter-spacing: 0.08em;
 }
 
 .ayuda-acordeon-titulo h2,
 .ayuda-explorar h2 {
-  font-size: 1.2rem;
+  font-size: var(--fs-xl);
 }
 
 .ayuda-explorar .ayuda-enlaces-explorar {
@@ -545,7 +545,7 @@ body:not(.dark-mode) .ayuda-page .ayuda-contacto {
 }
 
 .ayuda-page .ayuda-contacto p {
-  font-size: 1.05rem;
+  font-size: var(--fs-md);
   font-weight: 400;
 }
 
@@ -602,7 +602,7 @@ body:not(.dark-mode) .ayuda-page .ayuda-enlace:focus-visible,
 body:not(.dark-mode) .ayuda-page .ayuda-contacto a:hover,
 body:not(.dark-mode) .ayuda-page .ayuda-contacto a:focus-visible {
   text-decoration: underline !important;
-  text-decoration-color: #E8821A;
+  text-decoration-color: var(--brand);
   text-decoration-thickness: auto;
   text-underline-offset: auto;
 }
@@ -611,7 +611,7 @@ body.dark-mode .ayuda-page .ayuda-temas > .ayuda-seccion,
 body.dark-mode .ayuda-page .ayuda-temas > .ayuda-explorar,
 body.dark-mode .ayuda-page .ayuda-contacto {
   background: #000 !important;
-  border-color: #E8821A !important;
+  border-color: var(--brand) !important;
 }
 
 body.dark-mode .ayuda-page .ayuda-temas > .ayuda-seccion .ayuda-acordeon-titulo h2,
@@ -627,8 +627,8 @@ body.dark-mode .ayuda-page .ayuda-contacto > p {
 body.dark-mode .ayuda-page .ayuda-enlace,
 body.dark-mode .ayuda-page .ayuda-contacto a {
   color: #fff !important;
-  font-family: 'Lato', 'Segoe UI', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
   font-weight: 700;
   text-decoration: none;
 }
@@ -644,7 +644,7 @@ body.dark-mode .ayuda-page .ayuda-contacto a:focus-visible {
 
 body.dark-mode .ayuda-page .ayuda-enlaces-explorar a,
 body.dark-mode .ayuda-page .ayuda-enlaces-explorar button {
-  border-color: #E8821A !important;
+  border-color: var(--brand) !important;
   background: #000 !important;
   color: #fff !important;
   font-weight: 700;
@@ -659,8 +659,8 @@ body.dark-mode .ayuda-page .ayuda-enlaces-explorar a:hover,
 body.dark-mode .ayuda-page .ayuda-enlaces-explorar a:focus-visible,
 body.dark-mode .ayuda-page .ayuda-enlaces-explorar button:hover,
 body.dark-mode .ayuda-page .ayuda-enlaces-explorar button:focus-visible {
-  border-color: #E8821A !important;
-  background: #E8821A !important;
+  border-color: var(--brand) !important;
+  background: var(--brand) !important;
   color: #fff !important;
 }
 

@@ -53,7 +53,7 @@ body.dark-mode :is(.btn-primary, .btn-save, .btn-danger, .mn-btn-edit, .mn-btn-d
    --------------------------------------------------------------------- */
 body.dark-mode,
 body.dark-mode * {
-  scrollbar-color: #e8821a #000000;
+  scrollbar-color: var(--brand) #000000;
 }
 
 body.dark-mode ::-webkit-scrollbar-track {
@@ -63,7 +63,7 @@ body.dark-mode ::-webkit-scrollbar-track {
 body.dark-mode ::-webkit-scrollbar-thumb,
 body.dark-mode ::-webkit-scrollbar-thumb:hover,
 body.dark-mode ::-webkit-scrollbar-button {
-  background-color: #e8821a;
+  background-color: var(--brand);
 }
 
 body.dark-mode ::-webkit-scrollbar-thumb {
@@ -98,7 +98,7 @@ body.dark-mode .data-table input.input-conteo {
   width: 110px;
   padding: 8px 10px;
   background: #000000 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   border-radius: 6px !important;
   color: #ffffff !important;
   outline: none !important;
@@ -139,7 +139,7 @@ body.dark-mode .admin-body .data-table tbody tr:last-child td {
    --------------------------------------------------------------------- */
 body.dark-mode .mn-view-toggle {
   background: #000000 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
 }
 
 body.dark-mode .mn-view-toggle button {
@@ -148,11 +148,11 @@ body.dark-mode .mn-view-toggle button {
 }
 
 body.dark-mode .mn-view-toggle button + button {
-  border-left: 1.5px solid #e8821a !important;
+  border-left: 1.5px solid var(--brand) !important;
 }
 
 body.dark-mode .mn-view-toggle button.active {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -212,7 +212,7 @@ body.dark-mode :is(
   .btn-icon.btn-icon-estado, .btn-icon.btn-icon-restore
 ) {
   background: #000000 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -222,8 +222,8 @@ body.dark-mode :is(
   .btn-icon.btn-icon-edit, .btn-icon.btn-icon-del,
   .btn-icon.btn-icon-estado, .btn-icon.btn-icon-restore
 ):hover:not(:disabled) {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.65), 0 4px 14px rgba(232, 130, 26, 0.5) !important;
 }
@@ -232,7 +232,7 @@ body.dark-mode :is(
 body.dark-mode .badge.badge-info.venta-metodo-badge,
 body.dark-mode .badge.badge-info.compras-metodo-badge {
   background: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -246,7 +246,7 @@ body.dark-mode :is(
   .tv-ver-detalle
 ) {
   background: #000000 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   color: #ffffff !important;
   transition: background 0.18s ease;
 }
@@ -256,8 +256,8 @@ body.dark-mode :is(
   .compras-outline-btn, .ventas-clear-filters-btn, .compras-clear-filters-btn,
   .tv-ver-detalle
 ):hover:not(:disabled) {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
   transform: none !important;
   box-shadow: none !important;
@@ -275,7 +275,7 @@ body.dark-mode .admin-body .main-content .vt-estado {
 body.dark-mode .admin-body .main-content .vt-estado[data-estado="Registrado"]        { --c: #4b5563; }
 body.dark-mode .admin-body .main-content .vt-estado[data-estado="Por verificar"]     { --c: #d97706; }
 body.dark-mode .admin-body .main-content .vt-estado[data-estado="Recepcionado"]      { --c: #2563eb; }
-body.dark-mode .admin-body .main-content .vt-estado[data-estado="En preparación"]    { --c: #e8821a; }
+body.dark-mode .admin-body .main-content .vt-estado[data-estado="En preparación"]    { --c: var(--brand); }
 body.dark-mode .admin-body .main-content .vt-estado[data-estado="Preparado"]         { --c: #16a34a; }
 body.dark-mode .admin-body .main-content .vt-estado[data-estado="Servido"]           { --c: #7c3aed; }
 body.dark-mode .admin-body .main-content .vt-estado[data-estado="Pendiente de pago"] { --c: #dc2626; }
@@ -288,16 +288,16 @@ body.dark-mode .admin-body .main-content .vt-estado[data-estado="Reembolsada"]  
    11) AYUDA (admin): líneas separadoras naranjas
    --------------------------------------------------------------------- */
 body.dark-mode .admin-body .main-content .ayuda-pagina .ayuda-articulo {
-  border-top: 1px solid #e8821a !important;
+  border-top: 1px solid var(--brand) !important;
 }
 body.dark-mode .admin-body .main-content .ayuda-pagina :is(.ayuda-panel, .ayuda-faq, .ayuda-soporte, .ayuda-categoria, .ayuda-pregunta, .ayuda-buscador) {
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 body.dark-mode .admin-body .main-content .ayuda-pagina :is(h2, h3, h4, hr, .ayuda-panel h2, .ayuda-respuesta, .ayuda-faq-cabecera) {
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
 }
 body.dark-mode .admin-body .main-content .ayuda-pagina hr {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   border: none !important;
   height: 1px;
 }
@@ -324,7 +324,7 @@ body.dark-mode .notif-panel .notif-pie {
 }
 
 body.dark-mode .notif-panel .notif-pie:hover {
-  background: #e8821a !important;
+  background: var(--brand) !important;
 }
 
 body.dark-mode .notif-panel :is(.notif-titulo, .notif-detalle, .notif-vacio, .notif-head, .notif-head strong, .notif-head span) {
@@ -336,7 +336,7 @@ body.dark-mode .notif-panel :is(.notif-titulo, .notif-detalle, .notif-vacio, .no
    --------------------------------------------------------------------- */
 body.dark-mode .menu-usuario {
   background: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   gap: 0 !important;
 }
 
@@ -348,14 +348,14 @@ body.dark-mode .menu-usuario .menu-usuario-item {
 }
 
 body.dark-mode .menu-usuario .menu-usuario-item + .menu-usuario-item {
-  border-top: 1px solid #e8821a !important;
+  border-top: 1px solid var(--brand) !important;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
 
 body.dark-mode .menu-usuario .menu-usuario-item:hover,
 body.dark-mode .menu-usuario .menu-usuario-item:focus-visible {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -374,8 +374,8 @@ body.dark-mode .burgi-sug {
 
 body.dark-mode .burgi-sug:hover,
 body.dark-mode .burgi-sug:focus-visible {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
   transform: none !important;
 }
@@ -388,7 +388,7 @@ body.dark-mode .burgi-sug:hover > span[aria-hidden="true"] {
 /* Burgi: botón X (cerrar) y Limpiar -> fondo negro, borde naranja; naranja al pasar o pulsar */
 body.dark-mode .burgi-mini {
   background: #000000 !important;
-  border: 1.5px solid #e8821a !important;
+  border: 1.5px solid var(--brand) !important;
   color: #ffffff !important;
   transition: background 0.18s ease;
 }
@@ -396,15 +396,15 @@ body.dark-mode .burgi-mini {
 body.dark-mode .burgi-mini:hover,
 body.dark-mode .burgi-mini:active,
 body.dark-mode .burgi-mini:focus-visible {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
 }
 
 /* Burgi: burbuja de respuesta con fondo negro y borde naranja */
 body.dark-mode .burgi-resp {
   background: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   color: #ffffff !important;
 }
 body.dark-mode .burgi-resp :is(p, span, strong, b, li, div) {
@@ -417,8 +417,8 @@ body.dark-mode .burgi-resp :is(p, span, strong, b, li, div) {
    --------------------------------------------------------------------- */
 html body .btn-primary.btn-dictar-voz {
   background: transparent !important;
-  color: var(--brand, #e8821a) !important;
-  border: 2px solid var(--brand, #e8821a) !important;
+  color: var(--brand, var(--brand)) !important;
+  border: 2px solid var(--brand, var(--brand)) !important;
   box-shadow: none !important;
   transform: none !important;
   transition: background 0.18s ease, color 0.18s ease !important;
@@ -426,9 +426,9 @@ html body .btn-primary.btn-dictar-voz {
 html body .btn-primary.btn-dictar-voz:hover:not(:disabled),
 html body .btn-primary.btn-dictar-voz:active:not(:disabled),
 html body .btn-primary.btn-dictar-voz:focus-visible:not(:disabled) {
-  background: #e8821a !important;
+  background: var(--brand) !important;
   color: #ffffff !important;
-  border-color: #e8821a !important;
+  border-color: var(--brand) !important;
   box-shadow: none !important;
   transform: none !important;
 }
@@ -443,10 +443,10 @@ html body.dark-mode .admin-body .cierre-filtros select {
   min-width: 150px;
   padding: 0 30px 0 10px !important;
   border-radius: 8px !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   background-color: #000000 !important;
   color: #ffffff !important;
-  font-size: 11px !important;
+  font-size: var(--fs-xs) !important;
 }
 
 html body.dark-mode .admin-body .cierre-filtros input[type="checkbox"] {
@@ -456,7 +456,7 @@ html body.dark-mode .admin-body .cierre-filtros input[type="checkbox"] {
   width: 18px;
   height: 18px;
   margin: 0;
-  border: 1.5px solid #e8821a;
+  border: 1.5px solid var(--brand);
   border-radius: 5px;
   background-color: #000000;
   background-repeat: no-repeat;
@@ -536,34 +536,34 @@ html body :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar)::after {
 
 html body.dark-mode :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar) {
   background: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   color: #ffffff !important;
   transition: background 0.18s ease;
 }
 html body.dark-mode :is(.modal-x, .mn-form-cerrar, .modal-box .mm-cerrar):is(:hover, :active, :focus-visible):not(:disabled) {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
 }
 
 /* Línea bajo el título de los modales sencillos (ej. "Generar copia de seguridad") */
 html body.dark-mode .modal-box h2,
 html body.dark-mode .modal-overlay .modal-box h2 {
-  border-bottom: 2px solid #e8821a !important;
+  border-bottom: 2px solid var(--brand) !important;
 }
 
 /* X de las cabeceras en línea (Proveedor, Registrar compra, etc.): fondo naranja al pasar/clic */
 html body.dark-mode .admin-body .main-content .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button,
 html body.dark-mode .admin-body .main-content .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button {
   background: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   color: #ffffff !important;
   transition: background 0.18s ease;
 }
 html body.dark-mode .admin-body .main-content .modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button:is(:hover, :active, :focus-visible):not(:disabled),
 html body.dark-mode .admin-body .main-content .mn-modal-overlay [style*="var(--text-900)"][style*="18px 28px"] button:is(:hover, :active, :focus-visible):not(:disabled) {
-  background: #e8821a !important;
-  border-color: #e8821a !important;
+  background: var(--brand) !important;
+  border-color: var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -572,7 +572,7 @@ html body.dark-mode .admin-body .main-content .mn-modal-overlay [style*="var(--t
 html body.dark-mode .admin-body .main-content span.mn-card-estado.mn-estado-Disponible,
 html body.dark-mode .admin-body .main-content span.mn-card-estado.mn-estado-Activa {
   background-color: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -583,7 +583,7 @@ html body.dark-mode .admin-body .main-content span.mn-card-estado.mn-estado-Acti
 html body.dark-mode .admin-body .data-table tr.vt-dia > td {
   background: #000000 !important;
   background-color: #000000 !important;
-  border-bottom: 1px solid #e8821a !important;
+  border-bottom: 1px solid var(--brand) !important;
 }
 html body.dark-mode .admin-body .vt-dia-bar { background: #000000 !important; }
 html body.dark-mode .admin-body .vt-dia-label { color: #ffffff !important; }
@@ -592,24 +592,24 @@ html body.dark-mode .admin-body .vt-dia-info b { color: #ffffff !important; }
 
 html body.dark-mode .modal-box .cierre-resumen div {
   background: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
 }
 html body.dark-mode .modal-box .cierre-resumen small { color: #ffffff !important; }
 html body.dark-mode .modal-box .cierre-resumen strong { color: #ffffff !important; }
-html body.dark-mode .modal-box .cierre-resumen div:first-child strong { color: #e8821a !important; }
+html body.dark-mode .modal-box .cierre-resumen div:first-child strong { color: var(--brand) !important; }
 
 html body.dark-mode .modal-box .cierre-sub { color: #ffffff !important; }
 html body.dark-mode .modal-box .cierre-nota { color: #ffffff !important; }
 
 html body.dark-mode .modal-box .cierre-scroll {
   background: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
 }
 html body.dark-mode .modal-box .cierre-tabla { background: #000000 !important; }
 html body.dark-mode .modal-box .cierre-tabla th {
   background: #000000 !important;
   color: #ffffff !important;
-  border-bottom: 2px solid #e8821a !important;
+  border-bottom: 2px solid var(--brand) !important;
 }
 html body.dark-mode .modal-box .cierre-tabla td {
   background: #000000 !important;
@@ -620,7 +620,7 @@ html body.dark-mode .modal-box .cierre-tabla .c { color: #ffffff !important; }
 
 html body.dark-mode .modal-box .cierre-metodos span {
   background: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -645,7 +645,7 @@ html body.dark-mode .admin-body .main-content :is(
 ) {
   background: #000000 !important;
   background-color: #000000 !important;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   color: #ffffff !important;
 }
 
@@ -657,11 +657,11 @@ html body.dark-mode .admin-body .rpt-buscador input {
   width: 100%;
   height: 38px;
   padding: 0 14px;
-  border: 1px solid #e8821a !important;
+  border: 1px solid var(--brand) !important;
   border-radius: 10px;
   background: #000000 !important;
   color: #ffffff !important;
-  font-size: 13px;
+  font-size: var(--fs-xs);
   outline: none;
 }
 html body.dark-mode .admin-body .rpt-buscador input::placeholder { color: rgba(255, 255, 255, 0.55); }
@@ -672,8 +672,8 @@ html body.dark-mode .admin-body .rpt-buscador button { color: #ffffff !important
 
 /* NOTIFICACIONES (modo oscuro): línea divisoria naranja sobre "Ver resumen en Inicio" y bajo el título */
 body.dark-mode .notif-panel .notif-head {
-  border-bottom: 1px solid #e8821a !important;
+  border-bottom: 1px solid var(--brand) !important;
 }
 body.dark-mode .notif-panel .notif-pie {
-  border-top: 1px solid #e8821a !important;
+  border-top: 1px solid var(--brand) !important;
 }
