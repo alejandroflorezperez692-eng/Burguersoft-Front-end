@@ -80,9 +80,10 @@ type AuthContextValue = {
     password: string,
     tipoDocumento?: string,
     numeroDocumento?: string,
-    recaptchaToken?: string,
+    captchaId?: string,
   ) => Promise<void>;
   logout: () => void;
+  cerrandoSesion: boolean;
   updateUser: (partial: Partial<User>) => void;
 };
 
@@ -124,6 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return token ? readStoredUser() : null;
   });
   const [loading, setLoading] = useState(false);
+  const [cerrandoSesion, setCerrandoSesion] = useState(false);
 
 
   useEffect(() => {
@@ -136,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           sessionStorage.removeItem('token');
           sessionStorage.removeItem('user');
           setUser(null);
+          setLoading(false);
         }
       })
       .catch(() => {
@@ -217,7 +220,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password: string,
       tipoDocumento?: string,
       numeroDocumento?: string,
-      recaptchaToken?: string,
+      captchaId?: string,
     ) => {
       await apiClient.post('/registro', {
         nombre,
@@ -226,7 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
         tipo_documento: tipoDocumento,
         numero_documento: numeroDocumento,
-        recaptcha_token: recaptchaToken,
+        captcha_id: captchaId,
       });
     },
     [],
@@ -240,6 +243,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('user');
+    setCerrandoSesion(true);
+    setTimeout(() => setCerrandoSesion(false), 1500);
     setUser(null);
     setLoading(false);
   }, []);
@@ -261,10 +266,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loginWithToken,
       register,
       logout,
+      cerrandoSesion,
       updateUser,
     }),
 
-    [user, loading, login, register, logout],
+    [user, loading, login, loginWithToken, register, logout, cerrandoSesion, updateUser],
 
   );
 

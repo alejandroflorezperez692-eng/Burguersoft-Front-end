@@ -6,15 +6,9 @@ import ModalLegal, { type DocumentoLegal } from '../components/ModalLegal';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/Toast';
 import { mensajeError } from '../utils/errores';
+import CaptchaLocal, { type CaptchaLocalRef } from '../components/CaptchaLocal';
 
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
-
-declare global {
-  interface Window {
-    grecaptcha: any;
-  }
-}
 
 const TIPOS_DOCUMENTO = [
   'Cédula de Ciudadanía',
@@ -63,6 +57,8 @@ export default function Registro() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [documentoLegal, setDocumentoLegal] = useState<DocumentoLegal | null>(null);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const captchaRef = useRef<CaptchaLocalRef>(null);
+  const [captcha, setCaptcha] = useState({ id: '', respuesta: '' });
 
   const { register } = useAuth();
   const { showToast } = useToast();
@@ -83,36 +79,6 @@ export default function Registro() {
       document.removeEventListener('keydown', onKey);
     };
   }, [tipoOpen]);
-
-  useEffect(() => {
-    if (!RECAPTCHA_SITE_KEY) {
-      console.warn('VITE_RECAPTCHA_SITE_KEY no está definida en las variables de entorno.');
-      return;
-    }
-    if (window.grecaptcha) return;
-
-    const script = document.createElement('script');
-    script.async = true;
-    script.defer = true;
-    script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
-    document.head.appendChild(script);
-
-    return () => {
-      script.remove();
-    };
-  }, []);
-  
-  useEffect(() => {
-    if (!window.grecaptcha) return;
-    const container = document.getElementById('recaptcha-container');
-    if (container && !container.dataset.recaptchaRendered) {
-      window.grecaptcha.render(container, {
-        'sitekey': RECAPTCHA_SITE_KEY,
-        'callback': () => { /* widget rendered, can be captured on submit */ }
-      });
-      container.dataset.recaptchaRendered = 'true';
-    }
-  }, [RECAPTCHA_SITE_KEY, window.grecaptcha]);
 
   const requisitos: Requisito[] = [
     { ...TEXTO_REQUISITOS[0], cumple: password.length >= 8 },
@@ -170,17 +136,11 @@ export default function Registro() {
       return;
     }
 
-    let recaptchaToken = '';
-    try {
-      if (window.grecaptcha && RECAPTCHA_SITE_KEY) {
-        await new Promise((resolve) => window.grecaptcha.ready(resolve));
-        recaptchaToken = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, { action: 'registro' });
-      }
-    } catch (error) {
-      console.error('Error al ejecutar reCAPTCHA:', error);
+    if (!captcha.respuesta) {
+      showToast('Confirma que no eres un robot para continuar.', true);
+      return;
     }
 
-    sessionStorage.setItem('recaptcha_token', recaptchaToken);
     setModalAbierto(true);
   };
 
@@ -189,7 +149,6 @@ export default function Registro() {
     setLoading(true);
 
     try {
-      const token = sessionStorage.getItem('recaptcha_token') ?? '';
       await register(
         nombre,
         apellido,
@@ -197,11 +156,12 @@ export default function Registro() {
         password,
         tipoDocumento,
         numeroDocumento,
-        token
+        captcha.id
       );
       sessionStorage.setItem('aviso_login', 'registro_ok');
       navigate('/login', { replace: true, state: { toast: 'registro_ok' } });
     } catch (err) {
+      captchaRef.current?.recargar();
       showToast(mensajeError(err, 'No fue posible completar el registro'), true);
     } finally {
       setLoading(false);
@@ -430,7 +390,9 @@ export default function Registro() {
             </label>
           </div>
 
-          <button type="submit" className="boton-registro" disabled={loading}>
+          <CaptchaLocal ref={captchaRef} onChange={(id, respuesta) => setCaptcha({ id, respuesta })} />
+
+          <button type="submit" className="boton-registro" disabled={loading || !captcha.respuesta}>
             {loading ? 'REGISTRANDO…' : 'Registrarse'}
           </button>
         </div>

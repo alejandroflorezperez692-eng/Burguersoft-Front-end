@@ -14,11 +14,12 @@ export default function ProtectedRoute({
   redirect = '/login',
   allowGuest = false,
 }: ProtectedRouteProps) {
-  const { isAuthenticated, user, loading } = useAuth();
+  const { isAuthenticated, user, loading, cerrandoSesion } = useAuth();
 
   if (loading) return null;
 
   if (!isAuthenticated) {
+    if (cerrandoSesion) return null;
     return allowGuest ? <Outlet /> : <AccesoDenegado />;
   }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { isAxiosError } from 'axios';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -8,6 +8,7 @@ import { useToast } from '../components/Toast';
 import { mensajeError } from '../utils/errores';
 import iconoBloqueo from '../assets/img/bloquear.png';
 import AdminLoading from '../components/AdminLoading';
+import CaptchaLocal, { type CaptchaLocalRef } from '../components/CaptchaLocal';
 
 function segundosRestantesBloqueo(): number {
   const hasta = Number(sessionStorage.getItem('bloqueo_correo_hasta') ?? '0');
@@ -18,6 +19,8 @@ function segundosRestantesBloqueo(): number {
 export default function RecuperarContrasena() {
   const [correo, setCorreo] = useState(() => sessionStorage.getItem('correo_recuperacion') ?? '');
   const [loading, setLoading] = useState(false);
+  const captchaRef = useRef<CaptchaLocalRef>(null);
+  const [captcha, setCaptcha] = useState({ id: '', respuesta: '' });
   const [bloqueo, setBloqueo] = useState(() => segundosRestantesBloqueo());
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -51,12 +54,17 @@ export default function RecuperarContrasena() {
       showToast('Por favor ingresa un correo válido.', true);
       return;
     }
+    if (!captcha.respuesta) {
+      showToast('Confirma que no eres un robot para continuar.', true);
+      return;
+    }
     setLoading(true);
     try {
-      await apiClient.post('/recuperar-contrasena', { email: emailLimpio, correo: emailLimpio });
+      await apiClient.post('/recuperar-contrasena', { email: emailLimpio, correo: emailLimpio, captcha_id: captcha.id });
       sessionStorage.setItem('correo_recuperacion', emailLimpio);
       navigate('/verificar-codigo');
     } catch (err) {
+      captchaRef.current?.recargar();
       if (isAxiosError(err) && err.response?.status === 429) {
         const data = err.response.data as { segundos?: number } | undefined;
         const seg = data?.segundos ?? 60;
@@ -116,7 +124,9 @@ export default function RecuperarContrasena() {
               />
             </div>
 
-            <button type="submit" className="btn-primario" disabled={loading || bloqueado}>
+            <CaptchaLocal ref={captchaRef} onChange={(id, respuesta) => setCaptcha({ id, respuesta })} />
+
+            <button type="submit" className="btn-primario" disabled={loading || bloqueado || !captcha.respuesta}>
               {bloqueado ? `ESPERA ${bloqueo}s` : loading ? 'ENVIANDO…' : 'Enviar código de recuperación'}
             </button>
             <p className="descripcion-recuperacion">¿No puedes cambiar la contraseña?</p>
