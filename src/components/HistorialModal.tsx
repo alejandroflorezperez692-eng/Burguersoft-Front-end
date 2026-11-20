@@ -149,7 +149,7 @@ function chip(activo: boolean): CSSProperties {
   };
 }
 
-export default function HistorialPage(_props: { onVolver?: () => void }) {
+export default function HistorialPage({ onVolver }: { onVolver?: () => void }) {
   const [movs, setMovs] = useState<Movimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -340,7 +340,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
         .hist-hora { flex-shrink: 0; font-size: 12px; color: var(--text-400); text-align: right; }
       `}</style>
 
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <h2
           style={{
             fontFamily: 'var(--font-sans)',
@@ -352,6 +352,16 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
         >
           Historial de movimientos
         </h2>
+        {onVolver && (
+          <button
+            type="button"
+            className="btn-cancel"
+            onClick={onVolver}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            ← Volver
+          </button>
+        )}
       </div>
 
       <div
@@ -399,6 +409,8 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
           <label style={etiquetaCtl}>
             Usuario
             <SelectOscuro
+              searchable
+              searchPlaceholder="Buscar usuario…"
               className="hist-ctl"
               style={selectCtl}
               value={usuario}

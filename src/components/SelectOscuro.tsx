@@ -19,6 +19,12 @@ import '../styles/select-claro.css';
 
 type Opcion = { value: string; label: string; disabled: boolean };
 
+type SelectOscuroProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  /** Muestra un campo de búsqueda dentro de la lista desplegable. */
+  searchable?: boolean;
+  searchPlaceholder?: string;
+};
+
 type Panel = {
   left: number;
   minWidth: number;
@@ -65,19 +71,24 @@ function extraerOpciones(hijos: ReactNode, salida: Opcion[] = []): Opcion[] {
   return salida;
 }
 
-export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  const { children, className, onMouseDown, onKeyDown, ...resto } = props;
+export default function SelectOscuro(props: SelectOscuroProps) {
+  const { children, className, onMouseDown, onKeyDown, searchable, searchPlaceholder, ...resto } = props;
 
   const [punteroFino] = useState(() => window.matchMedia(CONSULTA_PUNTERO).matches);
   const personalizado = punteroFino;
 
   const selectRef = useRef<HTMLSelectElement>(null);
   const listaRef = useRef<HTMLDivElement>(null);
+  const buscarRef = useRef<HTMLInputElement>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
   const [activo, setActivo] = useState(-1);
+  const [busqueda, setBusqueda] = useState('');
   const desplazarRef = useRef(false);
 
-  const cerrar = useCallback(() => setPanel(null), []);
+  const cerrar = useCallback(() => {
+    setPanel(null);
+    setBusqueda('');
+  }, []);
 
   const abrir = () => {
     const el = selectRef.current;
@@ -96,10 +107,11 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
       minWidth: r.width,
       top: abrirArriba ? undefined : r.bottom + 3,
       bottom: abrirArriba ? window.innerHeight - r.top + 3 : undefined,
-      maxHeight: Math.max(120, Math.min(260, abrirArriba ? arriba : abajo)),
+      maxHeight: Math.max(140, Math.min(280, abrirArriba ? arriba : abajo)),
       fontSize: estilo.fontSize,
       fontFamily: estilo.fontFamily,
     });
+    setBusqueda('');
 
     const actual = opciones.findIndex((o) => o.value === el.value);
     desplazarRef.current = true;
@@ -153,6 +165,12 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
       ?.querySelector<HTMLElement>('[data-so-activa="true"]')
       ?.scrollIntoView({ block: 'nearest' });
   }, [panel, activo]);
+
+  useEffect(() => {
+    if (panel && searchable) {
+      buscarRef.current?.focus();
+    }
+  }, [panel, searchable]);
 
   if (!personalizado) {
     return <select {...props}>{children}</select>;
@@ -231,7 +249,55 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
   };
 
   const opciones = panel ? extraerOpciones(children) : [];
+  const normalizarTexto = (texto: string) =>
+    texto
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  const filtro = normalizarTexto(busqueda.trim());
+  const visibles = filtro
+    ? opciones.filter((opcion) => normalizarTexto(opcion.label).includes(filtro))
+    : opciones;
   const valorActual = selectRef.current?.value;
+
+  const moverVisible = (paso: 1 | -1) => {
+    if (visibles.length === 0) return;
+    let i = activo;
+    for (let n = 0; n < visibles.length; n += 1) {
+      i = (i + paso + visibles.length) % visibles.length;
+      if (!visibles[i]?.disabled) {
+        desplazarRef.current = true;
+        setActivo(i);
+        return;
+      }
+    }
+  };
+
+  const alBuscarTecla = (e: ReactKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      cerrar();
+      selectRef.current?.focus();
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      moverVisible(1);
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      moverVisible(-1);
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const opcion = visibles[activo];
+      if (opcion) elegir(opcion);
+      return;
+    }
+    if (e.key === 'Tab') cerrar();
+  };
 
   return (
     <>
@@ -262,14 +328,39 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
               fontSize: panel.fontSize,
               fontFamily: panel.fontFamily,
             }}
-            
+             
             onMouseDown={(e) => {
+              if (e.target instanceof HTMLElement && e.target.tagName === 'INPUT') return;
               e.preventDefault();
               e.stopPropagation();
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {opciones.map((opcion, i) => (
+            {searchable && (
+              <div className="so-buscar-caja">
+                <input
+                  ref={buscarRef}
+                  type="search"
+                  className="so-buscar"
+                  value={busqueda}
+                  placeholder={searchPlaceholder ?? 'Buscar…'}
+                  aria-label={searchPlaceholder ?? 'Buscar en la lista'}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    setBusqueda(valor);
+                    const f = normalizarTexto(valor.trim());
+                    const lista = f
+                      ? opciones.filter((opcion) => normalizarTexto(opcion.label).includes(f))
+                      : opciones;
+                    setActivo(lista.findIndex((opcion) => !opcion.disabled));
+                    desplazarRef.current = true;
+                  }}
+                  onKeyDown={alBuscarTecla}
+                />
+              </div>
+            )}
+            {visibles.length === 0 && <div className="so-vacio">Sin resultados</div>}
+            {visibles.map((opcion, i) => (
               <div
                 key={`${opcion.value}-${i}`}
                 className={`so-opcion${i === activo ? ' so-activa' : ''}`}

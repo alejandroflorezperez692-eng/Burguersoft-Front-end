@@ -1016,7 +1016,13 @@ const load = () => {
             style={{ display: 'none' }}
             onChange={(e) => {
               const f = e.target.files?.[0];
-              if (f) escanear(f);
+              if (f) {
+                if (f.size > 8 * 1024 * 1024) {
+                  showToast('El archivo no puede superar los 8 MB.', true);
+                } else {
+                  escanear(f);
+                }
+              }
               e.target.value = '';
             }}
           />
@@ -1136,7 +1142,7 @@ const load = () => {
             >
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Insumo (elige o crea uno nuevo) <span className="mn-req">*</span></label>
-                <SelectOscuro value={l.materia_prima_id ?? '__nuevo__'} onChange={(e) => updateLinea(i, 'materia_prima_id', e.target.value === '__nuevo__' ? null : Number(e.target.value))}>
+                <SelectOscuro searchable searchPlaceholder="Buscar insumo…" value={l.materia_prima_id ?? '__nuevo__'} onChange={(e) => updateLinea(i, 'materia_prima_id', e.target.value === '__nuevo__' ? null : Number(e.target.value))}>
                   <option value="__nuevo__">+ Nuevo insumo</option>
                   {materias.filter((m) => m.estado !== 'Inactivo' || m.id === l.materia_prima_id).map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </SelectOscuro>
@@ -1146,7 +1152,7 @@ const load = () => {
                 <>
                   <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`nombre-${i}`)}>
                     <label>Nombre del insumo <span className="mn-req">*</span></label>
-                    <input value={l.nombre_nuevo} style={rojo(errLinea(l).nombre)} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
+                    <input value={l.nombre_nuevo} style={rojo(errLinea(l).nombre)} required maxLength={40} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
                     {msgCampo(`nombre-${i}`)}
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
@@ -1172,7 +1178,7 @@ const load = () => {
 
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`cantidad-${i}`)}>
                 <label>Cantidad <span className="mn-req">*</span></label>
-                <input type="number" value={l.cantidad} style={rojo(errLinea(l).cantidad)} onChange={(e) => updateLinea(i, 'cantidad', e.target.value)} />
+                <input type="number" min="0.01" max="999999" step="0.01" inputMode="decimal" required value={l.cantidad} style={rojo(errLinea(l).cantidad)} onChange={(e) => updateLinea(i, 'cantidad', e.target.value)} />
                 {msgCampo(`cantidad-${i}`)}
               </div>
 
@@ -1195,13 +1201,13 @@ const load = () => {
 
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`precio-${i}`)}>
                 <label>Precio total <span className="mn-req">*</span></label>
-                <input type="text" inputMode="numeric" placeholder="$ 0" style={rojo(errLinea(l).precio)} value={miles(l.precio_unitario)} onChange={(e) => updateLinea(i, 'precio_unitario', soloDigitos(e.target.value))} />
+                <input type="text" inputMode="numeric" required maxLength={9} placeholder="$ 0" style={rojo(errLinea(l).precio)} value={miles(l.precio_unitario)} onChange={(e) => updateLinea(i, 'precio_unitario', soloDigitos(e.target.value))} />
                 {msgCampo(`precio-${i}`)}
               </div>
 
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`marca-${i}`)}>
                 <label>Proveedor <span className="mn-req">*</span></label>
-                <SelectOscuro value={l.marca_id} style={rojo(errLinea(l).marca)} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
+                <SelectOscuro searchable searchPlaceholder="Buscar proveedor…" value={l.marca_id} style={rojo(errLinea(l).marca)} onChange={(e) => updateLinea(i, 'marca_id', Number(e.target.value))}>
                   <option value={0}>Seleccionar...</option>
                   {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
                 </SelectOscuro>

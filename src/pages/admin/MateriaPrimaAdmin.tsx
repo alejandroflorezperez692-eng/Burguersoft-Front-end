@@ -355,7 +355,7 @@ export default function MateriaPrimaAdmin() {
 
         <div className="mn-field">
           <label>Marca</label>
-          <SelectOscuro className={filtroMarca ? 'activo' : ''} value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
+          <SelectOscuro searchable searchPlaceholder="Buscar proveedor…" className={filtroMarca ? 'activo' : ''} value={filtroMarca} onChange={(e) => setFiltroMarca(e.target.value)}>
             <option value="">Todas</option>
             {(marcas ?? []).map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
           </SelectOscuro>
@@ -474,20 +474,26 @@ export default function MateriaPrimaAdmin() {
           <h2 style={{ marginBottom: 18, paddingBottom: 12 }}>Editar materia prima</h2>
 
             <div className="form-group" style={{ marginBottom: 14 }}>
-              <label>Nombre del insumo <span className="mn-req">*</span></label>
+              <label htmlFor="mp-nombre">Nombre del insumo <span className="mn-req">*</span></label>
               <input
+                id="mp-nombre"
                 style={bordeError(errores.nombre)}
                 value={form.nombre}
                 placeholder="Ej. Pan de hamburguesa"
+                required
+                minLength={2}
+                maxLength={40}
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
               />
               {msgCampo('nombre')}
             </div>
 
             <div className="form-group" style={{ marginBottom: 14 }}>
-              <label>Tipo <span style={{ opacity: 0.6, fontWeight: 500 }}>(opcional)</span></label>
+              <label htmlFor="mp-tipo">Tipo <span style={{ opacity: 0.6, fontWeight: 500 }}>(opcional)</span></label>
               <input
+                id="mp-tipo"
                 placeholder="Ej. Carne, Bebida, Panadería..."
+                maxLength={40}
                 value={form.tipo}
                 onChange={(e) => setForm({ ...form, tipo: e.target.value })}
               />
@@ -495,10 +501,13 @@ export default function MateriaPrimaAdmin() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Cantidad real <span className="mn-req">*</span></label>
+                <label htmlFor="mp-cantidad">Cantidad real <span className="mn-req">*</span></label>
                 <input
+                  id="mp-cantidad"
                   type="text"
                   inputMode="decimal"
+                  required
+                  maxLength={10}
                   style={bordeError(errores.cantidad)}
                   value={form.cantidad}
                   onChange={(e) => setForm({ ...form, cantidad: soloNumero(e.target.value) })}
@@ -518,12 +527,15 @@ export default function MateriaPrimaAdmin() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Precio <span className="mn-req">*</span></label>
+                <label htmlFor="mp-precio">Precio <span className="mn-req">*</span></label>
                 <div style={{ position: 'relative' }}>
                   <span style={{ ...adornoBase, left: 14 }}>$</span>
                   <input
+                    id="mp-precio"
                     type="text"
                     inputMode="decimal"
+                    required
+                    maxLength={12}
                     style={{ paddingLeft: 30, ...bordeError(errores.precio) }}
                     placeholder="Ej. 2.500"
                     value={form.valor}
@@ -535,6 +547,8 @@ export default function MateriaPrimaAdmin() {
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Proveedor <span className="mn-req">*</span></label>
                 <SelectOscuro
+                  searchable
+                  searchPlaceholder="Buscar proveedor…"
                   style={bordeError(errores.marca)}
                   value={form.marca_id}
                   onChange={(e) => setForm({ ...form, marca_id: Number(e.target.value) })}

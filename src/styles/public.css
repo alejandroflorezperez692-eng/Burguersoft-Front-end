@@ -915,6 +915,35 @@
   color: #ffffff;
 }
 
+.public-body .footer-legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.public-body .footer-legal a {
+  color: #ffffff;
+  text-decoration: underline;
+  font-size: 0.78rem;
+}
+
+.public-body .footer-legal a:hover,
+.public-body .footer-legal a:focus-visible {
+  color: #e8821a;
+}
+
+body.dark-mode .public-body .footer-legal a {
+  color: #ffffff;
+}
+
+body.dark-mode .public-body .footer-legal a:hover,
+body.dark-mode .public-body .footer-legal a:focus-visible {
+  color: #e8821a;
+}
+
 /* ================================================= */
 /*                 RESPONSIVE                        */
 /* ================================================= */

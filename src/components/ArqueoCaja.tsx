@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import { useToast } from './Toast';
 import { mensajeError } from '../utils/errores';
+import logoUrl from '../assets/img/logo-burguersoft.png';
 
 interface Preview {
   desde: string;
@@ -46,13 +47,25 @@ function descargarPdfCierre(c: CierreGuardado, aviso: (m: string) => void) {
     <title>Cierre de caja N.º ${c.id}</title>
     <style>
       body{font-family:Arial,sans-serif;color:#1a0a00;padding:32px}
+      header{display:flex;align-items:center;gap:14px;border-bottom:3px solid #e8821a;padding-bottom:10px;margin-bottom:14px}
+      header img{width:60px;height:60px;object-fit:contain}
+      .marca{font-size:19px;font-weight:800;color:#8a3f00}
+      .empresa{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:#b5651d}
       h1{margin:0 0 4px;font-size:22px} p{margin:2px 0;font-size:13px}
       table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
       th{background:#1a0a00;color:#fff;text-align:left;padding:8px 10px}
       td{padding:8px 10px;border-bottom:1px solid #ddd}
     </style></head><body>
+    <header>
+      <img src="${logoUrl}" alt="Logo Burguersoft">
+      <div>
+        <div class="marca">Burguersoft</div>
+        <div class="empresa">El Oriente &middot; Comidas rápidas</div>
+      </div>
+    </header>
     <h1>Cierre de caja N.º ${c.id}</h1>
-    <p><b>Empresa:</b> El Oriente</p>
+    <p><b>Empresa:</b> El Oriente &middot; Burguersoft</p>
+    <p><b>Generado:</b> ${new Date().toLocaleString('es-CO')}</p>
     <p><b>Fecha:</b> ${f.toLocaleDateString('es-CO')} &nbsp; <b>Hora:</b> ${f.toLocaleTimeString('es-CO')}</p>
     <p><b>Cajero:</b> ${esc(c.cajero)}</p>
     ${c.desde ? `<p><b>Turno desde:</b> ${fechaHora(c.desde)}</p>` : ''}
@@ -165,12 +178,12 @@ export default function ArqueoCaja() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 12 }}>
         <div className="form-group" style={{ margin: 0 }}>
-          <label>Base inicial (opcional)</label>
-          <input type="text" inputMode="numeric" value={miles(base)} onChange={(e) => setBase(soloDigitos(e.target.value))} placeholder="0" />
+          <label htmlFor="arqueo-base">Base inicial (opcional)</label>
+          <input id="arqueo-base" type="text" inputMode="numeric" maxLength={12} value={miles(base)} onChange={(e) => setBase(soloDigitos(e.target.value))} placeholder="0" />
         </div>
         <div className="form-group" style={{ margin: 0 }}>
-          <label>Efectivo que contaste</label>
-          <input type="text" inputMode="numeric" value={miles(contado)} onChange={(e) => setContado(soloDigitos(e.target.value))} placeholder="0" />
+          <label htmlFor="arqueo-contado">Efectivo que contaste <span className="required-marker">*</span></label>
+          <input id="arqueo-contado" type="text" inputMode="numeric" required maxLength={12} value={miles(contado)} onChange={(e) => setContado(soloDigitos(e.target.value))} placeholder="0" />
         </div>
       </div>
 
@@ -188,8 +201,8 @@ export default function ArqueoCaja() {
 
       {hayDiferencia && (
         <div className="form-group" style={{ marginTop: 10 }}>
-          <label>Observación (obligatoria si hay diferencia)</label>
-          <textarea rows={2} maxLength={255} value={obs} onChange={(e) => setObs(e.target.value)} />
+          <label htmlFor="arqueo-observacion">Observación (obligatoria si hay diferencia)</label>
+          <textarea id="arqueo-observacion" rows={2} maxLength={255} required minLength={5} value={obs} onChange={(e) => setObs(e.target.value)} />
         </div>
       )}
 

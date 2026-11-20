@@ -540,6 +540,16 @@ const cargar = useCallback(async () => {
   const elegirArchivo = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
     if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      showToast('El archivo debe ser una imagen (JPG, PNG o WEBP).', true);
+      e.target.value = '';
+      return;
+    }
+    if (f.size > 4 * 1024 * 1024) {
+      showToast('La imagen no puede superar los 4 MB.', true);
+      e.target.value = '';
+      return;
+    }
     setArchivo(f);
     setImgActual(false);
   };
@@ -662,7 +672,7 @@ const cargar = useCallback(async () => {
             <div className="mn-form-left">
               <div className="mn-field">
                 <label htmlFor="pm-nombre">Nombre <span className="mn-req">*</span></label>
-                <input id="pm-nombre" style={rojo(errores.nombre)} type="text" maxLength={100} placeholder="Ej: Combo Familiar"
+                <input id="pm-nombre" style={rojo(errores.nombre)} type="text" required minLength={2} maxLength={100} placeholder="Ej: Combo Familiar"
                   value={form.nombre} onChange={setCampo('nombre')} />
               </div>
 
@@ -699,12 +709,12 @@ const cargar = useCallback(async () => {
                 </div>
                 <div className="mn-field">
                   <label htmlFor="pm-desc-pct">Descuento (%)</label>
-                  <input id="pm-desc-pct" type="text" inputMode="numeric" placeholder="0"
+                  <input id="pm-desc-pct" type="text" inputMode="numeric" maxLength={3} pattern="[0-9]{1,3}" title="Porcentaje entre 0 y 100" placeholder="0"
                     value={descuento} onChange={cambiarDescuento} />
                 </div>
                 <div className="mn-field">
                   <label htmlFor="pm-precio">Precio del combo <span className="mn-req">*</span></label>
-                  <input id="pm-precio" style={rojo(errores.precio)} type="text" inputMode="numeric" placeholder="$ 0"
+                  <input id="pm-precio" style={rojo(errores.precio)} type="text" inputMode="numeric" required maxLength={9} placeholder="$ 0"
                     value={form.precio ? Number(form.precio).toLocaleString('es-CO') : ''}
                     onChange={cambiarPrecio} />
                 </div>
@@ -765,8 +775,7 @@ const cargar = useCallback(async () => {
 
               <div className="mn-field">
                 <label htmlFor="pm-desc">Descripción</label>
-                <textarea id="pm-desc" maxLength={255} placeholder="Se llena sola al elegir los productos…"
-                  value={form.descripcion} onChange={cambiarDescripcion} />
+                <textarea id="pm-desc" maxLength={255} placeholder="Se llena sola al elegir los productos…"                  value={form.descripcion} onChange={cambiarDescripcion} />
                 <div className="pm-desc-bar">
                   {descManual && seleccion.length > 0 ? (
                     <button type="button" className="pm-link" onClick={() => setDescManual(false)}>

@@ -10,6 +10,8 @@ import ScrollToTop from './components/ScrollToTop';
 import AvisoComprobanteDevuelto from './components/AvisoComprobanteDevuelto';
 import AdminLoading from './components/AdminLoading';
 import Accesibilidad from './components/Accesibilidad';
+import AccionesTablasGlobales from './components/AccionesTablasGlobales';
+import CargaGlobal from './components/CargaGlobal';
 
 /* Las páginas se cargan "por partes": cada una se descarga solo cuando
    el usuario entra a su ruta. Así la primera visita no baja todo el
@@ -41,12 +43,14 @@ const ReportesAdmin = lazy(() => import('./pages/admin/ReportesAdmin'));
 const BackupsAdmin = lazy(() => import('./pages/admin/BackupsAdmin'));
 const ConfiguracionAdmin = lazy(() => import('./pages/admin/ConfiguracionAdmin'));
 const AyudaAdmin = lazy(() => import('./pages/admin/AyudaAdmin'));
+const ManualProgramador = lazy(() => import('./pages/admin/ManualProgramador'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const CierreInventarioAdmin = lazy(() => import('./pages/admin/CierreInventarioAdmin'));
 const TerminosPrivacidad = lazy(() => import('./pages/TerminosPrivacidad'));
 const Ayuda = lazy(() => import('./pages/admin/Ayuda'));
 const AyudaCliente = lazy(() => import('./pages/AyudaCliente'));
 const InventarioAdmin = lazy(() => import('./pages/admin/InventarioAdmin'));
+const Creditos = lazy(() => import('./pages/Creditos'));
 
 
 export default function App() {
@@ -54,7 +58,9 @@ export default function App() {
     <ToastProvider>
       <TooltipsGlobales />
       <AvisoComprobanteDevuelto />
-        <Suspense fallback={<AdminLoading texto="Cargando" subtexto="Un momento, por favor" />}>
+      <AccionesTablasGlobales />
+      <CargaGlobal />
+      <Suspense fallback={<AdminLoading texto="Cargando" subtexto="Un momento, por favor" />}>
         <Routes>
           {/* Páginas públicas: se pueden ver con o sin sesión. */}
           <Route element={<ProtectedRoute allowGuest />}>
@@ -72,6 +78,7 @@ export default function App() {
           <Route path="/registro" element={<Registro />} />
           <Route path="/terminos" element={<TerminosCondiciones />} />
           <Route path="/privacidad" element={<PoliticaPrivacidad />} />
+          <Route path="/creditos" element={<Creditos />} />
           <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
           <Route path="/verificar-codigo" element={<VerificarCodigo />} />
           <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />
@@ -121,6 +128,7 @@ export default function App() {
                 <Route path="/backups" element={<Navigate to="/copias-de-seguridad" replace />} />
                 <Route path="/usuarios" element={<UsuariosAdmin />} />
                 <Route path="/reportes" element={<ReportesAdmin />} />
+                <Route path="/manual-programador" element={<ManualProgramador />} />
               </Route>
             </Route>
           </Route>

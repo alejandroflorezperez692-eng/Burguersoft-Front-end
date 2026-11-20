@@ -499,7 +499,7 @@ export default function CierreInventarioAdmin() {
             </label>
             <label style={estiloEtiqueta}>
               Responsable
-              <SelectOscuro style={estiloFiltro} value={fResponsable} onChange={(e) => setFResponsable(e.target.value)}>
+              <SelectOscuro searchable searchPlaceholder="Buscar responsable…" style={estiloFiltro} value={fResponsable} onChange={(e) => setFResponsable(e.target.value)}>
                 <option value="">Todos</option>
                 {responsables.map((r) => <option key={r} value={r}>{r}</option>)}
               </SelectOscuro>

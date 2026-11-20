@@ -852,7 +852,7 @@ export default function MisCompras() {
                 </div>
 
                 {p.items.length > 0 && (
-                  <table className="pedido-table">
+                  <table className="pedido-table" data-sin-acciones>
                     <thead>
                       <tr>
                         <th>Producto</th>

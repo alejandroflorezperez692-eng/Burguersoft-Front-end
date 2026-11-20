@@ -1,4 +1,5 @@
 import type { Row, Workbook, Worksheet } from 'exceljs';
+import { agregarPortada } from '../../utils/portadaExcel';
 
 
 export interface VentaExport {
@@ -139,9 +140,14 @@ export async function exportarReporteExcel(op: OpcionesReporte) {
   const hayC = compras.length > 0;
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'Reportes';
+  wb.creator = 'Burguersoft';
   wb.created = new Date();
 
+  await agregarPortada(
+    wb,
+    'Reporte general de ventas, compras y márgenes',
+    `Periodo: ${op.desde} a ${op.hasta}`,
+  );
 
   const wsRes = wb.addWorksheet('Resumen');
   wsRes.views = [{ showGridLines: false }];

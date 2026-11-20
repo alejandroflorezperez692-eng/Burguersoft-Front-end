@@ -28,6 +28,7 @@ import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
 import ConfirmarSalida from '../components/ConfirmarSalida';
+import Breadcrumb from '../components/Breadcrumb';
 import pedidosIcono from '../assets/img/pedidos.svg';
 
 const todosLosItems = [
@@ -44,6 +45,7 @@ const todosLosItems = [
   { to: '/reportes', label: 'Reportes', icono: insignia, roles: ACCESO.soloAdmin },
   { to: '/copias-de-seguridad', label: 'Copias de seguridad', icono: engranaje, roles: ACCESO.soloAdmin },
   { to: '/usuarios', label: 'Usuarios', icono: equipo, roles: ACCESO.soloAdmin },
+  { to: '/manual-programador', label: 'Manual del programador', icono: insignia, roles: ACCESO.soloAdmin },
   { to: '/ayuda-admin', label: 'Ayuda', icono: accesibilidad, roles: ACCESO.personal },
 ];
 
@@ -282,6 +284,7 @@ const salirDesdeMenuUsuario = () => {
       {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
 
       <div className="main-content">
+        <Breadcrumb variante="admin" />
         <Outlet />
         <AdminFooter />
       </div>

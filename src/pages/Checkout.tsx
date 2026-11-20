@@ -823,26 +823,31 @@ export default function Checkout() {
                     </button>
 
                     <div className="form-group">
-                      <label>Dirección <span className="checkout-required">*</span></label>
+                      <label htmlFor="co-direccion">Dirección <span className="checkout-required">*</span></label>
                       <input
+                        id="co-direccion"
                         value={direccion.linea1}
                         onChange={(e) => setDireccion({ ...direccion, linea1: e.target.value })}
                         placeholder="Calle 10 # 20-30"
                         required
+                        minLength={5}
+                        maxLength={120}
                       />
                     </div>
                     <div className="checkout-grid-2">
                       <div className="form-group">
-                        <label>Barrio <span className="checkout-required">*</span></label>
-                        <input value={direccion.barrio} onChange={(e) => setDireccion({ ...direccion, barrio: e.target.value })} required />
+                        <label htmlFor="co-barrio">Barrio <span className="checkout-required">*</span></label>
+                        <input id="co-barrio" value={direccion.barrio} onChange={(e) => setDireccion({ ...direccion, barrio: e.target.value })} required minLength={3} maxLength={80} />
                       </div>
                     </div>
                     <div className="form-group">
-                      <label>Referencia (opcional)</label>
+                      <label htmlFor="co-referencia">Referencia (opcional)</label>
                       <textarea
+                        id="co-referencia"
                         ref={refReferencia}
                         className="checkout-referencia"
                         rows={2}
+                        maxLength={255}
                         value={direccion.referencia}
                         onChange={(e) => setDireccion({ ...direccion, referencia: e.target.value })}
                         placeholder="Portón negro, casa esquinera, apto 301..."
@@ -851,22 +856,29 @@ export default function Checkout() {
                     </div>
                     <div className="checkout-grid-2">
                       <div className="form-group">
-                        <label>Nombre de quien recibe <span className="checkout-required">*</span></label>
+                        <label htmlFor="co-recibe">Nombre de quien recibe <span className="checkout-required">*</span></label>
                         <input
+                          id="co-recibe"
                           value={recibeNombre}
                           onChange={(e) => setRecibeNombre(e.target.value)}
                           placeholder="Nombre y apellido"
+                          minLength={3}
                           maxLength={150}
                           required
                         />
                       </div>
                       <div className="form-group">
-                        <label>Teléfono de quien recibe <span className="checkout-required">*</span></label>
+                        <label htmlFor="co-recibe-tel">Teléfono de quien recibe <span className="checkout-required">*</span></label>
                         <input
+                          id="co-recibe-tel"
                           value={recibeTelefono}
                           onChange={(e) => setRecibeTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
                           placeholder="3001234567"
                           inputMode="numeric"
+                          minLength={7}
+                          maxLength={10}
+                          pattern="[0-9]{7,10}"
+                          title="Entre 7 y 10 dígitos"
                           required
                         />
                       </div>
@@ -953,9 +965,15 @@ export default function Checkout() {
                 </div>
 
                 <div className="form-group">
-                  <label>Teléfono <span className="checkout-required">*</span></label>
+                  <label htmlFor="co-telefono">Teléfono <span className="checkout-required">*</span></label>
                   <input
+                    id="co-telefono"
                     inputMode="tel"
+                    required
+                    minLength={7}
+                    maxLength={10}
+                    pattern="[0-9]{7,10}"
+                    title="Entre 7 y 10 dígitos"
                     value={formatearTelefono(telefono)}
                     onChange={(e) => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     placeholder="300 345 8970"

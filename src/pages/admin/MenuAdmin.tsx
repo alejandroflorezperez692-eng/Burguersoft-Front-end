@@ -335,6 +335,16 @@ export default function MenuAdmin() {
   const elegirArchivo = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] ?? null;
     if (!f) return;
+    if (!f.type.startsWith('image/')) {
+      showToast('El archivo debe ser una imagen (JPG, PNG o WEBP).', true);
+      e.target.value = '';
+      return;
+    }
+    if (f.size > 4 * 1024 * 1024) {
+      showToast('La imagen no puede superar los 4 MB.', true);
+      e.target.value = '';
+      return;
+    }
     setArchivo(f);
     setImgActual(false);
   };
@@ -495,14 +505,14 @@ export default function MenuAdmin() {
             <div className="mn-form-left">
               <div className="mn-field">
                 <label htmlFor="mn-nombre">Nombre <span className="mn-req">*</span></label>
-                <input id="mn-nombre" style={rojo(errores.nombre)} type="text" maxLength={40} placeholder="Ej: Hamburguesa Especial"
+                <input id="mn-nombre" style={rojo(errores.nombre)} type="text" required minLength={2} maxLength={40} placeholder="Ej: Hamburguesa Especial"
                   value={form.nombre} onChange={setCampo('nombre')} />
               </div>
 
               <div className="mn-row-3">
                 <div className="mn-field">
                   <label htmlFor="mn-precio">Precio <span className="mn-req">*</span></label>
-                  <input id="mn-precio" style={rojo(errores.valor)} type="text" inputMode="numeric" placeholder="$ 0"
+                  <input id="mn-precio" style={rojo(errores.valor)} type="text" inputMode="numeric" required maxLength={9} placeholder="$ 0"
                     value={form.valor ? Number(form.valor).toLocaleString('es-CO') : ''}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, valor: e.target.value.replace(/\D/g, '').slice(0, 9) }))
@@ -541,7 +551,7 @@ export default function MenuAdmin() {
 
               <div className="mn-field">
                 <label htmlFor="mn-desc">Descripción <span className="mn-req">*</span></label>
-                <textarea id="mn-desc" style={rojo(errores.descripcion)} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
+                <textarea id="mn-desc" style={rojo(errores.descripcion)} required minLength={3} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
                   value={form.descripcion} onChange={setCampo('descripcion')} />
                 <span className="mn-counter">{form.descripcion.length}/255</span>
               </div>
@@ -813,7 +823,7 @@ export default function MenuAdmin() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end' }}>
           <div className="mn-field" style={{ margin: 0 }}>
             <label htmlFor="mn-f-categoria">Categoría</label>
-            <SelectOscuro id="mn-f-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
+            <SelectOscuro searchable searchPlaceholder="Buscar categoría…" id="mn-f-categoria" value={filtroCategoria} onChange={(e) => setFiltroCategoria(e.target.value)}>
               <option value="">Todas</option>
               {CATEGORIAS.map((c) => <option key={c} value={c}>{catLabel(c)}</option>)}
               <option value="Otras">Otras</option>

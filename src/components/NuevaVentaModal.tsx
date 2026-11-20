@@ -363,19 +363,22 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
             <h4><b>2</b> Información del cliente</h4>
             <div className="np-scroll">
               <div className="form-group">
-                <label>Cliente (opcional)</label>
-                <input type="text" maxLength={150} value={cliente} onChange={(e) => setCliente(e.target.value)} />
+                <label htmlFor="nv-cliente">Cliente (opcional)</label>
+                <input id="nv-cliente" type="text" maxLength={150} value={cliente} onChange={(e) => setCliente(e.target.value)} />
               </div>
                             {tipoEntrega === 'Domicilio' && (
                 <>
                   <div className="form-group">
-                    <label>Dirección <span style={{ color: '#E8821A' }}>*</span></label>
-                    <input type="text" maxLength={120} value={direccion} onChange={(e) => setDireccion(e.target.value)} />
+                    <label htmlFor="nv-direccion">Dirección <span className="required-marker">*</span></label>
+                    <input id="nv-direccion" type="text" required minLength={5} maxLength={120} value={direccion} onChange={(e) => setDireccion(e.target.value)} />
                   </div>
                   <div className="form-group">
-                    <label>Nombre de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
+                    <label htmlFor="nv-recibe">Nombre de quien recibe <span className="required-marker">*</span></label>
                     <input
+                      id="nv-recibe"
                       type="text"
+                      required
+                      minLength={3}
                       maxLength={150}
                       value={recibeNombre}
                       onChange={(e) => setRecibeNombre(e.target.value)}
@@ -383,11 +386,16 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                     />
                   </div>
                   <div className="form-group">
-                    <label>Teléfono de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
+                    <label htmlFor="nv-telefono">Teléfono de quien recibe <span className="required-marker">*</span></label>
                     <input
-                      type="text"
+                      id="nv-telefono"
+                      type="tel"
                       inputMode="numeric"
+                      required
+                      minLength={7}
                       maxLength={15}
+                      pattern="[0-9]{7,15}"
+                      title="Entre 7 y 15 dígitos"
                       value={telefono}
                       onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
                       placeholder="3001234567"
@@ -397,8 +405,8 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
               )}
               
               <div className="form-group">
-                <label>Notas para cocina</label>
-                <input type="text" maxLength={120} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej: sin tomate" />
+                <label htmlFor="nv-notas">Notas para cocina</label>
+                <input id="nv-notas" type="text" maxLength={120} value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej: sin tomate" />
               </div>
 
               {tieneCuenta && mesaActual && (

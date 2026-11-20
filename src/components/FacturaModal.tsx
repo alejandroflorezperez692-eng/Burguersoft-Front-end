@@ -31,7 +31,7 @@ export default function FacturaModal({ isOpen, onClose }: { isOpen: boolean; onC
             <div style={{ fontSize: 20, fontWeight: 900, color: '#1C1410', letterSpacing: 1, fontFamily: 'Playfair Display,serif' }}>El Oriente</div>
             <div style={{ fontSize: 11, color: '#7A6855', marginTop: 4, letterSpacing: '.5px', textTransform: 'uppercase' }}>{fecha}</div>
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 16 }}>
+          <table data-sin-acciones style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, marginBottom: 16 }}>
             <thead>
               <tr style={{ background: '#F7F2EA' }}>
                 <th style={{ padding: '8px 10px', textAlign: 'left', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.5px', color: '#7A6855', borderRadius: '6px 0 0 6px' }}>Producto</th>

@@ -214,8 +214,9 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
             <form onSubmit={handleGuardarDatos} noValidate>
               <div className="mp-grid">
                 <div className="mp-field">
-                  <label className="mp-label">Nombre <span className="mp-req">*</span></label>
+                  <label className="mp-label" htmlFor="mp-nombre">Nombre <span className="mp-req">*</span></label>
                   <input
+                    id="mp-nombre"
                     type="text"
                     value={nombre}
                     onChange={(e) => {
@@ -225,12 +226,14 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                     }}
                     placeholder="Tu nombre"
                     required
+                    minLength={2}
                     maxLength={20}
                   />
                 </div>
                 <div className="mp-field">
-                  <label className="mp-label">Apellido <span className="mp-req">*</span></label>
+                  <label className="mp-label" htmlFor="mp-apellido">Apellido <span className="mp-req">*</span></label>
                   <input
+                    id="mp-apellido"
                     type="text"
                     value={apellido}
                     onChange={(e) => {
@@ -240,21 +243,23 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                     }}
                     placeholder="Tu apellido"
                     required
+                    minLength={2}
                     maxLength={20}
                   />
                 </div>
                 <div className="mp-field">
-                  <label className="mp-label">Tipo de documento <span className="mp-req">*</span></label>
+                  <label className="mp-label" htmlFor="mp-tdoc">Tipo de documento <span className="mp-req">*</span></label>
                   <div className="mp-select-wrap">
-                    <SelectOscuro value={tdoc} onChange={(e) => { marcarEditado(); setTdoc(e.target.value); }} required>
+                    <SelectOscuro id="mp-tdoc" value={tdoc} onChange={(e) => { marcarEditado(); setTdoc(e.target.value); }} required>
                       <option value="">Seleccione...</option>
                       {tiposDoc.map((t) => <option key={t} value={t}>{t}</option>)}
                     </SelectOscuro>
                   </div>
                 </div>
                 <div className="mp-field">
-                  <label className="mp-label">Número de documento <span className="mp-req">*</span></label>
+                  <label className="mp-label" htmlFor="mp-ndoc">Número de documento <span className="mp-req">*</span></label>
                   <input
+                    id="mp-ndoc"
                     type="text"
                     value={ndoc}
                     onChange={(e) => setNdoc(e.target.value.replace(/[^0-9A-Za-z]/g, ''))}
@@ -267,18 +272,18 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                   {esCliente && <span className="mp-hint">El número de documento no se puede cambiar.</span>}
                 </div>
                 <div className="mp-field mp-full">
-                  <label className="mp-label">Teléfono <span className="mp-req">*</span></label>
-                  <input type="tel" value={telefono} onChange={(e) => {
+                  <label className="mp-label" htmlFor="mp-telefono">Teléfono <span className="mp-req">*</span></label>
+                  <input id="mp-telefono" type="tel" value={telefono} onChange={(e) => {
                     let v = e.target.value.replace(/[^0-9]/g, '');
                     if (v.length > 0 && v[0] !== '3') v = '3' + v.slice(1);
                     if (v.length > 10) v = v.slice(0, 10);
                     setTelefono(v);
-                  }} placeholder="3001234567" maxLength={10} required />
+                  }} placeholder="3001234567" maxLength={10} minLength={10} pattern="[0-9]{10}" title="10 dígitos, debe iniciar por 3" required />
 
                 </div>
                 <div className="mp-field mp-full">
-                  <label className="mp-label">Correo electrónico</label>
-                  <input type="email" value={correo} disabled />
+                  <label className="mp-label" htmlFor="mp-correo">Correo electrónico</label>
+                  <input id="mp-correo" type="email" value={correo} disabled />
                   <span className="mp-hint">El correo no se puede cambiar.</span>
                 </div>
               </div>
@@ -293,16 +298,16 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
             <form onSubmit={handlePassword} noValidate>
               <div className="mp-grid">
                 <div className="mp-field mp-full">
-                  <label className="mp-label">Contraseña actual <span className="mp-req">*</span></label>
+                  <label className="mp-label" htmlFor="mp-pw-actual">Contraseña actual <span className="mp-req">*</span></label>
                   <div className="mp-pw">
-                    <input type={mostrarActual ? 'text' : 'password'} value={actual} onChange={(e) => setActual(e.target.value)} placeholder="••••••••" required />
+                    <input id="mp-pw-actual" type={mostrarActual ? 'text' : 'password'} value={actual} onChange={(e) => setActual(e.target.value)} placeholder="••••••••" required />
                     <button type="button" className="mp-pw-toggle" onClick={() => setMostrarActual((v) => !v)}>{mostrarActual ? 'Ocultar' : 'Mostrar'}</button>
                   </div>
                 </div>
                 <div className="mp-field mp-full">
-                  <label className="mp-label">Nueva contraseña <span className="mp-req">*</span></label>
+                  <label className="mp-label" htmlFor="mp-pw-nueva">Nueva contraseña <span className="mp-req">*</span></label>
                   <div className="mp-pw">
-                    <input type={mostrarNueva ? 'text' : 'password'} value={nueva} onChange={(e) => setNueva(e.target.value)} placeholder="Mínimo 8 caracteres" required />
+                    <input id="mp-pw-nueva" type={mostrarNueva ? 'text' : 'password'} value={nueva} onChange={(e) => setNueva(e.target.value)} placeholder="Mínimo 8 caracteres" required minLength={8} maxLength={64} />
                     <button type="button" className="mp-pw-toggle" onClick={() => setMostrarNueva((v) => !v)}>{mostrarNueva ? 'Ocultar' : 'Mostrar'}</button>
                   </div>
                   <div className={`barra-contrasena ${fuerza <= 1 ? 'rojo' : fuerza === 2 ? 'amarillo' : 'verde'}`} style={{ marginTop: 10 }}>
@@ -316,9 +321,9 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                   </ul>
                 </div>
                 <div className="mp-field mp-full">
-                  <label className="mp-label">Confirmar nueva contraseña <span className="mp-req">*</span></label>
+                  <label className="mp-label" htmlFor="mp-pw-confirmar">Confirmar nueva contraseña <span className="mp-req">*</span></label>
                   <div className="mp-pw">
-                    <input type={mostrarConf ? 'text' : 'password'} value={confirmar} onChange={(e) => setConfirmar(e.target.value)} placeholder="Repite la contraseña" required />
+                    <input id="mp-pw-confirmar" type={mostrarConf ? 'text' : 'password'} value={confirmar} onChange={(e) => setConfirmar(e.target.value)} placeholder="Repite la contraseña" required minLength={8} maxLength={64} />
                     <button type="button" className="mp-pw-toggle" onClick={() => setMostrarConf((v) => !v)}>{mostrarConf ? 'Ocultar' : 'Mostrar'}</button>
                   </div>
                   {confirmar && confirmar !== nueva && <p style={{ fontSize: 12, color: '#e63946', marginTop: 5 }}>Las contraseñas no coinciden.</p>}
@@ -326,6 +331,17 @@ export default function PerfilModal({ isOpen, onClose }: { isOpen: boolean; onCl
                 </div>
               </div>
               <div className="mp-actions">
+                <button
+                  type="button"
+                  className="mp-btn-cancel"
+                  onClick={() => {
+                    setActual('');
+                    setNueva('');
+                    setConfirmar('');
+                  }}
+                >
+                  Cancelar
+                </button>
                 <button type="submit" className="mp-btn-save" disabled={enviandoPwd}>
                   {enviandoPwd ? 'Actualizando...' : 'Actualizar contraseña'}
                 </button>

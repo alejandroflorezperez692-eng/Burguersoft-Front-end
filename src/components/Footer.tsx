@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function Footer() {
   return (
     <footer>
@@ -34,6 +36,13 @@ export default function Footer() {
 
       <div className="footer-bottom">
         <p>&copy; 2026 BURGUERSOFT – EL ORIENTE. Todos los derechos reservados.</p>
+        <nav className="footer-legal" aria-label="Enlaces legales">
+          <Link to="/terminos">Términos y condiciones</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/privacidad">Política de privacidad</Link>
+          <span aria-hidden="true">·</span>
+          <Link to="/creditos">Créditos y licencias</Link>
+        </nav>
       </div>
     </footer>
   );

@@ -1,5 +1,6 @@
 
 import type { Row, Workbook, Worksheet } from 'exceljs';
+import { agregarPortada } from './portadaExcel';
 
 /* ---------- Tipos ---------- */
 export interface InsumoExport {
@@ -168,8 +169,14 @@ export async function exportarHistorialInsumoExcel(op: {
   const unidad = insumo.unidad_medida ? ` (${insumo.unidad_medida})` : '';
 
   const wb = new ExcelJS.Workbook();
-  wb.creator = 'Reportes';
+  wb.creator = 'Burguersoft';
   wb.created = new Date();
+
+  await agregarPortada(
+    wb,
+    `Historial de insumo · ${insumo.nombre}`,
+    'Compras y cierres de inventario del insumo',
+  );
 
   /* ===== Resumen (va primero) ===== */
   const wsRes = wb.addWorksheet('Resumen');

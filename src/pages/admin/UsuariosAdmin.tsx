@@ -335,14 +335,17 @@ const load = async (silencioso = false) => {
               <circle cx="11" cy="11" r="7" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
+            <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." aria-label="Buscar usuario" value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
           </div>
         </div>
 
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 190 }}>
-            <label>Rol</label>
+            <label htmlFor="usr-f-rol">Rol</label>
             <SelectOscuro
+              id="usr-f-rol"
+              searchable
+              searchPlaceholder="Buscar rol…"
               value={filtroRol}
               onChange={(e) => { setFiltroRol(e.target.value); setPagina(1); }}
             >
@@ -356,8 +359,9 @@ const load = async (silencioso = false) => {
           </div>
 
           <div className="form-group" style={{ marginBottom: 0, minWidth: 220 }}>
-            <label>Nombre</label>
+            <label htmlFor="usr-f-nombre">Nombre</label>
             <input
+              id="usr-f-nombre"
               type="text"
               placeholder="Filtrar por nombre..."
               value={filtroNombre}
@@ -366,8 +370,9 @@ const load = async (silencioso = false) => {
           </div>
 
           <div className="form-group" style={{ marginBottom: 0, minWidth: 150 }}>
-            <label>Mostrar</label>
+            <label htmlFor="usr-f-mostrar">Mostrar</label>
             <SelectOscuro
+              id="usr-f-mostrar"
               value={porPagina}
               onChange={(e) => { setPorPagina(Number(e.target.value)); setPagina(1); }}
             >
@@ -463,10 +468,13 @@ const load = async (silencioso = false) => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv('nombre')}>
-                <label>Nombre <span className="mn-req">*</span></label>
+                <label htmlFor="usr-nombre">Nombre <span className="mn-req">*</span></label>
                 <input
+                  id="usr-nombre"
                   style={bordeError(errores.nombre)}
                   value={nombre}
+                  required
+                  minLength={2}
                   maxLength={50}
                   placeholder="Ej. Alejandro"
                   onChange={(e) => setNombre(soloLetras(e.target.value))}
@@ -475,10 +483,13 @@ const load = async (silencioso = false) => {
                 {msgCampo('nombre')}
               </div>
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv('apellido')}>
-                <label>Apellido <span className="mn-req">*</span></label>
+                <label htmlFor="usr-apellido">Apellido <span className="mn-req">*</span></label>
                 <input
+                  id="usr-apellido"
                   style={bordeError(errores.apellido)}
                   value={apellido}
+                  required
+                  minLength={2}
                   maxLength={50}
                   placeholder="Ej. Florez"
                   onChange={(e) => setApellido(soloLetras(e.target.value))}
@@ -489,11 +500,13 @@ const load = async (silencioso = false) => {
             </div>
 
             <div className="form-group" style={{ marginBottom: 14 }} data-invalido={inv('correo')}>
-              <label>Correo <span className="mn-req">*</span></label>
+              <label htmlFor="usr-correo">Correo <span className="mn-req">*</span></label>
               <input
+                id="usr-correo"
                 style={bordeError(errores.correo)}
                 type="email"
                 value={correo}
+                required
                 maxLength={150}
                 placeholder="correo@ejemplo.com"
                 onChange={(e) => setCorreo(e.target.value)}
@@ -502,7 +515,7 @@ const load = async (silencioso = false) => {
             </div>
 
             <div className="form-group" style={{ marginBottom: 14 }} data-invalido={inv('password')}>
-              <label>
+              <label htmlFor="usr-password">
                 Nueva contraseña{' '}
                 <span style={{ color: 'var(--text-400)', fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>
                   (opcional)
@@ -511,9 +524,11 @@ const load = async (silencioso = false) => {
 
               <div style={{ position: 'relative' }}>
                 <input
+                  id="usr-password"
                   style={{ paddingRight: 70, ...bordeError(errores.password) }}
                   type={verPass ? 'text' : 'password'}
                   value={password}
+                  minLength={8}
                   maxLength={64}
                   autoComplete="new-password"
                   placeholder="Dejar vacío para no cambiarla"
@@ -537,35 +552,31 @@ const load = async (silencioso = false) => {
               </div>
               {msgCampo('password')}
 
-                {true && (
-                <>
-                  <div
-                    className={`barra-contrasena ${claseBarra}`}
-                    role="progressbar"
-                    aria-label="Requisitos de la contraseña"
-                    aria-valuemin={0}
-                    aria-valuemax={requisitos.length}
-                    aria-valuenow={requisitosCumplidos}
-                    style={{ marginTop: 10 }}
-                  >
-                    <span className="barra-contrasena-fill" style={{ width: `${porcentajeBarra}%` }} />
-                  </div>
-                  <ul className="requisitos" style={{ marginTop: 10 }}>
-                    {requisitos.map((r) => (
-                      <li key={r.id} className={`requisito${r.cumple ? ' cumple' : ''}`}>
-                        <span aria-hidden="true">{r.cumple ? '✅' : '❌'}</span>
-                        {r.texto}
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
+              <div
+                className={`barra-contrasena ${claseBarra}`}
+                role="progressbar"
+                aria-label="Requisitos de la contraseña"
+                aria-valuemin={0}
+                aria-valuemax={requisitos.length}
+                aria-valuenow={requisitosCumplidos}
+                style={{ marginTop: 10 }}
+              >
+                <span className="barra-contrasena-fill" style={{ width: `${porcentajeBarra}%` }} />
+              </div>
+              <ul className="requisitos" style={{ marginTop: 10 }}>
+                {requisitos.map((r) => (
+                  <li key={r.id} className={`requisito${r.cumple ? ' cumple' : ''}`}>
+                    <span aria-hidden="true">{r.cumple ? '✅' : '❌'}</span>
+                    {r.texto}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv('rol')}>
-                <label>Rol <span className="mn-req">*</span></label>
-                <SelectOscuro style={bordeError(errores.rol)} value={rol} onChange={(e) => setRol(e.target.value)}>
+                <label htmlFor="usr-rol">Rol <span className="mn-req">*</span></label>
+                <SelectOscuro id="usr-rol" searchable searchPlaceholder="Buscar rol…" style={bordeError(errores.rol)} value={rol} onChange={(e) => setRol(e.target.value)} required>
                   <option value="">Seleccionar rol...</option>
                   <option value="Administrador">Administrador</option>
                   <option value="Cajero">Cajero</option>
@@ -576,8 +587,8 @@ const load = async (silencioso = false) => {
                 {msgCampo('rol')}
               </div>
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv('estado')}>
-                <label>Estado <span className="mn-req">*</span></label>
-                <SelectOscuro style={bordeError(errores.estado)} value={estado} onChange={(e) => setEstado(e.target.value)}>
+                <label htmlFor="usr-estado">Estado <span className="mn-req">*</span></label>
+                <SelectOscuro id="usr-estado" style={bordeError(errores.estado)} value={estado} onChange={(e) => setEstado(e.target.value)} required>
                   <option value="">Seleccionar estado...</option>
                   <option value="Activo">Activo</option>
                   <option value="Inactivo">Inactivo</option>
@@ -588,8 +599,8 @@ const load = async (silencioso = false) => {
             </div>
 
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
-              <button className="btn-save" onClick={guardar}>Actualizar</button>
+              <button type="button" className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
+              <button type="button" className="btn-save" onClick={guardar}>Actualizar</button>
             </div>
           </div>
         </div>

@@ -490,6 +490,7 @@ export default function BackupsAdmin() {
 
 
   const inputPassword = (
+    id: string,
     valor: string,
     setValor: (v: string) => void,
     ver: boolean,
@@ -499,11 +500,16 @@ export default function BackupsAdmin() {
   ) => (
     <div className="bk-pw">
       <input
+        id={id}
+        name={id}
         type={ver ? 'text' : 'password'}
         value={valor}
+        required
+        minLength={6}
         maxLength={64}
         autoComplete="current-password"
         placeholder={placeholder}
+        aria-label={placeholder}
         onChange={(e) => setValor(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter' && onEnter) onEnter(); }}
       />
@@ -554,6 +560,7 @@ export default function BackupsAdmin() {
           en un archivo cifrado con tu contraseña. Te la pediremos antes de generarla para confirmar que eres tú.
         </p>
         <button
+          type="button"
           className="btn-save"
           onClick={abrirModalGen}
           disabled={generando}
@@ -602,6 +609,7 @@ export default function BackupsAdmin() {
                       <td className="td-acciones">
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
                           <button
+                            type="button"
                             className="btn-icon btn-icon-restore btn-accion"
                             onClick={() => abrirModalRestore(b)}
                             disabled={ocupado}
@@ -610,6 +618,7 @@ export default function BackupsAdmin() {
                             Restaurar
                           </button>
                           <button
+                            type="button"
                             className="btn-icon btn-icon-edit btn-accion"
                             onClick={() => descargarCifrado(b)}
                             disabled={ocupado || descargandoId === b.id}
@@ -620,6 +629,7 @@ export default function BackupsAdmin() {
                           {drive.conectada && (
                             !enDrive ? (
                               <button
+                                type="button"
                                 className="btn-accion"
                                 onClick={() => subirDrive(b)}
                                 disabled={ocupado || subiendoDrive === b.id}
@@ -629,6 +639,7 @@ export default function BackupsAdmin() {
                               </button>
                             ) : (
                               <button
+                                type="button"
                                 className="btn-accion"
                                 onClick={() => descargarDeDrive(b)}
                                 disabled={ocupado || descargandoId === b.id}
@@ -639,6 +650,7 @@ export default function BackupsAdmin() {
                             )
                           )}
                           <button
+                            type="button"
                             className="btn-icon btn-icon-del btn-accion"
                             onClick={() => del(b)}
                             disabled={ocupado}
@@ -681,13 +693,13 @@ export default function BackupsAdmin() {
         {drive.configurada && (
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {!drive.conectada ? (
-              <button className="btn-save" onClick={conectarDrive}>Conectar con Google Drive</button>
+              <button type="button" className="btn-save" onClick={conectarDrive}>Conectar con Google Drive</button>
             ) : (
               <>
-                <button className="btn-cancel" onClick={verCopiasDrive} disabled={cargandoDrive}>
+                <button type="button" className="btn-cancel" onClick={verCopiasDrive} disabled={cargandoDrive}>
                   {cargandoDrive ? 'Cargando…' : 'Ver copias en Drive'}
                 </button>
-                <button className="btn-cancel" onClick={desconectarDrive} disabled={desconectando}>
+                <button type="button" className="btn-cancel" onClick={desconectarDrive} disabled={desconectando}>
                   {desconectando ? 'Desconectando…' : 'Desconectar'}
                 </button>
               </>
@@ -699,16 +711,23 @@ export default function BackupsAdmin() {
      
       {modalGen && (
         <div className="modal-overlay open" onClick={() => { if (!generando) setModalGen(false); }}>
-          <div className="modal-box" style={{ maxWidth: 460 }} onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-box"
+            style={{ maxWidth: 460 }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bk-titulo-generar"
+          >
             <button type="button" className="modal-x" disabled={generando} onClick={() => setModalGen(false)} aria-label="Cerrar">×</button>   {/* ➕ */}
-            <h2>Generar copia de seguridad</h2>
+            <h2 id="bk-titulo-generar">Generar copia de seguridad</h2>
             <p className="bk-desc">
               Se generará una copia <strong>completa de la base de datos</strong> en un archivo SQL cifrado
               (.sql.enc, AES-256-GCM). Ingresa tu contraseña para confirmar tu identidad.
             </p>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Contraseña de tu cuenta <span className="mn-req">*</span></label>
-              {inputPassword(passGen, setPassGen, verPassGen, setVerPassGen, generar)}
+              <label htmlFor="bk-pass-generar">Contraseña de tu cuenta <span className="mn-req">*</span></label>
+              {inputPassword('bk-pass-generar', passGen, setPassGen, verPassGen, setVerPassGen, generar)}
             </div>
             {drive.conectada && (
               <label className="bk-check">
@@ -725,8 +744,8 @@ export default function BackupsAdmin() {
               </label>
             )}
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModalGen(false)} disabled={generando}>Cancelar</button>
-              <button className="btn-save" onClick={generar} disabled={generando}>
+              <button type="button" className="btn-cancel" onClick={() => setModalGen(false)} disabled={generando}>Cancelar</button>
+              <button type="button" className="btn-save" onClick={generar} disabled={generando}>
                 {generando ? 'Generando...' : 'Generar copia'}
               </button>
             </div>
@@ -737,9 +756,16 @@ export default function BackupsAdmin() {
      
       {restoreSel && (
         <div className="modal-overlay open" onClick={() => { if (!restaurando) setRestoreSel(null); }}>
-          <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-box"
+            style={{ maxWidth: 520 }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bk-titulo-restaurar"
+          >
             <button type="button" className="modal-x" disabled={restaurando} onClick={() => setRestoreSel(null)} aria-label="Cerrar">×</button>   {/* ➕ */}
-            <h2>Restaurar copia de seguridad</h2>
+            <h2 id="bk-titulo-restaurar">Restaurar copia de seguridad</h2>
             <p className="bk-desc">
               Copia <strong>#{restoreSel.id}</strong> — {resumenContenido(restoreSel).texto}, del{' '}
               {restoreSel.fecha ? new Date(restoreSel.fecha).toLocaleString() : '—'}.
@@ -783,13 +809,14 @@ export default function BackupsAdmin() {
             </p>
 
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label>Contraseña de tu cuenta o de la copia <span className="mn-req">*</span></label>
-              {inputPassword(restorePass, setRestorePass, verRestorePass, setVerRestorePass, confirmarRestaurar, 'Contraseña de tu cuenta o de la copia')}
+              <label htmlFor="bk-pass-restaurar">Contraseña de tu cuenta o de la copia <span className="mn-req">*</span></label>
+              {inputPassword('bk-pass-restaurar', restorePass, setRestorePass, verRestorePass, setVerRestorePass, confirmarRestaurar, 'Contraseña de tu cuenta o de la copia')}
             </div>
 
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setRestoreSel(null)} disabled={restaurando}>Cancelar</button>
+              <button type="button" className="btn-cancel" onClick={() => setRestoreSel(null)} disabled={restaurando}>Cancelar</button>
               <button
+                type="button"
                 className="btn-save bk-confirmar"
                 onClick={confirmarRestaurar}
                 disabled={restaurando}
@@ -805,9 +832,16 @@ export default function BackupsAdmin() {
      
       {modalDrive && (
         <div className="modal-overlay open" onClick={() => setModalDrive(false)}>
-          <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-box"
+            style={{ maxWidth: 520 }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bk-titulo-drive"
+          >
             <button type="button" className="modal-x" onClick={() => setModalDrive(false)} aria-label="Cerrar">×</button>   {/* ➕ */}
-            <h2>Copias en Google Drive</h2>
+            <h2 id="bk-titulo-drive">Copias en Google Drive</h2>
             {driveArchivos.length > 0 ? (
               <div style={{ maxHeight: 340, overflowY: 'auto', marginBottom: 8 }}>
                 {driveArchivos.map((f, i) => (
@@ -829,7 +863,7 @@ export default function BackupsAdmin() {
 
             )}
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModalDrive(false)}>Cerrar</button>
+              <button type="button" className="btn-cancel" onClick={() => setModalDrive(false)}>Cerrar</button>
             </div>
           </div>
         </div>

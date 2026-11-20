@@ -27,7 +27,7 @@ export default function Login() {
     password_ok: 'Contraseña cambiada correctamente. Inicia sesión con tu nueva contraseña.',
     logout_ok: 'Has cerrado sesión correctamente.',
     sesion_expirada: 'Tu sesión expiró. Inicia sesión de nuevo.',
-    registro_ok: 'Tu cuenta fue creada correctamente. Inicia sesión para continuar.',
+    registro_ok: 'Tu cuenta fue creada. Un administrador debe activarla antes de que puedas iniciar sesión.',
   };
 
   const [aviso, setAviso] = useState<string | null>(null);
@@ -137,6 +137,10 @@ export default function Login() {
             id="email"
             className="input"
             placeholder="Correo electrónico"
+            aria-label="Correo electrónico"
+            autoComplete="email"
+            inputMode="email"
+            maxLength={150}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -151,6 +155,9 @@ export default function Login() {
               id="password"
               className="input"
               placeholder="Ingresa tu contraseña"
+              aria-label="Contraseña"
+              autoComplete="current-password"
+              maxLength={64}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

@@ -1,5 +1,6 @@
 import axios, { type AxiosResponse } from 'axios';
 import { API_URL } from './config';
+import { cargaFinalizada, cargaIniciada } from '../utils/cargaGlobal';
 import {
   MENSAJE_DESCONOCIDO,
   MENSAJE_SERVIDOR,
@@ -22,6 +23,7 @@ const sanitizar = (mensaje: unknown, status?: number): string => {
 };
 
 apiClient.interceptors.request.use((config) => {
+  cargaIniciada();
   const token = sessionStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -30,8 +32,12 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    cargaFinalizada();
+    return response;
+  },
   (error) => {
+    cargaFinalizada();
     const token = sessionStorage.getItem('token');
     const esLogin = error.config?.url?.includes('/login');
 

@@ -1254,7 +1254,16 @@ export default function PedidosTurno() {
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   style={{ display: 'none' }}
-                  onChange={(e) => setArchivoCobro(e.target.files?.[0] ?? null)}
+                  onChange={(e) => {
+                    const archivo = e.target.files?.[0] ?? null;
+                    if (archivo && archivo.size > 8 * 1024 * 1024) {
+                      alertar('El comprobante no puede superar los 8 MB.');
+                      e.target.value = '';
+                      setArchivoCobro(null);
+                      return;
+                    }
+                    setArchivoCobro(archivo);
+                  }}
                 />
                 {previewCobro ? (
                   <div className="tv-drop-preview">

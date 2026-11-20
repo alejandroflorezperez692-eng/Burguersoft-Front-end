@@ -1214,7 +1214,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
 
             <h4 className="cierre-sub">Productos vendidos</h4>
             <div className="cierre-scroll">
-              <table className="cierre-tabla">
+              <table className="cierre-tabla" data-sin-acciones>
                 <thead><tr><th>Producto</th><th className="r">Cant.</th><th className="r">Subtotal</th></tr></thead>
                 <tbody>
                   {cierre.productos.map((p) => (
@@ -1265,17 +1265,22 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div style={{ padding: 28 }}>
           <div className="grid-registro">
             <div className="form-group">
-              <label>Producto</label>
-              <SelectOscuro value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
+              <label htmlFor="venta-producto">Producto <span className="required-marker">*</span></label>
+              <SelectOscuro searchable searchPlaceholder="Buscar producto…" id="venta-producto" value={productoId} style={rojoProducto} onChange={(e) => setProductoId(Number(e.target.value))}>
                 <option value={0}>Seleccionar...</option>
                 {(productos ?? []).map((p) => <option key={p?.id ?? p?.nombre} value={p?.id}>{p?.nombre ?? 'Sin nombre'} — ${Number(p?.valor || 0).toLocaleString('es-CO')}</option>)}
               </SelectOscuro>
             </div>
             <div className="form-group">
-              <label>Cantidad</label>
+              <label htmlFor="venta-cantidad">Cantidad <span className="required-marker">*</span></label>
               <input
+                id="venta-cantidad"
                 type="number"
                 min={1}
+                max={999}
+                step={1}
+                inputMode="numeric"
+                required
                 value={cantidad}
                 onChange={(e) => setCantidad(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') agregarAlCarrito(); }}
@@ -1296,7 +1301,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <div className="grid-registro" style={{ marginTop: 18 }}>
             <div className="form-group">
               <label>Combo (opcional)</label>
-              <SelectOscuro value={promocionId} onChange={(e) => setPromocionId(Number(e.target.value))}>
+              <SelectOscuro searchable searchPlaceholder="Buscar combo…" value={promocionId} onChange={(e) => setPromocionId(Number(e.target.value))}>
                 <option value={0}>Seleccionar combo...</option>
                 {(promociones ?? [])
                   .filter((p) => p?.estado === 'Activa')
@@ -1308,10 +1313,14 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               </SelectOscuro>
             </div>
             <div className="form-group">
-              <label>Cantidad de combos</label>
+              <label htmlFor="venta-cantidad-combo">Cantidad de combos</label>
               <input
+                id="venta-cantidad-combo"
                 type="number"
                 min={1}
+                max={999}
+                step={1}
+                inputMode="numeric"
                 value={cantidadCombo}
                 onChange={(e) => setCantidadCombo(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') agregarCombo(); }}

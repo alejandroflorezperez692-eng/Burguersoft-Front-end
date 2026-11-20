@@ -152,7 +152,7 @@ const load = async (silencioso = false) => {
     if (errores.nit) { showToast('El NIT debe tener 8 o 9 dígitos (sin contar el dígito de verificación)', true); return; }
     try {
       if (editId) {
-        const { nit, ...body } = form;
+        const { nit: _nit, ...body } = form;
         await apiClient.put(`/marcas/${editId}`, { ...body, nombre: body.nombre.trim(), img: body.img.trim(), telefono: body.telefono.trim(), correo: body.correo.trim() });
         showToast('Proveedor actualizado correctamente');
       } else {
@@ -230,6 +230,7 @@ const load = async (silencioso = false) => {
               className="mn-search"
               type="text"
               placeholder="Buscar por nombre, correo o teléfono..."
+              aria-label="Buscar proveedor"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -257,8 +258,8 @@ const load = async (silencioso = false) => {
         
         <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <div className="form-group" style={{ marginBottom: 0, minWidth: 210 }}>
-            <label>Proveedores</label>
-            <SelectOscuro value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)}>
+            <label htmlFor="prov-f-proveedor">Proveedores</label>
+            <SelectOscuro id="prov-f-proveedor" searchable searchPlaceholder="Buscar proveedor…" value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)}>
               <option value="">Todos los proveedores</option>
               {proveedoresOrdenados.map((m) => (
                 <option key={m.id} value={String(m.id)}>{m.nombre}</option>
@@ -267,8 +268,9 @@ const load = async (silencioso = false) => {
           </div>
 
           <div className="form-group" style={{ marginBottom: 0, minWidth: 220 }}>
-            <label>Nombre</label>
+            <label htmlFor="prov-f-nombre">Nombre</label>
             <input
+              id="prov-f-nombre"
               type="text"
               placeholder="Filtrar por nombre..."
               value={filtroNombre}
@@ -417,8 +419,8 @@ const load = async (silencioso = false) => {
             <div style={{ padding: '24px 32px 28px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
 
             <div className="form-group" style={{ marginBottom: 14 }}>
-              <label>Nombre <span className="mn-req">*</span></label>
-              <input style={bordeError(errores.nombre)} value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Postobón" />
+              <label htmlFor="prov-nombre">Nombre <span className="mn-req">*</span></label>
+              <input id="prov-nombre" style={bordeError(errores.nombre)} value={form.nombre} required minLength={2} maxLength={80} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Postobón" />
             </div>
 
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', marginBottom: 14 }}>
@@ -438,35 +440,43 @@ const load = async (silencioso = false) => {
                 )}
               </div>
               <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
-                <label>Logo (URL) <span className="mn-req">*</span></label>
-                <input style={bordeError(errores.img)} value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
+                <label htmlFor="prov-img">Logo (URL) <span className="mn-req">*</span></label>
+                <input id="prov-img" style={bordeError(errores.img)} type="url" value={form.img} required maxLength={500} onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
               </div>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Teléfono <span className="mn-req">*</span></label>
+                <label htmlFor="prov-telefono">Teléfono <span className="mn-req">*</span></label>
                 <input
+                  id="prov-telefono"
                   style={bordeError(errores.telefono)}
+                  type="tel"
                   inputMode="numeric"
+                  required
+                  minLength={7}
                   maxLength={10}
+                  pattern="[0-9]{7,10}"
+                  title="Entre 7 y 10 dígitos"
                   placeholder="Ej. 3001234567"
                   value={form.telefono}
                   onChange={(e) => setForm({ ...form, telefono: e.target.value.replace(/\D/g, '').slice(0, 10) })}
                 />
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label>Correo <span className="mn-req">*</span></label>
-                <input style={bordeError(errores.correo)} type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
+                <label htmlFor="prov-correo">Correo <span className="mn-req">*</span></label>
+                <input id="prov-correo" style={bordeError(errores.correo)} type="email" required maxLength={150} value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
               </div>
             </div>
 
             {!editId && (
               <div className="form-group" style={{ marginBottom: 14, maxWidth: 260 }}>
-                <label>NIT <span className="mn-req">*</span></label>
+                <label htmlFor="prov-nit">NIT <span className="mn-req">*</span></label>
                 <input
+                  id="prov-nit"
                   style={bordeError(errores.nit)}
                   inputMode="numeric"
+                  required
                   maxLength={11}
                   placeholder="Ej. 830047819-9"
                   value={form.nit}
@@ -476,8 +486,8 @@ const load = async (silencioso = false) => {
             )}
 
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
-              <button className="btn-save" onClick={save}>{editId ? 'Actualizar' : 'Crear'}</button>
+              <button type="button" className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
+              <button type="button" className="btn-save" onClick={save}>{editId ? 'Actualizar' : 'Crear'}</button>
             </div>
             </div>
           </div>

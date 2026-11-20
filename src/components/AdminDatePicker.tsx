@@ -8,12 +8,14 @@ interface AdminDatePickerProps {
   max?: string;
   style?: CSSProperties;
   label: string;
+  /** Permite asociar el botón con un <label htmlFor>. */
+  id?: string;
 }
 
 const fechaISO = (fecha: Date) =>
   `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}-${String(fecha.getDate()).padStart(2, '0')}`;
 
-export default function AdminDatePicker({ value, onChange, min, max, style, label }: AdminDatePickerProps) {
+export default function AdminDatePicker({ value, onChange, min, max, style, label, id }: AdminDatePickerProps) {
 const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
   const contenedorRef = useRef<HTMLDivElement>(null);
@@ -58,6 +60,7 @@ const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-
     <div className="compras-date-picker" ref={contenedorRef}>
       <button
         type="button"
+        id={id}
         className="compras-date-trigger"
         aria-label={label}
         aria-haspopup="dialog"

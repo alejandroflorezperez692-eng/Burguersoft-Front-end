@@ -82,3 +82,41 @@ body.dark-mode .so-opcion[aria-disabled="true"] {
 body.dark-mode .so-opcion[aria-disabled="true"]:hover {
   background: #000000;
 }
+
+/* Búsqueda dentro de los desplegables */
+.so-buscar-caja {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 6px;
+  border-bottom: 1px solid rgba(232, 130, 26, 0.35);
+  background: inherit;
+}
+.so-buscar {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px 10px;
+  border: 1px solid #d8cdbf;
+  border-radius: 6px;
+  background: #fff;
+  color: #1f2937;
+  font: inherit;
+}
+.so-buscar:focus {
+  outline: 2px solid #e8821a;
+  outline-offset: 0;
+}
+.so-vacio {
+  padding: 10px 12px;
+  color: #8a7b6b;
+  font-size: 12px;
+  text-align: center;
+}
+body.dark-mode .so-buscar {
+  background: #0b1220;
+  color: #e8eefc;
+  border-color: #e8821a;
+}
+body.dark-mode .so-vacio {
+  color: #c9b8a6;
+}

@@ -7,6 +7,7 @@ import { useCart } from '../hooks/useCart';
 import PerfilModal from './PerfilModal';
 import CartPanel from './CartPanel';
 import AdminLoading from './AdminLoading';
+import Breadcrumb from './Breadcrumb';
 import { normalizarRol } from '../utils/roles';
 import ConfirmarSalida from './ConfirmarSalida';
 
@@ -162,6 +163,8 @@ export default function PublicHeader() {
           )}
         </div>
       </header>
+
+      <Breadcrumb variante="publica" />
 
       {isAuthenticated && (
         <>

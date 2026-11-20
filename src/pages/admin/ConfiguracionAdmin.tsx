@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../components/Toast';
 import apiClient from '../../api/client';
@@ -30,6 +30,7 @@ export default function ConfiguracionAdmin() {
   const { user, updateUser, logout } = useAuth();
   const { showToast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [tdoc, setTdoc] = useState('');
@@ -360,6 +361,9 @@ export default function ConfiguracionAdmin() {
             </div>
 
             <div className="modal-actions">
+              <button type="button" className="btn-cancel" onClick={() => navigate('/inicio')}>
+                Cancelar
+              </button>
               <button className="btn-save" type="submit" disabled={guardando || cargando}>
                 {guardando ? 'Guardando...' : 'Guardar cambios'}
               </button>
@@ -460,6 +464,17 @@ export default function ConfiguracionAdmin() {
             </div>
 
             <div className="modal-actions">
+              <button
+                type="button"
+                className="btn-cancel"
+                onClick={() => {
+                  setActual('');
+                  setNueva('');
+                  setConfirmar('');
+                }}
+              >
+                Cancelar
+              </button>
               <button className="btn-save" type="submit" disabled={actualizandoPwd}>
                 {actualizandoPwd ? 'Actualizando...' : 'Actualizar contraseña'}
               </button>
