@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
@@ -20,6 +20,8 @@ import { nuevaClaveIdempotencia } from '../utils/idempotencia';
 import { esPagoElectronico } from '../utils/pagos';
 import { comprimirImagen } from '../utils/comprimirImagen';
 import AdminLoading from '../components/AdminLoading';
+import Boton from '../components/Boton';
+import { CreditCard as CreditCardIcon } from 'lucide-react';
 
 const TIPOS_DOCUMENTO = ['CC', 'CE', 'NIT', 'Pasaporte', 'Otro'];
 
@@ -356,8 +358,6 @@ export default function Checkout() {
           const lista: { numero: number; estado: string }[] = Array.isArray(data) ? data : [];
           setMesas(lista);
           setMesaSel((actual) => {
-            // Si el cliente llegó por el QR de una mesa, se preselecciona sola,
-            // pero solo si sigue libre.
             const candidata = actual ?? (mesaDesdeUrl ? mesaUrl : null);
             return candidata && lista.some((m) => m.numero === candidata && m.estado === 'Libre')
               ? candidata
@@ -729,10 +729,15 @@ export default function Checkout() {
     { id: 'efectivo' as const, etiqueta: 'Contra entrega (efectivo)', icono: <IconoEfectivo /> },
   ];
 
+  const manejarEnvio = (evento: FormEvent<HTMLFormElement>) => {
+    evento.preventDefault();
+    void pagarAhora();
+  };
+
   return (
     <div className="public-body checkout-wrapper">
       <PublicHeader />
-      <div className="checkout-page">
+      <form className="checkout-page" onSubmit={manejarEnvio}>
         <div className="checkout-main">
           {pedidoConfirmado ? (
             <section className="checkout-card">
@@ -765,21 +770,17 @@ export default function Checkout() {
                   </div>
 
                   <div className="checkout-confirm-acciones">
-                    <button
+                    <Boton variante="ver"
                       type="button"
                       className="btn-ubicacion"
                       onClick={() => navigate('/mis-compras')}
-                    >
-                      Ver el estado de mis compras
-                    </button>
+                    >Ver el estado de mis compras</Boton>
 
-                    <button
+                    <Boton variante="menu"
                       type="button"
                       className="btn-ubicacion"
                       onClick={() => navigate('/menu-publico')}
-                    >
-                      Hacer otro pedido
-                    </button>
+                    >Hacer otro pedido</Boton>
                   </div>
                 </div>
               </div>
@@ -792,13 +793,11 @@ export default function Checkout() {
               </div>
               <div className="checkout-seccion">
                 <div className="checkout-form">
-                  <button
+                  <Boton variante="menu"
                     type="button"
                     className="btn-ubicacion"
                     onClick={() => navigate('/menu-publico')}
-                  >
-                    Ir al menú
-                  </button>
+                  >Ir al menú</Boton>
                 </div>
               </div>
             </section>
@@ -828,13 +827,15 @@ export default function Checkout() {
                         value={direccion.linea1}
                         onChange={(e) => setDireccion({ ...direccion, linea1: e.target.value })}
                         placeholder="Calle 10 # 20-30"
+                        minLength={5}
+                        maxLength={150}
                         required
                       />
                     </div>
                     <div className="checkout-grid-2">
                       <div className="form-group">
                         <label>Barrio <span className="checkout-required">*</span></label>
-                        <input value={direccion.barrio} onChange={(e) => setDireccion({ ...direccion, barrio: e.target.value })} required />
+                        <input value={direccion.barrio} onChange={(e) => setDireccion({ ...direccion, barrio: e.target.value })} minLength={2} maxLength={100} required />
                       </div>
                     </div>
                     <div className="form-group">
@@ -844,8 +845,9 @@ export default function Checkout() {
                         className="checkout-referencia"
                         rows={2}
                         value={direccion.referencia}
-                        onChange={(e) => setDireccion({ ...direccion, referencia: e.target.value })}
+                        onChange={(e) => setDireccion({ ...direccion, referencia: e.target.value.slice(0, 255) })}
                         placeholder="Portón negro, casa esquinera, apto 301..."
+                        maxLength={255}
                       />
                       <span className="checkout-hint">Puedes arrastrar la esquina inferior para agrandar el campo.</span>
                     </div>
@@ -866,7 +868,11 @@ export default function Checkout() {
                           value={recibeTelefono}
                           onChange={(e) => setRecibeTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
                           placeholder="3001234567"
+                          type="tel"
                           inputMode="numeric"
+                          pattern="[0-9]{10}"
+                          minLength={10}
+                          maxLength={10}
                           required
                         />
                       </div>
@@ -955,10 +961,15 @@ export default function Checkout() {
                 <div className="form-group">
                   <label>Teléfono <span className="checkout-required">*</span></label>
                   <input
-                    inputMode="tel"
+                    type="tel"
+                    inputMode="numeric"
                     value={formatearTelefono(telefono)}
                     onChange={(e) => setTelefono(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     placeholder="300 345 8970"
+                    pattern="[0-9 ]{10,13}"
+                    minLength={10}
+                    maxLength={13}
+                    required
                   />
                 </div>
               </div>
@@ -1055,15 +1066,13 @@ export default function Checkout() {
                           <div className="checkout-comprobante-preview-info">
                             <strong>{comprobante?.name}</strong>
                             <span>{((comprobante?.size ?? 0) / 1024 / 1024).toFixed(2)} MB</span>
-                            <button
+                            <Boton variante="eliminar"
                               type="button"
                               onClick={() => {
                                 setComprobante(null);
                                 if (refComprobante.current) refComprobante.current.value = '';
                               }}
-                            >
-                              Quitar y elegir otra
-                            </button>
+                            >Quitar y elegir otra</Boton>
                           </div>
                         </div>
                       ) : (
@@ -1096,12 +1105,15 @@ export default function Checkout() {
               <div><span>Impuestos</span><span>{fmtCOP(impuestos)}</span></div>
               <div className="checkout-resumen-total"><span>Total</span><span>{fmtCOP(total)}</span></div>
             </div>
-            <button className="btn-pagar-ahora" onClick={pagarAhora} disabled={enviando}>
-              {enviando ? 'Procesando...' : 'Pagar ahora'}
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <Boton variante="volver" type="button" onClick={() => navigate('/menu-publico')}>Volver al menú</Boton>
+              <button type="submit" className="btn-pagar-ahora" disabled={enviando}><CreditCardIcon size={16} className="btn-ico" aria-hidden="true" />
+                {enviando ? 'Procesando...' : 'Pagar ahora'}
+              </button>
+            </div>
           </aside>
         )}
-      </div>
+      </form>
       {enviando && (
         <AdminLoading
           texto={comprobante ? 'Verificando tu comprobante' : 'Registrando tu pedido'}

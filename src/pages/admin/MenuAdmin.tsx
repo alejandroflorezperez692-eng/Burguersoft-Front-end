@@ -10,6 +10,8 @@ import { normalizarRol } from '../../utils/roles';
 import { mensajeError as mensajeErrorBase } from '../../utils/errores';
 import { categoriaSinExtras } from '../../utils/categorias';
 import SelectOscuro from '../../components/SelectOscuro';
+import Boton from '../../components/Boton';
+import { Check as CheckIcon, Plus as PlusIcon, Power as PowerIcon, Save as SaveIcon, Upload as UploadIcon, X as XIcon } from 'lucide-react';
 
 type Estado = 'Disponible' | 'Agotado';
 
@@ -31,7 +33,6 @@ const CATEGORIAS = [
   'Arepas', 'Picada', 'Bebidas Frias', 'Bebidas Calientes', 'Pizza',
 ];
 
-// Se conserva el valor guardado en la base de datos y solo se corrige la etiqueta visible.
 const ETIQUETA_CATEGORIA: Record<string, string> = {
   'Perros Caliente': 'Perros Calientes',
   'Bebidas Frias': 'Bebidas Frías',
@@ -67,7 +68,11 @@ function MnFormSelect({
 }) {
   const [modoOscuro, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
+  const [filtro, setFiltro] = useState('');
   const contenedorRef = useRef<HTMLDivElement>(null);
+  const opcionesFiltradas = options.filter((option) =>
+    option.label.toLowerCase().includes(filtro.toLowerCase().trim()),
+  );
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
@@ -115,7 +120,7 @@ function MnFormSelect({
         aria-haspopup="listbox"
         aria-expanded={abierto}
         aria-controls={`${id}-options`}
-        onClick={() => setAbierto((actual) => !actual)}
+        onClick={() => { setFiltro(''); setAbierto((actual) => !actual); }}
       >
         <span>{seleccionada?.label ?? ''}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -124,7 +129,27 @@ function MnFormSelect({
       </button>
       {abierto && (
         <div id={`${id}-options`} className="mn-form-select-options" role="listbox" aria-label={label}>
-          {options.map((option) => (
+          <input
+            type="text"
+            value={filtro}
+            onChange={(event) => setFiltro(event.target.value)}
+            placeholder="Buscar..."
+            aria-label={`Buscar en ${label}`}
+            autoComplete="off"
+            style={{
+              width: 'calc(100% - 16px)',
+              boxSizing: 'border-box',
+              margin: '8px',
+              padding: '8px 10px',
+              fontSize: 14,
+              color: 'var(--text-900)',
+              background: 'var(--surface-2)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              outline: 'none',
+            }}
+           maxLength={100}/>
+          {opcionesFiltradas.map((option) => (
             <button
               type="button"
               key={option.value}
@@ -139,6 +164,9 @@ function MnFormSelect({
               {option.label}
             </button>
           ))}
+          {opcionesFiltradas.length === 0 && (
+            <div style={{ padding: '10px 12px', fontSize: 13, color: 'var(--text-400)' }}>No se encontraron opciones</div>
+          )}
         </div>
       )}
     </div>
@@ -488,7 +516,7 @@ export default function MenuAdmin() {
         <button type="button" className="mn-form-cerrar" onClick={limpiarFormulario} aria-label="Cerrar">×</button>
       </div>
 
-      <form onSubmit={guardar} noValidate>
+      <form onSubmit={guardar}>
         <div className="mn-form-body">
           <div className="mn-form-grid">
 
@@ -496,13 +524,13 @@ export default function MenuAdmin() {
               <div className="mn-field">
                 <label htmlFor="mn-nombre">Nombre <span className="mn-req">*</span></label>
                 <input id="mn-nombre" style={rojo(errores.nombre)} type="text" maxLength={40} placeholder="Ej: Hamburguesa Especial"
-                  value={form.nombre} onChange={setCampo('nombre')} />
+                  value={form.nombre} onChange={setCampo('nombre')}  required/>
               </div>
 
               <div className="mn-row-3">
                 <div className="mn-field">
                   <label htmlFor="mn-precio">Precio <span className="mn-req">*</span></label>
-                  <input id="mn-precio" style={rojo(errores.valor)} type="text" inputMode="numeric" placeholder="$ 0"
+                  <input id="mn-precio" style={rojo(errores.valor)} type="text" inputMode="numeric" placeholder="$ 0" required maxLength={12}
                     value={form.valor ? Number(form.valor).toLocaleString('es-CO') : ''}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, valor: e.target.value.replace(/\D/g, '').slice(0, 9) }))
@@ -542,7 +570,7 @@ export default function MenuAdmin() {
               <div className="mn-field">
                 <label htmlFor="mn-desc">Descripción <span className="mn-req">*</span></label>
                 <textarea id="mn-desc" style={rojo(errores.descripcion)} maxLength={255} placeholder="Ej: Carne 150g, queso, tocineta…"
-                  value={form.descripcion} onChange={setCampo('descripcion')} />
+                  value={form.descripcion} onChange={setCampo('descripcion')}  required/>
                 <span className="mn-counter">{form.descripcion.length}/255</span>
               </div>
 
@@ -580,6 +608,7 @@ export default function MenuAdmin() {
                                 onChange={(e) =>
                                   setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
                                 }
+                                required
                               />
                               <div className="mn-adic-precio">
                                 <span>$</span>
@@ -593,7 +622,7 @@ export default function MenuAdmin() {
                                     const valor = n === '' ? '' : String(Math.min(Number(n), MAX_PRECIO_ADICION));
                                     setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, precio: valor } : x)));
                                   }}
-                                />
+                                 maxLength={10} pattern="[0-9.,]*" required/>
                               </div>
                               <button
                                 type="button"
@@ -623,13 +652,11 @@ export default function MenuAdmin() {
                         </div>
                       )}
                       {nAdic < MAX_ADICIONES ? (
-                        <button
+                        <Boton variante="agregar"
                           type="button"
                           className="mn-adic-add"
                           onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '', tipo: 'adicion' }])}
-                        >
-                          + Nueva adición
-                        </button>
+                        >Nueva adición</Boton>
                       ) : (
                         <div className="mn-adic-hint">Llegaste al máximo de {MAX_ADICIONES} adiciones.</div>
                       )}
@@ -654,6 +681,7 @@ export default function MenuAdmin() {
                                 onChange={(e) =>
                                   setAdiciones((l) => l.map((x, j) => (j === i ? { ...x, nombre: e.target.value } : x)))
                                 }
+                                required
                               />
                               <button
                                 type="button"
@@ -683,13 +711,11 @@ export default function MenuAdmin() {
                         </div>
                       )}
                       {nQuitar < MAX_QUITAR ? (
-                        <button
+                        <Boton variante="agregar"
                           type="button"
                           className="mn-adic-add"
                           onClick={() => setAdiciones((l) => [...l, { nombre: '', precio: '', tipo: 'quitar' }])}
-                        >
-                          + Nueva personalización
-                        </button>
+                        >Nueva personalización</Boton>
                       ) : (
                         <div className="mn-adic-hint">Llegaste al máximo de {MAX_QUITAR} personalizaciones.</div>
                       )}
@@ -722,7 +748,7 @@ export default function MenuAdmin() {
                   <span className="mn-upload-name">
                     {archivo ? archivo.name : imgActual ? 'Imagen actual' : 'Ningún archivo seleccionado'}
                   </span>
-                  <button type="button" className="mn-btn-pick" onClick={() => fileRef.current?.click()}>
+                  <button type="button" className="mn-btn-pick" onClick={() => fileRef.current?.click()}><UploadIcon size={16} className="btn-ico" aria-hidden="true" />
                     {preview ? 'Cambiar' : 'Seleccionar'}
                   </button>
                 </div>
@@ -734,10 +760,10 @@ export default function MenuAdmin() {
         </div>
 
         <div className="mn-form-footer">
-          <button type="submit" className="mn-btn-submit" disabled={guardando}>
+          <button type="submit" className="mn-btn-submit" disabled={guardando}><SaveIcon size={16} className="btn-ico" aria-hidden="true" />
             {guardando ? 'Guardando…' : editId ? 'Guardar cambios' : 'Guardar Producto'}
           </button>
-          <button type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
+          <Boton variante="cancelar" type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar</Boton>
         </div>
       </form>
     </div>
@@ -762,7 +788,7 @@ export default function MenuAdmin() {
             className="btn-primary"
             onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
           >
-            {mostrarForm ? 'Cancelar' : '+ Agregar producto'}
+            {mostrarForm ? <><XIcon size={16} className="btn-ico" aria-hidden="true" />Cancelar</> : <><PlusIcon size={16} className="btn-ico" aria-hidden="true" />Agregar producto</>}
           </button>
         )}
       </div>
@@ -788,7 +814,7 @@ export default function MenuAdmin() {
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
             <input className="mn-search" type="text" placeholder="Buscar por nombre, descripción o categoría..."
-              value={buscar} onChange={(e) => setBuscar(e.target.value)} />
+              value={buscar} onChange={(e) => setBuscar(e.target.value)}  maxLength={100}/>
           </div>
 
           <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
@@ -838,7 +864,7 @@ export default function MenuAdmin() {
               style={{ width: 120 }}
               value={precioMin ? Number(precioMin).toLocaleString('es-CO') : ''}
               onChange={(e) => setPrecioMin(e.target.value.replace(/\D/g, '').slice(0, 9))}
-            />
+             maxLength={12} pattern="[0-9.,$ ]*"/>
           </div>
 
           <div className="mn-field" style={{ margin: 0 }}>
@@ -851,13 +877,11 @@ export default function MenuAdmin() {
               style={{ width: 120 }}
               value={precioMax ? Number(precioMax).toLocaleString('es-CO') : ''}
               onChange={(e) => setPrecioMax(e.target.value.replace(/\D/g, '').slice(0, 9))}
-            />
+             maxLength={12} pattern="[0-9.,$ ]*"/>
           </div>
 
           {hayFiltros && (
-            <button type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>
-              Limpiar filtros
-            </button>
+            <Boton variante="limpiar" type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>Limpiar filtros</Boton>
           )}
         </div>
 
@@ -913,14 +937,14 @@ export default function MenuAdmin() {
                     <td>
                       {esAdmin && (
                         <div className="mn-table-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+                          <Boton variante="editar" type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</Boton>
+                          <Boton variante="eliminar" type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</Boton>
 
                           <button
                             type="button"
                             className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
                             onClick={() => setCambiarEstado(p)}
-                          >
+                          ><PowerIcon size={16} className="btn-ico" aria-hidden="true" />
                             {p.activo === false ? 'Activar' : 'Desactivar'}
                           </button>
                         </div>
@@ -960,14 +984,14 @@ export default function MenuAdmin() {
                       </div>
                       {esAdmin && (
                         <div className="mn-card-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+                          <Boton variante="editar" type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</Boton>
+                          <Boton variante="eliminar" type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</Boton>
 
                           <button
                             type="button"
                             className={`mn-btn-toggle ${p.activo === false ? 'activar' : 'desactivar'}`}
                             onClick={() => setCambiarEstado(p)}
-                          >
+                          ><PowerIcon size={16} className="btn-ico" aria-hidden="true" />
                             {p.activo === false ? 'Activar' : 'Desactivar'}
                           </button>
                         </div>
@@ -990,15 +1014,13 @@ export default function MenuAdmin() {
                 : `¿Desactivar "${cambiarEstado.nombre}"? Dejará de aparecer en el menú y no se podrá vender.`}
             </p>
             <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setCambiarEstado(null)}>
-                Cancelar
-              </button>
+              <Boton variante="cancelar" type="button" className="mn-btn-cancel" onClick={() => setCambiarEstado(null)}>Cancelar</Boton>
               <button
                 type="button"
                 className="mn-btn-confirm"
                 style={cambiarEstado.activo === false ? { background: '#16a34a', boxShadow: '0 4px 14px rgba(22,163,74,.3)' } : undefined}
                 onClick={confirmarCambioActivo}
-              >
+              ><CheckIcon size={16} className="btn-ico" aria-hidden="true" />
                 {cambiarEstado.activo === false ? 'Sí, activar' : 'Sí, desactivar'}
               </button>
             </div>
@@ -1011,8 +1033,8 @@ export default function MenuAdmin() {
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
             <p>¿Eliminar "{eliminar.nombre}"? Esta acción no se puede deshacer.</p>
             <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setEliminar(null)}>Cancelar</button>
-              <button type="button" className="mn-btn-confirm" onClick={confirmarEliminar}>Sí, eliminar</button>
+              <Boton variante="cancelar" type="button" className="mn-btn-cancel" onClick={() => setEliminar(null)}>Cancelar</Boton>
+              <Boton variante="eliminar" type="button" className="mn-btn-confirm" onClick={confirmarEliminar}>Sí, eliminar</Boton>
             </div>
           </div>
         </div>

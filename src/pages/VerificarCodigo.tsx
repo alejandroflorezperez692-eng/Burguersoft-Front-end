@@ -6,6 +6,7 @@ import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
 import { useToast } from '../components/Toast';
 import iconoBloqueo from '../assets/img/bloquear.png';
+import { ShieldCheck as ShieldCheckIcon } from 'lucide-react';
 
 export default function VerificarCodigo() {
   const navigate = useNavigate();
@@ -188,7 +189,7 @@ export default function VerificarCodigo() {
             loading && <span className="otp-spinner" />
           )}
         </div>
-        <form onSubmit={handleSubmit} className="otp-paso" noValidate>
+        <form onSubmit={handleSubmit} className="otp-paso">
           <div className={`otp-slots${agitar ? ' otp-slots--agitar' : ''}`} onPaste={handlePaste}>
             {digitos.map((d, i) => (
               <input
@@ -198,6 +199,7 @@ export default function VerificarCodigo() {
                 }}
                 type="text"
                 inputMode="numeric"
+                pattern="[0-9]"
                 maxLength={1}
                 autoComplete="off"
                 required
@@ -219,7 +221,7 @@ export default function VerificarCodigo() {
             className="btn-primario"
             disabled={bloqueado || loading || exito}
             style={bloqueado ? { opacity: 0.5 } : undefined}
-          >
+          ><ShieldCheckIcon size={16} className="btn-ico" aria-hidden="true" />
             {exito ? '¡VERIFICADO!' : loading ? 'VERIFICANDO…' : 'VERIFICAR CÓDIGO'}
           </button>
         </form>

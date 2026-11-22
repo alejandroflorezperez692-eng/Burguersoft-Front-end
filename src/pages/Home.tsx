@@ -181,7 +181,7 @@ export default function Home() {
                         </button>
                       ) : (
                         <Link to="/login" className="link-sesion" data-tooltip="Inicia sesión para pedir">
-                          <button type="button" className="btn-circular-add btn-login">
+                          <button type="button" className="btn-circular-add btn-login" aria-label="Agregar al carrito">
                             +
                           </button>
                         </Link>

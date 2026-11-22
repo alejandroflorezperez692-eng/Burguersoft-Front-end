@@ -247,7 +247,7 @@ body:not(.dark-mode) .btn-regresar:active {
   align-items: center;
   justify-content: center;
   width: auto;
-  height: auto;
+  height: 100%;
   padding: 0 6px;
   color: #EF9F27;
   background: transparent;
@@ -303,10 +303,10 @@ body.dark-mode .boton-mostrar-password:hover {
 }
 
 #registroForm .boton-mostrar-password {
-  top: 0;
+  top: 3px;
   right: 12px;
-  bottom: 0;
-  transform: none;
+  bottom: auto;
+  height: auto;
 }
 
 .input::-ms-reveal,
@@ -2199,4 +2199,46 @@ body:not(.dark-mode) #registroForm .campo .custom-select-trigger.placeholder,
 body:not(.dark-mode) #registroForm .campo .custom-select-trigger:focus,
 body:not(.dark-mode) #registroForm .campo .custom-select-trigger.open {
   border: 1.5px solid #E8821A !important;
+}
+
+
+/* ===== Página legal unificada (punto 14) ===== */
+.legal-page h3 {
+  margin: 16px 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.legal-page ul {
+  margin: 0 0 12px;
+  padding-left: 22px;
+  font-size: 15px;
+}
+.legal-page li {
+  margin-bottom: 4px;
+}
+.legal-page .legal-indice {
+  margin: 12px 0 8px;
+  padding: 12px 16px;
+  border: 1px solid rgba(232, 130, 26, 0.35);
+  border-radius: 10px;
+  font-size: 14px;
+}
+.legal-page .legal-indice ul {
+  margin: 6px 0 0;
+  list-style: none;
+  padding-left: 0;
+}
+.legal-page a {
+  color: var(--color-primario);
+}
+.auth-aviso-legal {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--text-700);
+}
+.footer-legal-link {
+  color: inherit;
+  text-decoration: underline;
 }

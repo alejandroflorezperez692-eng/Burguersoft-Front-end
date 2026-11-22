@@ -29,7 +29,6 @@ const CaptchaLocal = forwardRef<CaptchaLocalRef, Props>(({ onChange }, ref) => {
   useEffect(() => { cargar(); }, [cargar]);
   useImperativeHandle(ref, () => ({ recargar: cargar }), [cargar]);
 
-  // Verificación automática: cuando llega el desafío, se valida solo (sin hacer clic).
   useEffect(() => {
     if (!id) return;
     let cancelado = false;
@@ -46,7 +45,6 @@ const CaptchaLocal = forwardRef<CaptchaLocalRef, Props>(({ onChange }, ref) => {
     return () => { cancelado = true; clearTimeout(t); };
   }, [id]);
 
-  // Solo si falla: un clic reintenta.
   const marcar = (e: React.MouseEvent) => {
     if (!e.isTrusted || estado !== 'error') return;
     cargar();
@@ -149,7 +147,7 @@ const CaptchaLocal = forwardRef<CaptchaLocalRef, Props>(({ onChange }, ref) => {
           type="text" tabIndex={-1} autoComplete="off" value={honeypot}
           onChange={(e) => setHoneypot(e.target.value)}
           style={{ position: 'absolute', left: -9999, opacity: 0, height: 0, width: 0 }}
-        />
+         maxLength={64}/>
       </div>
       <style>{`
         .cpt-root .cpt-t{color:${colorTitulo} !important;text-shadow:none !important}

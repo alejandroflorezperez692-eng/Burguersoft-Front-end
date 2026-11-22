@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import Boton from './Boton';
+import { Check as CheckIcon } from 'lucide-react';
 
 export type ToastPayload = { msg: string; error?: boolean; aviso?: boolean };
 
@@ -153,15 +155,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 <div className="confirm-modal-box" role="alertdialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
                   <p>{confirmState.msg}</p>
                   <div className="confirm-modal-actions">
-                    <button type="button" className="confirm-btn-cancel" onClick={() => resolverConfirm(false)}>
-                      Cancelar
-                    </button>
+                    <Boton variante="cancelar" type="button" className="confirm-btn-cancel" onClick={() => resolverConfirm(false)}>Cancelar</Boton>
                     <button
                       type="button"
                       className={`confirm-btn-ok${confirmState.peligro ? ' confirm-btn-danger' : ''}`}
                       onClick={() => resolverConfirm(true)}
                       autoFocus
-                    >
+                    ><CheckIcon size={16} className="btn-ico" aria-hidden="true" />
                       {confirmState.textoConfirmar}
                     </button>
                   </div>

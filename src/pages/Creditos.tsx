@@ -9,7 +9,6 @@ interface Recurso {
   licencia: string;
 }
 
-// COMPLETAR: reemplaza cada "POR COMPLETAR" con el dato real de cada recurso.
 const POR = 'POR COMPLETAR';
 
 const RECURSOS: Recurso[] = [

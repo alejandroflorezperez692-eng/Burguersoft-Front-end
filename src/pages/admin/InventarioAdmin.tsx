@@ -7,6 +7,7 @@ import { useEscape } from '../../hooks/useEscape';
 import '../../styles/nu-admin.css';
 import SelectOscuro from '../../components/SelectOscuro';
 import MateriaPrimaHistorialModal from '../../components/MateriaPrimaHistorialModal';
+import Boton from '../../components/Boton';
 
 interface MateriaPrima {
   id: number;
@@ -116,7 +117,7 @@ export default function InventarioAdmin() {
           placeholder="Buscar insumo..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
-        />
+         maxLength={100}/>
       </div>
 
       <div className="mn-filtros">
@@ -135,13 +136,11 @@ export default function InventarioAdmin() {
         </div>
 
         {hayFiltros && (
-          <button
+          <Boton variante="limpiar"
             type="button"
             className="mn-btn-cancel"
             onClick={() => { setQ(''); setFiltroEstado('todos'); }}
-          >
-            Limpiar filtros
-          </button>
+          >Limpiar filtros</Boton>
         )}
       </div>
 
@@ -176,15 +175,13 @@ export default function InventarioAdmin() {
                     <span className={`badge ${claseBadge(m.cantidad)}`}>{textoEstado(m.cantidad)}</span>
                   </td>
                   <td>
-                    <button
+                    <Boton variante="ver"
                       type="button"
                       className="mn-btn-edit"
                       style={{ flex: 'none', padding: '7px 18px' }}
                       onClick={() => setDetalle(m)}
                       data-tooltip="Ver detalle"
-                    >
-                      Ver detalle
-                    </button>
+                    >Ver detalle</Boton>
                   </td>
                 </tr>
               ))}

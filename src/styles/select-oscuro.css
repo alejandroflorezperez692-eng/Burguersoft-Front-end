@@ -82,3 +82,47 @@ body.dark-mode .so-opcion[aria-disabled="true"] {
 body.dark-mode .so-opcion[aria-disabled="true"]:hover {
   background: #000000;
 }
+
+/* Buscador dentro de las listas desplegables */
+body.dark-mode .so-buscar {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: #000000;
+  border-bottom: 1px solid #e8821a;
+  color: #e8821a;
+}
+
+body.dark-mode .so-buscar input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 6px;
+  font-size: inherit;
+  font-family: inherit;
+  color: #ffffff;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+body.dark-mode .so-buscar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  color: #e8821a;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+body.dark-mode .so-vacio {
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #e8821a;
+  text-align: center;
+}

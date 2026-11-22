@@ -1,4 +1,5 @@
 import { useCart } from '../hooks/useCart';
+import Boton from './Boton';
 
 export default function FacturaModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const { items, total } = useCart();
@@ -24,7 +25,7 @@ export default function FacturaModal({ isOpen, onClose }: { isOpen: boolean; onC
             <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 1, display: 'flex', alignItems: 'center', gap: 8 }}>FACTURA</div>
             <div style={{ fontSize: 11, opacity: .6, marginTop: 2 }}>El Oriente — BurguerSoft</div>
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: 'white', width: 30, height: 30, borderRadius: '50%', cursor: 'pointer', fontSize: 16 }}>✕</button>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,.15)', border: 'none', color: 'white', width: 30, height: 30, borderRadius: '50%', cursor: 'pointer', fontSize: 16 }} aria-label="Cerrar">✕</button>
         </div>
         <div style={{ padding: 24 }}>
           <div style={{ textAlign: 'center', marginBottom: 20, paddingBottom: 16, borderBottom: '2px dashed #E0D5C5' }}>
@@ -60,8 +61,8 @@ export default function FacturaModal({ isOpen, onClose }: { isOpen: boolean; onC
           </div>
         </div>
         <div style={{ padding: '0 24px 24px', display: 'flex', gap: 10 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 11, borderRadius: 10, border: '1px solid #E0D5C5', background: '#F0EAE0', color: '#7A6855', fontWeight: 600, fontFamily: 'inherit', fontSize: 13, cursor: 'pointer' }}>Cerrar</button>
-          <button onClick={handlePrint} style={{ flex: 1, padding: 11, borderRadius: 10, border: 'none', background: '#EF9F27', color: '#412402', fontWeight: 700, fontFamily: 'inherit', fontSize: 13, cursor: 'pointer', boxShadow: '0 2px 12px rgba(239,159,39,.3)' }}>Imprimir</button>
+          <Boton variante="volver" onClick={onClose} style={{ flex: 1, padding: 11, borderRadius: 10, border: '1px solid #E0D5C5', background: '#F0EAE0', color: '#7A6855', fontWeight: 600, fontFamily: 'inherit', fontSize: 13, cursor: 'pointer' }}>Cerrar</Boton>
+          <Boton variante="imprimir" onClick={handlePrint} style={{ flex: 1, padding: 11, borderRadius: 10, border: 'none', background: '#EF9F27', color: '#412402', fontWeight: 700, fontFamily: 'inherit', fontSize: 13, cursor: 'pointer', boxShadow: '0 2px 12px rgba(239,159,39,.3)' }}>Imprimir</Boton>
         </div>
       </div>
     </>

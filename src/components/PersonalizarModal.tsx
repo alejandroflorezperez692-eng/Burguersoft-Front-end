@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useCart } from '../hooks/useCart';
 import cenaFallback from '../assets/img/cena.png';
 import { categoriaSinExtras } from '../utils/categorias';
+import { ShoppingCart as ShoppingCartIcon } from 'lucide-react';
 
 type Adicion = { id: number; nombre: string; precio: number | string; tipo?: string };
 
@@ -208,7 +209,7 @@ export default function PersonalizarModal({
             <span>{cantidad}</span>
             <button type="button" aria-label="Agregar una unidad" onClick={() => setCantidad((c) => Math.min(20, c + 1))}>+</button>
           </div>
-          <button type="button" className="pers-ok" onClick={confirmar}>
+          <button type="button" className="pers-ok" onClick={confirmar}><ShoppingCartIcon size={16} className="btn-ico" aria-hidden="true" />
             <span>Agregar</span>
             <span>{formatCOP(precioUnidad * cantidad)}</span>
           </button>

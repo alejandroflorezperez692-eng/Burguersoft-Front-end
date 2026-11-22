@@ -2,12 +2,14 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { isAxiosError } from 'axios';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { UserPlus as UserPlusIcon } from 'lucide-react';
 import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
 import { useToast } from '../components/Toast';
 import { mensajeError } from '../utils/errores';
 import iconoBloqueo from '../assets/img/bloquear.png';
 import AdminLoading from '../components/AdminLoading';
+import { Send as SendIcon } from 'lucide-react';
 
 function segundosRestantesBloqueo(): number {
   const hasta = Number(sessionStorage.getItem('bloqueo_correo_hasta') ?? '0');
@@ -92,7 +94,7 @@ export default function RecuperarContrasena() {
 
         <div className="header-bar header-bar-recuperacion">¿TIENES PROBLEMAS?</div>
         <div className="card card-recuperacion">
-          <form onSubmit={handleSubmit} noValidate>
+          <form onSubmit={handleSubmit}>
             <div className="icono-card">
               <img src={iconoBloqueo} alt="Imagen Bloqueo" />
             </div>
@@ -111,12 +113,13 @@ export default function RecuperarContrasena() {
                 placeholder="Correo electrónico (obligatorio)"
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
+                maxLength={150}
                 required
                 disabled={bloqueado}
               />
             </div>
 
-            <button type="submit" className="btn-primario" disabled={loading || bloqueado}>
+            <button type="submit" className="btn-primario" disabled={loading || bloqueado}><SendIcon size={16} className="btn-ico" aria-hidden="true" />
               {bloqueado ? `ESPERA ${bloqueo}s` : loading ? 'ENVIANDO…' : 'Enviar código de recuperación'}
             </button>
             <p className="descripcion-recuperacion">¿No puedes cambiar la contraseña?</p>
@@ -126,7 +129,7 @@ export default function RecuperarContrasena() {
               <div className="linea" />
             </div>
             <Link to="/registro" className="btn-secundario">
-              Crear cuenta nueva
+              <UserPlusIcon size={16} className="btn-ico" aria-hidden="true" />Crear cuenta nueva
             </Link>
           </form>
         </div>

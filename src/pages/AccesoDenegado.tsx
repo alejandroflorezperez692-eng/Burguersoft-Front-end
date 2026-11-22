@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { Home as HomeIcon, LogIn as LogInIcon } from 'lucide-react';
 
 type Props = { codigo?: string; titulo?: string; mensaje?: string };
 
@@ -76,8 +77,8 @@ export default function AccesoDenegado({
             <p className="g-p g-muted">Eso es todo lo que sabemos.</p>
 
             <div className="g-actions">
-              <Link to="/login" className="g-btn g-btn--fill">Iniciar sesión</Link>
-              <Link to="/" className="g-btn g-btn--text">Ir al inicio</Link>
+              <Link to="/login" className="g-btn g-btn--fill"><LogInIcon size={16} className="btn-ico" aria-hidden="true" />Iniciar sesión</Link>
+              <Link to="/" className="g-btn g-btn--text"><HomeIcon size={16} className="btn-ico" aria-hidden="true" />Ir al inicio</Link>
             </div>
           </div>
 

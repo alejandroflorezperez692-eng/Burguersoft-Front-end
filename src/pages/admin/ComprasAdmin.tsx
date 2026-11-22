@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { validarCamposVisibles } from '../../utils/validarCampos';
 import type { CSSProperties } from 'react';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
@@ -12,6 +13,8 @@ import ComprasSugeridas, { type ItemSugerido } from '../../components/ComprasSug
 import SelectOscuro from '../../components/SelectOscuro';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import Boton from '../../components/Boton';
+import { Check as CheckIcon, ClipboardList as ClipboardListIcon, Mic as MicIcon, Square as SquareIcon } from 'lucide-react';
 
 interface DetalleCompra {
   id: number;
@@ -180,9 +183,9 @@ function SelectorFechaCompras({ value, onChange, min, max }: {
       {abierto && (
         <div className="compras-calendar" role="dialog" aria-label="Elegir fecha">
           <div className="compras-calendar-header">
-            <button type="button" aria-label="Mes anterior" disabled={indiceMes <= mesMinimo} onClick={() => setMesVisible(new Date(anio, mes - 1, 1))}>‹</button>
+            <button type="button" aria-label="Mes anterior" data-tooltip="Mes anterior" disabled={indiceMes <= mesMinimo} onClick={() => setMesVisible(new Date(anio, mes - 1, 1))}>‹</button>
             <strong>{tituloMes}</strong>
-            <button type="button" aria-label="Mes siguiente" disabled={indiceMes >= mesMaximo} onClick={() => setMesVisible(new Date(anio, mes + 1, 1))}>›</button>
+            <button type="button" aria-label="Mes siguiente" data-tooltip="Mes siguiente" disabled={indiceMes >= mesMaximo} onClick={() => setMesVisible(new Date(anio, mes + 1, 1))}>›</button>
           </div>
           <div className="compras-calendar-grid compras-calendar-weekdays" aria-hidden="true">
             {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((dia) => <span key={dia}>{dia}</span>)}
@@ -211,13 +214,13 @@ function SelectorFechaCompras({ value, onChange, min, max }: {
             })}
           </div>
           <div className="compras-calendar-footer">
-            <button type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</button>
-            <button type="button" onClick={() => {
+            <Boton variante="eliminar" type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</Boton>
+            <Boton variante="hoy" type="button" onClick={() => {
               const hoy = new Date();
               const fecha = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
               if ((!min || fecha >= min) && (!max || fecha <= max)) onChange(fecha);
               setAbierto(false);
-            }}>Hoy</button>
+            }}>Hoy</Boton>
           </div>
         </div>
       )}
@@ -234,9 +237,13 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
   className?: string;
 }) {
   const [abierto, setAbierto] = useState(false);
+  const [filtro, setFiltro] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   const opcionesNormalizadas = opciones.map((opcion) =>
     typeof opcion === 'string' ? { value: opcion, label: opcion } : opcion,
+  );
+  const opcionesFiltradas = opcionesNormalizadas.filter((opcion) =>
+    opcion.label.toLowerCase().includes(filtro.toLowerCase().trim()),
   );
   const opcionSeleccionada = opcionesNormalizadas.find((opcion) => opcion.value === value);
 
@@ -253,7 +260,7 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
       <button
         type="button"
         className={className ? `${className}-trigger` : undefined}
-        onClick={() => setAbierto(!abierto)}
+        onClick={() => { setFiltro(''); setAbierto(!abierto); }}
         style={{
           width: '100%',
           display: 'flex',
@@ -313,7 +320,28 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
             boxShadow: 'var(--shadow-md)',
           }}
         >
-          {opcionesNormalizadas.map((o) => (
+          <li style={{ padding: '4px 6px 8px', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
+            <input
+              type="text"
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              placeholder="Buscar..."
+              aria-label="Buscar opción"
+              autoComplete="off"
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '8px 10px',
+                fontSize: 14,
+                color: 'var(--text-900)',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                outline: 'none',
+              }}
+             maxLength={100}/>
+          </li>
+          {opcionesFiltradas.map((o) => (
             <li
               key={o.value}
               className={className ? `${className}-option${o.value === value ? ' selected' : ''}` : undefined}
@@ -343,6 +371,9 @@ function Desplegable({ value, onChange, opciones, placeholder = 'Seleccionar...'
               {o.label}
             </li>
           ))}
+          {opcionesFiltradas.length === 0 && (
+            <li style={{ padding: '10px 12px', fontSize: 13, color: 'var(--text-400)' }}>No se encontraron opciones</li>
+          )}
         </ul>
       )}
     </div>
@@ -897,6 +928,7 @@ const load = () => {
   guardarBorradorRef.current = guardarBorrador;
 
   const registrar = () => {
+    if (!validarCamposVisibles()) return;
     if (guardando) return;
     setConfirmando(false);
     setGuardando(true);
@@ -989,24 +1021,18 @@ const load = () => {
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           {!soloLectura && (
             <>
-              <button
+              <Boton variante="escanear"
                 className="btn-primary compras-outline-btn"
                 disabled={escaneando}
                 style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
                 onClick={() => inputFactura.current?.click()}
-              >
-                Escanear factura
-              </button>
-              <button
+              >Escanear factura</Boton>
+              <Boton variante="dictar"
                 className="btn-primary compras-outline-btn"
                 style={{ background: 'transparent', color: 'var(--brand)', border: '2px solid var(--brand)', boxShadow: 'none' }}
                 onClick={() => setMostrarDictado((v) => !v)}
-              >
-                Dictar compra
-              </button>
-              <button className="btn-primary" onClick={abrirNuevo}>
-                + Nueva compra
-              </button>
+              >Dictar compra</Boton>
+              <Boton variante="agregar" className="btn-primary" onClick={abrirNuevo}>Nueva compra</Boton>
             </>
           )}
           <input
@@ -1036,7 +1062,7 @@ const load = () => {
             onChange={(e) => setTextoDictado(e.target.value)}
             placeholder="Escribe o usa el micrófono..."
             style={{ width: '100%', boxSizing: 'border-box', padding: '12px 14px', border: '1.5px solid var(--border)', borderRadius: 'var(--r-sm)', fontFamily: 'var(--font-sans)', fontSize: 14, background: 'var(--surface)', color: 'var(--text-900)', outline: 'none', resize: 'vertical' }}
-          />
+           maxLength={255}/>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 14 }}>
             {SpeechRec && (
               <button
@@ -1044,11 +1070,11 @@ const load = () => {
                 className="btn-primary btn-dictar-voz"
                 onClick={alternarMicrofono}
               >
-                {escuchando ? '⏹ Detener' : '🎤 Dictar con voz'}
+                {escuchando ? <><SquareIcon size={16} className="btn-ico" aria-hidden="true" />Detener</> : <><MicIcon size={16} className="btn-ico" aria-hidden="true" />Dictar con voz</>}
               </button>
             )}
-            <button type="button" className="btn-cancel" onClick={() => { vozRef.current?.stop(); setMostrarDictado(false); }}>Cancelar</button>
-            <button type="button" className="btn-primary" disabled={interpretando || !textoDictado.trim()} onClick={dictar}>
+            <Boton variante="cancelar" type="button" className="btn-cancel" onClick={() => { vozRef.current?.stop(); setMostrarDictado(false); }}>Cancelar</Boton>
+            <button type="button" className="btn-primary" disabled={interpretando || !textoDictado.trim()} onClick={dictar}><ClipboardListIcon size={16} className="btn-ico" aria-hidden="true" />
               {interpretando ? 'Interpretando...' : 'Llenar formulario'}
             </button>
           </div>
@@ -1058,8 +1084,8 @@ const load = () => {
       {!showForm && hayBorradorLocal && (
         <div className="compras-borrador" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', padding: '12px 16px', marginBottom: 16, border: '1px solid var(--border)', borderRadius: 12, background: 'var(--surface-2)', fontSize: 13, fontWeight: 600, color: 'var(--text-900)' }}>
           <span style={{ flex: 1 }}>Tienes una compra sin terminar guardada en este equipo.</span>
-          <button className="btn-primary" onClick={continuarBorradorLocal}>Continuar</button>
-          <button className="btn-cancel" onClick={borrarLocal}>Descartar</button>
+          <Boton variante="aceptar" className="btn-primary" onClick={continuarBorradorLocal}>Continuar</Boton>
+          <Boton variante="cancelar" className="btn-cancel" onClick={borrarLocal}>Descartar</Boton>
         </div>
       )}
 
@@ -1108,7 +1134,7 @@ const load = () => {
               maxLength={50}
               value={numeroFactura}
               onChange={(e) => setNumeroFactura(e.target.value)}
-            />
+             required/>
           </div>
 
           <div className="form-group">
@@ -1146,7 +1172,7 @@ const load = () => {
                 <>
                   <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`nombre-${i}`)}>
                     <label>Nombre del insumo <span className="mn-req">*</span></label>
-                    <input value={l.nombre_nuevo} style={rojo(errLinea(l).nombre)} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value)} />
+                    <input value={l.nombre_nuevo} maxLength={50} required style={rojo(errLinea(l).nombre)} onChange={(e) => updateLinea(i, 'nombre_nuevo', e.target.value.slice(0, 50))} />
                     {msgCampo(`nombre-${i}`)}
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
@@ -1154,7 +1180,8 @@ const load = () => {
                     <input
                       placeholder="Ej: Carnes, Salsas..."
                       value={l.tipo}
-                      onChange={(e) => updateLinea(i, 'tipo', e.target.value)}
+                      maxLength={50}
+                      onChange={(e) => updateLinea(i, 'tipo', e.target.value.slice(0, 50))}
                     />
                   </div>
                 </>
@@ -1172,7 +1199,7 @@ const load = () => {
 
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`cantidad-${i}`)}>
                 <label>Cantidad <span className="mn-req">*</span></label>
-                <input type="number" value={l.cantidad} style={rojo(errLinea(l).cantidad)} onChange={(e) => updateLinea(i, 'cantidad', e.target.value)} />
+                <input type="number" min={0} max={99999999} step={1} required value={l.cantidad} style={rojo(errLinea(l).cantidad)} onChange={(e) => updateLinea(i, 'cantidad', e.target.value)} />
                 {msgCampo(`cantidad-${i}`)}
               </div>
 
@@ -1195,7 +1222,7 @@ const load = () => {
 
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv(`precio-${i}`)}>
                 <label>Precio total <span className="mn-req">*</span></label>
-                <input type="text" inputMode="numeric" placeholder="$ 0" style={rojo(errLinea(l).precio)} value={miles(l.precio_unitario)} onChange={(e) => updateLinea(i, 'precio_unitario', soloDigitos(e.target.value))} />
+                <input type="text" inputMode="numeric" placeholder="$ 0" pattern="[0-9.,$ ]*" maxLength={15} required style={rojo(errLinea(l).precio)} value={miles(l.precio_unitario)} onChange={(e) => updateLinea(i, 'precio_unitario', soloDigitos(e.target.value))} />
                 {msgCampo(`precio-${i}`)}
               </div>
 
@@ -1209,19 +1236,19 @@ const load = () => {
               </div>
 
               {lineas.length > 1 && (
-                <button className="btn-icon btn-icon-del" onClick={() => removeLinea(i)} style={{ position: 'absolute', top: 6, right: 8 }}>✕</button>
+                <button className="btn-icon btn-icon-del" onClick={() => removeLinea(i)} style={{ position: 'absolute', top: 6, right: 8 }} aria-label="Quitar">✕</button>
               )}
             </div>
           ))}
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 }}>
-            <button className="btn-primary" onClick={addLinea}>+ Agregar insumo</button>
+            <Boton variante="agregar" className="btn-primary" onClick={addLinea}>Agregar insumo</Boton>
             <span style={{ fontFamily: 'var(--font-sans)', fontWeight: 800, fontSize: 18, color: 'var(--text-900)' }}>Total: ${total.toLocaleString('es-CO')}</span>
           </div>
           <div className="modal-actions" style={{ marginTop: 16 }}>
-            <button className="btn-cancel" onClick={cerrarForm}>Cancelar</button>
-            <button className="btn-cancel" onClick={guardarBorrador} disabled={guardando}>Guardar borrador</button>
-            <button className="btn-save" onClick={irARevision}>Registrar</button>
+            <Boton variante="cancelar" className="btn-cancel" onClick={cerrarForm}>Cancelar</Boton>
+            <Boton variante="guardar" className="btn-cancel" onClick={guardarBorrador} disabled={guardando}>Guardar borrador</Boton>
+            <Boton variante="aceptar" className="btn-save" onClick={irARevision}>Registrar</Boton>
           </div>
           </div>
         </div>
@@ -1234,7 +1261,7 @@ const load = () => {
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input className="mn-search" type="text" placeholder="Buscar compra..." value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="mn-search" type="text" placeholder="Buscar compra..." value={q} onChange={(e) => setQ(e.target.value)}  maxLength={100}/>
       </div>
 
       <div className="compras-filtros" style={{ display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap', marginBottom: 24 }}>
@@ -1277,9 +1304,7 @@ const load = () => {
           />
         </label>
         {hayFiltros && (
-          <button type="button" className="btn-cancel compras-clear-filters-btn" style={{ padding: '9px 18px' }} onClick={limpiarFiltros}>
-            Limpiar filtros
-          </button>
+          <Boton variante="limpiar" type="button" className="btn-cancel compras-clear-filters-btn" style={{ padding: '9px 18px' }} onClick={limpiarFiltros}>Limpiar filtros</Boton>
         )}
       </div>
 
@@ -1324,27 +1349,23 @@ const load = () => {
                         <td><span className={`badge ${badgeEstado(c.estado)}`}>{c.estado}</span></td>
                         <td>
                           <div style={{ display: 'flex', gap: 8 }}>
-                            <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)} data-tooltip="Ver detalle">Ver detalle</button>
+                            <Boton variante="ver" type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 14px' }} onClick={() => setModalDetalle(c)} data-tooltip="Ver detalle">Ver detalle</Boton>
                             {!soloLectura && c.estado !== 'Finalizada' && (
                               <>
-                                <button
+                                <Boton variante="editar"
                                   type="button"
                                   className="mn-btn-edit compras-modificar-btn"
                                   style={{ flex: 'none', padding: '7px 14px' }}
                                   onClick={() => abrirEditar(c)}
                                   data-tooltip="Modificar"
-                                >
-                                  Modificar
-                                </button>
-                                <button
+                                >Modificar</Boton>
+                                <Boton variante="eliminar"
                                   type="button"
                                   className="mn-btn-del"
                                   style={{ flex: 'none', padding: '7px 14px' }}
                                   onClick={() => del(c)}
                                   data-tooltip="Eliminar"
-                                >
-                                  Eliminar
-                                </button>
+                                >Eliminar</Boton>
                               </>
                             )}
                           </div>
@@ -1441,9 +1462,7 @@ const load = () => {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 22 }}>
-                <button type="button" className="btn-primary" style={{ padding: '11px 32px' }} onClick={() => setModalDetalle(null)}>
-                  Cerrar
-                </button>
+                <Boton variante="volver" type="button" className="btn-primary" style={{ padding: '11px 32px' }} onClick={() => setModalDetalle(null)}>Cerrar</Boton>
               </div>
             </div>
           </div>
@@ -1478,8 +1497,8 @@ const load = () => {
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
             <p>¿Eliminar esta compra? Todavía no se ha registrado en Materia Prima. Esta acción no se puede deshacer.</p>
             <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setEliminarCompra(null)}>Cancelar</button>
-              <button type="button" className="mn-btn-confirm" onClick={confirmarEliminarCompra}>Sí, eliminar</button>
+              <Boton variante="cancelar" type="button" className="mn-btn-cancel" onClick={() => setEliminarCompra(null)}>Cancelar</Boton>
+              <Boton variante="eliminar" type="button" className="mn-btn-confirm" onClick={confirmarEliminarCompra}>Sí, eliminar</Boton>
             </div>
           </div>
         </div>
@@ -1574,8 +1593,8 @@ const load = () => {
               </div>
 
               <div className="modal-actions" style={{ marginTop: 22 }}>
-                <button type="button" className="btn-cancel" disabled={guardando} onClick={() => setRevisando(false)}>Volver a editar</button>
-                <button type="button" className="btn-save" disabled={guardando} onClick={() => setConfirmando(true)}>
+                <Boton variante="volver" type="button" className="btn-cancel" disabled={guardando} onClick={() => setRevisando(false)}>Volver a editar</Boton>
+                <button type="button" className="btn-save" disabled={guardando} onClick={() => setConfirmando(true)}><CheckIcon size={16} className="btn-ico" aria-hidden="true" />
                   {guardando ? 'Registrando...' : 'Confirmar compra'}
                 </button>
               </div>
@@ -1591,8 +1610,8 @@ const load = () => {
               ¿Quieres registrar esta compra? Se sumará a Materia Prima y ya no se podrá modificar ni eliminar.
             </p>
             <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setConfirmando(false)}>Seguir revisando</button>
-              <button type="button" className="mn-btn-confirm" disabled={guardando} onClick={registrar}>Sí, registrar compra</button>
+              <Boton variante="volver" type="button" className="mn-btn-cancel" onClick={() => setConfirmando(false)}>Seguir revisando</Boton>
+              <Boton variante="aceptar" type="button" className="mn-btn-confirm" disabled={guardando} onClick={registrar}>Sí, registrar compra</Boton>
             </div>
           </div>
         </div>

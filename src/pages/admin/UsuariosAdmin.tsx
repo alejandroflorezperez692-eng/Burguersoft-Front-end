@@ -1,4 +1,6 @@
 import { useEffect, useState, type CSSProperties } from 'react';
+import { validarCamposVisibles } from '../../utils/validarCampos';
+import { Eye, EyeOff } from 'lucide-react';
 import apiClient from '../../api/client';
 import { useToast } from '../../components/Toast';
 import AdminLoading from '../../components/AdminLoading';
@@ -9,6 +11,8 @@ import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
 import Paginacion from '../../components/Paginacion';
 import usuarioPerfil from '../../assets/img/usuario-perfil.png';
+import Boton from '../../components/Boton';
+import { Power as PowerIcon } from 'lucide-react';
 
 interface Usuario {
   id: number;
@@ -219,6 +223,7 @@ const load = async (silencioso = false) => {
   };
 
   const guardar = async () => {
+    if (!validarCamposVisibles()) return;
     if (!sel) return;
     setIntentado(true);
     if (errs.length > 0) {
@@ -335,7 +340,7 @@ const load = async (silencioso = false) => {
               <circle cx="11" cy="11" r="7" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }} />
+            <input className="mn-search" type="text" placeholder="Buscar por nombre, correo o teléfono..." value={q} onChange={(e) => { setQ(e.target.value); setPagina(1); }}  maxLength={100}/>
           </div>
         </div>
 
@@ -362,7 +367,7 @@ const load = async (silencioso = false) => {
               placeholder="Filtrar por nombre..."
               value={filtroNombre}
               onChange={(e) => { setFiltroNombre(e.target.value); setPagina(1); }}
-            />
+             maxLength={100}/>
           </div>
 
           <div className="form-group" style={{ marginBottom: 0, minWidth: 150 }}>
@@ -378,9 +383,7 @@ const load = async (silencioso = false) => {
           </div>
 
           {hayFiltros && (
-            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>
-              Limpiar filtros
-            </button>
+            <Boton variante="limpiar" type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>Limpiar filtros</Boton>
           )}
         </div>
       </div>
@@ -422,14 +425,14 @@ const load = async (silencioso = false) => {
                   <td><span className="badge badge-info">{u.rol?.nombre ?? '—'}</span></td>
                   <td className="td-acciones">
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                      <button className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar" data-tooltip="Editar">Editar</button>
-                      <button className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar" data-tooltip="Eliminar">Eliminar</button>
+                      <Boton variante="editar" className="btn-icon btn-icon-edit btn-accion" onClick={() => openEdit(u)} title="Editar" data-tooltip="Editar">Editar</Boton>
+                      <Boton variante="eliminar" className="btn-icon btn-icon-del btn-accion" onClick={() => del(u.id)} title="Eliminar" data-tooltip="Eliminar">Eliminar</Boton>
 
                       <button
                         className={`btn-icon btn-icon-estado btn-accion ${u.estado === 'Activo' ? 'estado-inactivar' : 'estado-activar'}`}
                         onClick={() => alternarEstado(u)}
                         title={u.estado === 'Activo' ? 'Inactivar cuenta' : 'Activar cuenta'}
-                      >
+                      ><PowerIcon size={16} className="btn-ico" aria-hidden="true" />
                         {u.estado === 'Activo' ? 'Inactivar' : 'Activar'}
                       </button>
                     </div>
@@ -471,7 +474,7 @@ const load = async (silencioso = false) => {
                   placeholder="Ej. Alejandro"
                   onChange={(e) => setNombre(soloLetras(e.target.value))}
                   onBlur={() => setNombre(formatearNombre(nombre))}
-                />
+                 required/>
                 {msgCampo('nombre')}
               </div>
               <div className="form-group" style={{ marginBottom: 0 }} data-invalido={inv('apellido')}>
@@ -483,7 +486,7 @@ const load = async (silencioso = false) => {
                   placeholder="Ej. Florez"
                   onChange={(e) => setApellido(soloLetras(e.target.value))}
                   onBlur={() => setApellido(formatearNombre(apellido))}
-                />
+                 required/>
                 {msgCampo('apellido')}
               </div>
             </div>
@@ -497,7 +500,7 @@ const load = async (silencioso = false) => {
                 maxLength={150}
                 placeholder="correo@ejemplo.com"
                 onChange={(e) => setCorreo(e.target.value)}
-              />
+               required/>
               {msgCampo('correo')}
             </div>
 
@@ -521,6 +524,7 @@ const load = async (silencioso = false) => {
                 />
                 <button
                   type="button"
+                  data-tooltip={verPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   onClick={() => setVerPass((v) => !v)}
                   aria-label={verPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   title={verPass ? 'Ocultar contraseña' : 'Mostrar contraseña'}
@@ -532,7 +536,7 @@ const load = async (silencioso = false) => {
                     color: 'var(--text-600)',
                   }}
                 >
-                  {verPass ? 'Ocultar' : 'Mostrar'}
+                  {verPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {msgCampo('password')}
@@ -588,8 +592,8 @@ const load = async (silencioso = false) => {
             </div>
 
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
-              <button className="btn-save" onClick={guardar}>Actualizar</button>
+              <Boton variante="cancelar" className="btn-cancel" onClick={() => setModal(false)}>Cancelar</Boton>
+              <Boton variante="actualizar" className="btn-save" onClick={guardar}>Actualizar</Boton>
             </div>
           </div>
         </div>

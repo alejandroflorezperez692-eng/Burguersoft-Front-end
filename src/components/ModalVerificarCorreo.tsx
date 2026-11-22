@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { validarCamposVisibles } from '../utils/validarCampos';
 import { createPortal } from 'react-dom';
 import { isAxiosError } from 'axios';
 import { enviarCodigoRegistro, verificarCodigoRegistro } from '../api/auth';
+import Boton from './Boton';
+import { RefreshCw as RefreshCwIcon, Send as SendIcon, ShieldCheck as ShieldCheckIcon } from 'lucide-react';
 
 type Props = {
   correo: string;
@@ -176,6 +179,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
   };
 
   const handleVerificar = async () => {
+    if (!validarCamposVisibles()) return;
     if (loadingVerificar || exito) return;
     setError(null);
     if (!codigoEnviado) {
@@ -340,7 +344,7 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
           className="btn-secundario verify-btn-enviar"
           onClick={handleEnviar}
           disabled={loadingEnviar || loadingVerificar || exito || segundosReenvio > 0}
-        >
+        ><SendIcon size={16} className="btn-ico" aria-hidden="true" />
           {loadingEnviar
             ? 'ENVIANDO…'
             : segundosReenvio > 0 && !codigoEnviado
@@ -372,7 +376,9 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
               }}
               type="text"
               inputMode="numeric"
+              pattern="[0-9]"
               maxLength={1}
+              required
               autoComplete="off"
               disabled={bloqueado || loadingVerificar || exito || !codigoEnviado}
               value={d}
@@ -408,13 +414,13 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
           onClick={handleVerificar}
           disabled={bloqueado || loadingVerificar || exito || !codigoEnviado}
           style={bloqueado ? { opacity: 0.5 } : undefined}
-        >
+        ><ShieldCheckIcon size={16} className="btn-ico" aria-hidden="true" />
           {exito ? '¡VERIFICADO!' : loadingVerificar ? 'VERIFICANDO…' : 'Verificar código'}
         </button>
 
         <p className="otp-reenviar">
           ¿No recibiste el código?
-          <button type="button" onClick={handleEnviar} disabled={!puedeReenviar}>
+          <button type="button" onClick={handleEnviar} disabled={!puedeReenviar}><RefreshCwIcon size={16} className="btn-ico" aria-hidden="true" />
             {segundosReenvio > 0 ? `Reenviar en ${segundosReenvio}s` : 'Reenviar código'}
           </button>
         </p>
@@ -424,14 +430,12 @@ export default function ModalVerificarCorreo({ correo, onClose, onVerified }: Pr
           </p>
         )}
 
-        <button
+        <Boton variante="cancelar"
           type="button"
           className="verify-cancelar"
           onClick={onClose}
           disabled={loadingVerificar || exito}
-        >
-          Cancelar y volver al registro
-        </button>
+        >Cancelar y volver al registro</Boton>
       </div>
     </div>
     </>

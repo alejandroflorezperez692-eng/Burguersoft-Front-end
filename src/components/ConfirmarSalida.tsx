@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import '../styles/ConfirmarSalida.css';
+import Boton from './Boton';
 
 export default function ConfirmarSalida({
   onConfirmar,
@@ -46,12 +47,8 @@ export default function ConfirmarSalida({
         <p>{mensaje}</p>
 
         <div className="cs-actions">
-          <button type="button" className="cs-btn-cancel" onClick={onCancelar}>
-            Cancelar
-          </button>
-          <button type="button" className="cs-btn-confirm" onClick={onConfirmar}>
-            Sí, salir
-          </button>
+          <Boton variante="cancelar" type="button" className="cs-btn-cancel" onClick={onCancelar}>Cancelar</Boton>
+          <Boton variante="salir" type="button" className="cs-btn-confirm" onClick={onConfirmar}>Sí, salir</Boton>
         </div>
       </div>
     </div>

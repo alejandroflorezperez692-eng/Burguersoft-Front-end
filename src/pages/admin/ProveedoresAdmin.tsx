@@ -10,6 +10,8 @@ import { normalizarRol } from '../../utils/roles';
 import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
 import Paginacion, { paginar } from '../../components/Paginacion';
+import Boton from '../../components/Boton';
+import { Save as SaveIcon, Trash2 as Trash2Icon } from 'lucide-react';
 
 interface Proveedor {
   id: number;
@@ -211,7 +213,7 @@ const load = async (silencioso = false) => {
           <p className="subtitulo">Administra los proveedores de insumos</p>
         </div>
         {esAdmin && (
-          <button className="btn-primary" onClick={openNew}>+ Nuevo proveedor</button>
+          <Boton variante="agregar" className="btn-primary" onClick={openNew}>Nuevo proveedor</Boton>
         )}
       </div>
 
@@ -232,7 +234,7 @@ const load = async (silencioso = false) => {
               placeholder="Buscar por nombre, correo o teléfono..."
               value={q}
               onChange={(e) => setQ(e.target.value)}
-            />
+             maxLength={100}/>
           </div>
 
           <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
@@ -273,13 +275,11 @@ const load = async (silencioso = false) => {
               placeholder="Filtrar por nombre..."
               value={filtroNombre}
               onChange={(e) => setFiltroNombre(e.target.value)}
-            />
+             maxLength={100}/>
           </div>
 
           {hayFiltros && (
-            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>
-              Limpiar filtros
-            </button>
+            <Boton variante="limpiar" type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>Limpiar filtros</Boton>
           )}
         </div>
       </div>
@@ -329,8 +329,8 @@ const load = async (silencioso = false) => {
                     <td>
                       {esAdmin && (
                         <div className="mn-table-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)} data-tooltip="Eliminar">Eliminar</button>
+                          <Boton variante="editar" type="button" className="mn-btn-edit" onClick={() => openEdit(m)} data-tooltip="Editar">Editar</Boton>
+                          <Boton variante="eliminar" type="button" className="mn-btn-del" onClick={() => pedirEliminar(m.id)} data-tooltip="Eliminar">Eliminar</Boton>
                         </div>
                       )}
                     </td>
@@ -391,8 +391,8 @@ const load = async (silencioso = false) => {
               <span className="detalle-estado dot-activo">ID {detalle.id}</span>
               {esAdmin && (
                 <div className="detalle-actions">
-                  <button className="btn-det-editar" onClick={() => openEdit(detalle)} data-tooltip="Editar">Editar</button>
-                  <button className="btn-det-eliminar" onClick={() => pedirEliminar(detalle.id)} data-tooltip="Eliminar">Eliminar</button>
+                  <Boton variante="editar" className="btn-det-editar" onClick={() => openEdit(detalle)} data-tooltip="Editar">Editar</Boton>
+                  <Boton variante="eliminar" className="btn-det-eliminar" onClick={() => pedirEliminar(detalle.id)} data-tooltip="Eliminar">Eliminar</Boton>
                 </div>
               )}
             </div>
@@ -418,7 +418,7 @@ const load = async (silencioso = false) => {
 
             <div className="form-group" style={{ marginBottom: 14 }}>
               <label>Nombre <span className="mn-req">*</span></label>
-              <input style={bordeError(errores.nombre)} value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} placeholder="Ej. Postobón" />
+              <input style={bordeError(errores.nombre)} value={form.nombre} maxLength={100} required onChange={(e) => setForm({ ...form, nombre: e.target.value.slice(0, 100) })} placeholder="Ej. Postobón" />
             </div>
 
             <div style={{ display: 'flex', gap: 14, alignItems: 'flex-end', marginBottom: 14 }}>
@@ -439,7 +439,7 @@ const load = async (silencioso = false) => {
               </div>
               <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
                 <label>Logo (URL) <span className="mn-req">*</span></label>
-                <input style={bordeError(errores.img)} value={form.img} onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
+                <input style={bordeError(errores.img)} type="url" value={form.img} maxLength={255} required onChange={(e) => setForm({ ...form, img: e.target.value })} placeholder="https://..." />
               </div>
             </div>
 
@@ -448,8 +448,11 @@ const load = async (silencioso = false) => {
                 <label>Teléfono <span className="mn-req">*</span></label>
                 <input
                   style={bordeError(errores.telefono)}
+                  type="tel"
                   inputMode="numeric"
+                  pattern="[0-9]{7,10}"
                   maxLength={10}
+                  required
                   placeholder="Ej. 3001234567"
                   value={form.telefono}
                   onChange={(e) => setForm({ ...form, telefono: e.target.value.replace(/\D/g, '').slice(0, 10) })}
@@ -457,7 +460,7 @@ const load = async (silencioso = false) => {
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label>Correo <span className="mn-req">*</span></label>
-                <input style={bordeError(errores.correo)} type="email" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
+                <input style={bordeError(errores.correo)} type="email" value={form.correo} maxLength={150} required onChange={(e) => setForm({ ...form, correo: e.target.value })} />
               </div>
             </div>
 
@@ -467,7 +470,9 @@ const load = async (silencioso = false) => {
                 <input
                   style={bordeError(errores.nit)}
                   inputMode="numeric"
+                  pattern="[0-9\-]*"
                   maxLength={11}
+                  required
                   placeholder="Ej. 830047819-9"
                   value={form.nit}
                   onChange={(e) => setForm({ ...form, nit: limpiarNit(e.target.value) })}
@@ -476,8 +481,8 @@ const load = async (silencioso = false) => {
             )}
 
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
-              <button className="btn-save" onClick={save}>{editId ? 'Actualizar' : 'Crear'}</button>
+              <Boton variante="cancelar" className="btn-cancel" onClick={() => setModal(false)}>Cancelar</Boton>
+              <button className="btn-save" onClick={save}><SaveIcon size={16} className="btn-ico" aria-hidden="true" />{editId ? 'Actualizar' : 'Crear'}</button>
             </div>
             </div>
           </div>
@@ -491,8 +496,8 @@ const load = async (silencioso = false) => {
               ¿Eliminar el proveedor "{confirmDel.nombre}"? Esta acción no se puede deshacer.
             </p>
             <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setConfirmDel(null)} disabled={eliminando}>Cancelar</button>
-              <button type="button" className="mn-btn-confirm" onClick={del} disabled={eliminando}>
+              <Boton variante="cancelar" type="button" className="mn-btn-cancel" onClick={() => setConfirmDel(null)} disabled={eliminando}>Cancelar</Boton>
+              <button type="button" className="mn-btn-confirm" onClick={del} disabled={eliminando}><Trash2Icon size={16} className="btn-ico" aria-hidden="true" />
                 {eliminando ? 'Eliminando...' : 'Sí, eliminar'}
               </button>
             </div>

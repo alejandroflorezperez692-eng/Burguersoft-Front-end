@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { validarCamposVisibles } from '../utils/validarCampos';
 import { useEscape } from '../hooks/useEscape';
+import Boton from './Boton';
 
 interface MotivoModalProps {
   titulo: string;
@@ -33,6 +35,7 @@ export default function MotivoModal({
   const valido = motivo.trim().length >= 5;
 
   const enviar = () => {
+    if (!validarCamposVisibles()) return;
     if (!valido) {
       setTocado(true);
       return;
@@ -63,7 +66,10 @@ export default function MotivoModal({
           rows={4}
           autoFocus
           value={motivo}
-          onChange={(e) => setMotivo(e.target.value)}
+          minLength={5}
+          maxLength={255}
+          required
+          onChange={(e) => setMotivo(e.target.value.slice(0, 255))}
           onBlur={() => setTocado(true)}
           style={{
             width: '100%',
@@ -84,13 +90,11 @@ export default function MotivoModal({
         )}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
-          <button
+          <Boton variante="volver"
             type="button"
             className="btn-cancel"
             onClick={onClose}
-          >
-            Volver
-          </button>
+          >Volver</Boton>
           <button
             type="button"
             className="btn-primary"

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import apiClient from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { AvatarBurgi, BurgiRobot, CHISPAS, Chispa } from './AsistenteIA';
+import Boton from './Boton';
 
 interface Mensaje {
   role: 'user' | 'assistant';
@@ -194,14 +195,12 @@ export default function AsistenteCliente() {
                 </div>
               </div>
               {mensajes.length > 0 && (
-                <button
+                <Boton variante="limpiar"
                   type="button"
                   className="burgi-mini"
                   onClick={() => setMensajes([])}
                   style={{ background: 'rgba(232,130,26,0.12)', border: 'none', color: 'var(--brand-deep, #b85f0c)', borderRadius: 999, padding: '6px 12px', fontSize: 12, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}
-                >
-                  Limpiar
-                </button>
+                >Limpiar</Boton>
               )}
               <button
                 type="button"

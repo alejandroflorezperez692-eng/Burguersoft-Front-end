@@ -3,6 +3,8 @@ import apiClient from '../api/client';
 import SelectOscuro from './SelectOscuro';
 import AdminDatePicker from './AdminDatePicker';
 import Paginacion, { paginar } from './Paginacion';
+import Boton from './Boton';
+import { Eraser as EraserIcon } from 'lucide-react';
 
 
 interface Movimiento {
@@ -149,7 +151,7 @@ function chip(activo: boolean): CSSProperties {
   };
 }
 
-export default function HistorialPage(_props: { onVolver?: () => void }) {
+export default function HistorialPage({ onVolver }: { onVolver?: () => void }) {
   const [movs, setMovs] = useState<Movimiento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -340,7 +342,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
         .hist-hora { flex-shrink: 0; font-size: 12px; color: var(--text-400); text-align: right; }
       `}</style>
 
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <h2
           style={{
             fontFamily: 'var(--font-sans)',
@@ -352,6 +354,9 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
         >
           Historial de movimientos
         </h2>
+        {onVolver && (
+          <Boton variante="volver" type="button" onClick={onVolver}>Volver</Boton>
+        )}
       </div>
 
       <div
@@ -370,7 +375,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
           placeholder="Buscar por usuario, rol, apartado o acción..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
-        />
+         maxLength={100}/>
 
         <div
           style={{
@@ -479,9 +484,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button type="button" style={chip(esRango(0))} onClick={() => rangoRapido(0)}>
-              Hoy
-            </button>
+            <Boton variante="hoy" type="button" style={chip(esRango(0))} onClick={() => rangoRapido(0)}>Hoy</Boton>
             <button type="button" style={chip(esRango(7))} onClick={() => rangoRapido(7)}>
               7 días
             </button>
@@ -543,7 +546,7 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
               textDecoration: 'underline',
               cursor: 'pointer',
             }}
-          >
+          ><EraserIcon size={16} className="btn-ico" aria-hidden="true" />
             Limpiar {filtrosActivos} filtro{filtrosActivos !== 1 ? 's' : ''}
           </button>
         )}
@@ -557,17 +560,13 @@ export default function HistorialPage(_props: { onVolver?: () => void }) {
         ) : error ? (
           <div className="hist-card" style={{ textAlign: 'center', padding: 30 }}>
             <p style={{ color: 'var(--danger)', margin: '0 0 12px' }}>No se pudo cargar el historial.</p>
-            <button type="button" className="btn-cancel" onClick={cargar}>
-              Reintentar
-            </button>
+            <Boton variante="actualizar" type="button" className="btn-cancel" onClick={cargar}>Reintentar</Boton>
           </div>
         ) : filtrados.length === 0 ? (
           <div className="hist-card" style={{ textAlign: 'center', padding: 30 }}>
             <p style={{ color: 'var(--text-400)', margin: '0 0 12px' }}>No hay movimientos para mostrar.</p>
             {filtrosActivos > 0 && (
-              <button type="button" className="btn-cancel" onClick={limpiar}>
-                Limpiar filtros
-              </button>
+              <Boton variante="limpiar" type="button" className="btn-cancel" onClick={limpiar}>Limpiar filtros</Boton>
             )}
           </div>
         ) : (

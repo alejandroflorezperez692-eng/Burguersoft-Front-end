@@ -280,7 +280,7 @@ const AyudaAdmin = () => {
               setBusqueda(e.target.value);
               setCategoriaActiva(null);
             }}
-          />
+           maxLength={100}/>
           <button type="submit" className="ayuda-boton-buscar">
             <Search size={16} />
             Buscar

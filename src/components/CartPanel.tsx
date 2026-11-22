@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import FacturaModal from './FacturaModal';
 import { useToast } from './Toast';
 import { useTasaImpuesto } from '../hooks/useTasaImpuesto';
+import Boton from './Boton';
+import { CreditCard as CreditCardIcon } from 'lucide-react';
+import SelectBuscable from './SelectBuscable';
 
 const TIPOS_ENTREGA = ['Domicilio', 'Para recoger', 'En restaurante'] as const;
 const CUANDO_OPCIONES = ['Lo antes posible', 'Programar para más tarde'] as const;
@@ -91,25 +94,6 @@ export default function CartPanel() {
     showToastGlobal(msg, tipo === 'err', tipo === 'aviso');
   };
   const [confirmado, setConfirmado] = useState(() => localStorage.getItem('burguersoft_confirmado') === '1');
-  const [cuandoAbierto, setCuandoAbierto] = useState(false);
-  const cuandoRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!cuandoAbierto) return;
-    const alClicFuera = (e: MouseEvent) => {
-      if (!cuandoRef.current?.contains(e.target as Node)) setCuandoAbierto(false);
-    };
-    const alTeclear = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setCuandoAbierto(false);
-    };
-    document.addEventListener('mousedown', alClicFuera);
-    document.addEventListener('keydown', alTeclear);
-    return () => {
-      document.removeEventListener('mousedown', alClicFuera);
-      document.removeEventListener('keydown', alTeclear);
-    };
-  }, [cuandoAbierto]);
-
   const rangoHorario = obtenerRangoHorario(fechaSeleccionada);
   const hoyStr = hoyColombiaStr();
 
@@ -166,41 +150,13 @@ export default function CartPanel() {
 
         <div className="cart-cuando-row">
           <span className="cart-cuando-label">Cuándo:</span>
-          <div className="cart-cuando-select" ref={cuandoRef}>
-            <button
-              type="button"
-              className="cart-cuando-trigger"
-              aria-haspopup="listbox"
-              aria-expanded={cuandoAbierto}
-              onClick={() => setCuandoAbierto((v) => !v)}
-            >
-              {cuando}
-              <span className="cart-cuando-arrow" aria-hidden="true">▾</span>
-            </button>
-            {cuandoAbierto && (
-              <ul className="cart-cuando-lista" role="listbox" aria-label="Cuándo">
-                {CUANDO_OPCIONES.map((c) => (
-                  <li
-                    key={c}
-                    role="option"
-                    aria-selected={cuando === c}
-                    tabIndex={0}
-                    className={`cart-cuando-opcion${cuando === c ? ' activa' : ''}`}
-                    onClick={() => { setCuando(c); setCuandoAbierto(false); }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setCuando(c);
-                        setCuandoAbierto(false);
-                      }
-                    }}
-                  >
-                    {c}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          <SelectBuscable
+            value={cuando}
+            onChange={(valor) => setCuando(String(valor) as typeof cuando)}
+            opciones={CUANDO_OPCIONES.map((c) => ({ value: c, label: c }))}
+            placeholder="Cuándo"
+            clase="cart-cuando-select"
+          />
         </div>
         {cuando === 'Programar para más tarde' && (
           <div className="cart-fecha-row">
@@ -253,7 +209,7 @@ export default function CartPanel() {
                     <div className="cart-item-price">${(it.precio * it.cantidad).toLocaleString('es-CO')}</div>
                   </div>
                   <div className="cart-item-actions">
-                    <button type="button" className="link-action link-eliminar" onClick={() => quitar(it.uid ?? it.id)}>Eliminar</button>
+                    <Boton variante="eliminar" type="button" className="link-action link-eliminar" onClick={() => quitar(it.uid ?? it.id)}>Eliminar</Boton>
                     <div className="cart-item-edit">
                       <span className="link-action link-editar">Editar</span>
                       <div className="qty-stepper">
@@ -265,7 +221,7 @@ export default function CartPanel() {
                   </div>
                 </div>
               ))}
-              <button type="button" className="btn-vaciar-pill" onClick={handleVaciar}>Vaciar carrito</button>
+              <Boton variante="eliminar" type="button" className="btn-vaciar-pill" onClick={handleVaciar}>Vaciar carrito</Boton>
             </div>
           )}
         </div>
@@ -288,7 +244,7 @@ export default function CartPanel() {
             className="btn-ir-pagar"
             disabled={items.length === 0 || !confirmado}
             onClick={handleIrAPagar}
-          >
+          ><CreditCardIcon size={16} className="btn-ico" aria-hidden="true" />
             <span>Ir a pagar</span>
             <span>${total.toLocaleString('es-CO')}</span>
           </button>

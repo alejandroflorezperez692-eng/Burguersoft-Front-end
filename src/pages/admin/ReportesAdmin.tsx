@@ -6,6 +6,7 @@ import AdminLoading from '../../components/AdminLoading';
 import VentasGraficas from '../../components/VentasGraficas';
 import type { EstadisticasVentas } from '../../types/Ventas';
 import { exportarReporteExcel } from './exportarReporteExcel';
+import Boton from '../../components/Boton';
 
 interface DetalleVenta {
   id: number;
@@ -189,7 +190,7 @@ function PanelProductosVendidos({ productos }: { productos: ProductoVendido[] })
           onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar producto..."
           style={{ width: '100%', paddingRight: busqueda ? 34 : undefined }}
-        />
+         maxLength={100}/>
         {busqueda && (
           <button
             type="button"
@@ -726,15 +727,13 @@ export default function ReportesAdmin() {
           <h1>Reportes</h1>
           <p className="subtitulo">Consulta por rango de fechas · máximo {MAX_DIAS} días por reporte</p>
         </div>
-        <button
+        <Boton variante="excel"
           type="button"
           className="btn-primary"
           onClick={exportarExcel}
           disabled={!hayDatos}
           style={{ opacity: hayDatos ? 1 : 0.5, cursor: hayDatos ? 'pointer' : 'not-allowed' }}
-        >
-          EXCEL
-        </button>
+        >EXCEL</Boton>
       </div>
 
       {/* ---------- Filtros ---------- */}

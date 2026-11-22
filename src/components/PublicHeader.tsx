@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import logo from '../assets/img/icono1-oscuro.png';
 import iconoPersona from '../assets/img/icono-persona.png';
 import { useAuth } from '../hooks/useAuth';
@@ -9,11 +9,14 @@ import CartPanel from './CartPanel';
 import AdminLoading from './AdminLoading';
 import { normalizarRol } from '../utils/roles';
 import ConfirmarSalida from './ConfirmarSalida';
+import Breadcrumbs from './Breadcrumbs';
+import { LogOut as LogOutIcon } from 'lucide-react';
 
 export default function PublicHeader() {
   const { isAuthenticated, user, logout } = useAuth();
   const { count, toggle } = useCart();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const ayudaPath = isAuthenticated && normalizarRol(user?.role) === 'cliente'
     ? '/ayuda-cliente'
     : '/ayuda';
@@ -142,7 +145,7 @@ export default function PublicHeader() {
                     </span>
                     Mis compras
                   </button>
-                  <button type="button" className="cerrar-sesion" data-tooltip="Cerrar sesión" onClick={() => { setMenuAbierto(false); setConfirmarSalida(true); }}>
+                  <button type="button" className="cerrar-sesion" data-tooltip="Cerrar sesión" onClick={() => { setMenuAbierto(false); setConfirmarSalida(true); }}><LogOutIcon size={16} className="btn-ico" aria-hidden="true" />
                     <span style={{ width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>↪</span>
 
                     Cerrar sesión
@@ -155,13 +158,21 @@ export default function PublicHeader() {
               <button
                 type="button"
                 className="btn-sesion"
+                aria-label="Iniciar sesión"
+                data-tooltip="Iniciar sesión"
               >
-                <img src={iconoPersona} alt="Iniciar sesión" />
+                <img src={iconoPersona} alt="" />
               </button>
             </Link>
           )}
         </div>
       </header>
+
+      {pathname !== '/' && (
+        <div className="public-breadcrumbs">
+          <Breadcrumbs />
+        </div>
+      )}
 
       {isAuthenticated && (
         <>

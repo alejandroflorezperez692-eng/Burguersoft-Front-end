@@ -1,4 +1,5 @@
 import '../styles/paginacion.css';
+import Boton from './Boton';
 
 export const POR_PAGINA = 15;
 
@@ -50,9 +51,7 @@ export default function Paginacion({ total, pagina, onCambiar, porPagina = POR_P
 
       {(totalPaginas > 1 || siempre) && (
         <nav className="pag-nav" aria-label="Paginación">
-          <button type="button" className="pag-btn" onClick={() => ir(actual - 1)} disabled={actual === 1}>
-            ‹ Anterior
-          </button>
+          <Boton variante="anterior" type="button" className="pag-btn" onClick={() => ir(actual - 1)} disabled={actual === 1}>Anterior</Boton>
 
           {numerosPagina(actual, totalPaginas).map((n, i) =>
             n === '…' ? (
@@ -70,9 +69,7 @@ export default function Paginacion({ total, pagina, onCambiar, porPagina = POR_P
             )
           )}
 
-          <button type="button" className="pag-btn" onClick={() => ir(actual + 1)} disabled={actual === totalPaginas}>
-            Siguiente ›
-          </button>
+          <Boton variante="siguiente" type="button" className="pag-btn" onClick={() => ir(actual + 1)} disabled={actual === totalPaginas}>Siguiente</Boton>
         </nav>
       )}
     </div>

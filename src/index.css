@@ -2024,3 +2024,27 @@ body:not(.dark-mode) .acc-btn-tile:focus:not(:focus-visible) {
   box-shadow: none !important;
 }
 
+
+
+/* Botones con icono (punto 9) */
+.btn-con-icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-con-icono svg {
+  flex-shrink: 0;
+}
+
+/* Icono que acompaña al texto de un botón (punto 9) */
+.btn-ico {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.1em;
+  height: 1.1em;
+  margin-right: 0.45em;
+  vertical-align: -0.17em;
+  stroke-width: 2;
+  pointer-events: none;
+}

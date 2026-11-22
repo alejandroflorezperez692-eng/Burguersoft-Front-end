@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import apiClient from '../api/client';
 import { useToast } from './Toast';
 import '../styles/historial-insumo.css';
+import Boton from './Boton';
 import {
   armarPeriodos,
   exportarHistorialInsumoExcel,
   type CierreInsumo,
   type CompraInsumo,
 } from '../utils/exportarHistorialInsumoExcel';
+import { FileSpreadsheet as FileSpreadsheetIcon } from 'lucide-react';
 
 interface Insumo {
   id: number;
@@ -134,7 +136,7 @@ export default function MateriaPrimaHistorialModal({ insumo, proveedor, onClose 
             className="hm-btn-excel"
             onClick={() => void exportar()}
             disabled={loading || exportando}
-          >
+          ><FileSpreadsheetIcon size={16} className="btn-ico" aria-hidden="true" />
             {exportando ? 'Generando…' : '⬇ Exportar a Excel'}
           </button>
         </div>
@@ -225,7 +227,7 @@ export default function MateriaPrimaHistorialModal({ insumo, proveedor, onClose 
         )}
 
         <div className="mn-modal-actions" style={{ marginTop: 18 }}>
-          <button type="button" className="mn-btn-cancel" onClick={onClose}>Cerrar</button>
+          <Boton variante="volver" type="button" className="mn-btn-cancel" onClick={onClose}>Cerrar</Boton>
         </div>
       </div>
     </div>

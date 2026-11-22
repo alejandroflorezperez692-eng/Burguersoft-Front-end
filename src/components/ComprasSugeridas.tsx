@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
+import Boton from './Boton';
+import { ChevronsUpDown as ChevronsUpDownIcon } from 'lucide-react';
 
 export interface ItemSugerido {
   materia_id: number;
@@ -116,14 +118,12 @@ export default function ComprasSugeridas({
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
         {datos.items.length > 5 && (
-          <button type="button" className="mn-btn-cancel" onClick={() => setVerTodos((v) => !v)}>
+          <button type="button" className="mn-btn-cancel" onClick={() => setVerTodos((v) => !v)}><ChevronsUpDownIcon size={16} className="btn-ico" aria-hidden="true" />
             {verTodos ? 'Ver menos' : `Ver todos (${datos.items.length})`}
           </button>
         )}
         {onAgregar && (
-          <button type="button" className="btn-primary" onClick={() => onAgregar(datos.items)}>
-            Crear compra con esta lista
-          </button>
+          <Boton variante="agregar" type="button" className="btn-primary" onClick={() => onAgregar(datos.items)}>Crear compra con esta lista</Boton>
         )}
       </div>
     </div>

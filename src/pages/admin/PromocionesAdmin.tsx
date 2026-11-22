@@ -9,6 +9,8 @@ import { useEscape } from '../../hooks/useEscape';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
 import { mensajeError as mensajeErrorBase } from '../../utils/errores';
+import Boton from '../../components/Boton';
+import { Plus as PlusIcon, RefreshCw as RefreshCwIcon, RotateCcw as RotateCcwIcon, Save as SaveIcon, Upload as UploadIcon, X as XIcon } from 'lucide-react';
 
 interface Producto {
   id: number;
@@ -304,9 +306,9 @@ function PromoDatePicker({
       {abierto && (
         <div className="compras-calendar" role="dialog" aria-label="Elegir fecha">
           <div className="compras-calendar-header">
-            <button type="button" aria-label="Mes anterior" disabled={indiceMes <= mesMinimo} onClick={() => setMesVisible(new Date(anio, mes - 1, 1))}>‹</button>
+            <button type="button" aria-label="Mes anterior" data-tooltip="Mes anterior" disabled={indiceMes <= mesMinimo} onClick={() => setMesVisible(new Date(anio, mes - 1, 1))}>‹</button>
             <strong>{tituloMes}</strong>
-            <button type="button" aria-label="Mes siguiente" disabled={indiceMes >= mesMaximo} onClick={() => setMesVisible(new Date(anio, mes + 1, 1))}>›</button>
+            <button type="button" aria-label="Mes siguiente" data-tooltip="Mes siguiente" disabled={indiceMes >= mesMaximo} onClick={() => setMesVisible(new Date(anio, mes + 1, 1))}>›</button>
           </div>
           <div className="compras-calendar-grid compras-calendar-weekdays" aria-hidden="true">
             {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((dia) => <span key={dia}>{dia}</span>)}
@@ -335,12 +337,12 @@ function PromoDatePicker({
             })}
           </div>
           <div className="compras-calendar-footer">
-            <button type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</button>
-            <button type="button" onClick={() => {
+            <Boton variante="eliminar" type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</Boton>
+            <Boton variante="hoy" type="button" onClick={() => {
               const hoy = aISO(new Date());
               if ((!min || hoy >= min) && (!max || hoy <= max)) onChange(hoy);
               setAbierto(false);
-            }}>Hoy</button>
+            }}>Hoy</Boton>
           </div>
         </div>
       )}
@@ -655,7 +657,7 @@ const cargar = useCallback(async () => {
         <button type="button" className="mn-form-cerrar" onClick={limpiarFormulario} aria-label="Cerrar">×</button>
       </div>
 
-      <form onSubmit={guardar} noValidate>
+      <form onSubmit={guardar}>
         <div className="mn-form-body">
           <div className="mn-form-grid">
 
@@ -663,7 +665,7 @@ const cargar = useCallback(async () => {
               <div className="mn-field">
                 <label htmlFor="pm-nombre">Nombre <span className="mn-req">*</span></label>
                 <input id="pm-nombre" style={rojo(errores.nombre)} type="text" maxLength={100} placeholder="Ej: Combo Familiar"
-                  value={form.nombre} onChange={setCampo('nombre')} />
+                  value={form.nombre} onChange={setCampo('nombre')}  required/>
               </div>
 
               <div className="mn-field">
@@ -672,7 +674,7 @@ const cargar = useCallback(async () => {
                   <span className="pm-count">{seleccion.length} {seleccion.length === 1 ? 'seleccionado' : 'seleccionados'}</span>
                 </label>
                 <input type="text" placeholder="Buscar producto o categoría..."
-                  value={buscarProd} onChange={(e) => setBuscarProd(e.target.value)} />
+                  value={buscarProd} onChange={(e) => setBuscarProd(e.target.value)}  maxLength={100}/>
                 <div className="pm-picker" style={rojo(errores.productos)}>
                   {listaProd.length === 0 ? (
                     <div className="pm-picker-empty">No se encontraron productos</div>
@@ -699,12 +701,12 @@ const cargar = useCallback(async () => {
                 </div>
                 <div className="mn-field">
                   <label htmlFor="pm-desc-pct">Descuento (%)</label>
-                  <input id="pm-desc-pct" type="text" inputMode="numeric" placeholder="0"
+                  <input id="pm-desc-pct" type="text" inputMode="numeric" placeholder="0" pattern="[0-9]*" maxLength={3}
                     value={descuento} onChange={cambiarDescuento} />
                 </div>
                 <div className="mn-field">
                   <label htmlFor="pm-precio">Precio del combo <span className="mn-req">*</span></label>
-                  <input id="pm-precio" style={rojo(errores.precio)} type="text" inputMode="numeric" placeholder="$ 0"
+                  <input id="pm-precio" style={rojo(errores.precio)} type="text" inputMode="numeric" placeholder="$ 0" required maxLength={12}
                     value={form.precio ? Number(form.precio).toLocaleString('es-CO') : ''}
                     onChange={cambiarPrecio} />
                 </div>
@@ -716,7 +718,7 @@ const cargar = useCallback(async () => {
                 ) : precioManual ? (
                   <>
                     Precio escrito a mano.{' '}
-                    <button type="button" className="pm-link" onClick={() => setPrecioManual(false)}>
+                    <button type="button" className="pm-link" onClick={() => setPrecioManual(false)}><RotateCcwIcon size={16} className="btn-ico" aria-hidden="true" />
                       Usar el sugerido ({fmt(precioSugerido)})
                     </button>
                   </>
@@ -769,7 +771,7 @@ const cargar = useCallback(async () => {
                   value={form.descripcion} onChange={cambiarDescripcion} />
                 <div className="pm-desc-bar">
                   {descManual && seleccion.length > 0 ? (
-                    <button type="button" className="pm-link" onClick={() => setDescManual(false)}>
+                    <button type="button" className="pm-link" onClick={() => setDescManual(false)}><RefreshCwIcon size={16} className="btn-ico" aria-hidden="true" />
                       ↻ Generar descripción automática
                     </button>
                   ) : <span />}
@@ -801,7 +803,7 @@ const cargar = useCallback(async () => {
                   <span className="mn-upload-name">
                     {archivo ? archivo.name : imgActual ? 'Imagen actual' : 'Ningún archivo seleccionado'}
                   </span>
-                  <button type="button" className="mn-btn-pick" onClick={() => fileRef.current?.click()}>
+                  <button type="button" className="mn-btn-pick" onClick={() => fileRef.current?.click()}><UploadIcon size={16} className="btn-ico" aria-hidden="true" />
                     {preview ? 'Cambiar' : 'Seleccionar'}
                   </button>
                 </div>
@@ -813,10 +815,10 @@ const cargar = useCallback(async () => {
         </div>
 
         <div className="mn-form-footer">
-          <button type="submit" className="mn-btn-submit" disabled={guardando}>
+          <button type="submit" className="mn-btn-submit" disabled={guardando}><SaveIcon size={16} className="btn-ico" aria-hidden="true" />
             {guardando ? 'Guardando…' : editId ? 'Guardar cambios' : 'Guardar Promoción'}
           </button>
-          <button type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar</button>
+          <Boton variante="cancelar" type="button" className="mn-btn-cancel" onClick={limpiarFormulario}>Cancelar</Boton>
         </div>
       </form>
     </div>
@@ -840,7 +842,7 @@ const cargar = useCallback(async () => {
             className="btn-primary"
             onClick={() => (mostrarForm ? limpiarFormulario() : setMostrarForm(true))}
           >
-            {mostrarForm ? 'Cancelar' : '+ Añadir promoción'}
+            {mostrarForm ? <><XIcon size={16} className="btn-ico" aria-hidden="true" />Cancelar</> : <><PlusIcon size={16} className="btn-ico" aria-hidden="true" />Añadir promoción</>}
           </button>
         )}
       </div>
@@ -866,7 +868,7 @@ const cargar = useCallback(async () => {
               <circle cx="11" cy="11" r="7" />
               <line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input className="mn-search" type="text" placeholder="Buscar promoción..." value={buscar} onChange={(e) => setBuscar(e.target.value)} />
+            <input className="mn-search" type="text" placeholder="Buscar promoción..." value={buscar} onChange={(e) => setBuscar(e.target.value)}  maxLength={100}/>
           </div>
 
           <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
@@ -934,9 +936,7 @@ const cargar = useCallback(async () => {
           </div>
 
           {hayFiltros && (
-            <button type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>
-              Limpiar filtros
-            </button>
+            <Boton variante="limpiar" type="button" className="btn-cancel" onClick={limpiarFiltros} style={{ height: 42 }}>Limpiar filtros</Boton>
           )}
         </div>
       </div>
@@ -994,8 +994,8 @@ const cargar = useCallback(async () => {
                     <td>
                       {esAdmin && (
                         <div className="mn-card-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+                          <Boton variante="editar" type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</Boton>
+                          <Boton variante="eliminar" type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</Boton>
                         </div>
                       )}
                     </td>
@@ -1049,8 +1049,8 @@ const cargar = useCallback(async () => {
                       </div>
                       {esAdmin && (
                         <div className="mn-card-actions">
-                          <button type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</button>
-                          <button type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</button>
+                          <Boton variante="editar" type="button" className="mn-btn-edit" onClick={() => prepararEdicion(p)} data-tooltip="Editar">Editar</Boton>
+                          <Boton variante="eliminar" type="button" className="mn-btn-del" onClick={() => setEliminar(p)} data-tooltip="Eliminar">Eliminar</Boton>
                         </div>
                       )}
                     </article>
@@ -1067,8 +1067,8 @@ const cargar = useCallback(async () => {
           <div className="mn-modal-box" onClick={(e) => e.stopPropagation()}>
             <p>¿Eliminar "{eliminar.nombre}"? Esta acción no se puede deshacer.</p>
             <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setEliminar(null)}>Cancelar</button>
-              <button type="button" className="mn-btn-confirm" onClick={confirmarEliminar}>Sí, eliminar</button>
+              <Boton variante="cancelar" type="button" className="mn-btn-cancel" onClick={() => setEliminar(null)}>Cancelar</Boton>
+              <Boton variante="eliminar" type="button" className="mn-btn-confirm" onClick={confirmarEliminar}>Sí, eliminar</Boton>
             </div>
           </div>
         </div>

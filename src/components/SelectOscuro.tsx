@@ -12,6 +12,7 @@ import {
   type SelectHTMLAttributes,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { Search, X } from 'lucide-react';
 import '../styles/select-oscuro.css';
 import '../styles/select-claro.css';
 
@@ -74,16 +75,27 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
   const selectRef = useRef<HTMLSelectElement>(null);
   const listaRef = useRef<HTMLDivElement>(null);
   const [panel, setPanel] = useState<Panel | null>(null);
+  const [filtro, setFiltro] = useState('');
   const [activo, setActivo] = useState(-1);
   const desplazarRef = useRef(false);
 
-  const cerrar = useCallback(() => setPanel(null), []);
+  const cerrar = useCallback(() => {
+    setPanel(null);
+    setFiltro('');
+  }, []);
+
+  const obtenerOpciones = () => {
+    const todas = extraerOpciones(children);
+    const texto = filtro.toLowerCase().trim();
+    return texto ? todas.filter((opcion) => opcion.label.toLowerCase().includes(texto)) : todas;
+  };
 
   const abrir = () => {
     const el = selectRef.current;
     if (!el || el.disabled) return;
     const opciones = extraerOpciones(children);
     if (opciones.length === 0) return;
+    setFiltro('');
 
     const r = el.getBoundingClientRect();
     const estilo = getComputedStyle(el);
@@ -168,8 +180,8 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
     else abrir();
   };
 
-  const alTeclear = (e: ReactKeyboardEvent<HTMLSelectElement>) => {
-    onKeyDown?.(e);
+  const alTeclear = (e: ReactKeyboardEvent<HTMLElement>) => {
+    onKeyDown?.(e as ReactKeyboardEvent<HTMLSelectElement>);
     if (e.defaultPrevented) return;
 
     if (!panel) {
@@ -180,7 +192,7 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
       return;
     }
 
-    const opciones = extraerOpciones(children);
+    const opciones = obtenerOpciones();
     const mover = (paso: 1 | -1) => {
       let i = activo;
       for (let n = 0; n < opciones.length; n += 1) {
@@ -230,7 +242,7 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
     }
   };
 
-  const opciones = panel ? extraerOpciones(children) : [];
+  const opciones = panel ? obtenerOpciones() : [];
   const valorActual = selectRef.current?.value;
 
   return (
@@ -264,12 +276,40 @@ export default function SelectOscuro(props: SelectHTMLAttributes<HTMLSelectEleme
             }}
             
             onMouseDown={(e) => {
+              const destino = e.target as HTMLElement;
+              if (destino.closest('input, button')) return;
               e.preventDefault();
               e.stopPropagation();
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {opciones.map((opcion, i) => (
+            <div className="so-buscar">
+              <Search size={14} aria-hidden="true" />
+              <input
+                type="text"
+                value={filtro}
+                onChange={(e) => { setFiltro(e.target.value); setActivo(-1); }}
+                onKeyDown={alTeclear}
+                placeholder="Buscar..."
+                aria-label="Buscar opción"
+                autoComplete="off"
+                spellCheck="false"
+               maxLength={100}/>
+              {filtro && (
+                <button
+                  type="button"
+                  aria-label="Limpiar búsqueda"
+                  data-tooltip="Limpiar búsqueda"
+                  title="Limpiar búsqueda"
+                  onClick={() => { setFiltro(''); setActivo(-1); }}
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            {opciones.length === 0 ? (
+              <div className="so-vacio">No se encontraron opciones</div>
+            ) : opciones.map((opcion, i) => (
               <div
                 key={`${opcion.value}-${i}`}
                 className={`so-opcion${i === activo ? ' so-activa' : ''}`}

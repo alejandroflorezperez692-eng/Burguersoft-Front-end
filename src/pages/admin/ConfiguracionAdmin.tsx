@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../components/Toast';
 import apiClient from '../../api/client';
 import HistorialPage from '../../components/HistorialModal';
+import { Eye, EyeOff } from 'lucide-react';
 import { normalizarRol } from '../../utils/roles';
 import { mensajeError } from '../../utils/errores';
 import AdminLoading from '../../components/AdminLoading';
 import usuarioPerfil from '../../assets/img/usuario-perfil.png';
+import Boton from '../../components/Boton';
+import SelectBuscable from '../../components/SelectBuscable';
 import {
   maxLenDocumento,
   reglasPassword,
@@ -15,6 +18,7 @@ import {
   validarDatos,
   validarPassword,
 } from '../../utils/perfil';
+import { KeyRound as KeyRoundIcon, Save as SaveIcon } from 'lucide-react';
 
 type UsuarioMe = {
   nombre?: string;
@@ -30,10 +34,10 @@ export default function ConfiguracionAdmin() {
   const { user, updateUser, logout } = useAuth();
   const { showToast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [tdoc, setTdoc] = useState('');
-  const [tdocAbierto, setTdocAbierto] = useState(false);
   const [ndoc, setNdoc] = useState('');
   const [telefono, setTelefono] = useState('');
   const [telefonoEditado, setTelefonoEditado] = useState(false);
@@ -49,22 +53,10 @@ export default function ConfiguracionAdmin() {
   const [mostrarNueva, setMostrarNueva] = useState(false);
   const [mostrarConf, setMostrarConf] = useState(false);
   const [actualizandoPwd, setActualizandoPwd] = useState(false);
-  const selectorTdocRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     setVerHistorial(false);
   }, [location.key]);
 
-  useEffect(() => {
-    const cerrarAlHacerClickFuera = (event: MouseEvent) => {
-      if (!selectorTdocRef.current?.contains(event.target as Node)) {
-        setTdocAbierto(false);
-      }
-    };
-
-    document.addEventListener('mousedown', cerrarAlHacerClickFuera);
-    return () => document.removeEventListener('mousedown', cerrarAlHacerClickFuera);
-  }, []);
   useEffect(() => {
   setVerHistorial(false);
 }, [location.state]);
@@ -153,7 +145,6 @@ export default function ConfiguracionAdmin() {
     const inicio = Date.now();
     try {
       await apiClient.post('/perfil/password', { actual, nueva, confirmar });
-      // Deja el loading visible al menos 1.2 s para que se alcance a ver
       const resto = 1200 - (Date.now() - inicio);
       if (resto > 0) await new Promise((r) => setTimeout(r, resto));
       sessionStorage.setItem('aviso_login', 'password_ok');
@@ -214,19 +205,17 @@ export default function ConfiguracionAdmin() {
           <span className="badge badge-info cfg-role-badge">{user?.role ?? 'Administrador'}</span>
         </div>
         {normalizarRol(user?.role) === 'admin' && (
-          <button
+          <Boton variante="historial"
             type="button"
             className="btn-primary"
             style={{ alignSelf: 'center', padding: '8px 20px', fontSize: 13 }}
             onClick={() => setVerHistorial(true)}
-          >
-            Historial
-          </button>
+          >Historial</Boton>
         )}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <form onSubmit={handleInfo} className="cfg-card" noValidate>
+          <form onSubmit={handleInfo} className="cfg-card">
             <h3 className="cfg-titulo">Información personal</h3>
 
             <div className="grid-2col">
@@ -264,54 +253,14 @@ export default function ConfiguracionAdmin() {
 
             <div className="grid-2col">
               <div className="form-group">
-                <label htmlFor="admin-tdoc">Tipo de documento <span className="cfg-req">*</span></label>
-                <div className="cfg-document-select" ref={selectorTdocRef}>
-                  <button
-                    type="button"
-                    id="admin-tdoc"
-                    className={`cfg-document-trigger${tdocAbierto ? ' open' : ''}${!tdoc ? ' placeholder' : ''}`}
-                    onClick={() => setTdocAbierto((abierto) => !abierto)}
-                    aria-haspopup="listbox"
-                    aria-expanded={tdocAbierto}
-                    aria-controls="admin-tdoc-options"
-                    aria-label="Tipo de documento"
-                    disabled={cargando}
-                  >
-                    <span>{tdoc || 'Seleccione...'}</span>
-                    <span className="cfg-document-arrow" aria-hidden="true">▾</span>
-                  </button>
-                  {tdocAbierto && (
-                    <ul id="admin-tdoc-options" className="cfg-document-options" role="listbox" aria-label="Tipo de documento">
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={!tdoc}
-                        className="cfg-document-option"
-                        onClick={() => {
-                          setTdoc('');
-                          setTdocAbierto(false);
-                        }}
-                      >
-                        Seleccione...
-                      </button>
-                      {tiposDoc.map((tipo) => (
-                        <button
-                          type="button"
-                          key={tipo}
-                          role="option"
-                          aria-selected={tdoc === tipo}
-                          className={`cfg-document-option${tdoc === tipo ? ' selected' : ''}`}
-                          onClick={() => {
-                            setTdoc(tipo);
-                            setTdocAbierto(false);
-                          }}
-                        >
-                          {tipo}
-                        </button>
-                      ))}
-                    </ul>
-                  )}
-                </div>
+                <SelectBuscable
+                  value={tdoc}
+                  onChange={(valor) => setTdoc(String(valor))}
+                  opciones={tiposDoc.map((tipo) => ({ value: tipo, label: tipo }))}
+                  placeholder="Seleccione..."
+                  label="Tipo de documento"
+                  requerido
+                />
               </div>
               <div className="form-group">
                 <label htmlFor="admin-ndoc">Número de documento</label>
@@ -330,7 +279,7 @@ export default function ConfiguracionAdmin() {
 
             <div className="grid-2col">
               <div className="form-group">
-                <label htmlFor="admin-telefono">Teléfono <span className="cfg-req">*</span></label>
+                <label htmlFor="admin-telefono">Teléfono (opcional)</label>
                 <input
                   id="admin-telefono"
                   type="tel"
@@ -349,8 +298,7 @@ export default function ConfiguracionAdmin() {
                   placeholder="3001234567"
                   maxLength={10}
                   disabled={cargando}
-                  required
-                />
+                 pattern="[0-9]{10}"/>
               </div>
               <div className="form-group">
                 <label htmlFor="admin-correo">Correo electrónico</label>
@@ -360,13 +308,14 @@ export default function ConfiguracionAdmin() {
             </div>
 
             <div className="modal-actions">
-              <button className="btn-save" type="submit" disabled={guardando || cargando}>
+              <Boton variante="volver" type="button" onClick={() => navigate(-1)}>Volver</Boton>
+              <button className="btn-save" type="submit" disabled={guardando || cargando}><SaveIcon size={16} className="btn-ico" aria-hidden="true" />
                 {guardando ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>
           </form>
 
-          <form onSubmit={handlePass} className="cfg-card" noValidate>
+          <form onSubmit={handlePass} className="cfg-card">
             <h3 className="cfg-titulo">Seguridad</h3>
 
             <div className="form-group">
@@ -380,14 +329,17 @@ export default function ConfiguracionAdmin() {
                   placeholder="••••••••"
                   autoComplete="current-password"
                   required
+                  maxLength={64}
                 />
                 <button
                   type="button"
                   className="cfg-pw-toggle"
                   onClick={() => setMostrarActual((v) => !v)}
+                  data-tooltip={mostrarActual ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   aria-label={mostrarActual ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  title={mostrarActual ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
-                  {mostrarActual ? 'Ocultar' : 'Mostrar'}
+                  {mostrarActual ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -403,14 +355,20 @@ export default function ConfiguracionAdmin() {
                   placeholder="Mínimo 8 caracteres"
                   autoComplete="new-password"
                   required
+                  minLength={8}
+                  maxLength={64}
+                  pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
+                  title="Mínimo 8 caracteres, una mayúscula, un número y un símbolo"
                 />
                 <button
                   type="button"
                   className="cfg-pw-toggle"
                   onClick={() => setMostrarNueva((v) => !v)}
+                  data-tooltip={mostrarNueva ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   aria-label={mostrarNueva ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  title={mostrarNueva ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
-                  {mostrarNueva ? 'Ocultar' : 'Mostrar'}
+                  {mostrarNueva ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
 
@@ -445,14 +403,20 @@ export default function ConfiguracionAdmin() {
                   placeholder="Repite la contraseña"
                   autoComplete="new-password"
                   required
+                  minLength={8}
+                  maxLength={64}
+                  pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
+                  title="Mínimo 8 caracteres, una mayúscula, un número y un símbolo"
                 />
                 <button
                   type="button"
                   className="cfg-pw-toggle"
                   onClick={() => setMostrarConf((v) => !v)}
+                  data-tooltip={mostrarConf ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   aria-label={mostrarConf ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  title={mostrarConf ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
-                  {mostrarConf ? 'Ocultar' : 'Mostrar'}
+                  {mostrarConf ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {confirmar && confirmar !== nueva && <span className="cfg-hint cfg-hint-err">Las contraseñas no coinciden.</span>}
@@ -460,7 +424,8 @@ export default function ConfiguracionAdmin() {
             </div>
 
             <div className="modal-actions">
-              <button className="btn-save" type="submit" disabled={actualizandoPwd}>
+              <Boton variante="volver" type="button" onClick={() => navigate(-1)}>Volver</Boton>
+              <button className="btn-save" type="submit" disabled={actualizandoPwd}><KeyRoundIcon size={16} className="btn-ico" aria-hidden="true" />
                 {actualizandoPwd ? 'Actualizando...' : 'Actualizar contraseña'}
               </button>
             </div>

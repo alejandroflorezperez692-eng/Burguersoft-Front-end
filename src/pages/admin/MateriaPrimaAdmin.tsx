@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { validarCamposVisibles } from '../../utils/validarCampos';
 import type React from 'react';
 import apiClient from '../../api/client';
 import { useToast } from '../../components/Toast';
@@ -10,6 +11,8 @@ import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
+import Boton from '../../components/Boton';
+import { Power as PowerIcon } from 'lucide-react';
 
 interface MateriaPrima {
   id: number;
@@ -244,6 +247,7 @@ export default function MateriaPrimaAdmin() {
     intentado && malo ? { borderColor: 'var(--danger)' } : undefined;
 
   const guardar = async () => {
+    if (!validarCamposVisibles()) return;
     if (!editId) return;
     setIntentado(true);
     if (errs.length > 0) {
@@ -319,9 +323,7 @@ export default function MateriaPrimaAdmin() {
           }}
         >
           <span>{errorCarga}</span>
-          <button type="button" className="btn-primary" style={{ padding: '7px 18px' }} onClick={() => load()}>
-            Reintentar
-          </button>
+          <Boton variante="actualizar" type="button" className="btn-primary" style={{ padding: '7px 18px' }} onClick={() => load()}>Reintentar</Boton>
         </div>
       )}
 
@@ -331,7 +333,7 @@ export default function MateriaPrimaAdmin() {
           <circle cx="11" cy="11" r="7" />
           <line x1="21" y1="21" x2="16.65" y2="16.65" />
         </svg>
-        <input className="mn-search" type="text" placeholder="Buscar insumo..." value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="mn-search" type="text" placeholder="Buscar insumo..." value={q} onChange={(e) => setQ(e.target.value)}  maxLength={100}/>
       </div>
 
       <div className="mn-filtros">
@@ -380,9 +382,7 @@ export default function MateriaPrimaAdmin() {
         </div>
 
         {hayFiltros && (
-          <button type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>
-            Limpiar filtros
-          </button>
+          <Boton variante="limpiar" type="button" className="mn-btn-cancel" onClick={limpiarFiltros}>Limpiar filtros</Boton>
         )}
       </div>
 
@@ -441,7 +441,7 @@ export default function MateriaPrimaAdmin() {
                   <td>
                     {!soloLectura && (
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)} data-tooltip="Editar">Editar</button>
+                        <Boton variante="editar" type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }} onClick={() => openEdit(m)} data-tooltip="Editar">Editar</Boton>
                         <button
                           type="button"
                           className={esInactivo(m) ? 'mn-btn-edit' : 'mn-btn-del'}
@@ -449,7 +449,7 @@ export default function MateriaPrimaAdmin() {
                           disabled={cambiandoId === m?.id}
                           onClick={() => (esInactivo(m) ? alternarEstado(m) : setDesactivar(m))}
                           data-tooltip={esInactivo(m) ? 'Activar' : 'Desactivar'}
-                        >
+                        ><PowerIcon size={16} className="btn-ico" aria-hidden="true" />
                           {esInactivo(m) ? 'Activar' : 'Desactivar'}
                         </button>
                       </div>
@@ -479,7 +479,9 @@ export default function MateriaPrimaAdmin() {
                 style={bordeError(errores.nombre)}
                 value={form.nombre}
                 placeholder="Ej. Pan de hamburguesa"
-                onChange={(e) => setForm({ ...form, nombre: e.target.value })}
+                maxLength={50}
+                required
+                onChange={(e) => setForm({ ...form, nombre: e.target.value.slice(0, 50) })}
               />
               {msgCampo('nombre')}
             </div>
@@ -489,7 +491,8 @@ export default function MateriaPrimaAdmin() {
               <input
                 placeholder="Ej. Carne, Bebida, Panadería..."
                 value={form.tipo}
-                onChange={(e) => setForm({ ...form, tipo: e.target.value })}
+                maxLength={50}
+                onChange={(e) => setForm({ ...form, tipo: e.target.value.slice(0, 50) })}
               />
             </div>
 
@@ -499,6 +502,9 @@ export default function MateriaPrimaAdmin() {
                 <input
                   type="text"
                   inputMode="decimal"
+                  pattern="[0-9.,]*"
+                  maxLength={15}
+                  required
                   style={bordeError(errores.cantidad)}
                   value={form.cantidad}
                   onChange={(e) => setForm({ ...form, cantidad: soloNumero(e.target.value) })}
@@ -524,6 +530,9 @@ export default function MateriaPrimaAdmin() {
                   <input
                     type="text"
                     inputMode="decimal"
+                    pattern="[0-9.,$ ]*"
+                    maxLength={15}
+                    required
                     style={{ paddingLeft: 30, ...bordeError(errores.precio) }}
                     placeholder="Ej. 2.500"
                     value={form.valor}
@@ -556,14 +565,15 @@ export default function MateriaPrimaAdmin() {
                 <input
                   placeholder="Ej: conteo físico, producto dañado..."
                   value={motivo}
-                  onChange={(e) => setMotivo(e.target.value)}
+                  maxLength={255}
+                  onChange={(e) => setMotivo(e.target.value.slice(0, 255))}
                 />
               </div>
             )}
 
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
-              <button className="btn-save" onClick={guardar}>Actualizar</button>
+              <Boton variante="cancelar" className="btn-cancel" onClick={() => setModal(false)}>Cancelar</Boton>
+              <Boton variante="actualizar" className="btn-save" onClick={guardar}>Actualizar</Boton>
             </div>
           </div>
         </div>
@@ -576,8 +586,8 @@ export default function MateriaPrimaAdmin() {
               ¿Desactivar la materia prima "{desactivar.nombre}"? Ya no se podrá elegir en nuevas compras, pero podrás activarla de nuevo cuando quieras.
             </p>
             <div className="mn-modal-actions">
-              <button type="button" className="mn-btn-cancel" onClick={() => setDesactivar(null)}>Cancelar</button>
-              <button type="button" className="mn-btn-confirm" onClick={() => alternarEstado(desactivar)}>Sí, desactivar</button>
+              <Boton variante="cancelar" type="button" className="mn-btn-cancel" onClick={() => setDesactivar(null)}>Cancelar</Boton>
+              <button type="button" className="mn-btn-confirm" onClick={() => alternarEstado(desactivar)}><PowerIcon size={16} className="btn-ico" aria-hidden="true" />Sí, desactivar</button>
             </div>
           </div>
         </div>

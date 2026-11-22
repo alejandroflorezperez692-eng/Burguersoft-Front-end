@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
 import { useEscape } from '../hooks/useEscape';
+import Boton from './Boton';
 import {
   registrosDeTrazabilidad,
   nombreUsuario,
@@ -135,7 +136,7 @@ export default function TrazabilidadModal({ ventaId, onClose }: TrazabilidadModa
         </div>
 
         <div className="tz-footer">
-          <button type="button" className="btn-save" onClick={onClose}>Cerrar</button>
+          <Boton variante="volver" type="button" className="btn-save" onClick={onClose}>Cerrar</Boton>
         </div>
       </div>
     </div>

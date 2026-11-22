@@ -1,5 +1,6 @@
 ﻿import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import AuthLayout from '../layouts/AuthLayout';
 import { useAuth } from '../hooks/useAuth';
 import AdminLoading from '../components/AdminLoading';
@@ -8,6 +9,7 @@ import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
 import { mensajeError } from '../utils/errores';
 import CaptchaLocal, { type CaptchaLocalRef } from '../components/CaptchaLocal';
+import { LogIn as LogInIcon } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -128,7 +130,7 @@ export default function Login() {
       <div className="header-bar">INICIAR SESIÓN</div>
 
       <div className="card">
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit}>
           <h2>
             CORREO<span className="required-marker">*</span>
           </h2>
@@ -139,6 +141,7 @@ export default function Login() {
             placeholder="Correo electrónico"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            maxLength={150}
             required
           />
 
@@ -153,16 +156,18 @@ export default function Login() {
               placeholder="Ingresa tu contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              maxLength={64}
               required
             />
             <button
               type="button"
               className="boton-mostrar-password"
+              data-tooltip={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               onClick={() => setMostrarPassword((visible) => !visible)}
               aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               title={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
-              {mostrarPassword ? 'Ocultar' : 'Mostrar'}
+              {mostrarPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
 
@@ -171,7 +176,7 @@ export default function Login() {
             onChange={(id, respuesta) => setCaptcha({ id, respuesta })}
           />
 
-          <button type="submit" className="btn-primario" disabled={loading || !captcha.respuesta}>
+          <button type="submit" className="btn-primario" disabled={loading || !captcha.respuesta}><LogInIcon size={16} className="btn-ico" aria-hidden="true" />
             {loading ? 'INGRESANDO…' : 'INICIAR SESIÓN'}
           </button>
 
@@ -223,6 +228,13 @@ export default function Login() {
             ¿No tienes una cuenta?
             <Link to="/registro">Crear cuenta</Link>
           </div>
+
+          <p className="auth-aviso-legal">
+            Al iniciar sesión o continuar con Google aceptas los{' '}
+            <Link to="/politica-legal#terminos" target="_blank" rel="noopener noreferrer" className="auth-legal-link">Términos y Condiciones de Uso</Link>
+            {' '}y la{' '}
+            <Link to="/politica-legal#datos" target="_blank" rel="noopener noreferrer" className="auth-legal-link">Política de Tratamiento de Datos Personales (Habeas Data)</Link>.
+          </p>
         </form>
       </div>
     </AuthLayout>

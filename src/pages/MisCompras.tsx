@@ -13,6 +13,7 @@ import '../styles/public.css';
 import '../styles/mis-pedidos.css';
 import { mensajeError } from '../utils/errores';
 import { useToast } from '../components/Toast';
+import { Ban as BanIcon, RefreshCw as RefreshCwIcon, Upload as UploadIcon } from 'lucide-react';
 
 const separarNotasPedido = (notas: string) =>
   notas.split(' | ').map((bloque) => {
@@ -183,7 +184,6 @@ function normalizarCombos(combosRaw: any, promocionesRaw: any): ComboUI[] {
     });
   }
 
-  // Respaldo cuando la respuesta solo trae la relación de promociones.
   const vistas = new Set<string>();
   return (Array.isArray(promocionesRaw) ? promocionesRaw : [])
     .map((promo: any): ComboUI => {
@@ -629,8 +629,8 @@ export default function MisCompras() {
               fontSize: 12,
               color: '#3d2111',
             }}
-          >
-            {cargando ? 'Actualizando…' : '↻ Actualizar'}
+          ><RefreshCwIcon size={16} className="btn-ico" aria-hidden="true" />
+            {cargando ? 'Actualizando…' : 'Actualizar'}
           </button>
         </div>
 
@@ -693,8 +693,6 @@ export default function MisCompras() {
                 (!p.tiene_comprobante && pagoElectronico));
 
             const combos = p.combos ?? [];
-            // Si ya tenemos el resumen de combos, sus productos se muestran
-            // dentro de la fila del combo y no como líneas "Incluido" sueltas.
             const itemsVisibles =
               combos.length > 0 ? p.items.filter((item) => !item.es_combo) : p.items;
 
@@ -800,7 +798,7 @@ export default function MisCompras() {
                           setAvisoComprobante(null);
                           setPedidoComprobante(p);
                         }}
-                      >
+                      ><UploadIcon size={16} className="btn-ico" aria-hidden="true" />
                         {p.tiene_comprobante ? 'Volver a subir comprobante' : 'Subir comprobante'}
                       </button>
                     )}
@@ -924,7 +922,7 @@ export default function MisCompras() {
                         className="btn-cancelar-pedido"
                         onClick={() => cancelarPedido(p)}
                         disabled={estaCancelando}
-                      >
+                      ><BanIcon size={16} className="btn-ico" aria-hidden="true" />
                         {estaCancelando ? 'Cancelando…' : 'Cancelar pedido'}
                       </button>
                     )}

@@ -28,6 +28,7 @@ import AdminFooter from '../components/AdminFooter';
 import AsistenteIA from '../components/AsistenteIA';
 import NotificacionesBoton from '../components/NotificacionesBoton';
 import ConfirmarSalida from '../components/ConfirmarSalida';
+import Breadcrumbs from '../components/Breadcrumbs';
 import pedidosIcono from '../assets/img/pedidos.svg';
 
 const todosLosItems = [
@@ -282,6 +283,9 @@ const salirDesdeMenuUsuario = () => {
       {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
 
       <div className="main-content">
+        <div className="admin-breadcrumbs">
+          <Breadcrumbs inicioRuta="/inicio" />
+        </div>
         <Outlet />
         <AdminFooter />
       </div>

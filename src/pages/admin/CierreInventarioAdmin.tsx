@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { validarCamposVisibles } from '../../utils/validarCampos';
 import apiClient from '../../api/client';
 import AdminDatePicker from '../../components/AdminDatePicker';
 import { useToast } from '../../components/Toast';
@@ -9,6 +10,8 @@ import { useEscape } from '../../hooks/useEscape';
 import { mensajeError } from '../../utils/errores';
 import SelectOscuro from '../../components/SelectOscuro';
 import logoImg from '../../assets/img/logo-burguersoft.png';
+import Boton from '../../components/Boton';
+import { Check as CheckIcon, Eye as EyeIcon, Save as SaveIcon } from 'lucide-react';
 
 interface FilaCierre {
   id: number;
@@ -213,7 +216,6 @@ export default function CierreInventarioAdmin() {
         im.src = logoImg;
       });
 
-      // Encabezado del local
       let y = 16;
       const logoW = 24;
       const logoH = logo ? (logo.naturalHeight / logo.naturalWidth) * logoW : 0;
@@ -240,7 +242,6 @@ export default function CierreInventarioAdmin() {
       doc.line(M, y, W - M, y);
       y += 12;
 
-      // Título
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(26, 10, 0);
@@ -312,6 +313,7 @@ export default function CierreInventarioAdmin() {
   };
 
   const guardar = async () => {
+    if (!validarCamposVisibles()) return;
     if (contados.length === 0) {
       showToast('Escribe el conteo real de al menos una materia prima');
       return;
@@ -358,7 +360,7 @@ export default function CierreInventarioAdmin() {
             <p style={{ fontSize: 14, color: 'var(--text-400)', fontWeight: 500, margin: 0 }}>
               Escribe lo que hay <b>ahora</b> de cada materia prima. El sistema te dice cuánto se usó.
             </p>
-            <button type="button" className="btn-primary" style={{ padding: '9px 22px' }} onClick={llenarTodo}>
+            <button type="button" className="btn-primary" style={{ padding: '9px 22px' }} onClick={llenarTodo}><CheckIcon size={16} className="btn-ico" aria-hidden="true" />
               Todo está igual
             </button>
           </div>
@@ -372,7 +374,7 @@ export default function CierreInventarioAdmin() {
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 placeholder="Ej: harina"
-              />
+               maxLength={100}/>
             </label>
             <label style={estiloEtiqueta}>
               Estado
@@ -383,9 +385,7 @@ export default function CierreInventarioAdmin() {
               </SelectOscuro>
             </label>
             {hayFiltroConteo && (
-              <button type="button" className="btn-cancel" style={{ padding: '9px 18px' }} onClick={limpiarFiltrosConteo}>
-                Limpiar filtros
-              </button>
+              <Boton variante="limpiar" type="button" className="btn-cancel" style={{ padding: '9px 18px' }} onClick={limpiarFiltrosConteo}>Limpiar filtros</Boton>
             )}
           </div>
           {hayFiltroConteo && (
@@ -429,7 +429,7 @@ export default function CierreInventarioAdmin() {
                           style={{ width: 110 }}
                           value={conteos[f.id] ?? ''}
                           onChange={(e) => setConteos({ ...conteos, [f.id]: soloNumero(e.target.value) })}
-                        />
+                         maxLength={15} pattern="[0-9.,]*"/>
                       </td>
                       <td>
                         {us === null ? '—' : Math.abs(us) < 0.005 ? (
@@ -472,7 +472,7 @@ export default function CierreInventarioAdmin() {
                 />
               </div>
             </div>
-            <button type="button" className="ci-btn-guardar" disabled={guardando} onClick={guardar}>
+            <button type="button" className="ci-btn-guardar" disabled={guardando} onClick={guardar}><SaveIcon size={16} className="btn-ico" aria-hidden="true" />
               {guardando ? 'Guardando...' : 'Guardar cierre'}
             </button>
           </div>
@@ -509,9 +509,7 @@ export default function CierreInventarioAdmin() {
               Solo con diferencia
             </label>
             {hayFiltroHistorial && (
-              <button type="button" className="btn-cancel" style={{ padding: '9px 18px' }} onClick={limpiarFiltrosHistorial}>
-                Limpiar filtros
-              </button>
+              <Boton variante="limpiar" type="button" className="btn-cancel" style={{ padding: '9px 18px' }} onClick={limpiarFiltrosHistorial}>Limpiar filtros</Boton>
             )}
           </div>
 
@@ -551,7 +549,7 @@ export default function CierreInventarioAdmin() {
                     <td>
                       <button type="button" className="mn-btn-edit" style={{ flex: 'none', padding: '7px 18px' }}
                         disabled={cargandoDetalle === h.id} onClick={() => verDetalle(h.id)}
-                        data-tooltip="Ver detalle">
+                        data-tooltip="Ver detalle"><EyeIcon size={16} className="btn-ico" aria-hidden="true" />
                         {cargandoDetalle === h.id ? 'Cargando...' : 'Ver detalle'}
                       </button>
                     </td>
@@ -613,8 +611,8 @@ export default function CierreInventarioAdmin() {
             </div>
 
             <div className="modal-actions" style={{ marginTop: 18 }}>
-              <button className="btn-cancel" onClick={() => setDetalle(null)}>Cerrar</button>
-              <button className="btn-save" onClick={() => descargarPdf(detalle)}>Descargar PDF</button>
+              <Boton variante="volver" className="btn-cancel" onClick={() => setDetalle(null)}>Cerrar</Boton>
+              <Boton variante="descargar" className="btn-save" onClick={() => descargarPdf(detalle)}>Descargar PDF</Boton>
             </div>
           </div>
         </div>

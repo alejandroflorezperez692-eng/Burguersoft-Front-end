@@ -1,5 +1,6 @@
 import ComprobanteImagen from './ComprobanteImagen';
 import { useEscape } from '../hooks/useEscape';
+import Boton from './Boton';
 
 /** Datos mínimos del pedido que necesita el modal de detalle del cliente. */
 export interface PedidoDetalleDatos {
@@ -145,9 +146,7 @@ export default function DetallePedidoCliente({ pedido, onClose }: Props) {
         </section>
 
         <div className="mp-detalle-acciones">
-          <button type="button" className="mp-detalle-btn" onClick={onClose}>
-            Cerrar
-          </button>
+          <Boton variante="volver" type="button" className="mp-detalle-btn" onClick={onClose}>Cerrar</Boton>
         </div>
       </div>
     </div>

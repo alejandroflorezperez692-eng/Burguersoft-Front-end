@@ -1,13 +1,19 @@
-﻿import { useEffect, useRef, useState, type FormEvent } from 'react';
+﻿import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import AuthLayout from '../layouts/AuthLayout';
 import ModalVerificarCorreo from '../components/ModalVerificarCorreo';
-import ModalLegal, { type DocumentoLegal } from '../components/ModalLegal';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../components/Toast';
 import { mensajeError } from '../utils/errores';
+import { UserPlus as UserPlusIcon } from 'lucide-react';
+import SelectBuscable from '../components/SelectBuscable';
 
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+// En local el backend no exige captcha; cargarlo aquí solo mete errores de
+// permisos de Google en la consola. En producción se mantiene la protección.
+const RECAPTCHA_SITE_KEY = import.meta.env.PROD
+  ? import.meta.env.VITE_RECAPTCHA_SITE_KEY
+  : undefined;
 
 
 declare global {
@@ -51,8 +57,6 @@ export default function Registro() {
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
   const [tipoDocumento, setTipoDocumento] = useState('');
-  const [tipoOpen, setTipoOpen] = useState(false);
-  const tipoRef = useRef<HTMLDivElement>(null);
   const [numeroDocumento, setNumeroDocumento] = useState('');
   const [correo, setCorreo] = useState('');
   const [password, setPassword] = useState('');
@@ -61,28 +65,11 @@ export default function Registro() {
   const [mostrarConfirmPassword, setMostrarConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [documentoLegal, setDocumentoLegal] = useState<DocumentoLegal | null>(null);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
 
   const { register } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!tipoOpen) return;
-    const onClick = (e: MouseEvent) => {
-      if (tipoRef.current && !tipoRef.current.contains(e.target as Node)) setTipoOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setTipoOpen(false);
-    };
-    document.addEventListener('mousedown', onClick);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onClick);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [tipoOpen]);
 
   useEffect(() => {
     if (!RECAPTCHA_SITE_KEY) {
@@ -166,7 +153,7 @@ export default function Registro() {
       return;
     }
     if (!aceptaTerminos) {
-      showToast('Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.', true);
+      showToast('Debes aceptar los Términos y Condiciones y la Política de Tratamiento de Datos Personales para continuar.', true);
       return;
     }
 
@@ -197,7 +184,8 @@ export default function Registro() {
         password,
         tipoDocumento,
         numeroDocumento,
-        token
+        token,
+        aceptaTerminos
       );
       sessionStorage.setItem('aviso_login', 'registro_ok');
       navigate('/login', { replace: true, state: { toast: 'registro_ok' } });
@@ -210,7 +198,7 @@ export default function Registro() {
 
   return (
     <AuthLayout regresarA="/login">
-      <form id="registroForm" onSubmit={handleSubmit} noValidate>
+      <form id="registroForm" onSubmit={handleSubmit}>
         <div className="contenedor-registro">
           <div className="encabezado">
             <h2>CREAR UNA CUENTA</h2>
@@ -268,39 +256,14 @@ export default function Registro() {
 
           <div className="fila">
             <div className="campo">
-              <label htmlFor="tipoDocumento">Tipo de documento<span className="required-marker">*</span></label>
-              <div className="custom-select" ref={tipoRef}>
-                <button
-                  type="button"
-                  id="tipoDocumento"
-                  className={`custom-select-trigger ${!tipoDocumento ? 'placeholder' : ''} ${tipoOpen ? 'open' : ''}`}
-                  onClick={() => setTipoOpen((v) => !v)}
-                  aria-haspopup="listbox"
-                  aria-expanded={tipoOpen}
-                  aria-label="Tipo de documento"
-                >
-                  <span>{tipoDocumento || 'Seleccione tipo de documento'}</span>
-                  <span className="custom-select-arrow" aria-hidden="true">▾</span>
-                </button>
-                {tipoOpen && (
-                  <ul className="custom-select-options" role="listbox">
-                    {TIPOS_DOCUMENTO.map((tipo) => (
-                      <li
-                        key={tipo}
-                        role="option"
-                        aria-selected={tipoDocumento === tipo}
-                        className={`custom-select-option ${tipoDocumento === tipo ? 'selected' : ''}`}
-                        onClick={() => {
-                          setTipoDocumento(tipo);
-                          setTipoOpen(false);
-                        }}
-                      >
-                        {tipo}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              <SelectBuscable
+                value={tipoDocumento}
+                onChange={(valor) => setTipoDocumento(String(valor))}
+                opciones={TIPOS_DOCUMENTO.map((tipo) => ({ value: tipo, label: tipo }))}
+                placeholder="Seleccione tipo de documento"
+                label="Tipo de documento"
+                requerido
+              />
             </div>
             <div className="campo">
               <label htmlFor="numeroDocumento">Número de documento<span className="required-marker">*</span></label>
@@ -337,6 +300,10 @@ export default function Registro() {
                 value={correo}
                 onChange={(e) => setCorreo(e.target.value)}
                 required
+                pattern="[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}"
+                minLength={5}
+                maxLength={100}
+                title="Ingrese un correo electrónico válido"
               />
             </div>
           </div>
@@ -348,19 +315,25 @@ export default function Registro() {
                 <input
                   type={mostrarPassword ? 'text' : 'password'}
                   id="password"
+                  className="input"
                   placeholder="Digite una contraseña segura"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={8}
+                  maxLength={64}
+                  pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
+                  title="Mínimo 8 caracteres, una mayúscula, un número y un símbolo"
                 />
                 <button
                   type="button"
                   className="boton-mostrar-password"
+                  data-tooltip={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   onClick={() => setMostrarPassword((visible) => !visible)}
                   aria-label={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   title={mostrarPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
-                  {mostrarPassword ? 'Ocultar' : 'Mostrar'}
+                  {mostrarPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               <div
@@ -397,19 +370,25 @@ export default function Registro() {
                 <input
                   type={mostrarConfirmPassword ? 'text' : 'password'}
                   id="confirmPassword"
+                  className="input"
                   placeholder="Confirme su contraseña segura"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
+                  minLength={8}
+                  maxLength={64}
+                  pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
+                  title="Mínimo 8 caracteres, una mayúscula, un número y un símbolo"
                 />
                 <button
                   type="button"
                   className="boton-mostrar-password"
+                  data-tooltip={mostrarConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   onClick={() => setMostrarConfirmPassword((visible) => !visible)}
                   aria-label={mostrarConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   title={mostrarConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                 >
-                  {mostrarConfirmPassword ? 'Ocultar' : 'Mostrar'}
+                  {mostrarConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {confirmPassword && confirmPassword !== password && <p className="pwd-nomatch" style={{ fontSize: 12, marginTop: 5 }}>Las contraseñas no coinciden.</p>}
@@ -422,15 +401,19 @@ export default function Registro() {
               type="checkbox"
               id="aceptaTerminos"
               checked={aceptaTerminos}
+              required
               onChange={(e) => { setAceptaTerminos(e.target.checked); }}
               style={{ marginTop: 4 }}
             />
             <label htmlFor="aceptaTerminos" style={{ fontSize: 13, lineHeight: 1.4, color: 'var(--text-700)' }}>
-              He leído y acepto los <Link to="/terminos" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('terminos'); }}>Términos y Condiciones</Link> y autorizo el tratamiento de mis datos personales conforme a la <Link to="/privacidad" className="auth-legal-link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDocumentoLegal('privacidad'); }}>Política de Privacidad</Link>.
+              He leído y acepto los{' '}
+              <Link to="/politica-legal#terminos" target="_blank" rel="noopener noreferrer" className="auth-legal-link">Términos y Condiciones de Uso</Link>
+              {' '}y autorizo el tratamiento de mis datos personales conforme a la{' '}
+              <Link to="/politica-legal#datos" target="_blank" rel="noopener noreferrer" className="auth-legal-link">Política de Tratamiento de Datos Personales (Habeas Data - Ley 1581 de 2012)</Link>.
             </label>
           </div>
 
-          <button type="submit" className="boton-registro" disabled={loading}>
+          <button type="submit" className="boton-registro" disabled={loading}><UserPlusIcon size={16} className="btn-ico" aria-hidden="true" />
             {loading ? 'REGISTRANDO…' : 'Registrarse'}
           </button>
         </div>
@@ -446,12 +429,6 @@ export default function Registro() {
           correo={correo}
           onClose={() => setModalAbierto(false)}
           onVerified={handleCodigoVerificado}
-        />
-      )}
-      {documentoLegal && (
-        <ModalLegal
-          documentoInicial={documentoLegal}
-          onClose={() => setDocumentoLegal(null)}
         />
       )}
     </AuthLayout>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { validarCamposVisibles } from '../utils/validarCampos';
 import apiClient from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from './Toast';
@@ -7,6 +8,8 @@ import { normalizarRol } from '../utils/roles';
 import '../styles/nu-admin.css';
 import '../styles/nuevo-pedido.css';
 import SelectOscuro from './SelectOscuro';
+import Boton from './Boton';
+import { Check as CheckIcon, Plus as PlusIcon } from 'lucide-react';
 
 interface Adicion { id: number; nombre: string; precio: number | string; tipo?: string; estado?: string }
 interface Producto { id: number; nombre: string; valor: number; img?: string | null; estado?: string; categoria?: string; adiciones?: Adicion[] }
@@ -252,6 +255,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
   };
 
   const guardar = () => {
+    if (!validarCamposVisibles()) return;
     if (enviando) return;
     if (tipoEntrega === 'Consumir' && !mesa) return alertar('Elige la mesa');
     if (tipoEntrega === 'Domicilio') {
@@ -343,7 +347,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                       </button>
                     ))}
                     {esAdmin && (
-                      <button type="button" className="np-mesa np-nueva" onClick={crearMesa}>+ Nueva mesa</button>
+                      <Boton variante="agregar" type="button" className="np-mesa np-nueva" onClick={crearMesa}>Nueva mesa</Boton>
                     )}
                   </div>
                 </div>
@@ -370,7 +374,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                 <>
                   <div className="form-group">
                     <label>Dirección <span style={{ color: '#E8821A' }}>*</span></label>
-                    <input type="text" maxLength={120} value={direccion} onChange={(e) => setDireccion(e.target.value)} />
+                    <input type="text" maxLength={120} value={direccion} onChange={(e) => setDireccion(e.target.value)}  required/>
                   </div>
                   <div className="form-group">
                     <label>Nombre de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
@@ -380,17 +384,19 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                       value={recibeNombre}
                       onChange={(e) => setRecibeNombre(e.target.value)}
                       placeholder="Nombre y apellido"
-                    />
+                     required/>
                   </div>
                   <div className="form-group">
                     <label>Teléfono de quien recibe <span style={{ color: '#E8821A' }}>*</span></label>
                     <input
-                      type="text"
+                      type="tel"
                       inputMode="numeric"
                       maxLength={15}
                       value={telefono}
                       onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
                       placeholder="3001234567"
+                      pattern="[0-9]{7,15}"
+                      required
                     />
                   </div>
                 </>
@@ -425,9 +431,9 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                     <div className="np-line">
                       <span className="np-line-name">{it.nombre}</span>
                       <div className="np-step">
-                        <button type="button" onClick={() => cambiar(it, -1)}>−</button>
+                        <button aria-label="Quitar uno" type="button" onClick={() => cambiar(it, -1)}>−</button>
                         <strong>{cantidadDe(it)}</strong>
-                        <button type="button" onClick={() => cambiar(it, 1)}>+</button>
+                        <button type="button" onClick={() => cambiar(it, 1)} aria-label="Agregar al carrito">+</button>
                       </div>
                       <span className="np-line-price">{money(it.precio * cantidadDe(it))}</span>
                     </div>
@@ -438,9 +444,9 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                           <div key={a.id} className="np-extra">
                             <span>{a.nombre} <em>+{money(Number(a.precio) || 0)}</em></span>
                             <div className="np-step">
-                              <button type="button" onClick={() => cambiarExtra(a.id, -1)} disabled={!cantExtra(a.id)}>−</button>
+                              <button aria-label="Quitar un extra" type="button" onClick={() => cambiarExtra(a.id, -1)} disabled={!cantExtra(a.id)}>−</button>
                               <strong>{cantExtra(a.id)}</strong>
-                              <button type="button" onClick={() => cambiarExtra(a.id, 1)}>+</button>
+                              <button type="button" onClick={() => cambiarExtra(a.id, 1)} aria-label="Agregar al carrito">+</button>
                             </div>
                           </div>
                         ))}
@@ -455,7 +461,8 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
               <div className="np-total">
                 <span>{tieneCuenta ? 'Total a agregar' : 'Total'}</span><b>{money(total)}</b>
               </div>
-              <button type="button" className="np-finalizar" disabled={lineas.length === 0 || enviando} onClick={guardar}>
+              <Boton variante="cancelar" type="button" onClick={cerrar}>Cancelar</Boton>
+              <button type="button" className="np-finalizar" disabled={lineas.length === 0 || enviando} onClick={guardar}><CheckIcon size={16} className="btn-ico" aria-hidden="true" />
                 {enviando ? 'Enviando…' : tieneCuenta ? `Agregar a la mesa ${mesa}` : 'Finalizar pedido'}
               </button>
             </div>
@@ -466,7 +473,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
             <h4><b>3</b> Productos</h4>
             <div className="np-tools">
               <input type="text" placeholder="Buscar producto por nombre..." value={buscar}
-                onChange={(e) => setBuscar(e.target.value)} />
+                onChange={(e) => setBuscar(e.target.value)}  maxLength={100}/>
               <div className="mn-view-toggle" role="group" aria-label="Cambiar vista">
                 <button type="button" className={vista === 'lista' ? 'active' : ''} onClick={() => setVista('lista')} title="Lista">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -506,7 +513,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                     </div>
                     <div className="np-ctrl">
                       {cant === 0 ? (
-                        <button type="button" className="np-add" disabled={it.agotado} onClick={() => cambiar(it, 1)}>
+                        <button type="button" className="np-add" disabled={it.agotado} onClick={() => cambiar(it, 1)}><PlusIcon size={16} className="btn-ico" aria-hidden="true" />
                           {it.agotado ? 'Agotado' : 'Agregar'}
                         </button>
                       ) : (
@@ -527,7 +534,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
 
             <nav className="np-pager" aria-label="Paginación">
               {pagina > 1 && (
-                <button type="button" className="np-pg" onClick={() => setPagina((p) => p - 1)}>‹ Anterior</button>
+                <Boton variante="anterior" type="button" className="np-pg" onClick={() => setPagina((p) => p - 1)}>Anterior</Boton>
               )}
               {Array.from({ length: paginas }, (_, i) => i + 1)
                 .filter((n) => n === 1 || n === paginas || Math.abs(n - pagina) <= 1)
@@ -540,7 +547,7 @@ export default function NuevaVentaModal({ abierto, onClose, onCreada, mesaInicia
                   </span>
                 ))}
               {pagina < paginas && (
-                <button type="button" className="np-pg" onClick={() => setPagina((p) => p + 1)}>Siguiente ›</button>
+                <Boton variante="siguiente" type="button" className="np-pg" onClick={() => setPagina((p) => p + 1)}>Siguiente</Boton>
               )}
             </nav>
           </section>

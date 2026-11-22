@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { conectarAlertas, desconectarAlertas } from '../api/echo';
+import Boton from './Boton';
 
 interface Alerta {
   tipo: 'stock' | 'precio' | 'pedido' | 'comprobante' | 'pago';
@@ -324,9 +325,7 @@ export default function NotificacionesBoton() {
           <div className="notif-head">
             <strong>Notificaciones</strong>
             {sinLeer > 0 && (
-              <button type="button" className="notif-link" onClick={marcarTodas}>
-                Marcar como leídas
-              </button>
+              <Boton variante="marcarLeidas" type="button" className="notif-link" onClick={marcarTodas}>Marcar como leídas</Boton>
             )}
           </div>
 
@@ -366,16 +365,14 @@ export default function NotificacionesBoton() {
             )}
           </div>
 
-          <button
+          <Boton variante="ver"
             type="button"
             className="notif-pie"
             onClick={() => {
               setAbierto(false);
               navigate('/inicio');
             }}
-          >
-            Ver resumen en Inicio
-          </button>
+          >Ver resumen en Inicio</Boton>
         </div>
       )}
 

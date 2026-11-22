@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import FondoParticulas from '../components/FondoParticulas';
 import '../styles/auth.css';
 import '../styles/public.css';
+import Boton from '../components/Boton';
 
 type AuthLayoutProps = {
   children: ReactNode;
@@ -27,9 +28,7 @@ export default function AuthLayout({ children, regresarA }: AuthLayoutProps) {
       <FondoParticulas />
       <nav className="auth-navbar">
         <img src={logo} alt="Burguersoft" className="auth-logo" />
-        <button type="button" className="btn-regresar" onClick={handleRegresar}>
-          Regresar
-        </button>
+        <Boton variante="volver" type="button" className="btn-regresar" onClick={handleRegresar}>Regresar</Boton>
       </nav>
 
       <div className="auth-center">{children}</div>

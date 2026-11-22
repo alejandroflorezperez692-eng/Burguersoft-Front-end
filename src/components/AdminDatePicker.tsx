@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
+import Boton from './Boton';
 
 interface AdminDatePickerProps {
   value: string;
@@ -108,12 +109,12 @@ const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-
             })}
           </div>
           <div className="compras-calendar-footer">
-            <button type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</button>
-            <button type="button" onClick={() => {
+            <Boton variante="eliminar" type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</Boton>
+            <Boton variante="hoy" type="button" onClick={() => {
               const hoy = fechaISO(new Date());
               if ((!min || hoy >= min) && (!max || hoy <= max)) onChange(hoy);
               setAbierto(false);
-            }}>Hoy</button>
+            }}>Hoy</Boton>
           </div>
         </div>
       )}

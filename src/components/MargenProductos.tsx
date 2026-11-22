@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import apiClient from '../api/client';
+import { ChevronsUpDown as ChevronsUpDownIcon } from 'lucide-react';
 
 interface ProductoMargen {
   id: number;
@@ -111,7 +112,7 @@ export default function MargenProductos() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12, fontSize: 13 }}>
         {conReceta.length > 8 ? (
-          <button type="button" className="mn-btn-cancel" onClick={() => setVerTodos((v) => !v)}>
+          <button type="button" className="mn-btn-cancel" onClick={() => setVerTodos((v) => !v)}><ChevronsUpDownIcon size={16} className="btn-ico" aria-hidden="true" />
             {verTodos ? 'Ver menos' : `Ver todos (${conReceta.length})`}
           </button>
         ) : (

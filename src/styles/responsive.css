@@ -1401,3 +1401,178 @@ body {
     height: 100dvh;
   }
 }
+
+/* ---------- Ojitos de contraseña: mismo tamano y centrados en TODO el sistema ---------- */
+:is(
+  .boton-mostrar-password,
+  .mp-pw-toggle,
+  .cfg-pw-toggle,
+  .bk-pw-toggle,
+  .password-toggle
+):has(svg) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  height: 28px !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+}
+
+/* Registro: se deja el ojito un poco mas abajo, como se pidio */
+#registroForm .boton-mostrar-password:has(svg) {
+  top: 3px !important;
+  transform: none !important;
+}
+
+:is(
+  .boton-mostrar-password,
+  .mp-pw-toggle,
+  .cfg-pw-toggle,
+  .bk-pw-toggle,
+  .password-toggle
+):has(svg) svg {
+  width: 18px !important;
+  height: 18px !important;
+  flex: 0 0 auto !important;
+}
+
+/* ---------- Breadcrumbs visibles en todo el sistema ---------- */
+.breadcrumbs-link {
+  color: var(--text-500);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumbs-link:hover {
+  color: var(--brand);
+  text-decoration: underline;
+}
+
+.breadcrumbs-actual {
+  color: var(--text-900);
+  font-weight: 600;
+}
+
+.breadcrumbs-sep {
+  color: var(--text-400);
+  flex-shrink: 0;
+}
+
+.admin-breadcrumbs {
+  padding: 10px 28px 0;
+}
+
+.public-breadcrumbs {
+  padding: 4px 5% 0;
+}
+
+@media (max-width: 768px) {
+  .admin-breadcrumbs {
+    padding: 8px 14px 0;
+  }
+
+  .public-breadcrumbs {
+    padding: 4px 14px 0;
+  }
+
+  .breadcrumbs-wrap {
+    font-size: 12px !important;
+    flex-wrap: wrap;
+  }
+}
+
+/* ---------- Punto 17: secciones corporativas de Nosotros ---------- */
+.public-body .nosotros-section.nosotros-info {
+  min-height: auto;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  scroll-margin-top: 80px;
+}
+
+.public-body .nosotros-section.nosotros-info .nosotros-content {
+  margin-left: 0;
+  width: 100%;
+  padding: 56px 5%;
+}
+
+.public-body .nosotros-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+  width: 100%;
+  margin-top: 26px;
+  text-align: left;
+}
+
+.public-body .nosotros-tarjeta {
+  padding: 22px;
+  border: 1px solid var(--color-secundario, #e8821a);
+  border-radius: 10px;
+  background: rgba(232, 130, 26, 0.05);
+  color: var(--color-primario, #000);
+}
+
+.public-body .nosotros-tarjeta h3 {
+  margin: 0 0 10px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-primario, #000);
+}
+
+.public-body .nosotros-tarjeta p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.public-body .nosotros-tarjeta a,
+.public-body .nosotros-content .footer-legal-link {
+  color: var(--color-secundario, #e8821a);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.public-body .nosotros-tarjeta a:hover,
+.public-body .nosotros-content .footer-legal-link:hover {
+  text-decoration: underline;
+}
+
+body.dark-mode .public-body .nosotros-section.nosotros-info {
+  border-bottom-color: #333;
+}
+
+body.dark-mode .public-body .nosotros-tarjeta {
+  background: #0b0b0b;
+  border-color: #e8821a;
+  color: #fff;
+}
+
+body.dark-mode .public-body .nosotros-tarjeta h3 {
+  color: #fff;
+}
+
+.public-body .nosotros-ubicacion {
+  scroll-margin-top: 80px;
+}
+
+@media (max-width: 768px) {
+  .public-body .nosotros-section.nosotros-info .nosotros-content {
+    padding: 36px 16px;
+  }
+
+  .public-body .nosotros-info-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 18px;
+  }
+}
+
+.auth-shell .legal-page section[id] {
+  scroll-margin-top: 90px;
+}

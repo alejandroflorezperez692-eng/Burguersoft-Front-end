@@ -81,6 +81,7 @@ type AuthContextValue = {
     tipoDocumento?: string,
     numeroDocumento?: string,
     recaptchaToken?: string,
+    aceptaTerminos?: boolean,
   ) => Promise<void>;
   logout: () => void;
   updateUser: (partial: Partial<User>) => void;
@@ -218,6 +219,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tipoDocumento?: string,
       numeroDocumento?: string,
       recaptchaToken?: string,
+      aceptaTerminos?: boolean,
     ) => {
       await apiClient.post('/registro', {
         nombre,
@@ -227,6 +229,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         tipo_documento: tipoDocumento,
         numero_documento: numeroDocumento,
         recaptcha_token: recaptchaToken,
+        acepta_terminos: aceptaTerminos === true,
       });
     },
     [],

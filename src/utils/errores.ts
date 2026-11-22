@@ -37,6 +37,12 @@ function traducirConocido(mensaje: string): string | null {
   if (m.includes('must be a valid email')) return 'Debe ser una dirección de correo válida.';
   if (m.includes('invalid email')) return 'Correo electrónico inválido.';
   if (m.includes('given data was invalid')) return 'Los datos ingresados no son válidos.';
+  if ((m.includes('documento') || m.includes('ndocumento') || m.includes('document')) &&
+      (m.includes('ya existe') || m.includes('duplicad') || m.includes('registrad') ||
+       m.includes('already exists') || m.includes('already registered') || m.includes('duplicate') ||
+       m.includes('unique') || m.includes('taken'))) {
+    return 'El número de documento ya está registrado con otro usuario.';
+  }
   if (m.includes('password confirmation') && m.includes('match')) return 'Las contraseñas no coinciden.';
   if (m.includes('password') && m.includes('required')) return 'La contraseña es obligatoria.';
   if (m.includes('correo') && m.includes('required')) return 'El correo es obligatorio.';

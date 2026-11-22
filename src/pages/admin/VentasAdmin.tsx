@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { validarCamposVisibles } from '../../utils/validarCampos';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
@@ -19,6 +20,8 @@ import { mensajeDeError } from '../../types/Trazabilidad';
 import SelectOscuro from '../../components/SelectOscuro';
 import { nuevaClaveIdempotencia } from '../../utils/idempotencia';
 import { METODOS_MOSTRADOR, esPagoElectronico } from '../../utils/pagos';
+import Boton from '../../components/Boton';
+import { Check as CheckIcon, ClipboardCheck as ClipboardCheckIcon, X as XIcon } from 'lucide-react';
 
 const separarNotasPedido = (notas: string) =>
   notas.split(' | ').map((bloque) => {
@@ -145,7 +148,11 @@ function FiltroDesplegableVentas({ value, onChange, opciones }: {
 }) {
   const [, setModoOscuro] = useState(() => document.body.classList.contains('dark-mode'));
   const [abierto, setAbierto] = useState(false);
+  const [filtro, setFiltro] = useState('');
   const contenedorRef = useRef<HTMLDivElement>(null);
+  const opcionesFiltradas = opciones.filter((opcion) =>
+    opcion.label.toLowerCase().includes(filtro.toLowerCase().trim()),
+  );
 
   useEffect(() => {
     const observer = new MutationObserver(() => setModoOscuro(document.body.classList.contains('dark-mode')));
@@ -177,7 +184,7 @@ const seleccionada = opciones.find((opcion) => opcion.value === value);
         className="ventas-filter-dropdown-trigger"
         aria-haspopup="listbox"
         aria-expanded={abierto}
-        onClick={() => setAbierto(!abierto)}
+        onClick={() => { setFiltro(''); setAbierto(!abierto); }}
       >
         <span>{seleccionada?.label ?? ''}</span>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -186,7 +193,28 @@ const seleccionada = opciones.find((opcion) => opcion.value === value);
       </button>
       {abierto && (
         <ul className="ventas-filter-dropdown-options" role="listbox">
-          {opciones.map((opcion) => (
+          <li style={{ padding: '4px 6px 8px', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
+            <input
+              type="text"
+              value={filtro}
+              onChange={(event) => setFiltro(event.target.value)}
+              placeholder="Buscar..."
+              aria-label="Buscar opción"
+              autoComplete="off"
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '8px 10px',
+                fontSize: 14,
+                color: 'var(--text-900)',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border)',
+                borderRadius: 8,
+                outline: 'none',
+              }}
+             maxLength={100}/>
+          </li>
+          {opcionesFiltradas.map((opcion) => (
             <li
               key={opcion.value}
               className={`ventas-filter-dropdown-option${opcion.value === value ? ' selected' : ''}`}
@@ -205,6 +233,9 @@ const seleccionada = opciones.find((opcion) => opcion.value === value);
               {opcion.label}
             </li>
           ))}
+          {opcionesFiltradas.length === 0 && (
+            <li style={{ padding: '10px 12px', fontSize: 13, color: 'var(--text-400)' }}>No se encontraron opciones</li>
+          )}
         </ul>
       )}
     </div>
@@ -279,9 +310,9 @@ const anio = mesVisible.getFullYear();
       {abierto && (
         <div className="compras-calendar" role="dialog" aria-label="Elegir fecha">
           <div className="compras-calendar-header">
-            <button type="button" aria-label="Mes anterior" disabled={indiceMes <= mesMinimo} onClick={() => setMesVisible(new Date(anio, mes - 1, 1))}>‹</button>
+            <button type="button" aria-label="Mes anterior" data-tooltip="Mes anterior" disabled={indiceMes <= mesMinimo} onClick={() => setMesVisible(new Date(anio, mes - 1, 1))}>‹</button>
             <strong>{tituloMes}</strong>
-            <button type="button" aria-label="Mes siguiente" disabled={indiceMes >= mesMaximo} onClick={() => setMesVisible(new Date(anio, mes + 1, 1))}>›</button>
+            <button type="button" aria-label="Mes siguiente" data-tooltip="Mes siguiente" disabled={indiceMes >= mesMaximo} onClick={() => setMesVisible(new Date(anio, mes + 1, 1))}>›</button>
           </div>
           <div className="compras-calendar-grid compras-calendar-weekdays" aria-hidden="true">
             {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((dia) => <span key={dia}>{dia}</span>)}
@@ -307,8 +338,8 @@ const anio = mesVisible.getFullYear();
             })}
           </div>
           <div className="compras-calendar-footer">
-            <button type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</button>
-            <button
+            <Boton variante="eliminar" type="button" onClick={() => { onChange(''); setAbierto(false); }}>Borrar</Boton>
+            <Boton variante="hoy"
               type="button"
               onClick={() => {
                 const hoy = new Date();
@@ -316,9 +347,7 @@ const anio = mesVisible.getFullYear();
                 if ((!min || fecha >= min) && (!max || fecha <= max)) onChange(fecha);
                 setAbierto(false);
               }}
-            >
-              Hoy
-            </button>
+            >Hoy</Boton>
           </div>
         </div>
       )}
@@ -432,8 +461,6 @@ const load = async (silencioso = false) => {
 
   useEffect(() => { load(); }, []);
 
-  // Al abrir el detalle se piden los datos completos de la venta: así se ven el
-  // correo y el documento del cliente, además del estado real del pedido.
   useEffect(() => {
     if (detalleId === null) return;
     let vigente = true;
@@ -444,7 +471,6 @@ const load = async (silencioso = false) => {
         setItems((prev) => prev.map((v) => (v.id === data.id ? { ...v, ...data } : v)));
       })
       .catch(() => {
-        // Si falla, se conserva lo que ya traía el listado.
       });
     return () => {
       vigente = false;
@@ -454,9 +480,6 @@ const load = async (silencioso = false) => {
   const nombreCliente = (v: Venta) =>
     v?.cliente_nombre || (v?.usuario ? `${v.usuario.nombre} ${v.usuario.apellido}`.trim() : '');
 
-  // El usuario de la venta es el cliente solo cuando el pedido se hizo desde su
-  // cuenta. En ventas de mostrador el usuario es el empleado y el cliente es un
-  // nombre suelto, así que no se muestran los datos personales del empleado.
   const usuarioEsCliente = (v?: Venta | null) => Number(v?.usuario?.rol_id) === 2;
 
   const correoCliente = (v?: Venta | null) =>
@@ -474,8 +497,6 @@ const load = async (silencioso = false) => {
     return [v?.usuario?.Tdocumento, numero].filter(Boolean).join(' ');
   };
 
-  // Tipo de entrega normalizado: el dato puede venir como "Consumir",
-  // "En el local", "Recoger", etc. según el origen del pedido.
   const esEnLocal = (v: Venta) => {
     const t = normalizar(v?.tipo_entrega).trim();
     return t.includes('consum') || t.includes('restaurante') || t.includes('local') || t.includes('mesa');
@@ -550,8 +571,6 @@ const load = async (silencioso = false) => {
     setPagina(1);
   };
 
-  // Solo los pedidos entregados y en estado "Pagado" cuentan como dinero vendido.
-  // Si el usuario filtra un estado concreto se muestra el total de ese estado.
   const totalFiltrado = filtered
     .filter((v) => (filtroEstado ? true : v?.estado === 'Pagado'))
     .reduce((a, v) => a + (Number(v?.valor_total) || 0), 0);
@@ -565,6 +584,7 @@ const load = async (silencioso = false) => {
       : undefined;
 
   const save = async () => {
+    if (!validarCamposVisibles()) return;
     if (guardando) return;
     setIntentado(true);
     if (sinNada) return;
@@ -671,7 +691,6 @@ const load = async (silencioso = false) => {
 
   const totalCarrito = totalProductos + totalCombos;
 
-  // Factura armada con los datos que entrega el backend (/ventas/{id}/recibo.json).
   const htmlFacturaDatos = (d: any) => {
     const logoUrl = new URL(logoImg, window.location.origin).href;
     const neg = d.negocio ?? {};
@@ -1179,7 +1198,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           <h1>{esAdmin ? 'Gestión de Ventas' : 'Caja'}</h1>
           <p className="subtitulo">{new Date().toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
-        <button type="button" className="btn-save" onClick={() => abrirCierre()}>
+        <button type="button" className="btn-save" onClick={() => abrirCierre()}><ClipboardCheckIcon size={16} className="btn-ico" aria-hidden="true" />
           Cierre del día
         </button>
       </div>
@@ -1248,8 +1267,8 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             <ArqueoCaja />
 
             <div className="modal-actions" style={{ marginTop: 16 }}>
-              <button type="button" className="btn-cancel" onClick={() => setCierreAbierto(false)}>Cerrar</button>
-              <button type="button" className="btn-save" onClick={imprimirCierre}>Imprimir</button>
+              <Boton variante="volver" type="button" className="btn-cancel" onClick={() => setCierreAbierto(false)}>Cerrar</Boton>
+              <Boton variante="imprimir" type="button" className="btn-save" onClick={imprimirCierre}>Imprimir</Boton>
             </div>
           </div>
         </div>
@@ -1276,6 +1295,9 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               <input
                 type="number"
                 min={1}
+                max={99999}
+                step={1}
+                required
                 value={cantidad}
                 onChange={(e) => setCantidad(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') agregarAlCarrito(); }}
@@ -1283,15 +1305,13 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </div>
           </div>
 
-          <button
+          <Boton variante="agregar"
             type="button"
             className="btn-cancel"
             onClick={agregarAlCarrito}
             disabled={!productoId}
             style={{ marginTop: 4, padding: '8px 18px', fontSize: 13, opacity: productoId ? 1 : 0.5, cursor: productoId ? 'pointer' : 'not-allowed' }}
-          >
-            Agregar producto
-          </button>
+          >Agregar producto</Boton>
 
           <div className="grid-registro" style={{ marginTop: 18 }}>
             <div className="form-group">
@@ -1312,6 +1332,9 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
               <input
                 type="number"
                 min={1}
+                max={99999}
+                step={1}
+                required
                 value={cantidadCombo}
                 onChange={(e) => setCantidadCombo(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') agregarCombo(); }}
@@ -1319,15 +1342,13 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </div>
           </div>
 
-          <button
+          <Boton variante="agregar"
             type="button"
             className="btn-cancel"
             onClick={agregarCombo}
             disabled={!promocionId}
             style={{ marginTop: 4, padding: '8px 18px', fontSize: 13, opacity: promocionId ? 1 : 0.5, cursor: promocionId ? 'pointer' : 'not-allowed' }}
-          >
-            Agregar combo
-          </button>
+          >Agregar combo</Boton>
 
           <div style={{ marginTop: 18 }}>
             {carrito.length === 0 && combos.length === 0 ? (
@@ -1446,8 +1467,8 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </p>
           ) : null}
           <div className="modal-actions" style={{ marginTop: 8 }}>
-            <button className="btn-cancel" onClick={cerrarFormulario}>Cancelar</button>
-            <button className="btn-save" onClick={save} disabled={guardando}>
+            <Boton variante="cancelar" className="btn-cancel" onClick={cerrarFormulario}>Cancelar</Boton>
+            <button className="btn-save" onClick={save} disabled={guardando}><CheckIcon size={16} className="btn-ico" aria-hidden="true" />
               {guardando ? 'Guardando...' : 'Registrar'}
             </button>
           </div>
@@ -1471,7 +1492,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             value={q}
             onChange={(e) => { setQ(e.target.value); setPagina(1); }}
             style={{ paddingLeft: 42 }} // <-- Esto arregla la superposición con el icono
-          />
+           maxLength={100}/>
         </div>
 
         {/* Fila 2: Filtros (Carlos) */}
@@ -1522,9 +1543,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
           </div>
 
           {hayFiltros && (
-            <button type="button" className="btn-cancel ventas-clear-filters-btn" onClick={limpiarFiltros}>
-              Limpiar filtros
-            </button>
+            <Boton variante="limpiar" type="button" className="btn-cancel ventas-clear-filters-btn" onClick={limpiarFiltros}>Limpiar filtros</Boton>
           )}
         </div>
 
@@ -1565,7 +1584,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                         {r.ventas} ventas · Vendido: <b>{moneda(r.total)}</b>
                         {r.anuladas > 0 && <> · {r.anuladas} cancelada{r.anuladas > 1 ? 's' : ''} (no suma{r.anuladas > 1 ? 'n' : ''})</>}
                       </span>
-                      <button type="button" className="btn-save vt-dia-btn" onClick={() => abrirCierre(clave, clave)}>
+                      <button type="button" className="btn-save vt-dia-btn" onClick={() => abrirCierre(clave, clave)}><ClipboardCheckIcon size={16} className="btn-ico" aria-hidden="true" />
                         Cierre del día
                       </button>
                     </div>
@@ -1585,14 +1604,12 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   </small>
                 </td>
                 <td>
-                  <button
+                  <Boton variante="ver"
                     type="button"
                     className="btn-cancel"
                     style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
                     onClick={() => setDetalleId(v.id)}
-                  >
-                    Ver detalle
-                  </button>
+                  >Ver detalle</Boton>
                 </td>
                 <td className="vt-total">${Number(v?.valor_total || 0).toLocaleString('es-CO')}</td>
 
@@ -1601,35 +1618,29 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   <span className={`badge ${claseEstado(v?.estado)}`}>{v?.estado ?? '—'}</span>
                 </td>
                 <td>
-                  <button
+                  <Boton variante="ver"
                     type="button"
                     className="btn-cancel"
                     style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
                     onClick={() => setHistorialId(v.id)}
-                  >
-                    Ver historial
-                  </button>
+                  >Ver historial</Boton>
                 </td>
                 <td>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
-                    <button
+                    <Boton variante="ver"
                       type="button"
                       className="btn-save"
                       style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap' }}
                       onClick={() => verFactura(v.id)}
-                    >
-                      Ver factura
-                    </button>
+                    >Ver factura</Boton>
 
                     {esAdmin && !['Servido', 'Pendiente de pago', 'Pagado'].includes(v?.estado) && !NO_VENDIDOS.includes(v?.estado) && (
-                      <button
+                      <Boton variante="cancelar"
                         type="button"
                         className="btn-cancel vt-btn-anular"
                         style={{ padding: '5px 10px', fontSize: 12, whiteSpace: 'nowrap', color: 'var(--danger)', borderColor: 'var(--danger)' }}
                         onClick={() => setCambioMotivo({ id: v.id, estado: 'Cancelado' })}
-                      >
-                        Cancelar
-                      </button>
+                      >Cancelar</Boton>
                     )}
                   </div>
                 </td>
@@ -1752,13 +1763,11 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                   </p>
                   {!esEfectivo(detalle) && puedeSubirComprobante(detalle) && (
                     <div className="vt-comprobante-acciones">
-                      <button
+                      <Boton variante="subir"
                         type="button"
                         className="btn-save"
                         onClick={() => setComprobanteASubir(detalle)}
-                      >
-                        Subir comprobante
-                      </button>
+                      >Subir comprobante</Boton>
                     </div>
                   )}
                 </>
@@ -1837,7 +1846,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                         className="btn-save"
                         disabled={procesandoComprobante}
                         onClick={() => void revisarComprobante(detalle, 'Aprobado')}
-                      >
+                      ><CheckIcon size={16} className="btn-ico" aria-hidden="true" />
                         {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
                       </button>
                     )}
@@ -1851,7 +1860,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
                         style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                         disabled={procesandoComprobante}
                         onClick={() => void revisarComprobante(detalle, 'Rechazado', MOTIVO_DEVOLUCION_DEFECTO)}
-                      >
+                      ><XIcon size={16} className="btn-ico" aria-hidden="true" />
                       {procesandoComprobante ? 'Guardando…' : 'Devolver comprobante'}
                       </button>
                     )}
@@ -1892,7 +1901,7 @@ ${c.anuladas ? `<p class="nota">Canceladas / rechazadas: ${c.anuladas}</p>` : ''
             </div>
 
             <div className="modal-actions">
-              <button type="button" className="btn-cancel" onClick={() => setDetalleId(null)}>Cerrar</button>
+              <Boton variante="volver" type="button" className="btn-cancel" onClick={() => setDetalleId(null)}>Cerrar</Boton>
             </div>
           </div>
         </div>

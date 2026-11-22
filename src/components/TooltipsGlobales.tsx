@@ -45,6 +45,53 @@ const DESCRIPCIONES_ICONOS: Record<string, string> = {
   upload: 'Subir archivo',
   user: 'Ver perfil',
   x: 'Cerrar',
+  house: 'Ir al inicio',
+  'arrow-right': 'Continuar',
+  'ban': 'Cancelar',
+  'banknote': 'Registrar pago',
+  'book-open': 'Ver guía',
+  'calendar-days': 'Seleccionar fecha',
+  'case-sensitive': 'Cambiar tamaño de letra',
+  'check-check': 'Marcar todo como leído',
+  'chevron-left': 'Anterior',
+  'chevron-right': 'Siguiente',
+  'chevrons-up-down': 'Mostrar más o menos',
+  'clipboard-check': 'Registrar cierre',
+  'clipboard-list': 'Ver listado',
+  'cloud': 'Google Drive',
+  'cloud-download': 'Descargar desde Drive',
+  'cloud-upload': 'Subir a Drive',
+  'contrast': 'Cambiar contraste',
+  'credit-card': 'Pagar',
+  'database': 'Copia de seguridad',
+  'eraser': 'Limpiar',
+  'file-spreadsheet': 'Exportar a Excel',
+  'file-text': 'Ver documento',
+  'folder-open': 'Abrir carpeta',
+  'history': 'Ver historial',
+  'key-round': 'Cambiar contraseña',
+  'life-buoy': 'Ver ayuda',
+  'link-2': 'Copiar enlace',
+  'log-in': 'Iniciar sesión',
+  'mic': 'Dictar con voz',
+  'moon': 'Activar modo oscuro',
+  'mouse-pointer-2': 'Cambiar cursor',
+  'package-check': 'Recibir pedido',
+  'power': 'Activar o desactivar',
+  'rotate-ccw': 'Restaurar',
+  'scan-line': 'Escanear',
+  'send': 'Enviar',
+  'shield-check': 'Verificar',
+  'shopping-bag': 'Ver mis compras',
+  'square': 'Detener',
+  'sun': 'Activar modo claro',
+  'text': 'Cambiar texto',
+  'undo-2': 'Devolver',
+  'unplug': 'Desconectar',
+  'user-plus': 'Registrarse',
+  'utensils-crossed': 'Ver menú',
+  'volume-1': 'Bajar volumen',
+  'volume-2': 'Leer en voz alta',
 };
 
 type TooltipVisible = {
@@ -86,7 +133,7 @@ function descripcionDelIcono(elemento: Element): string | undefined {
   if (clase) {
     const nombre = clase.slice('lucide-'.length);
     return DESCRIPCIONES_ICONOS[nombre]
-      ?? `Icono de ${nombre.replace(/-/g, ' ')}`;
+      ?? undefined;
   }
 
   const imagen = elemento.matches('img')

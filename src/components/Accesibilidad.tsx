@@ -116,9 +116,6 @@ function aplicarEscala(factor: number) {
         window.getComputedStyle(el).fontSize,
       );
 
-      // Elementos ocultos a propósito con font-size: 0 (por ejemplo botones
-      // que solo muestran un ícono): se dejan intactos para no revelar su
-      // texto auxiliar ni bloquearlos en 0px.
       if (!Number.isFinite(tamanoActual) || tamanoActual <= 0) {
         el.style.removeProperty('font-size');
         delete el.dataset.origSize;
@@ -600,7 +597,6 @@ export default function Accesibilidad() {
   };
 
   const restablecer = () => {
-    // 1. Borrar lo guardado
     [
       'acc_tema',
       'acc_factor',
@@ -612,29 +608,23 @@ export default function Accesibilidad() {
       'acc_movimiento',
     ].forEach((clave) => localStorage.removeItem(clave));
 
-    // 2. Parar la lectura en voz alta
     if (leyendo || lecturaActivaRef.current) detenerLectura();
 
-    // 3. Tema claro
     setTemaActual('claro');
     document.body.classList.remove('dark-mode');
 
-    // 4. Tamaño del texto original
     factorRef.current = 1;
     setFactor(1);
     aplicarEscala(1);
 
-    // 5. Fuente original
     fuenteRef.current = '';
     setFuenteActual('');
     quitarFuente();
 
-    // 6. Velocidad de lectura por defecto
     velocidadLecturaRef.current = 'normal';
     setVelocidadLectura('normal');
     setVelocidadSeleccionada(null);
 
-    // 7. Todos los ajustes apagados (movimiento sigue la preferencia del sistema)
     const prefiereMenosMovimiento = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches;

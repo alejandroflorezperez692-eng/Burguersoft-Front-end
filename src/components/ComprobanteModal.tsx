@@ -4,6 +4,8 @@ import { useEscape } from '../hooks/useEscape';
 import { mensajeError } from '../utils/errores';
 import { comprimirImagen } from '../utils/comprimirImagen';
 import AdminLoading from './AdminLoading';
+import Boton from './Boton';
+import { Upload as UploadIcon } from 'lucide-react';
 
 interface ComprobanteModalProps {
   ventaId: number;
@@ -137,15 +139,13 @@ const elegir = async (file: File | null) => {
         {error && <div className="comprobante-modal-error">{error}</div>}
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 18 }}>
-          <button type="button" className="btn-cancel" onClick={onClose} disabled={enviando}>
-            Cancelar
-          </button>
+          <Boton variante="cancelar" type="button" className="btn-cancel" onClick={onClose} disabled={enviando}>Cancelar</Boton>
           <button
             type="button"
             className="btn-save"
             onClick={() => void enviar(archivo)}
             disabled={enviando || !archivo}
-          >
+          ><UploadIcon size={16} className="btn-ico" aria-hidden="true" />
             {enviando ? 'Verificando con IA…' : error ? 'Reintentar' : 'Subir comprobante'}
           </button>
         </div>

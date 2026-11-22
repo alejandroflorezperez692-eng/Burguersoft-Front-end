@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { validarCamposVisibles } from '../../utils/validarCampos';
 import apiClient from '../../api/client';
 import { useAuth } from '../../hooks/useAuth';
 import { normalizarRol } from '../../utils/roles';
@@ -17,6 +18,8 @@ import ComprobanteModal from '../../components/ComprobanteModal';
 import { useEscape } from '../../hooks/useEscape';
 import AdminLoading from '../../components/AdminLoading';
 import SelectOscuro from '../../components/SelectOscuro';
+import Boton from '../../components/Boton';
+import { ArrowRight as ArrowRightIcon, Banknote as BanknoteIcon, Check as CheckIcon, PackageCheck as PackageCheckIcon, Undo2 as Undo2Icon, X as XIcon } from 'lucide-react';
 
 
 type Vista = 'cocina' | 'meseros' | 'cajero' | 'todos';
@@ -524,6 +527,7 @@ export default function PedidosTurno() {
     !!cobro && METODOS_CON_COMPROBANTE.includes(metodoCobro) && !comprobanteAprobado(cobro.venta);
     
   const confirmarPago = async () => {
+    if (!validarCamposVisibles()) return;
     if (!cobro || pagandoRef.current) return;
     const { venta, accion } = cobro;
 
@@ -677,9 +681,7 @@ export default function PedidosTurno() {
             );
           })()}
 
-          <button type="button" className="tv-ver-detalle" onClick={() => setDetalleId(v.id)}>
-            Ver detalle
-          </button>
+          <Boton variante="ver" type="button" className="tv-ver-detalle" onClick={() => setDetalleId(v.id)}>Ver detalle</Boton>
 
           {v.programado_para && (
             <span className="tv-programado">
@@ -720,7 +722,7 @@ export default function PedidosTurno() {
                     intentarCambio(v, accion);
                   }
                 }}
-              >
+              ><ArrowRightIcon size={16} className="btn-ico" aria-hidden="true" />
                 {esOcupado ? 'Guardando…' : textoAccion}
               </button>
             ) : (
@@ -734,7 +736,7 @@ export default function PedidosTurno() {
                 disabled={esOcupado}
                 onClick={() => intentarCambio(v, { sig: 'Rechazada', texto: 'Rechazar pedido' })}
                 title="Rechazar pedido (requiere motivo)"
-              >
+              ><XIcon size={16} className="btn-ico" aria-hidden="true" />
                 Rechazar
               </button>
             )}
@@ -788,12 +790,10 @@ export default function PedidosTurno() {
           placeholder="Buscar por número, mesa o nombre"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
-        />
+         maxLength={100}/>
         <div className="tv-acciones">
           {puedeCrear && (
-            <button type="button" className="tv-btn-nuevo" onClick={() => setNuevoAbierto(true)}>
-              + Nuevo pedido
-            </button>
+            <Boton variante="agregar" type="button" className="tv-btn-nuevo" onClick={() => setNuevoAbierto(true)}>Nuevo pedido</Boton>
           )}
         </div>
       </div>
@@ -954,7 +954,6 @@ export default function PedidosTurno() {
                 prev.subtotal += Number((d as any).subtotal ?? 0);
                 agrupados.set(nombre, prev);
               });
-              // Si hay combo, se ocultan los productos incluidos en él (subtotal 0)
               const lista = [...agrupados.values()].filter((g) => promos.length === 0 || g.subtotal > 0);
 
               return (
@@ -1007,13 +1006,11 @@ export default function PedidosTurno() {
                     </p>
                     {!esEfectivo(detalle) && puedeSubirComprobante(detalle) && (
                       <div className="vt-comprobante-acciones">
-                        <button
+                        <Boton variante="subir"
                           type="button"
                           className="btn-save"
                           onClick={() => setComprobanteASubir(detalle)}
-                        >
-                          Subir comprobante
-                        </button>
+                        >Subir comprobante</Boton>
                       </div>
                     )}
                   </>
@@ -1082,7 +1079,7 @@ export default function PedidosTurno() {
                             className="btn-save"
                             disabled={procesandoComprobante}
                             onClick={() => void revisarComprobante(detalle, 'Aprobado')}
-                          >
+                          ><CheckIcon size={16} className="btn-ico" aria-hidden="true" />
                             {procesandoComprobante ? 'Guardando…' : 'Aprobar pago'}
                           </button>
                         )}
@@ -1093,7 +1090,7 @@ export default function PedidosTurno() {
                             style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
                             disabled={procesandoComprobante}
                             onClick={() => setComprobanteARechazar(detalle)}
-                          >
+                          ><Undo2Icon size={16} className="btn-ico" aria-hidden="true" />
                             Devolver comprobante
                           </button>
                         )}
@@ -1141,7 +1138,7 @@ export default function PedidosTurno() {
                       setDetalleId(null);
                       intentarCambio(v, { sig: 'Recepcionado', texto: 'Recibir pedido' });
                     }}
-                  >
+                  ><PackageCheckIcon size={16} className="btn-ico" aria-hidden="true" />
                     Recibir pedido
                   </button>
                 </div>
@@ -1262,15 +1259,13 @@ export default function PedidosTurno() {
                     <div className="tv-drop-info">
                       <strong>{archivoCobro?.name}</strong>
                       <span>{((archivoCobro?.size ?? 0) / 1024 / 1024).toFixed(2)} MB</span>
-                      <button
+                      <Boton variante="eliminar"
                         type="button"
                         onClick={() => {
                           setArchivoCobro(null);
                           if (refArchivoCobro.current) refArchivoCobro.current.value = '';
                         }}
-                      >
-                        Quitar y elegir otra
-                      </button>
+                      >Quitar y elegir otra</Boton>
                     </div>
                   </div>
                 ) : (
@@ -1283,10 +1278,8 @@ export default function PedidosTurno() {
             )}
 
             <div className="vt-comprobante-acciones">
-              <button type="button" className="btn-cancel" onClick={() => setCobro(null)} disabled={pagando}>
-                Cancelar
-              </button>
-              <button type="button" className="btn-save" onClick={confirmarPago} disabled={pagando}>
+              <Boton variante="cancelar" type="button" className="btn-cancel" onClick={() => setCobro(null)} disabled={pagando}>Cancelar</Boton>
+              <button type="button" className="btn-save" onClick={confirmarPago} disabled={pagando}><BanknoteIcon size={16} className="btn-ico" aria-hidden="true" />
                 {pagando ? 'Registrando…' : 'Registrar pago'}
               </button>
             </div>

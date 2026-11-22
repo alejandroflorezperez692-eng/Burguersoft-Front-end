@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 
 
+import { Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AuthLayout from '../layouts/AuthLayout';
 import apiClient from '../api/client';
@@ -16,6 +17,7 @@ import { mensajeError } from '../utils/errores';
 
 
 import iconoBloqueo from '../assets/img/bloquear.png';
+import { KeyRound as KeyRoundIcon } from 'lucide-react';
 
 export default function RestablecerContrasena() {
   const navigate = useNavigate();
@@ -71,11 +73,9 @@ export default function RestablecerContrasena() {
       sessionStorage.removeItem('correo_recuperacion');
       sessionStorage.removeItem('codigo_verificado');
 
-      // Deja el loading visible al menos 1.2 s para que se alcance a ver
       const resto = 1200 - (Date.now() - inicio);
       if (resto > 0) await new Promise((r) => setTimeout(r, resto));
 
-      // El Login lee 'aviso_login' para mostrar la alerta de contraseña cambiada
       sessionStorage.setItem('aviso_login', 'password_ok');
       logout();
       navigate('/login', { replace: true, state: { toast: 'password_ok' } });
@@ -96,7 +96,7 @@ export default function RestablecerContrasena() {
           <img src={iconoBloqueo} alt="Candado" />
         </div>
         <p className="descripcion">Ingresa y confirma tu nueva contraseña.</p>
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit}>
           <h2>NUEVA CONTRASEÑA<span className="required-marker">*</span></h2>
           <div className="campo-password">
             <input
@@ -107,15 +107,20 @@ export default function RestablecerContrasena() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={8}
+              maxLength={64}
+              pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
+              title="Mínimo 8 caracteres, una mayúscula, un número y un símbolo"
             />
             <button
               type="button"
               className="boton-mostrar-password"
+              data-tooltip={show1 ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               onClick={() => setShow1((v) => !v)}
               aria-label={show1 ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               title={show1 ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
-              {show1 ? 'Ocultar' : 'Mostrar'}
+              {show1 ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
 
@@ -141,16 +146,21 @@ export default function RestablecerContrasena() {
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               required
+              minLength={8}
+              maxLength={64}
+              pattern="^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).{8,}$"
+              title="Mínimo 8 caracteres, una mayúscula, un número y un símbolo"
               style={confirm ? { borderColor: coinciden ? '#1e8e3e' : '#c8382a' } : undefined}
             />
             <button
               type="button"
               className="boton-mostrar-password"
+              data-tooltip={show2 ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               onClick={() => setShow2((v) => !v)}
               aria-label={show2 ? 'Ocultar contraseña' : 'Mostrar contraseña'}
               title={show2 ? 'Ocultar contraseña' : 'Mostrar contraseña'}
             >
-              {show2 ? 'Ocultar' : 'Mostrar'}
+              {show2 ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
           {confirm && (
@@ -160,7 +170,7 @@ export default function RestablecerContrasena() {
           )}
 
 
-          <button type="submit" className="btn-primario" disabled={loading}>
+          <button type="submit" className="btn-primario" disabled={loading}><KeyRoundIcon size={16} className="btn-ico" aria-hidden="true" />
             {loading ? 'GUARDANDO…' : 'Cambiar contraseña'}
           </button>
         </form>

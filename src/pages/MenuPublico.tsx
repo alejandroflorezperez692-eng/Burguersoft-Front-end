@@ -106,7 +106,6 @@ export default function MenuPublico() {
   const sinCategoria = filtrados.filter((p) => !CATEGORIAS.includes(catNombre(p.categoria)));
   if (sinCategoria.length > 0) grouped['Otras'] = sinCategoria;
 
-  // Categorías que existen en el menú (para los botones)
   const categoriasConProductos = CATEGORIAS.filter((cat) =>
     disponibles.some((p) => catNombre(p.categoria) === cat),
   );
@@ -135,7 +134,7 @@ export default function MenuPublico() {
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 aria-label="Buscar producto"
-              />
+               maxLength={100}/>
               <label className="menu-check">
                 <input
                   type="checkbox"
@@ -217,7 +216,7 @@ export default function MenuPublico() {
                             </button>
                           ) : (
                             <Link to="/login" className="link-sesion" data-tooltip="Inicia sesión para pedir">
-                              <button type="button" className="btn-circular-add btn-login">
+                              <button type="button" className="btn-circular-add btn-login" aria-label="Agregar al carrito">
                                 +
                               </button>
                             </Link>

@@ -20,8 +20,7 @@ const MenuPublico = lazy(() => import('./pages/MenuPublico'));
 const Login = lazy(() => import('./pages/Login'));
 const SocialCallback = lazy(() => import('./pages/SocialCallback'));
 const Registro = lazy(() => import('./pages/Registro'));
-const TerminosCondiciones = lazy(() => import('./pages/TerminosCondiciones'));
-const PoliticaPrivacidad = lazy(() => import('./pages/PoliticaPrivacidad'));
+const PoliticaLegal = lazy(() => import('./pages/PoliticaLegal'));
 const RecuperarContrasena = lazy(() => import('./pages/RecuperarContrasena'));
 const VerificarCodigo = lazy(() => import('./pages/VerificarCodigo'));
 const RestablecerContrasena = lazy(() => import('./pages/RestablecerContrasena'));
@@ -43,7 +42,6 @@ const ConfiguracionAdmin = lazy(() => import('./pages/admin/ConfiguracionAdmin')
 const AyudaAdmin = lazy(() => import('./pages/admin/AyudaAdmin'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const CierreInventarioAdmin = lazy(() => import('./pages/admin/CierreInventarioAdmin'));
-const TerminosPrivacidad = lazy(() => import('./pages/TerminosPrivacidad'));
 const Ayuda = lazy(() => import('./pages/admin/Ayuda'));
 const AyudaCliente = lazy(() => import('./pages/AyudaCliente'));
 const InventarioAdmin = lazy(() => import('./pages/admin/InventarioAdmin'));
@@ -63,15 +61,16 @@ export default function App() {
               <Route path="/nosotros" element={<Nosotros />} />
               <Route path="/menu-publico" element={<MenuPublico />} />
               <Route path="/contactanos" element={<Contactanos />} />
-              <Route path="/terminos-y-condiciones" element={<TerminosPrivacidad />} />
+              <Route path="/terminos-y-condiciones" element={<Navigate to="/politica-legal" replace />} />
             </Route>
           </Route>
 
           <Route path="/login" element={<Login />} />
           <Route path="/social-callback" element={<SocialCallback />} />
           <Route path="/registro" element={<Registro />} />
-          <Route path="/terminos" element={<TerminosCondiciones />} />
-          <Route path="/privacidad" element={<PoliticaPrivacidad />} />
+          <Route path="/politica-legal" element={<PoliticaLegal />} />
+          <Route path="/terminos" element={<Navigate to="/politica-legal" replace />} />
+          <Route path="/privacidad" element={<Navigate to="/politica-legal" replace />} />
           <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
           <Route path="/verificar-codigo" element={<VerificarCodigo />} />
           <Route path="/restablecer-contrasena" element={<RestablecerContrasena />} />

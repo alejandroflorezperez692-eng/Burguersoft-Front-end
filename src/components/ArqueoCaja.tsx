@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { validarCamposVisibles } from '../utils/validarCampos';
+import { useNavigate } from 'react-router-dom';
 import apiClient from '../api/client';
 import { useToast } from './Toast';
 import { mensajeError } from '../utils/errores';
+import Boton from './Boton';
+import { History as HistoryIcon, Save as SaveIcon } from 'lucide-react';
 
 interface Preview {
   desde: string;
@@ -78,6 +82,7 @@ function descargarPdfCierre(c: CierreGuardado, aviso: (m: string) => void) {
 }
 
 export default function ArqueoCaja() {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [prev, setPrev] = useState<Preview | null>(null);
   const [sinPermiso, setSinPermiso] = useState(false);
@@ -106,6 +111,7 @@ export default function ArqueoCaja() {
   const hayDiferencia = diferencia !== null && Math.abs(diferencia) >= 0.01;
 
   const guardar = async () => {
+    if (!validarCamposVisibles()) return;
     if (contado === '' || Number(contado) < 0) {
       showToast('Escribe el efectivo que contaste', true);
       return;
@@ -166,11 +172,11 @@ export default function ArqueoCaja() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginTop: 12 }}>
         <div className="form-group" style={{ margin: 0 }}>
           <label>Base inicial (opcional)</label>
-          <input type="text" inputMode="numeric" value={miles(base)} onChange={(e) => setBase(soloDigitos(e.target.value))} placeholder="0" />
+          <input type="text" inputMode="numeric" value={miles(base)} onChange={(e) => setBase(soloDigitos(e.target.value))} placeholder="0"  maxLength={15} pattern="[0-9.,$ ]*"/>
         </div>
         <div className="form-group" style={{ margin: 0 }}>
           <label>Efectivo que contaste</label>
-          <input type="text" inputMode="numeric" value={miles(contado)} onChange={(e) => setContado(soloDigitos(e.target.value))} placeholder="0" />
+          <input type="text" inputMode="numeric" value={miles(contado)} onChange={(e) => setContado(soloDigitos(e.target.value))} placeholder="0"  maxLength={15} pattern="[0-9.,$ ]*" required/>
         </div>
       </div>
 
@@ -189,17 +195,18 @@ export default function ArqueoCaja() {
       {hayDiferencia && (
         <div className="form-group" style={{ marginTop: 10 }}>
           <label>Observación (obligatoria si hay diferencia)</label>
-          <textarea rows={2} maxLength={255} value={obs} onChange={(e) => setObs(e.target.value)} />
+          <textarea rows={2} maxLength={255} value={obs} required={hayDiferencia} onChange={(e) => setObs(e.target.value)} />
         </div>
       )}
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
-        <button type="button" className="btn-save" disabled={guardando} onClick={guardar}>
+        <button type="button" className="btn-save" disabled={guardando} onClick={guardar}><SaveIcon size={16} className="btn-ico" aria-hidden="true" />
           {guardando ? 'Guardando...' : 'Guardar cierre de caja'}
         </button>
-        <button type="button" className="btn-cancel" onClick={alternarHistorial}>
+        <button type="button" className="btn-cancel" onClick={alternarHistorial}><HistoryIcon size={16} className="btn-ico" aria-hidden="true" />
           {verHistorial ? 'Ocultar cierres' : 'Ver cierres anteriores'}
         </button>
+        <Boton variante="volver" type="button" onClick={() => navigate(-1)}>Volver</Boton>
       </div>
 
       {verHistorial && (
@@ -214,15 +221,13 @@ export default function ArqueoCaja() {
                   {fechaHora(c.created_at)} · {c.cajero}
                 </span>
                 <span>
-                  <button
+                  <Boton variante="pdf"
                     type="button"
                     className="btn-cancel"
                     style={{ padding: '2px 10px', marginRight: 8 }}
                     onClick={() => descargarPdfCierre(c, (m) => showToast(m, true))}
                     aria-label={`Descargar PDF del cierre ${c.id}`}
-                  >
-                    PDF
-                  </button>
+                  >PDF</Boton>
                   {moneda(Number(c.total_cobrado))} ·{' '}
                   <b style={{ color: Math.abs(dif) >= 0.01 ? 'var(--danger)' : '#1e8e4e' }}>
                     {Math.abs(dif) >= 0.01 ? moneda(dif) : 'Cuadró'}

@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
+import { validarCamposVisibles } from '../../utils/validarCampos';
 import axios from 'axios';
 import apiClient from '../../api/client';
 import AdminLoading from '../../components/AdminLoading';
 import Paginacion, { paginar } from '../../components/Paginacion';
 import { useToast } from '../../components/Toast';
+import { Eye, EyeOff } from 'lucide-react';
 import { MENSAJE_DESCONOCIDO, mensajeSeguro } from '../../utils/errores';
 import { useEscape } from '../../hooks/useEscape';
+import Boton from '../../components/Boton';
+import { Cloud as CloudIcon, CloudDownload as CloudDownloadIcon, CloudUpload as CloudUploadIcon, Database as DatabaseIcon, FolderOpen as FolderOpenIcon, RotateCcw as RotateCcwIcon, Unplug as UnplugIcon } from 'lucide-react';
 
 const BACKUPS_CSS = `
 .bk-pw{position:relative}
@@ -340,6 +344,7 @@ export default function BackupsAdmin() {
   };
 
   const confirmarRestaurar = async () => {
+    if (!validarCamposVisibles()) return;
     if (!restoreSel) return;
     if (!restorePass.trim()) {
       showToast('Ingresa la contraseña de tu cuenta o la usada al crear la copia.', true);
@@ -504,17 +509,19 @@ export default function BackupsAdmin() {
         maxLength={64}
         autoComplete="current-password"
         placeholder={placeholder}
+        required
         onChange={(e) => setValor(e.target.value)}
         onKeyDown={(e) => { if (e.key === 'Enter' && onEnter) onEnter(); }}
       />
       <button
         type="button"
         className="bk-pw-toggle"
+        data-tooltip={ver ? 'Ocultar contraseña' : 'Mostrar contraseña'}
         onClick={() => setVer(!ver)}
         aria-label={ver ? 'Ocultar contraseña' : 'Mostrar contraseña'}
         title={ver ? 'Ocultar contraseña' : 'Mostrar contraseña'}
       >
-        {ver ? 'Ocultar' : 'Mostrar'}
+        {ver ? <EyeOff size={16} /> : <Eye size={16} />}
       </button>
     </div>
   );
@@ -541,7 +548,7 @@ export default function BackupsAdmin() {
             placeholder="Buscar copia..." 
             value={buscar} 
             onChange={(e) => { setBuscar(e.target.value); setPagina(1); }} 
-          />
+           maxLength={100}/>
         </div>
       </div>
 
@@ -558,7 +565,7 @@ export default function BackupsAdmin() {
           onClick={abrirModalGen}
           disabled={generando}
           style={{ width: '100%', padding: '13px 20px', fontSize: 14 }}
-        >
+        ><DatabaseIcon size={16} className="btn-ico" aria-hidden="true" />
           {generando ? 'Generando copia…' : 'Generar copia de seguridad'}
         </button>
       </div>
@@ -601,22 +608,18 @@ export default function BackupsAdmin() {
                       )}
                       <td className="td-acciones">
                         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
-                          <button
+                          <Boton variante="restaurar"
                             className="btn-icon btn-icon-restore btn-accion"
                             onClick={() => abrirModalRestore(b)}
                             disabled={ocupado}
                             title="Restaurar"
-                          >
-                            Restaurar
-                          </button>
-                          <button
+                          >Restaurar</Boton>
+                          <Boton variante="descargar"
                             className="btn-icon btn-icon-edit btn-accion"
                             onClick={() => descargarCifrado(b)}
                             disabled={ocupado || descargandoId === b.id}
                             title="Descargar esta copia cifrada a tu PC"
-                          >
-                            Descargar
-                          </button>
+                          >Descargar</Boton>
                           {drive.conectada && (
                             !enDrive ? (
                               <button
@@ -624,7 +627,7 @@ export default function BackupsAdmin() {
                                 onClick={() => subirDrive(b)}
                                 disabled={ocupado || subiendoDrive === b.id}
                                 title="A Drive"
-                              >
+                              ><CloudUploadIcon size={16} className="btn-ico" aria-hidden="true" />
                                 {subiendoDrive === b.id ? 'Subiendo…' : 'A Drive'}
                               </button>
                             ) : (
@@ -633,19 +636,17 @@ export default function BackupsAdmin() {
                                 onClick={() => descargarDeDrive(b)}
                                 disabled={ocupado || descargandoId === b.id}
                                 title="De Drive"
-                              >
+                              ><CloudDownloadIcon size={16} className="btn-ico" aria-hidden="true" />
                                 {descargandoId === b.id ? 'Descargando…' : 'De Drive'}
                               </button>
                             )
                           )}
-                          <button
+                          <Boton variante="eliminar"
                             className="btn-icon btn-icon-del btn-accion"
                             onClick={() => del(b)}
                             disabled={ocupado}
                             title="Eliminar"
-                          >
-                            Eliminar
-                          </button>
+                          >Eliminar</Boton>
                         </div>
                       </td>
                     </tr>
@@ -681,13 +682,13 @@ export default function BackupsAdmin() {
         {drive.configurada && (
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {!drive.conectada ? (
-              <button className="btn-save" onClick={conectarDrive}>Conectar con Google Drive</button>
+              <button className="btn-save" onClick={conectarDrive}><CloudIcon size={16} className="btn-ico" aria-hidden="true" />Conectar con Google Drive</button>
             ) : (
               <>
-                <button className="btn-cancel" onClick={verCopiasDrive} disabled={cargandoDrive}>
+                <button className="btn-cancel" onClick={verCopiasDrive} disabled={cargandoDrive}><FolderOpenIcon size={16} className="btn-ico" aria-hidden="true" />
                   {cargandoDrive ? 'Cargando…' : 'Ver copias en Drive'}
                 </button>
-                <button className="btn-cancel" onClick={desconectarDrive} disabled={desconectando}>
+                <button className="btn-cancel" onClick={desconectarDrive} disabled={desconectando}><UnplugIcon size={16} className="btn-ico" aria-hidden="true" />
                   {desconectando ? 'Desconectando…' : 'Desconectar'}
                 </button>
               </>
@@ -725,8 +726,8 @@ export default function BackupsAdmin() {
               </label>
             )}
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModalGen(false)} disabled={generando}>Cancelar</button>
-              <button className="btn-save" onClick={generar} disabled={generando}>
+              <Boton variante="cancelar" className="btn-cancel" onClick={() => setModalGen(false)} disabled={generando}>Cancelar</Boton>
+              <button className="btn-save" onClick={generar} disabled={generando}><DatabaseIcon size={16} className="btn-ico" aria-hidden="true" />
                 {generando ? 'Generando...' : 'Generar copia'}
               </button>
             </div>
@@ -788,13 +789,13 @@ export default function BackupsAdmin() {
             </div>
 
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setRestoreSel(null)} disabled={restaurando}>Cancelar</button>
+              <Boton variante="cancelar" className="btn-cancel" onClick={() => setRestoreSel(null)} disabled={restaurando}>Cancelar</Boton>
               <button
                 className="btn-save bk-confirmar"
                 onClick={confirmarRestaurar}
                 disabled={restaurando}
                 style={restoreModo === 'replace' ? { background: 'var(--danger)', boxShadow: '0 4px 14px rgba(200,56,42,.3)' } : undefined}
-              >
+              ><RotateCcwIcon size={16} className="btn-ico" aria-hidden="true" />
                 {restaurando ? 'Restaurando...' : 'Confirmar restauración'}
               </button>
             </div>
@@ -829,7 +830,7 @@ export default function BackupsAdmin() {
 
             )}
             <div className="modal-actions">
-              <button className="btn-cancel" onClick={() => setModalDrive(false)}>Cerrar</button>
+              <Boton variante="volver" className="btn-cancel" onClick={() => setModalDrive(false)}>Cerrar</Boton>
             </div>
           </div>
         </div>

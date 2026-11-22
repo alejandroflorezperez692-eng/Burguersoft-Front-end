@@ -743,6 +743,16 @@ body.dark-mode .admin-body:has(.mn-page) .mn-card-imgwrap::after {
   margin: 0;
   font-size: 0.9rem;
 }
+.admin-footer p + p {
+  margin-top: 6px;
+}
+.admin-footer .footer-legal-link {
+  color: inherit;
+  text-decoration: underline;
+}
+.admin-footer .footer-legal-link:hover {
+  color: #E8821A;
+}
 
 body.dark-mode .admin-body .admin-footer {
   background: #000000;
