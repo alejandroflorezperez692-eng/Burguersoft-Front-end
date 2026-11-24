@@ -8,6 +8,7 @@ import '../styles/social-login.css';
 import { rutaInicio } from '../utils/roles';
 import { mensajeError } from '../utils/errores';
 import CaptchaLocal, { type CaptchaLocalRef } from '../components/CaptchaLocal';
+import { isAxiosError } from 'axios';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -79,9 +80,18 @@ export default function Login() {
       const rol = stored ? JSON.parse(stored).role : null;
       navigate(rutaInicio(rol), { replace: true, state: { toast: 'login_ok' } });
     } catch (err) {
-      showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
-      captchaRef.current?.recargar();
-    } finally {
+  if (isAxiosError(err) && err.response?.status === 429) {
+    const segundos = Number(err.response.headers['retry-after']);
+    showToast(
+      segundos > 0
+        ? `Demasiados intentos. Espera ${segundos} segundos e inténtalo de nuevo.`
+        : 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.',
+      true,
+    );
+  } else {
+    showToast(mensajeError(err, 'No se pudo iniciar sesión'), true);
+  }
+  captchaRef.current?.recargar();
       setLoading(false);
     }
   };
